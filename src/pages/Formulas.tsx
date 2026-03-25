@@ -277,10 +277,10 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     await supabase
       .from("formulas")
       .update({
-        volume_amount: pendingConversion.volumeAmount,
+        volume_amount: pendingConversion.volumeAmount.toString(),
         volume_unit: pendingConversion.unit,
         weight_g: weightG
-      })
+      } as any)
       .eq("id", pendingConversion.formulaId);
 
     toast.success("Conversion saved");
