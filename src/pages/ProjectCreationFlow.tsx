@@ -193,7 +193,7 @@ const ProjectCreationFlow = () => {
     }
   };
 
-  const loadIngredientSpecs = async (ingredientId: number) => {
+  const loadIngredientSpecs = async (ingredientId: string) => {
     const { data, error } = await supabase
       .from("ingredient_specs")
       .select("*")
