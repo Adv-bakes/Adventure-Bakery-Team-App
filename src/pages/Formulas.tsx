@@ -227,7 +227,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
       const weightG = volumeAmount * conversion.grams_per_unit;
       await supabase
         .from("formulas")
-        .update({ volume_amount: volumeAmount, volume_unit: volumeUnit, weight_g: weightG })
+        .update({ volume_amount: volumeAmount.toString(), volume_unit: volumeUnit, weight_g: weightG } as any)
         .eq("id", formulaId);
       loadFormulas();
     } else {
