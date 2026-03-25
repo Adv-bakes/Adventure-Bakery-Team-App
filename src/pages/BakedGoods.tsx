@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import BakedGoodDialog from "@/components/BakedGoodDialog";
 
 interface BakedGood {
-  id: number;
+  id: string;
   product_name: string;
   category: string | null;
   yield_units: number | null;
@@ -47,7 +47,7 @@ const BakedGoods = () => {
     setIsLoading(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item? This will also delete all associated formulas.")) {
       return;
     }

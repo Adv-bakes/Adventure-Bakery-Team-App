@@ -16,11 +16,11 @@ interface Concept {
   core_problem_solved: string;
   desired_claims: any;
   notes: string;
-  net_weight: number | null;
+  net_weight: string | null;
   net_weight_unit: string | null;
-  unit_length: number | null;
-  unit_width: number | null;
-  unit_height: number | null;
+  unit_length: string | null;
+  unit_width: string | null;
+  unit_height: string | null;
   shape: string | null;
 }
 

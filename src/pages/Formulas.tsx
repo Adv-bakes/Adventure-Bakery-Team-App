@@ -24,16 +24,16 @@ import { Input } from "@/components/ui/input";
 import WeightConversionModal from "@/components/WeightConversionModal";
 
 interface Formula {
-  id: number;
+  id: string;
   ingredient_name: string | null;
-  volume_amount: number | null;
+  volume_amount: string | null;
   volume_unit: string | null;
   weight_g: number | null;
   percentage_formula: number | null;
 }
 
 interface Ingredient {
-  id: number;
+  id: string;
   ingredient_name: string;
 }
 
@@ -61,7 +61,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [conversionModalOpen, setConversionModalOpen] = useState(false);
   const [pendingConversion, setPendingConversion] = useState<{
-    formulaId: number;
+    formulaId: string;
     ingredientName: string;
     unit: string;
     volumeAmount: number;
@@ -100,7 +100,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
       .order("ingredient_name");
 
     if (!error && data) {
-      setIngredients(data);
+      setIngredients((data as unknown as Ingredient[]) || []);
     }
   };
 
@@ -125,8 +125,8 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
       toast.error("Failed to load formulas");
       console.error(error);
     } else {
-      setFormulas(data || []);
-      calculatePercentages(data || []);
+      setFormulas((data as unknown as Formula[]) || []);
+      calculatePercentages((data as unknown as Formula[]) || []);
     }
     setIsLoading(false);
   };
@@ -161,8 +161,9 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
         volume_amount: null,
         volume_unit: null,
         weight_g: null,
-        percentage_formula: null
-      })
+        percentage_formula: null,
+        percentage: 0,
+      } as any)
       .select()
       .single();
 
@@ -170,11 +171,11 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
       toast.error("Failed to add row");
       console.error(error);
     } else {
-      setFormulas([...formulas, data]);
+      setFormulas([...formulas, data as unknown as Formula]);
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this row?")) return;
 
     const { error } = await supabase
@@ -190,7 +191,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     }
   };
 
-  const handleIngredientChange = async (formulaId: number, ingredientName: string) => {
+  const handleIngredientChange = async (formulaId: string, ingredientName: string) => {
     const { error } = await supabase
       .from("formulas")
       .update({ ingredient_name: ingredientName })
@@ -203,12 +204,12 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     }
   };
 
-  const handleVolumeChange = async (formulaId: number, volumeAmount: number | null, volumeUnit: string | null) => {
+  const handleVolumeChange = async (formulaId: string, volumeAmount: number | null, volumeUnit: string | null) => {
     const formula = formulas.find(f => f.id === formulaId);
     if (!formula || !volumeAmount || !volumeUnit || !formula.ingredient_name) {
       await supabase
         .from("formulas")
-        .update({ volume_amount: volumeAmount, volume_unit: volumeUnit })
+        .update({ volume_amount: volumeAmount?.toString(), volume_unit: volumeUnit } as any)
         .eq("id", formulaId);
       loadFormulas();
       return;
@@ -226,13 +227,13 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
       const weightG = volumeAmount * conversion.grams_per_unit;
       await supabase
         .from("formulas")
-        .update({ volume_amount: volumeAmount, volume_unit: volumeUnit, weight_g: weightG })
+        .update({ volume_amount: volumeAmount.toString(), volume_unit: volumeUnit, weight_g: weightG } as any)
         .eq("id", formulaId);
       loadFormulas();
     } else {
       // Need conversion - show modal
       setPendingConversion({
-        formulaId,
+        formulaId: formulaId,
         ingredientName: formula.ingredient_name,
         unit: volumeUnit,
         volumeAmount
@@ -241,7 +242,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     }
   };
 
-  const handleWeightChange = async (formulaId: number, weightG: number | null) => {
+  const handleWeightChange = async (formulaId: string, weightG: number | null) => {
     const { error } = await supabase
       .from("formulas")
       .update({ weight_g: weightG })
@@ -276,10 +277,10 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     await supabase
       .from("formulas")
       .update({
-        volume_amount: pendingConversion.volumeAmount,
+        volume_amount: pendingConversion.volumeAmount.toString(),
         volume_unit: pendingConversion.unit,
         weight_g: weightG
-      })
+      } as any)
       .eq("id", pendingConversion.formulaId);
 
     toast.success("Conversion saved");
@@ -403,7 +404,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
                         />
                         <Select
                           value={formula.volume_unit || "cup"}
-                          onValueChange={(unit) => handleVolumeChange(formula.id, formula.volume_amount, unit)}
+                          onValueChange={(unit) => handleVolumeChange(formula.id, formula.volume_amount ? parseFloat(formula.volume_amount) : null, unit)}
                         >
                           <SelectTrigger className="w-28">
                             <SelectValue />

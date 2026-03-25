@@ -16,15 +16,15 @@ import {
 import logo from "@/assets/logo.png";
 
 interface Product {
-  id: number;
+  id: string;
   product_name: string;
   unit_size_oz: number | null;
   yield_units: number | null;
 }
 
 interface OrderIntake {
-  id: number;
-  product_id: number;
+  id: string;
+  product_id: string;
   number_of_cases: number;
   status: string;
   created_at: string;
@@ -67,11 +67,11 @@ const OperationsHub = () => {
       supabase.from("production_intake").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]);
 
-    if (productsRes.data) setProducts(productsRes.data);
+    if (productsRes.data) setProducts(productsRes.data as unknown as Product[]);
     if (ordersRes.data) {
       const enriched = ordersRes.data.map((o: any) => ({
         ...o,
-        product_name: productsRes.data?.find((p: Product) => p.id === o.product_id)?.product_name ?? "Unknown",
+        product_name: productsRes.data?.find((p: any) => p.id === o.product_id)?.product_name ?? "Unknown",
       }));
       setOrders(enriched);
     }
@@ -88,9 +88,9 @@ const OperationsHub = () => {
 
     const { error } = await supabase.from("production_intake").insert({
       user_id: user.id,
-      product_id: parseInt(selectedProductId),
+      product_id: selectedProductId,
       number_of_cases: parseInt(numberOfCases),
-    });
+    } as any);
     setSubmitting(false);
     if (error) {
       toast.error("Failed to save order intake.");

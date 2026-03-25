@@ -38,8 +38,8 @@ import { Sparkles, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Formula {
-  id: number;
-  product_id: number | null;
+  id: string;
+  product_id: string | null;
   ingredient_name: string | null;
   ingredient_category: string | null;
   weight_g: number | null;
@@ -55,7 +55,7 @@ interface FormulaDialogProps {
 }
 
 interface Ingredient {
-  id: number;
+  id: string;
   ingredient_name: string;
   function_in_formula: string | null;
 }
@@ -67,7 +67,7 @@ const FormulaDialog = ({ open, onOpenChange, editingItem, conceptId }: FormulaDi
   const [showIngredientDialog, setShowIngredientDialog] = useState(false);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIngredientId, setSelectedIngredientId] = useState<number | null>(null);
+  const [selectedIngredientId, setSelectedIngredientId] = useState<string | null>(null);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [formData, setFormData] = useState({
     ingredient_name: "",
@@ -125,7 +125,7 @@ const FormulaDialog = ({ open, onOpenChange, editingItem, conceptId }: FormulaDi
     }
   };
 
-  const handleIngredientSelect = async (ingredientId: number) => {
+  const handleIngredientSelect = async (ingredientId: string) => {
     const ingredient = ingredients.find(i => i.id === ingredientId);
     if (!ingredient) return;
 

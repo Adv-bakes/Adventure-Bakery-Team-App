@@ -10,15 +10,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { IngredientDialog } from "@/components/IngredientDialog";
 
 interface Ingredient {
-  id: number;
+  id: string;
   ingredient_name: string;
   function_in_formula: string;
   specification_notes: string;
-  allergens: string[];
-  certifications: string[];
+  allergens: any;
+  certifications: any;
   sourceability: string;
   additional_notes: string;
-  notes: string;
 }
 
 const Ingredients = () => {
@@ -51,7 +50,7 @@ const Ingredients = () => {
     setIsLoading(false);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     const { error } = await supabase.from("ingredients").delete().eq("id", id);
 
     if (error) {

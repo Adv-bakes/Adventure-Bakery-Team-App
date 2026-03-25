@@ -119,7 +119,7 @@ export type Database = {
           created_at: string | null
           customer_name: string | null
           date_of_issue: string | null
-          desired_claims: string | null
+          desired_claims: Json | null
           dietary_category: Json | null
           id: number | null
           intended_use: string | null
@@ -167,7 +167,7 @@ export type Database = {
           created_at?: string | null
           customer_name?: string | null
           date_of_issue?: string | null
-          desired_claims?: string | null
+          desired_claims?: Json | null
           dietary_category?: Json | null
           id?: number | null
           intended_use?: string | null
@@ -215,7 +215,7 @@ export type Database = {
           created_at?: string | null
           customer_name?: string | null
           date_of_issue?: string | null
-          desired_claims?: string | null
+          desired_claims?: Json | null
           dietary_category?: Json | null
           id?: number | null
           intended_use?: string | null
@@ -307,22 +307,49 @@ export type Database = {
       }
       formulas: {
         Row: {
+          concept_id: number | null
           id: string
+          ingredient_category: string | null
           ingredient_id: string | null
-          percentage: number
+          ingredient_name: string | null
+          notes: string | null
+          percentage: number | null
+          percentage_formula: number | null
           product_id: string | null
+          user_id: string | null
+          volume_amount: string | null
+          volume_unit: string | null
+          weight_g: number | null
         }
         Insert: {
+          concept_id?: number | null
           id?: string
+          ingredient_category?: string | null
           ingredient_id?: string | null
-          percentage: number
+          ingredient_name?: string | null
+          notes?: string | null
+          percentage?: number | null
+          percentage_formula?: number | null
           product_id?: string | null
+          user_id?: string | null
+          volume_amount?: string | null
+          volume_unit?: string | null
+          weight_g?: number | null
         }
         Update: {
+          concept_id?: number | null
           id?: string
+          ingredient_category?: string | null
           ingredient_id?: string | null
-          percentage?: number
+          ingredient_name?: string | null
+          notes?: string | null
+          percentage?: number | null
+          percentage_formula?: number | null
           product_id?: string | null
+          user_id?: string | null
+          volume_amount?: string | null
+          volume_unit?: string | null
+          weight_g?: number | null
         }
         Relationships: [
           {
@@ -343,8 +370,11 @@ export type Database = {
       }
       ingredient_specs: {
         Row: {
+          base_ingredient: string | null
           concept_id: number | null
           created_at: string
+          formatted_name: string | null
+          formula_id: number | null
           id: number
           ingredient_cost: number | null
           labor_cost: number | null
@@ -353,14 +383,18 @@ export type Database = {
           overhead_cost: number | null
           packaging_cost: number | null
           product_id: number | null
+          spec_fields: Json | null
           target_price: number | null
           total_cost: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          base_ingredient?: string | null
           concept_id?: number | null
           created_at?: string
+          formatted_name?: string | null
+          formula_id?: number | null
           id?: number
           ingredient_cost?: number | null
           labor_cost?: number | null
@@ -369,14 +403,18 @@ export type Database = {
           overhead_cost?: number | null
           packaging_cost?: number | null
           product_id?: number | null
+          spec_fields?: Json | null
           target_price?: number | null
           total_cost?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          base_ingredient?: string | null
           concept_id?: number | null
           created_at?: string
+          formatted_name?: string | null
+          formula_id?: number | null
           id?: number
           ingredient_cost?: number | null
           labor_cost?: number | null
@@ -385,6 +423,7 @@ export type Database = {
           overhead_cost?: number | null
           packaging_cost?: number | null
           product_id?: number | null
+          spec_fields?: Json | null
           target_price?: number | null
           total_cost?: number | null
           updated_at?: string
@@ -394,22 +433,46 @@ export type Database = {
       }
       ingredients: {
         Row: {
+          additional_notes: string | null
+          allergens: Json | null
+          certifications: Json | null
           cost_per_lb: number | null
+          function_in_formula: string | null
           id: string
+          ingredient_name: string | null
           name: string
+          sourceability: string | null
+          specification_notes: string | null
           unit_of_measure: string | null
+          user_id: string | null
         }
         Insert: {
+          additional_notes?: string | null
+          allergens?: Json | null
+          certifications?: Json | null
           cost_per_lb?: number | null
+          function_in_formula?: string | null
           id?: string
+          ingredient_name?: string | null
           name: string
+          sourceability?: string | null
+          specification_notes?: string | null
           unit_of_measure?: string | null
+          user_id?: string | null
         }
         Update: {
+          additional_notes?: string | null
+          allergens?: Json | null
+          certifications?: Json | null
           cost_per_lb?: number | null
+          function_in_formula?: string | null
           id?: string
+          ingredient_name?: string | null
           name?: string
+          sourceability?: string | null
+          specification_notes?: string | null
           unit_of_measure?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -716,15 +779,18 @@ export type Database = {
           email: string
           id: string
           moq_acknowledged: boolean | null
+          number_of_cases: number | null
           packaging_plans: string | null
           packaging_types: string | null
           packs_per_case: string | null
           phone: string
+          product_id: string | null
           product_specifications: string | null
           sample_policy_acknowledged: boolean | null
           shelf_life_requirements: string | null
           status: string | null
           units_per_pack: string | null
+          user_id: string | null
         }
         Insert: {
           additional_comments?: string | null
@@ -737,15 +803,18 @@ export type Database = {
           email: string
           id?: string
           moq_acknowledged?: boolean | null
+          number_of_cases?: number | null
           packaging_plans?: string | null
           packaging_types?: string | null
           packs_per_case?: string | null
           phone: string
+          product_id?: string | null
           product_specifications?: string | null
           sample_policy_acknowledged?: boolean | null
           shelf_life_requirements?: string | null
           status?: string | null
           units_per_pack?: string | null
+          user_id?: string | null
         }
         Update: {
           additional_comments?: string | null
@@ -758,15 +827,18 @@ export type Database = {
           email?: string
           id?: string
           moq_acknowledged?: boolean | null
+          number_of_cases?: number | null
           packaging_plans?: string | null
           packaging_types?: string | null
           packs_per_case?: string | null
           phone?: string
+          product_id?: string | null
           product_specifications?: string | null
           sample_policy_acknowledged?: boolean | null
           shelf_life_requirements?: string | null
           status?: string | null
           units_per_pack?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -807,58 +879,127 @@ export type Database = {
       }
       products: {
         Row: {
+          cases_per_pallet: number | null
           category: string | null
+          concept_id: number | null
           created_at: string | null
           id: string
+          notes: string | null
           product_name: string
+          raw_fill_weight: number | null
+          raw_fill_weight_unit: string | null
           sku: string | null
           target_unit_weight_oz: number | null
+          unit_size_oz: number | null
+          units_per_caddy: number | null
           units_per_case: number | null
+          units_per_pack: number | null
+          units_per_shipper: number | null
+          user_id: string | null
+          yield_units: number | null
         }
         Insert: {
+          cases_per_pallet?: number | null
           category?: string | null
+          concept_id?: number | null
           created_at?: string | null
           id?: string
+          notes?: string | null
           product_name: string
+          raw_fill_weight?: number | null
+          raw_fill_weight_unit?: string | null
           sku?: string | null
           target_unit_weight_oz?: number | null
+          unit_size_oz?: number | null
+          units_per_caddy?: number | null
           units_per_case?: number | null
+          units_per_pack?: number | null
+          units_per_shipper?: number | null
+          user_id?: string | null
+          yield_units?: number | null
         }
         Update: {
+          cases_per_pallet?: number | null
           category?: string | null
+          concept_id?: number | null
           created_at?: string | null
           id?: string
+          notes?: string | null
           product_name?: string
+          raw_fill_weight?: number | null
+          raw_fill_weight_unit?: string | null
           sku?: string | null
           target_unit_weight_oz?: number | null
+          unit_size_oz?: number | null
+          units_per_caddy?: number | null
           units_per_case?: number | null
+          units_per_pack?: number | null
+          units_per_shipper?: number | null
+          user_id?: string | null
+          yield_units?: number | null
         }
         Relationships: []
       }
       profiles: {
         Row: {
+          access_granted: boolean | null
+          bio: string | null
           business_name: string | null
           created_at: string | null
+          department: string | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          employee_id: string | null
           full_name: string | null
           id: string
+          job_title: string | null
+          location: string | null
+          phone: string | null
+          product_type: string | null
           role: Database["public"]["Enums"]["user_role"] | null
+          target_market: string | null
+          website: string | null
         }
         Insert: {
+          access_granted?: boolean | null
+          bio?: string | null
           business_name?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_id?: string | null
           full_name?: string | null
           id: string
+          job_title?: string | null
+          location?: string | null
+          phone?: string | null
+          product_type?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          target_market?: string | null
+          website?: string | null
         }
         Update: {
+          access_granted?: boolean | null
+          bio?: string | null
           business_name?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_id?: string | null
           full_name?: string | null
           id?: string
+          job_title?: string | null
+          location?: string | null
+          phone?: string | null
+          product_type?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          target_market?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -1050,8 +1191,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: { _token: string; _user_id: string }
+        Returns: undefined
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_staff_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      validate_invitation_token: {
+        Args: { _token: string }
+        Returns: {
+          email: string
+          expired: boolean
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "staff" | "user"

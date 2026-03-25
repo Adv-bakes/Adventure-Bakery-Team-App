@@ -193,9 +193,9 @@ const ProjectCreationFlow = () => {
     }
   };
 
-  const loadIngredientSpecs = async (ingredientId: number) => {
-    const { data, error } = await supabase
-      .from("ingredient_specs")
+  const loadIngredientSpecs = async (ingredientId: string) => {
+    const { data, error } = await (supabase
+      .from("ingredient_specs") as any)
       .select("*")
       .eq("ingredient_id", ingredientId)
       .order("created_at", { ascending: false });
@@ -421,14 +421,14 @@ const ProjectCreationFlow = () => {
       const payload = {
         user_id: userId,
         ...restConcept,
-        baking_temp: baking_temp ? parseFloat(baking_temp) : null,
-        baking_time_minutes: baking_time_minutes ? parseFloat(baking_time_minutes) : null,
+        baking_temp: baking_temp ? String(baking_temp) : null,
+        baking_time_minutes: baking_time_minutes ? String(baking_time_minutes) : null,
         processing_steps: processing_steps.length > 0 ? processing_steps : [],
       };
 
       const { data, error } = await supabase
         .from("concepts")
-        .insert(payload)
+        .insert(payload as any)
         .select()
         .single();
 
@@ -459,14 +459,14 @@ const ProjectCreationFlow = () => {
       const { baking_temp, baking_time_minutes, processing_steps, ...restConcept } = conceptData;
       const payload = {
         ...restConcept,
-        baking_temp: baking_temp ? parseFloat(baking_temp) : null,
-        baking_time_minutes: baking_time_minutes ? parseFloat(baking_time_minutes) : null,
+        baking_temp: baking_temp ? String(baking_temp) : null,
+        baking_time_minutes: baking_time_minutes ? String(baking_time_minutes) : null,
         processing_steps: processing_steps.length > 0 ? processing_steps : [],
       };
 
       const { error } = await supabase
         .from("concepts")
-        .update(payload)
+        .update(payload as any)
         .eq("id", conceptId);
 
       if (error) throw error;
@@ -499,7 +499,7 @@ const ProjectCreationFlow = () => {
         return;
       }
 
-      setBakedGoodId(data.id);
+      setBakedGoodId(data.id as any);
       toast.success("Ingredients linked to product!");
     }
   };
@@ -529,7 +529,7 @@ const ProjectCreationFlow = () => {
           barrier_type: shelfLifeData.barrier_type,
           packaging_material: shelfLifeData.packaging_material,
           notes: shelfLifeData.notes
-        });
+        } as any);
 
       if (error) throw error;
       toast.success("Shelf-life data saved!");
@@ -596,7 +596,7 @@ const ProjectCreationFlow = () => {
           labeling_status: packagingData.labeling_status,
           compliance_notes: packagingData.compliance_notes,
           notes: packagingData.notes
-        });
+        } as any);
 
       if (error) throw error;
 
@@ -611,8 +611,8 @@ const ProjectCreationFlow = () => {
             units_per_caddy: packHierarchy.units_per_caddy ? parseInt(packHierarchy.units_per_caddy) : null,
             units_per_shipper: packHierarchy.units_per_shipper ? parseInt(packHierarchy.units_per_shipper) : null,
             cases_per_pallet: packHierarchy.cases_per_pallet ? parseInt(packHierarchy.cases_per_pallet) : null,
-          })
-          .eq("id", bakedGoodId);
+          } as any)
+          .eq("id", bakedGoodId as any);
       }
 
       toast.success("Packaging data saved!");
@@ -649,7 +649,7 @@ const ProjectCreationFlow = () => {
             concept_id: conceptId,
             product_id: bakedGoodId,
             overall_readiness_percent: progress
-          });
+          } as any);
       }
     } catch (error) {
       // Silent fail - progress tracking is not critical
@@ -674,7 +674,7 @@ const ProjectCreationFlow = () => {
           product_id: bakedGoodId,
           ...readinessData,
           overall_readiness_percent: progress
-        });
+        } as any);
 
       if (error) throw error;
       toast.success("Market readiness saved!");
