@@ -529,7 +529,7 @@ const ProjectCreationFlow = () => {
           barrier_type: shelfLifeData.barrier_type,
           packaging_material: shelfLifeData.packaging_material,
           notes: shelfLifeData.notes
-        });
+        } as any);
 
       if (error) throw error;
       toast.success("Shelf-life data saved!");
