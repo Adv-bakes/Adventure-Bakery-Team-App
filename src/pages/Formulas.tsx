@@ -100,7 +100,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
       .order("ingredient_name");
 
     if (!error && data) {
-      setIngredients(data);
+      setIngredients((data as unknown as Ingredient[]) || []);
     }
   };
 

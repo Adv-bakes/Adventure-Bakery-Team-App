@@ -67,11 +67,11 @@ const OperationsHub = () => {
       supabase.from("production_intake").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     ]);
 
-    if (productsRes.data) setProducts(productsRes.data);
+    if (productsRes.data) setProducts(productsRes.data as unknown as Product[]);
     if (ordersRes.data) {
       const enriched = ordersRes.data.map((o: any) => ({
         ...o,
-        product_name: productsRes.data?.find((p: Product) => p.id === o.product_id)?.product_name ?? "Unknown",
+        product_name: productsRes.data?.find((p: any) => p.id === o.product_id)?.product_name ?? "Unknown",
       }));
       setOrders(enriched);
     }
