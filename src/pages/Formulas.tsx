@@ -61,7 +61,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [conversionModalOpen, setConversionModalOpen] = useState(false);
   const [pendingConversion, setPendingConversion] = useState<{
-    formulaId: number;
+    formulaId: string;
     ingredientName: string;
     unit: string;
     volumeAmount: number;
