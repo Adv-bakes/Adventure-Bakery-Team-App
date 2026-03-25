@@ -313,7 +313,7 @@ export type Database = {
           ingredient_id: string | null
           ingredient_name: string | null
           notes: string | null
-          percentage: number
+          percentage: number | null
           percentage_formula: number | null
           product_id: string | null
           user_id: string | null
@@ -328,7 +328,7 @@ export type Database = {
           ingredient_id?: string | null
           ingredient_name?: string | null
           notes?: string | null
-          percentage: number
+          percentage?: number | null
           percentage_formula?: number | null
           product_id?: string | null
           user_id?: string | null
@@ -343,7 +343,7 @@ export type Database = {
           ingredient_id?: string | null
           ingredient_name?: string | null
           notes?: string | null
-          percentage?: number
+          percentage?: number | null
           percentage_formula?: number | null
           product_id?: string | null
           user_id?: string | null
@@ -779,15 +779,18 @@ export type Database = {
           email: string
           id: string
           moq_acknowledged: boolean | null
+          number_of_cases: number | null
           packaging_plans: string | null
           packaging_types: string | null
           packs_per_case: string | null
           phone: string
+          product_id: string | null
           product_specifications: string | null
           sample_policy_acknowledged: boolean | null
           shelf_life_requirements: string | null
           status: string | null
           units_per_pack: string | null
+          user_id: string | null
         }
         Insert: {
           additional_comments?: string | null
@@ -800,15 +803,18 @@ export type Database = {
           email: string
           id?: string
           moq_acknowledged?: boolean | null
+          number_of_cases?: number | null
           packaging_plans?: string | null
           packaging_types?: string | null
           packs_per_case?: string | null
           phone: string
+          product_id?: string | null
           product_specifications?: string | null
           sample_policy_acknowledged?: boolean | null
           shelf_life_requirements?: string | null
           status?: string | null
           units_per_pack?: string | null
+          user_id?: string | null
         }
         Update: {
           additional_comments?: string | null
@@ -821,15 +827,18 @@ export type Database = {
           email?: string
           id?: string
           moq_acknowledged?: boolean | null
+          number_of_cases?: number | null
           packaging_plans?: string | null
           packaging_types?: string | null
           packs_per_case?: string | null
           phone?: string
+          product_id?: string | null
           product_specifications?: string | null
           sample_policy_acknowledged?: boolean | null
           shelf_life_requirements?: string | null
           status?: string | null
           units_per_pack?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

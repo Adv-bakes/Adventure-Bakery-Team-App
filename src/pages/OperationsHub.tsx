@@ -16,15 +16,15 @@ import {
 import logo from "@/assets/logo.png";
 
 interface Product {
-  id: number;
+  id: string;
   product_name: string;
   unit_size_oz: number | null;
   yield_units: number | null;
 }
 
 interface OrderIntake {
-  id: number;
-  product_id: number;
+  id: string;
+  product_id: string;
   number_of_cases: number;
   status: string;
   created_at: string;

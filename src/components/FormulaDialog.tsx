@@ -38,8 +38,8 @@ import { Sparkles, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Formula {
-  id: number;
-  product_id: number | null;
+  id: string;
+  product_id: string | null;
   ingredient_name: string | null;
   ingredient_category: string | null;
   weight_g: number | null;

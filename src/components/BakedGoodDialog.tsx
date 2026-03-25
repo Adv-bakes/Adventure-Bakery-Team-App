@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 
 interface BakedGood {
-  id: number;
+  id: string;
   product_name: string;
   category: string | null;
   yield_units: number | null;

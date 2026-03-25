@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { IngredientDialog } from "@/components/IngredientDialog";
 
 interface Ingredient {
-  id: number;
+  id: string;
   ingredient_name: string;
   function_in_formula: string;
   specification_notes: string;
@@ -18,7 +18,6 @@ interface Ingredient {
   certifications: string[];
   sourceability: string;
   additional_notes: string;
-  notes: string;
 }
 
 const Ingredients = () => {
