@@ -459,14 +459,14 @@ const ProjectCreationFlow = () => {
       const { baking_temp, baking_time_minutes, processing_steps, ...restConcept } = conceptData;
       const payload = {
         ...restConcept,
-        baking_temp: baking_temp ? parseFloat(baking_temp) : null,
-        baking_time_minutes: baking_time_minutes ? parseFloat(baking_time_minutes) : null,
+        baking_temp: baking_temp ? String(baking_temp) : null,
+        baking_time_minutes: baking_time_minutes ? String(baking_time_minutes) : null,
         processing_steps: processing_steps.length > 0 ? processing_steps : [],
       };
 
       const { error } = await supabase
         .from("concepts")
-        .update(payload)
+        .update(payload as any)
         .eq("id", conceptId);
 
       if (error) throw error;
