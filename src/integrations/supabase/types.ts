@@ -879,44 +879,62 @@ export type Database = {
       }
       products: {
         Row: {
+          cases_per_pallet: number | null
           category: string | null
           concept_id: number | null
           created_at: string | null
           id: string
           notes: string | null
           product_name: string
+          raw_fill_weight: number | null
+          raw_fill_weight_unit: string | null
           sku: string | null
           target_unit_weight_oz: number | null
           unit_size_oz: number | null
+          units_per_caddy: number | null
           units_per_case: number | null
+          units_per_pack: number | null
+          units_per_shipper: number | null
           user_id: string | null
           yield_units: number | null
         }
         Insert: {
+          cases_per_pallet?: number | null
           category?: string | null
           concept_id?: number | null
           created_at?: string | null
           id?: string
           notes?: string | null
           product_name: string
+          raw_fill_weight?: number | null
+          raw_fill_weight_unit?: string | null
           sku?: string | null
           target_unit_weight_oz?: number | null
           unit_size_oz?: number | null
+          units_per_caddy?: number | null
           units_per_case?: number | null
+          units_per_pack?: number | null
+          units_per_shipper?: number | null
           user_id?: string | null
           yield_units?: number | null
         }
         Update: {
+          cases_per_pallet?: number | null
           category?: string | null
           concept_id?: number | null
           created_at?: string | null
           id?: string
           notes?: string | null
           product_name?: string
+          raw_fill_weight?: number | null
+          raw_fill_weight_unit?: string | null
           sku?: string | null
           target_unit_weight_oz?: number | null
           unit_size_oz?: number | null
+          units_per_caddy?: number | null
           units_per_case?: number | null
+          units_per_pack?: number | null
+          units_per_shipper?: number | null
           user_id?: string | null
           yield_units?: number | null
         }
@@ -928,9 +946,14 @@ export type Database = {
           bio: string | null
           business_name: string | null
           created_at: string | null
+          department: string | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          employee_id: string | null
           full_name: string | null
           id: string
+          job_title: string | null
           location: string | null
           phone: string | null
           product_type: string | null
@@ -943,9 +966,14 @@ export type Database = {
           bio?: string | null
           business_name?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_id?: string | null
           full_name?: string | null
           id: string
+          job_title?: string | null
           location?: string | null
           phone?: string | null
           product_type?: string | null
@@ -958,9 +986,14 @@ export type Database = {
           bio?: string | null
           business_name?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_id?: string | null
           full_name?: string | null
           id?: string
+          job_title?: string | null
           location?: string | null
           phone?: string | null
           product_type?: string | null
