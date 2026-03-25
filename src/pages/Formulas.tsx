@@ -241,7 +241,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     }
   };
 
-  const handleWeightChange = async (formulaId: number, weightG: number | null) => {
+  const handleWeightChange = async (formulaId: string, weightG: number | null) => {
     const { error } = await supabase
       .from("formulas")
       .update({ weight_g: weightG })
