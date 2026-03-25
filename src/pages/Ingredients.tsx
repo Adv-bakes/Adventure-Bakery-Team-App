@@ -14,8 +14,8 @@ interface Ingredient {
   ingredient_name: string;
   function_in_formula: string;
   specification_notes: string;
-  allergens: string[];
-  certifications: string[];
+  allergens: any;
+  certifications: any;
   sourceability: string;
   additional_notes: string;
 }
