@@ -161,8 +161,9 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
         volume_amount: null,
         volume_unit: null,
         weight_g: null,
-        percentage_formula: null
-      })
+        percentage_formula: null,
+        percentage: 0,
+      } as any)
       .select()
       .single();
 
