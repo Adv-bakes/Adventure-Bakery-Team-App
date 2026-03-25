@@ -209,7 +209,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     if (!formula || !volumeAmount || !volumeUnit || !formula.ingredient_name) {
       await supabase
         .from("formulas")
-        .update({ volume_amount: volumeAmount, volume_unit: volumeUnit })
+        .update({ volume_amount: volumeAmount?.toString(), volume_unit: volumeUnit } as any)
         .eq("id", formulaId);
       loadFormulas();
       return;
