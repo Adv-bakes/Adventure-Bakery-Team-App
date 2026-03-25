@@ -649,7 +649,7 @@ const ProjectCreationFlow = () => {
             concept_id: conceptId,
             product_id: bakedGoodId,
             overall_readiness_percent: progress
-          });
+          } as any);
       }
     } catch (error) {
       // Silent fail - progress tracking is not critical
