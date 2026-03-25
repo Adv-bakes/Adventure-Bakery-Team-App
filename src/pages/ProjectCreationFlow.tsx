@@ -596,7 +596,7 @@ const ProjectCreationFlow = () => {
           labeling_status: packagingData.labeling_status,
           compliance_notes: packagingData.compliance_notes,
           notes: packagingData.notes
-        });
+        } as any);
 
       if (error) throw error;
 
