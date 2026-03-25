@@ -1,13 +1,1 @@
-project_id = "ztykjygdojeeoldjrglu"
-
-[functions.manufacturing-coach]
-verify_jwt = true
-
-[functions.send-invitation-email]
-verify_jwt = false
-
-[functions.create-client-account]
-verify_jwt = false
-
-[functions.parse-batch-sheet]
-verify_jwt = false
+project_id = "zsukaixinoqmggpxxonn"
