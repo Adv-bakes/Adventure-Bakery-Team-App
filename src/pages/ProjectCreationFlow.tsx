@@ -499,7 +499,7 @@ const ProjectCreationFlow = () => {
         return;
       }
 
-      setBakedGoodId(data.id);
+      setBakedGoodId(data.id as any);
       toast.success("Ingredients linked to product!");
     }
   };
