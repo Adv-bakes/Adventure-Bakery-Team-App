@@ -233,7 +233,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     } else {
       // Need conversion - show modal
       setPendingConversion({
-        formulaId,
+        formulaId: formulaId,
         ingredientName: formula.ingredient_name,
         unit: volumeUnit,
         volumeAmount
