@@ -44,7 +44,7 @@ interface WeightConversion {
 }
 
 interface Concept {
-  id: string;
+  id: number;
   product_name: string;
   pss_file_path: string | null;
   pss_file_name: string | null;
