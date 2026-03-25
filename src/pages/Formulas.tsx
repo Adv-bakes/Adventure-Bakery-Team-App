@@ -203,7 +203,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     }
   };
 
-  const handleVolumeChange = async (formulaId: number, volumeAmount: number | null, volumeUnit: string | null) => {
+  const handleVolumeChange = async (formulaId: string, volumeAmount: number | null, volumeUnit: string | null) => {
     const formula = formulas.find(f => f.id === formulaId);
     if (!formula || !volumeAmount || !volumeUnit || !formula.ingredient_name) {
       await supabase
