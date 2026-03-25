@@ -611,7 +611,7 @@ const ProjectCreationFlow = () => {
             units_per_caddy: packHierarchy.units_per_caddy ? parseInt(packHierarchy.units_per_caddy) : null,
             units_per_shipper: packHierarchy.units_per_shipper ? parseInt(packHierarchy.units_per_shipper) : null,
             cases_per_pallet: packHierarchy.cases_per_pallet ? parseInt(packHierarchy.cases_per_pallet) : null,
-          })
+          } as any)
           .eq("id", bakedGoodId);
       }
 
