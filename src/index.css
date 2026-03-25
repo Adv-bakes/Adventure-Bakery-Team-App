@@ -1,0 +1,454 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 40 33% 94%; /* Soft beige #F5F1E6 */
+    --foreground: 25 35% 15%; /* Dark brown for text */
+
+    --card: 43 47% 87%; /* Deeper beige #F2E6C9 for stronger contrast */
+    --card-foreground: 25 35% 15%;
+
+    --popover: 43 47% 87%;
+    --popover-foreground: 25 35% 15%;
+
+    --primary: 25 35% 15%; /* Dark brown */
+    --primary-foreground: 40 33% 94%;
+
+    --secondary: 40 30% 90%;
+    --secondary-foreground: 25 35% 15%;
+
+    --muted: 40 25% 92%;
+    --muted-foreground: 30 15% 45%; /* Muted brown */
+
+    --accent: 43 52% 50%; /* Adventure Bakery Gold #C89B3C */
+    --accent-foreground: 25 35% 15%;
+    
+    --accent-light: 43 70% 85%; /* Light gold #F5E6B6 */
+
+    --success: 177 63% 44%;
+    --success-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 30% 82%; /* Stronger border */
+    --input: 40 30% 85%;
+    --ring: 43 52% 50%;
+
+    --radius: 0.75rem;
+    
+    /* Premium gradients for borders and accents */
+    --gradient-primary: linear-gradient(135deg, hsl(25 35% 15%), hsl(25 35% 25%));
+    --gradient-gold: linear-gradient(135deg, hsl(43 52% 50%), hsl(43 70% 85%));
+    --gradient-gold-border: linear-gradient(135deg, hsl(43 52% 50% / 0.4), hsl(43 70% 85% / 0.3));
+    --shadow-elevated: 0 4px 16px -2px hsl(0 0% 0% / 0.08), 0 2px 8px -2px hsl(0 0% 0% / 0.04);
+    --shadow-premium: 0 8px 32px -4px hsl(0 0% 0% / 0.12), 0 4px 16px -4px hsl(43 52% 50% / 0.08);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Enhanced glass card system with better depth */
+    --glass-bg: hsl(43 47% 87% / 0.85); /* Darker base for cards */
+    --glass-border: hsl(43 52% 50% / 0.25);
+    --glass-shadow: 0 4px 24px -2px hsl(0 0% 0% / 0.1), 0 2px 12px -2px hsl(0 0% 0% / 0.06);
+    --glass-blur: blur(20px);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 0 0% 12%;
+    --foreground: 44 38% 93%;
+
+    --card: 0 0% 18%;
+    --card-foreground: 44 38% 93%;
+
+    --popover: 0 0% 18%;
+    --popover-foreground: 44 38% 93%;
+
+    --primary: 44 51% 51%;
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 44 38% 93%;
+
+    --muted: 0 0% 22%;
+    --muted-foreground: 44 20% 65%;
+
+    --accent: 44 51% 51%;
+    --accent-foreground: 0 0% 10%;
+
+    --success: 177 63% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 28%;
+    --input: 0 0% 28%;
+    --ring: 44 51% 51%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 15%), hsl(0 0% 25%));
+    --gradient-accent: linear-gradient(135deg, hsl(44 51% 51%), hsl(44 60% 60%));
+    --shadow-elegant: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
+    
+    --glass-bg: hsl(0 0% 18% / 0.70);
+    --glass-border: hsl(44 51% 51% / 0.25);
+    --glass-shadow: 0 8px 32px 0 hsl(0 0% 0% / 0.5);
+    --glass-blur: blur(16px);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@keyframes confetti {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes celebrate-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Confetti burst animations for milestone celebrations */
+@keyframes confetti-0 {
+  0% { transform: rotate(0deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(720deg) translateY(-300px) scale(0); opacity: 0; }
+}
+@keyframes confetti-1 {
+  0% { transform: rotate(30deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(750deg) translateY(-280px) scale(0); opacity: 0; }
+}
+@keyframes confetti-2 {
+  0% { transform: rotate(60deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(780deg) translateY(-320px) scale(0); opacity: 0; }
+}
+@keyframes confetti-3 {
+  0% { transform: rotate(90deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(810deg) translateY(-290px) scale(0); opacity: 0; }
+}
+@keyframes confetti-4 {
+  0% { transform: rotate(120deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(840deg) translateY(-310px) scale(0); opacity: 0; }
+}
+@keyframes confetti-5 {
+  0% { transform: rotate(150deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(870deg) translateY(-300px) scale(0); opacity: 0; }
+}
+@keyframes confetti-6 {
+  0% { transform: rotate(180deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(900deg) translateY(-285px) scale(0); opacity: 0; }
+}
+@keyframes confetti-7 {
+  0% { transform: rotate(210deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(930deg) translateY(-305px) scale(0); opacity: 0; }
+}
+@keyframes confetti-8 {
+  0% { transform: rotate(240deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(960deg) translateY(-295px) scale(0); opacity: 0; }
+}
+@keyframes confetti-9 {
+  0% { transform: rotate(270deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(990deg) translateY(-315px) scale(0); opacity: 0; }
+}
+@keyframes confetti-10 {
+  0% { transform: rotate(300deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(1020deg) translateY(-288px) scale(0); opacity: 0; }
+}
+@keyframes confetti-11 {
+  0% { transform: rotate(330deg) translateY(0) scale(1); opacity: 1; }
+  100% { transform: rotate(1050deg) translateY(-308px) scale(0); opacity: 0; }
+}
+
+/* AI Co-Pilot Animations */
+/* AI Co-Pilot Advanced Animations */
+
+@keyframes holographic-ring {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes glow-line-pulse {
+  0%, 100% { 
+    opacity: 0;
+    transform: translate(-50%, -100%) scaleY(0);
+  }
+  50% { 
+    opacity: 0.6;
+    transform: translate(-50%, -100%) scaleY(1);
+  }
+}
+
+@keyframes breathing-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: scale(1.1);
+    opacity: 0.4;
+  }
+}
+
+@keyframes particle-drift {
+  0% {
+    opacity: 0.4;
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: rotate(120deg) scale(1.15);
+  }
+  100% {
+    opacity: 0.4;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes header-pulse {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(0%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes ai-orb-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes ai-pulse-ring {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: scale(1.15);
+    opacity: 0.3;
+  }
+}
+
+@keyframes ai-shimmer {
+  0%, 100% { 
+    transform: rotate(0deg);
+    opacity: 0.4;
+  }
+  50% { 
+    transform: rotate(180deg);
+    opacity: 0.6;
+  }
+}
+
+@keyframes ai-particle-trail {
+  0%, 100% {
+    opacity: 0.4;
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: rotate(180deg) scale(1.1);
+  }
+}
+
+@keyframes ai-glow-gentle {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 20px hsl(43, 52%, 50% / 0.3));
+  }
+  50% {
+    filter: brightness(1.05) drop-shadow(0 0 30px hsl(43, 52%, 50% / 0.4));
+  }
+}
+
+@keyframes ai-glow-medium {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 25px hsl(43, 52%, 50% / 0.4));
+  }
+  50% {
+    filter: brightness(1.1) drop-shadow(0 0 40px hsl(43, 52%, 50% / 0.5));
+  }
+}
+
+@keyframes ai-glow-bright {
+  0%, 100% {
+    filter: brightness(1.05) drop-shadow(0 0 30px hsl(43, 52%, 50% / 0.5));
+  }
+  50% {
+    filter: brightness(1.15) drop-shadow(0 0 50px hsl(43, 52%, 50% / 0.6));
+  }
+}
+
+@keyframes ai-glow-vibrant {
+  0%, 100% {
+    filter: brightness(1.1) drop-shadow(0 0 40px hsl(43, 70%, 60% / 0.6));
+  }
+  50% {
+    filter: brightness(1.2) drop-shadow(0 0 60px hsl(43, 70%, 60% / 0.7));
+  }
+}
+
+@keyframes ai-ripple {
+  0% {
+    box-shadow: 0 0 0 0 hsl(43, 52%, 50% / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 15px hsl(43, 52%, 50% / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(43, 52%, 50% / 0);
+  }
+}
+
+@keyframes ai-idle-halo {
+  0%, 100% {
+    filter: brightness(0.8) drop-shadow(0 0 10px hsl(43, 52%, 50% / 0.2));
+    transform: scale(0.98);
+  }
+  50% {
+    filter: brightness(0.85) drop-shadow(0 0 15px hsl(43, 52%, 50% / 0.3));
+    transform: scale(1);
+  }
+}
+
+@keyframes ai-celebration-glow {
+  0% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.4) drop-shadow(0 0 50px hsl(43, 70%, 60%));
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(180deg, hsl(40 33% 94%) 0%, hsl(38 30% 88%) 50%, hsl(36 28% 82%) 100%);
+    background-attachment: fixed;
+    position: relative;
+  }
+  
+  /* Deepened background texture layer with lighting gradient */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('/bakery-workspace-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.48; /* Increased from 0.26 to 0.48 for +22% depth */
+    z-index: -1;
+  }
+  
+  /* Bottom lighting fade for depth */
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to top, hsl(25 35% 15% / 0.08) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  main {
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Enhanced glass card with improved depth and shadows */
+  .glass-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: 12px;
+  }
+  
+  /* Premium card with gold gradient border for key elements */
+  .premium-card {
+    @apply glass-card;
+    position: relative;
+    background: hsl(43 47% 87% / 0.9);
+    border: 2px solid transparent;
+    box-shadow: var(--shadow-premium);
+    border-radius: 12px;
+  }
+  
+  .premium-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    padding: 2px;
+    background: var(--gradient-gold-border);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  
+  /* Standard elevated card with stronger shadow */
+  .elevated-card {
+    @apply glass-card;
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  /* Legacy branded card */
+  .branded-card {
+    @apply glass-card;
+    border: 2px solid hsl(var(--accent) / 0.3);
+    box-shadow: var(--shadow-premium);
+  }
+}
