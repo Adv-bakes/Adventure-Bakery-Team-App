@@ -125,7 +125,7 @@ const FormulaDialog = ({ open, onOpenChange, editingItem, conceptId }: FormulaDi
     }
   };
 
-  const handleIngredientSelect = async (ingredientId: number) => {
+  const handleIngredientSelect = async (ingredientId: string) => {
     const ingredient = ingredients.find(i => i.id === ingredientId);
     if (!ingredient) return;
 

@@ -612,7 +612,7 @@ const ProjectCreationFlow = () => {
             units_per_shipper: packHierarchy.units_per_shipper ? parseInt(packHierarchy.units_per_shipper) : null,
             cases_per_pallet: packHierarchy.cases_per_pallet ? parseInt(packHierarchy.cases_per_pallet) : null,
           } as any)
-          .eq("id", bakedGoodId);
+          .eq("id", bakedGoodId as any);
       }
 
       toast.success("Packaging data saved!");
