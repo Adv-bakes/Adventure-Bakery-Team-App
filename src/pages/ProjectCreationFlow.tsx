@@ -674,7 +674,7 @@ const ProjectCreationFlow = () => {
           product_id: bakedGoodId,
           ...readinessData,
           overall_readiness_percent: progress
-        });
+        } as any);
 
       if (error) throw error;
       toast.success("Market readiness saved!");

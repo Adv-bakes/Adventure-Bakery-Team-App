@@ -404,7 +404,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
                         />
                         <Select
                           value={formula.volume_unit || "cup"}
-                          onValueChange={(unit) => handleVolumeChange(formula.id, formula.volume_amount, unit)}
+                          onValueChange={(unit) => handleVolumeChange(formula.id, formula.volume_amount ? parseFloat(formula.volume_amount) : null, unit)}
                         >
                           <SelectTrigger className="w-28">
                             <SelectValue />

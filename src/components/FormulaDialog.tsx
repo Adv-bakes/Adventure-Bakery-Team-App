@@ -55,7 +55,7 @@ interface FormulaDialogProps {
 }
 
 interface Ingredient {
-  id: number;
+  id: string;
   ingredient_name: string;
   function_in_formula: string | null;
 }
