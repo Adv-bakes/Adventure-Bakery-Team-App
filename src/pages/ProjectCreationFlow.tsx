@@ -194,8 +194,8 @@ const ProjectCreationFlow = () => {
   };
 
   const loadIngredientSpecs = async (ingredientId: string) => {
-    const { data, error } = await supabase
-      .from("ingredient_specs")
+    const { data, error } = await (supabase
+      .from("ingredient_specs") as any)
       .select("*")
       .eq("ingredient_id", ingredientId)
       .order("created_at", { ascending: false });
