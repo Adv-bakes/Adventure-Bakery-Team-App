@@ -24,16 +24,16 @@ import { Input } from "@/components/ui/input";
 import WeightConversionModal from "@/components/WeightConversionModal";
 
 interface Formula {
-  id: number;
+  id: string;
   ingredient_name: string | null;
-  volume_amount: number | null;
+  volume_amount: string | null;
   volume_unit: string | null;
   weight_g: number | null;
   percentage_formula: number | null;
 }
 
 interface Ingredient {
-  id: number;
+  id: string;
   ingredient_name: string;
 }
 
