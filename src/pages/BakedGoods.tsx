@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import BakedGoodDialog from "@/components/BakedGoodDialog";
 
 interface BakedGood {
-  id: number;
+  id: string;
   product_name: string;
   category: string | null;
   yield_units: number | null;
