@@ -190,7 +190,7 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
     }
   };
 
-  const handleIngredientChange = async (formulaId: number, ingredientName: string) => {
+  const handleIngredientChange = async (formulaId: string, ingredientName: string) => {
     const { error } = await supabase
       .from("formulas")
       .update({ ingredient_name: ingredientName })
