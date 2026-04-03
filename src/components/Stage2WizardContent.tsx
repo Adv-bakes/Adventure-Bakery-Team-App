@@ -127,6 +127,22 @@ const STEPS = [
 
 const TOTAL_STEPS = STEPS.length;
 
+const PreviewField = ({ label, value, step, onEdit }: { label: string; value: string; step: number; onEdit: (step: number) => void }) => (
+  <div className="flex items-center justify-between py-1 group">
+    <div className="flex items-center gap-2 min-w-0 flex-1">
+      <span className="shrink-0" style={{ color: '#8B7355' }}>{label}:</span>
+      <span className="truncate">{value || '—'}</span>
+    </div>
+    <button
+      onClick={() => onEdit(step)}
+      className="shrink-0 ml-2 opacity-0 group-hover:opacity-70 hover:!opacity-100 transition-opacity p-1 rounded hover:bg-accent/10"
+      title={`Edit ${label}`}
+    >
+      <Pencil className="w-3 h-3" style={{ color: '#C89B3C' }} />
+    </button>
+  </div>
+);
+
 interface Stage2WizardContentProps {
   companyStage: CompanyStage;
   isStartup: boolean;
