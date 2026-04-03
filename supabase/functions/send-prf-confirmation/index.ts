@@ -127,9 +127,10 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Adventure Bakery <noreply@notify.adventurebakery.info>",
+        from: "Adventure Bakery <onboarding@resend.dev>",
         to: [recipientEmail],
-        cc: ["scale@adventurebakery.info"],
+        // CC temporarily disabled for Resend test domain — re-enable after domain verification
+        // cc: ["scale@adventurebakery.info"],
         subject: `PRF Received — ${displayProduct}`,
         html: htmlBody,
         reply_to: "scale@adventurebakery.info",
