@@ -1157,7 +1157,10 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       />
                       <Select
                         value={formData.weightPerUnitUnit}
-                        onValueChange={(value) => updateFormData({ weightPerUnitUnit: value })}
+                        onValueChange={(value) => {
+                          const updates: Partial<WizardData> = { weightPerUnitUnit: value, netWeightPerPrimaryPackUnit: value };
+                          updateFormData(updates);
+                        }}
                       >
                         <SelectTrigger className="w-24">
                           <SelectValue placeholder="Unit" />
