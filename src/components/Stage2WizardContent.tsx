@@ -55,6 +55,7 @@ interface WizardData {
   technicalContactName: string;
   technicalContactEmail: string;
   technicalContactPhone: string;
+  sameAsInitialContact: boolean;
   additionalProjectInfo: string;
 }
 
@@ -97,6 +98,7 @@ const initialData: WizardData = {
   technicalContactName: "",
   technicalContactEmail: "",
   technicalContactPhone: "",
+  sameAsInitialContact: false,
   additionalProjectInfo: "",
 };
 
@@ -230,6 +232,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       case 16:
         return formData.warehousingNeeds.length > 0;
       case 17: {
+        if (formData.sameAsInitialContact) return true;
         const nameError = validateContactName(formData.technicalContactName);
         const emailError = validateEmail(formData.technicalContactEmail);
         const phoneError = validatePhone(formData.technicalContactPhone);
@@ -323,12 +326,14 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
         if (formData.warehousingNeeds.length === 0) errors.warehousingNeeds = "Please select at least one option";
         break;
       case 17:
-        const nameError = validateContactName(formData.technicalContactName);
-        const emailError = validateEmail(formData.technicalContactEmail);
-        const phoneError = validatePhone(formData.technicalContactPhone);
-        if (nameError) errors.technicalContactName = nameError;
-        if (emailError) errors.technicalContactEmail = emailError;
-        if (phoneError) errors.technicalContactPhone = phoneError;
+        if (!formData.sameAsInitialContact) {
+          const nameError = validateContactName(formData.technicalContactName);
+          const emailError = validateEmail(formData.technicalContactEmail);
+          const phoneError = validatePhone(formData.technicalContactPhone);
+          if (nameError) errors.technicalContactName = nameError;
+          if (emailError) errors.technicalContactEmail = emailError;
+          if (phoneError) errors.technicalContactPhone = phoneError;
+        }
         break;
     }
     
@@ -536,12 +541,23 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       // Don't block — the stage2 submission already succeeded
     }
 
-    // Send confirmation email (non-blocking)
-    if (formData.technicalContactEmail) {
+    // Send confirmation email to INITIAL contact (non-blocking)
+    const initialLeadData = localStorage.getItem("prfLeadData");
+    let initialEmail = "";
+    let initialName = "";
+    if (initialLeadData) {
+      try {
+        const parsed = JSON.parse(initialLeadData);
+        initialEmail = parsed.email || "";
+        initialName = parsed.fullName || "";
+      } catch (e) { /* ignore */ }
+    }
+    const emailRecipient = initialEmail || formData.technicalContactEmail;
+    if (emailRecipient) {
       supabase.functions.invoke("send-prf-confirmation", {
         body: {
-          recipientEmail: formData.technicalContactEmail,
-          founderName: formData.technicalContactName || null,
+          recipientEmail: emailRecipient,
+          founderName: initialName || formData.technicalContactName || null,
           companyName: formData.customerName || null,
           productName: formData.productName || null,
           projectType: formData.projectType || null,
@@ -1805,21 +1821,63 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               </h2>
             </div>
             <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="sameAsInitialContact"
+                  checked={formData.sameAsInitialContact}
+                  onCheckedChange={(checked) => {
+                    const isChecked = checked === true;
+                    if (isChecked) {
+                      const savedLeadData = localStorage.getItem("prfLeadData");
+                      if (savedLeadData) {
+                        try {
+                          const lead = JSON.parse(savedLeadData);
+                          updateFormData({
+                            sameAsInitialContact: true,
+                            technicalContactName: lead.fullName || "",
+                            technicalContactEmail: lead.email || "",
+                            technicalContactPhone: (lead.phone || "").replace(/\D/g, '').slice(0, 10),
+                          });
+                        } catch (e) {
+                          updateFormData({ sameAsInitialContact: true });
+                        }
+                      } else {
+                        updateFormData({ sameAsInitialContact: true });
+                      }
+                    } else {
+                      updateFormData({
+                        sameAsInitialContact: false,
+                        technicalContactName: "",
+                        technicalContactEmail: "",
+                        technicalContactPhone: "",
+                      });
+                    }
+                    setValidationErrors(prev => ({ ...prev, technicalContactName: '', technicalContactEmail: '', technicalContactPhone: '' }));
+                  }}
+                />
+                <Label htmlFor="sameAsInitialContact" style={{ color: '#2C1810' }} className="cursor-pointer">
+                  Same as initial contact info
+                </Label>
+              </div>
+
               <div>
                 <Label htmlFor="technicalContactName" style={{ color: '#2C1810' }}>
-                  Contact Name <span className="text-red-500">*</span>
+                  Contact Name {!formData.sameAsInitialContact && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
                   id="technicalContactName"
                   value={formData.technicalContactName}
+                  readOnly={formData.sameAsInitialContact}
                   onChange={(e) => {
-                    updateFormData({ technicalContactName: e.target.value });
-                    if (validationErrors.technicalContactName) {
-                      setValidationErrors(prev => ({ ...prev, technicalContactName: '' }));
+                    if (!formData.sameAsInitialContact) {
+                      updateFormData({ technicalContactName: e.target.value });
+                      if (validationErrors.technicalContactName) {
+                        setValidationErrors(prev => ({ ...prev, technicalContactName: '' }));
+                      }
                     }
                   }}
                   placeholder="Full name"
-                  className={`mt-1 ${validationErrors.technicalContactName ? 'border-red-500' : ''}`}
+                  className={`mt-1 ${formData.sameAsInitialContact ? 'bg-muted' : ''} ${validationErrors.technicalContactName ? 'border-red-500' : ''}`}
                 />
                 {validationErrors.technicalContactName && (
                   <p className="text-sm text-red-500 mt-1">{validationErrors.technicalContactName}</p>
@@ -1827,20 +1885,23 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               </div>
               <div>
                 <Label htmlFor="technicalContactEmail" style={{ color: '#2C1810' }}>
-                  Email <span className="text-red-500">*</span>
+                  Email {!formData.sameAsInitialContact && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
                   id="technicalContactEmail"
                   type="email"
                   value={formData.technicalContactEmail}
+                  readOnly={formData.sameAsInitialContact}
                   onChange={(e) => {
-                    updateFormData({ technicalContactEmail: e.target.value });
-                    if (validationErrors.technicalContactEmail) {
-                      setValidationErrors(prev => ({ ...prev, technicalContactEmail: '' }));
+                    if (!formData.sameAsInitialContact) {
+                      updateFormData({ technicalContactEmail: e.target.value });
+                      if (validationErrors.technicalContactEmail) {
+                        setValidationErrors(prev => ({ ...prev, technicalContactEmail: '' }));
+                      }
                     }
                   }}
                   placeholder="email@company.com"
-                  className={`mt-1 ${validationErrors.technicalContactEmail ? 'border-red-500' : ''}`}
+                  className={`mt-1 ${formData.sameAsInitialContact ? 'bg-muted' : ''} ${validationErrors.technicalContactEmail ? 'border-red-500' : ''}`}
                 />
                 {validationErrors.technicalContactEmail && (
                   <p className="text-sm text-red-500 mt-1">{validationErrors.technicalContactEmail}</p>
@@ -1848,23 +1909,25 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               </div>
               <div>
                 <Label htmlFor="technicalContactPhone" style={{ color: '#2C1810' }}>
-                  Phone <span className="text-red-500">*</span>
+                  Phone {!formData.sameAsInitialContact && <span className="text-red-500">*</span>}
                 </Label>
                 <Input
                   id="technicalContactPhone"
                   type="tel"
                   value={formData.technicalContactPhone}
+                  readOnly={formData.sameAsInitialContact}
                   onChange={(e) => {
-                    // Only allow digits, max 10
-                    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
-                    updateFormData({ technicalContactPhone: digitsOnly });
-                    if (validationErrors.technicalContactPhone) {
-                      setValidationErrors(prev => ({ ...prev, technicalContactPhone: '' }));
+                    if (!formData.sameAsInitialContact) {
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updateFormData({ technicalContactPhone: digitsOnly });
+                      if (validationErrors.technicalContactPhone) {
+                        setValidationErrors(prev => ({ ...prev, technicalContactPhone: '' }));
+                      }
                     }
                   }}
                   placeholder="5551234567"
                   maxLength={10}
-                  className={`mt-1 ${validationErrors.technicalContactPhone ? 'border-red-500' : ''}`}
+                  className={`mt-1 ${formData.sameAsInitialContact ? 'bg-muted' : ''} ${validationErrors.technicalContactPhone ? 'border-red-500' : ''}`}
                 />
                 {validationErrors.technicalContactPhone && (
                   <p className="text-sm text-red-500 mt-1">{validationErrors.technicalContactPhone}</p>
