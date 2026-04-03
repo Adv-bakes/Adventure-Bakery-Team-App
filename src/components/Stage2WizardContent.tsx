@@ -277,10 +277,15 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
         // Skip numeric field validation if "Not determined yet" is selected
         if (formData.primaryPackagingVessel !== "Not determined yet") {
           if (!formData.weightPerUnit.trim()) errors.weightPerUnit = "Weight per unit is required";
+          else if (parseFloat(formData.weightPerUnit) < 0) errors.weightPerUnit = "Value cannot be negative";
           if (!formData.unitDimensionL.trim()) errors.unitDimensionL = "Length is required";
+          else if (parseFloat(formData.unitDimensionL) < 0) errors.unitDimensionL = "Value cannot be negative";
           if (!formData.unitDimensionW.trim()) errors.unitDimensionW = "Width is required";
+          else if (parseFloat(formData.unitDimensionW) < 0) errors.unitDimensionW = "Value cannot be negative";
           if (!formData.unitDimensionH.trim()) errors.unitDimensionH = "Height is required";
+          else if (parseFloat(formData.unitDimensionH) < 0) errors.unitDimensionH = "Value cannot be negative";
           if (!formData.unitsPerPrimaryPack.trim()) errors.unitsPerPrimaryPack = "Units per primary pack is required";
+          else if (parseFloat(formData.unitsPerPrimaryPack) < 0) errors.unitsPerPrimaryPack = "Value cannot be negative";
           if (!formData.netWeightPerPrimaryPack.trim()) errors.netWeightPerPrimaryPack = "Net weight per primary pack is required";
         }
         break;
