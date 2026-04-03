@@ -232,6 +232,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       case 16:
         return formData.warehousingNeeds.length > 0;
       case 17: {
+        if (formData.sameAsInitialContact) return true;
         const nameError = validateContactName(formData.technicalContactName);
         const emailError = validateEmail(formData.technicalContactEmail);
         const phoneError = validatePhone(formData.technicalContactPhone);
