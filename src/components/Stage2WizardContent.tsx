@@ -541,12 +541,23 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       // Don't block — the stage2 submission already succeeded
     }
 
-    // Send confirmation email (non-blocking)
-    if (formData.technicalContactEmail) {
+    // Send confirmation email to INITIAL contact (non-blocking)
+    const initialLeadData = localStorage.getItem("prfLeadData");
+    let initialEmail = "";
+    let initialName = "";
+    if (initialLeadData) {
+      try {
+        const parsed = JSON.parse(initialLeadData);
+        initialEmail = parsed.email || "";
+        initialName = parsed.fullName || "";
+      } catch (e) { /* ignore */ }
+    }
+    const emailRecipient = initialEmail || formData.technicalContactEmail;
+    if (emailRecipient) {
       supabase.functions.invoke("send-prf-confirmation", {
         body: {
-          recipientEmail: formData.technicalContactEmail,
-          founderName: formData.technicalContactName || null,
+          recipientEmail: emailRecipient,
+          founderName: initialName || formData.technicalContactName || null,
           companyName: formData.customerName || null,
           productName: formData.productName || null,
           projectType: formData.projectType || null,
