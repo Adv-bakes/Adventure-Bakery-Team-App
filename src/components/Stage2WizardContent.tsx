@@ -158,6 +158,11 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [editingFromPreview, setEditingFromPreview] = useState(false);
+  const goToEditStep = (step: number) => {
+    setShowPreviewModal(false);
+    setEditingFromPreview(true);
+    setCurrentStep(step);
+  };
 
   const progressPercent = (currentStep / TOTAL_STEPS) * 100;
 
