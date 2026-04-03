@@ -532,6 +532,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
       .eq("id", submissionId);
 
     if (error) {
+      setIsSubmitting(false);
       toast({
         title: "Submission failed",
         description: error.message,
