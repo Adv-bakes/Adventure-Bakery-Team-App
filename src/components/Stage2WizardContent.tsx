@@ -1137,11 +1137,21 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                         type="number"
                         value={formData.weightPerUnit}
                         onChange={(e) => {
-                          updateFormData({ weightPerUnit: e.target.value });
-                          if (validationErrors.weightPerUnit) {
-                            setValidationErrors(prev => ({ ...prev, weightPerUnit: '' }));
+                          const w = e.target.value;
+                          const unitsNum = parseFloat(formData.unitsPerPrimaryPack);
+                          const weightNum = parseFloat(w);
+                          const updates: Partial<WizardData> = { weightPerUnit: w };
+                          if (!isNaN(weightNum) && !isNaN(unitsNum) && weightNum > 0 && unitsNum > 0) {
+                            updates.netWeightPerPrimaryPack = (weightNum * unitsNum).toString();
+                            updates.netWeightPerPrimaryPackUnit = formData.weightPerUnitUnit;
+                          } else {
+                            updates.netWeightPerPrimaryPack = '';
                           }
-                        }}
+                          updateFormData(updates);
+                          if (validationErrors.weightPerUnit) {
+                            setValidationErrors(prev => ({ ...prev, weightPerUnit: '', netWeightPerPrimaryPack: '' }));
+                          }
+                        }
                         placeholder="e.g., 4"
                         className={`flex-1 ${validationErrors.weightPerUnit ? 'border-red-500' : ''}`}
                       />
