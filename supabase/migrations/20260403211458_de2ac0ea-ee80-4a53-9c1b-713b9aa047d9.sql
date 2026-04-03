@@ -1,0 +1,1 @@
+ALTER TABLE public.stage2_prf_submissions ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
