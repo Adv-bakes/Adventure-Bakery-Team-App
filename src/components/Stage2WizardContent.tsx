@@ -406,9 +406,11 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
   }, [formData.weightPerUnit, formData.unitsPerPrimaryPack, formData.weightPerUnitUnit]);
 
   const createNewSubmission = async () => {
+    const newId = crypto.randomUUID();
     const { data, error } = await supabase
       .from("stage2_prf_submissions")
       .insert([{
+        id: newId,
         company_stage: companyStage,
         status: "draft" as const,
         data_json: JSON.parse(JSON.stringify(initialData)),
@@ -422,8 +424,8 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
     }
 
     if (data) {
-      setSubmissionId(data.id);
-      localStorage.setItem("stage2SubmissionId", data.id);
+      setSubmissionId(data.id ?? newId);
+      localStorage.setItem("stage2SubmissionId", data.id ?? newId);
     }
   };
 
