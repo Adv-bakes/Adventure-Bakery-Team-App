@@ -98,6 +98,7 @@ const initialData: WizardData = {
   technicalContactName: "",
   technicalContactEmail: "",
   technicalContactPhone: "",
+  sameAsInitialContact: false,
   additionalProjectInfo: "",
 };
 
