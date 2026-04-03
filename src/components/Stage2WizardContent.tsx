@@ -1136,6 +1136,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="weightPerUnit"
                         type="number"
+                        min="0"
                         value={formData.weightPerUnit}
                         onChange={(e) => {
                           const w = e.target.value;
@@ -1188,6 +1189,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="unitDimensionL"
                         type="number"
+                        min="0"
                         value={formData.unitDimensionL}
                         onChange={(e) => {
                           updateFormData({ unitDimensionL: e.target.value });
@@ -1202,6 +1204,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="unitDimensionW"
                         type="number"
+                        min="0"
                         value={formData.unitDimensionW}
                         onChange={(e) => {
                           updateFormData({ unitDimensionW: e.target.value });
@@ -1216,6 +1219,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="unitDimensionH"
                         type="number"
+                        min="0"
                         value={formData.unitDimensionH}
                         onChange={(e) => {
                           updateFormData({ unitDimensionH: e.target.value });
@@ -1253,6 +1257,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                     <Input
                       id="unitsPerPrimaryPack"
                       type="number"
+                        min="0"
                       value={formData.unitsPerPrimaryPack}
                       onChange={(e) => {
                         const units = e.target.value;
@@ -1287,6 +1292,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="netWeightPerPrimaryPack"
                         type="number"
+                        min="0"
                         value={formData.netWeightPerPrimaryPack}
                         readOnly
                         placeholder="Auto-calculated"
