@@ -326,12 +326,14 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
         if (formData.warehousingNeeds.length === 0) errors.warehousingNeeds = "Please select at least one option";
         break;
       case 17:
-        const nameError = validateContactName(formData.technicalContactName);
-        const emailError = validateEmail(formData.technicalContactEmail);
-        const phoneError = validatePhone(formData.technicalContactPhone);
-        if (nameError) errors.technicalContactName = nameError;
-        if (emailError) errors.technicalContactEmail = emailError;
-        if (phoneError) errors.technicalContactPhone = phoneError;
+        if (!formData.sameAsInitialContact) {
+          const nameError = validateContactName(formData.technicalContactName);
+          const emailError = validateEmail(formData.technicalContactEmail);
+          const phoneError = validatePhone(formData.technicalContactPhone);
+          if (nameError) errors.technicalContactName = nameError;
+          if (emailError) errors.technicalContactEmail = emailError;
+          if (phoneError) errors.technicalContactPhone = phoneError;
+        }
         break;
     }
     
