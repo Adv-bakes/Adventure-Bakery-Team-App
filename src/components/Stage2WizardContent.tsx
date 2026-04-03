@@ -277,10 +277,15 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
         // Skip numeric field validation if "Not determined yet" is selected
         if (formData.primaryPackagingVessel !== "Not determined yet") {
           if (!formData.weightPerUnit.trim()) errors.weightPerUnit = "Weight per unit is required";
+          else if (parseFloat(formData.weightPerUnit) < 0) errors.weightPerUnit = "Value cannot be negative";
           if (!formData.unitDimensionL.trim()) errors.unitDimensionL = "Length is required";
+          else if (parseFloat(formData.unitDimensionL) < 0) errors.unitDimensionL = "Value cannot be negative";
           if (!formData.unitDimensionW.trim()) errors.unitDimensionW = "Width is required";
+          else if (parseFloat(formData.unitDimensionW) < 0) errors.unitDimensionW = "Value cannot be negative";
           if (!formData.unitDimensionH.trim()) errors.unitDimensionH = "Height is required";
+          else if (parseFloat(formData.unitDimensionH) < 0) errors.unitDimensionH = "Value cannot be negative";
           if (!formData.unitsPerPrimaryPack.trim()) errors.unitsPerPrimaryPack = "Units per primary pack is required";
+          else if (parseFloat(formData.unitsPerPrimaryPack) < 0) errors.unitsPerPrimaryPack = "Value cannot be negative";
           if (!formData.netWeightPerPrimaryPack.trim()) errors.netWeightPerPrimaryPack = "Net weight per primary pack is required";
         }
         break;
@@ -306,6 +311,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
         break;
       case 14:
         if (!formData.targetDate.trim()) errors.targetDate = "Target launch date is required";
+        else if (formData.targetDate < new Date().toISOString().split('T')[0]) errors.targetDate = "Target date cannot be in the past";
         if (!formData.priceTargetPerUnit.trim()) errors.priceTargetPerUnit = "Price target is required";
         break;
       case 15:
@@ -1135,6 +1141,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="weightPerUnit"
                         type="number"
+                        min="0"
                         value={formData.weightPerUnit}
                         onChange={(e) => {
                           const w = e.target.value;
@@ -1187,6 +1194,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="unitDimensionL"
                         type="number"
+                        min="0"
                         value={formData.unitDimensionL}
                         onChange={(e) => {
                           updateFormData({ unitDimensionL: e.target.value });
@@ -1201,6 +1209,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="unitDimensionW"
                         type="number"
+                        min="0"
                         value={formData.unitDimensionW}
                         onChange={(e) => {
                           updateFormData({ unitDimensionW: e.target.value });
@@ -1215,6 +1224,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="unitDimensionH"
                         type="number"
+                        min="0"
                         value={formData.unitDimensionH}
                         onChange={(e) => {
                           updateFormData({ unitDimensionH: e.target.value });
@@ -1252,6 +1262,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                     <Input
                       id="unitsPerPrimaryPack"
                       type="number"
+                        min="0"
                       value={formData.unitsPerPrimaryPack}
                       onChange={(e) => {
                         const units = e.target.value;
@@ -1286,6 +1297,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       <Input
                         id="netWeightPerPrimaryPack"
                         type="number"
+                        min="0"
                         value={formData.netWeightPerPrimaryPack}
                         readOnly
                         placeholder="Auto-calculated"
@@ -1623,6 +1635,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                 <Input
                   id="targetDate"
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={formData.targetDate}
                   onChange={(e) => {
                     updateFormData({ targetDate: e.target.value });
@@ -1638,7 +1651,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
               </div>
               <div>
                 <Label htmlFor="priceTargetPerUnit" style={{ color: '#2C1810' }}>
-                  Target X-Factory Cost per Unit <span className="text-red-500">*</span>
+                  Target X-Factory Cost per Sellable Unit <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="priceTargetPerUnit"
