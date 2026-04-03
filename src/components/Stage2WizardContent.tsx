@@ -306,6 +306,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
         break;
       case 14:
         if (!formData.targetDate.trim()) errors.targetDate = "Target launch date is required";
+        else if (formData.targetDate < new Date().toISOString().split('T')[0]) errors.targetDate = "Target date cannot be in the past";
         if (!formData.priceTargetPerUnit.trim()) errors.priceTargetPerUnit = "Price target is required";
         break;
       case 15:
