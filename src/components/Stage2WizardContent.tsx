@@ -1623,6 +1623,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                 <Input
                   id="targetDate"
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   value={formData.targetDate}
                   onChange={(e) => {
                     updateFormData({ targetDate: e.target.value });
