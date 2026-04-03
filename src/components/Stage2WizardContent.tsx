@@ -9,7 +9,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ArrowLeft, ArrowRight, CheckCircle, Eye, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
@@ -138,6 +140,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const progressPercent = (currentStep / TOTAL_STEPS) * 100;
 
@@ -2037,11 +2040,11 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
 
               {currentStep === TOTAL_STEPS ? (
                 <Button
-                  onClick={handleSubmit}
+                  onClick={() => setShowPreviewModal(true)}
                   className="flex items-center gap-2 bg-gradient-to-r from-[#C89B3C] to-[#D4A855] hover:from-[#B8892C] hover:to-[#C89B3C] text-white"
                 >
-                  Submit PRF
-                  <CheckCircle className="w-4 h-4" />
+                  <Eye className="w-4 h-4" />
+                  Preview Submission
                 </Button>
               ) : (
                 <Button
@@ -2056,6 +2059,188 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle style={{ color: '#2C1810' }}>Review Your Submission</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[70vh] px-6 pb-6">
+            <div className="space-y-4 text-sm" style={{ color: '#2C1810' }}>
+
+              {/* Project Basics */}
+              <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Project Basics</h3>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(1); }}>
+                    <Edit className="w-3 h-3 mr-1" /> Edit
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span style={{ color: '#8B7355' }}>Project Type:</span>
+                  <span>{formData.projectType || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Customer:</span>
+                  <span>{formData.customerName || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Product:</span>
+                  <span>{formData.productName || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Development Approach:</span>
+                  <span>{formData.developmentApproach || '—'}</span>
+                </div>
+              </div>
+
+              {/* Product Type / Status */}
+              <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Product Type / Status</h3>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(4); }}>
+                    <Edit className="w-3 h-3 mr-1" /> Edit
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span style={{ color: '#8B7355' }}>Finished Form:</span>
+                  <span>{formData.finishedForm.length > 0 ? formData.finishedForm.join(', ') : '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Nutraceutical:</span>
+                  <span>{formData.isNutraceutical ? 'Yes' : 'No'}</span>
+                  <span style={{ color: '#8B7355' }}>Flavor Type:</span>
+                  <span>{formData.flavorType || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Intended Application:</span>
+                  <span>{formData.intendedApplication.length > 0 ? formData.intendedApplication.join(', ') : '—'}</span>
+                </div>
+              </div>
+
+              {/* Claims / Certifications */}
+              <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Claims / Certifications</h3>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(8); }}>
+                    <Edit className="w-3 h-3 mr-1" /> Edit
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span style={{ color: '#8B7355' }}>Requirements:</span>
+                  <span>{formData.additionalRequirements.length > 0 ? formData.additionalRequirements.join(', ') : '—'}</span>
+                </div>
+              </div>
+
+              {/* Packaging */}
+              <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Packaging</h3>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(9); }}>
+                    <Edit className="w-3 h-3 mr-1" /> Edit
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span style={{ color: '#8B7355' }}>Readiness:</span>
+                  <span>{formData.packagingReadiness || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Primary Packaging:</span>
+                  <span>{formData.primaryPackagingVessel === 'Other (text)' ? formData.primaryPackagingOther : formData.primaryPackagingVessel || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Weight/Unit:</span>
+                  <span>{formData.weightPerUnit ? `${formData.weightPerUnit} ${formData.weightPerUnitUnit}` : '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Dimensions:</span>
+                  <span>{formData.unitDimensionL ? `${formData.unitDimensionL} × ${formData.unitDimensionW} × ${formData.unitDimensionH} ${formData.unitDimensionUnit}` : '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Units/Pack:</span>
+                  <span>{formData.unitsPerPrimaryPack || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Net Weight/Pack:</span>
+                  <span>{formData.netWeightPerPrimaryPack ? `${formData.netWeightPerPrimaryPack} ${formData.netWeightPerPrimaryPackUnit}` : '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Secondary Packaging:</span>
+                  <span>{formData.secondaryPackaging === 'Other (text)' ? formData.secondaryPackagingOther : formData.secondaryPackaging || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Artwork Readiness:</span>
+                  <span>{formData.artworkReadiness || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Label Responsibility:</span>
+                  <span>{formData.labelResponsibility || '—'}</span>
+                </div>
+              </div>
+
+              {/* Shipping */}
+              <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Shipping</h3>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(13); }}>
+                    <Edit className="w-3 h-3 mr-1" /> Edit
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span style={{ color: '#8B7355' }}>Master Carton:</span>
+                  <span>{formData.masterCartonRequirements || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Pallets Required:</span>
+                  <span>{formData.palletsRequired || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Shipping TBD:</span>
+                  <span>{formData.shippingTBD ? 'Yes' : 'No'}</span>
+                </div>
+              </div>
+
+              {/* Volumes / Timing / Ops */}
+              <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Volumes / Timing / Ops</h3>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(14); }}>
+                    <Edit className="w-3 h-3 mr-1" /> Edit
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span style={{ color: '#8B7355' }}>Target Launch Date:</span>
+                  <span>{formData.targetDate || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Price Target/Unit:</span>
+                  <span>{formData.priceTargetPerUnit || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Annual Volume:</span>
+                  <span>{formData.annualVolume || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Order Quantity:</span>
+                  <span>{formData.orderQuantity || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Order Frequency:</span>
+                  <span>{formData.orderFrequency || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Warehousing:</span>
+                  <span>{formData.warehousingNeeds.length > 0 ? formData.warehousingNeeds.join(', ') : '—'}</span>
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Technical / R&D Contact</h3>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(17); }}>
+                    <Edit className="w-3 h-3 mr-1" /> Edit
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span style={{ color: '#8B7355' }}>Same as Initial:</span>
+                  <span>{formData.sameAsInitialContact ? 'Yes' : 'No'}</span>
+                  <span style={{ color: '#8B7355' }}>Name:</span>
+                  <span>{formData.technicalContactName || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Email:</span>
+                  <span>{formData.technicalContactEmail || '—'}</span>
+                  <span style={{ color: '#8B7355' }}>Phone:</span>
+                  <span>{formData.technicalContactPhone || '—'}</span>
+                </div>
+              </div>
+
+              {/* Additional Notes */}
+              {formData.additionalProjectInfo && (
+                <div className="p-4 rounded-lg border" style={{ borderColor: 'rgba(200, 155, 60, 0.2)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">Additional Notes</h3>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowPreviewModal(false); setCurrentStep(18); }}>
+                      <Edit className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+                  </div>
+                  <p>{formData.additionalProjectInfo}</p>
+                </div>
+              )}
+
+            </div>
+
+            <div className="pt-6 pb-2 flex justify-end">
+              <Button
+                onClick={() => { setShowPreviewModal(false); handleSubmit(); }}
+                className="flex items-center gap-2 bg-gradient-to-r from-[#C89B3C] to-[#D4A855] hover:from-[#B8892C] hover:to-[#C89B3C] text-white"
+              >
+                Submit PRF
+                <CheckCircle className="w-4 h-4" />
+              </Button>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
