@@ -139,6 +139,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const progressPercent = (currentStep / TOTAL_STEPS) * 100;
