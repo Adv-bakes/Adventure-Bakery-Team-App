@@ -1268,7 +1268,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                         if (validationErrors.unitsPerPrimaryPack) {
                           setValidationErrors(prev => ({ ...prev, unitsPerPrimaryPack: '', netWeightPerPrimaryPack: '' }));
                         }
-                      }
+                      }}
                       placeholder="e.g., 6, 12, 24"
                       className={`mt-1 ${validationErrors.unitsPerPrimaryPack ? 'border-red-500' : ''}`}
                     />
