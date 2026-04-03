@@ -55,6 +55,7 @@ interface WizardData {
   technicalContactName: string;
   technicalContactEmail: string;
   technicalContactPhone: string;
+  sameAsInitialContact: boolean;
   additionalProjectInfo: string;
 }
 
