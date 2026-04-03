@@ -1241,11 +1241,21 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                       type="number"
                       value={formData.unitsPerPrimaryPack}
                       onChange={(e) => {
-                        updateFormData({ unitsPerPrimaryPack: e.target.value });
-                        if (validationErrors.unitsPerPrimaryPack) {
-                          setValidationErrors(prev => ({ ...prev, unitsPerPrimaryPack: '' }));
+                        const units = e.target.value;
+                        const weight = parseFloat(formData.weightPerUnit);
+                        const unitsNum = parseFloat(units);
+                        const updates: Partial<WizardData> = { unitsPerPrimaryPack: units };
+                        if (!isNaN(weight) && !isNaN(unitsNum) && weight > 0 && unitsNum > 0) {
+                          updates.netWeightPerPrimaryPack = (weight * unitsNum).toString();
+                          updates.netWeightPerPrimaryPackUnit = formData.weightPerUnitUnit;
+                        } else {
+                          updates.netWeightPerPrimaryPack = '';
                         }
-                      }}
+                        updateFormData(updates);
+                        if (validationErrors.unitsPerPrimaryPack) {
+                          setValidationErrors(prev => ({ ...prev, unitsPerPrimaryPack: '', netWeightPerPrimaryPack: '' }));
+                        }
+                      }
                       placeholder="e.g., 6, 12, 24"
                       className={`mt-1 ${validationErrors.unitsPerPrimaryPack ? 'border-red-500' : ''}`}
                     />
