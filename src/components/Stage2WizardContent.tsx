@@ -1287,14 +1287,9 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
                         id="netWeightPerPrimaryPack"
                         type="number"
                         value={formData.netWeightPerPrimaryPack}
-                        onChange={(e) => {
-                          updateFormData({ netWeightPerPrimaryPack: e.target.value });
-                          if (validationErrors.netWeightPerPrimaryPack) {
-                            setValidationErrors(prev => ({ ...prev, netWeightPerPrimaryPack: '' }));
-                          }
-                        }}
-                        placeholder="e.g., 24"
-                        className={`flex-1 ${validationErrors.netWeightPerPrimaryPack ? 'border-red-500' : ''}`}
+                        readOnly
+                        placeholder="Auto-calculated"
+                        className={`flex-1 bg-muted ${validationErrors.netWeightPerPrimaryPack ? 'border-red-500' : ''}`}
                       />
                       <Select
                         value={formData.netWeightPerPrimaryPackUnit}
