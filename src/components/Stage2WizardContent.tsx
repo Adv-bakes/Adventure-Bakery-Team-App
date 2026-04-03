@@ -367,6 +367,22 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
     }
   }, []);
 
+  // Auto-recalculate net weight per primary pack
+  useEffect(() => {
+    const weight = parseFloat(formData.weightPerUnit);
+    const units = parseFloat(formData.unitsPerPrimaryPack);
+    if (!isNaN(weight) && !isNaN(units) && weight > 0 && units > 0) {
+      const calculated = (weight * units).toString();
+      if (formData.netWeightPerPrimaryPack !== calculated || formData.netWeightPerPrimaryPackUnit !== formData.weightPerUnitUnit) {
+        setFormData(prev => ({
+          ...prev,
+          netWeightPerPrimaryPack: calculated,
+          netWeightPerPrimaryPackUnit: prev.weightPerUnitUnit,
+        }));
+      }
+    }
+  }, [formData.weightPerUnit, formData.unitsPerPrimaryPack, formData.weightPerUnitUnit]);
+
   const createNewSubmission = async () => {
     const { data, error } = await supabase
       .from("stage2_prf_submissions")
