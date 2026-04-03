@@ -127,7 +127,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Adventure Bakery <noreply@notify.adventurebakery.info>",
+        from: "Adventure Bakery <onboarding@resend.dev>",
         to: [recipientEmail],
         cc: ["scale@adventurebakery.info"],
         subject: `PRF Received — ${displayProduct}`,
