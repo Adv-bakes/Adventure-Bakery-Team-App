@@ -520,6 +520,7 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
 
   const handleSubmit = async () => {
     if (!submissionId) return;
+    setIsSubmitting(true);
 
     const { error } = await supabase
       .from("stage2_prf_submissions")
