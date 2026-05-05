@@ -121,7 +121,7 @@ export type Database = {
           date_of_issue: string | null
           desired_claims: Json | null
           dietary_category: Json | null
-          id: number | null
+          id: number
           intended_use: string | null
           key_qualities: string | null
           last_review_date: string | null
@@ -169,7 +169,7 @@ export type Database = {
           date_of_issue?: string | null
           desired_claims?: Json | null
           dietary_category?: Json | null
-          id?: number | null
+          id?: number
           intended_use?: string | null
           key_qualities?: string | null
           last_review_date?: string | null
@@ -217,7 +217,7 @@ export type Database = {
           date_of_issue?: string | null
           desired_claims?: Json | null
           dietary_category?: Json | null
-          id?: number | null
+          id?: number
           intended_use?: string | null
           key_qualities?: string | null
           last_review_date?: string | null
