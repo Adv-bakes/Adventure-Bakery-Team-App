@@ -494,18 +494,10 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
 
   const loadDraft = async (id: string) => {
     const { data, error } = await supabase
-      .from("stage2_prf_submissions")
-      .select("*")
-      .eq("id", id)
-      .single();
+      .rpc("get_stage2_draft", { _id: id })
+      .maybeSingle();
 
     if (error || !data) {
-      localStorage.removeItem("stage2SubmissionId");
-      createNewSubmission();
-      return;
-    }
-
-    if (data.status === "submitted") {
       localStorage.removeItem("stage2SubmissionId");
       createNewSubmission();
       return;
