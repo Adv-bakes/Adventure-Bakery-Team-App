@@ -1339,6 +1339,16 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
       }
+      get_stage2_draft: {
+        Args: { _id: string }
+        Returns: {
+          company_stage: string
+          created_at: string
+          data_json: Json
+          id: string
+          status: string
+        }[]
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_staff_or_admin: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {

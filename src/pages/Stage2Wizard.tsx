@@ -158,20 +158,11 @@ const Stage2Wizard = () => {
 
   const loadDraft = async (id: string) => {
     const { data, error } = await supabase
-      .from("stage2_prf_submissions")
-      .select("*")
-      .eq("id", id)
-      .single();
+      .rpc("get_stage2_draft", { _id: id })
+      .maybeSingle();
 
     if (error || !data) {
-      // Draft not found, create new
-      localStorage.removeItem("stage2SubmissionId");
-      createNewSubmission();
-      return;
-    }
-
-    if (data.status === "submitted") {
-      // Already submitted, create new
+      // Draft not found or already submitted — create new
       localStorage.removeItem("stage2SubmissionId");
       createNewSubmission();
       return;
