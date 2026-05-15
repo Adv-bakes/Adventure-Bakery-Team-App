@@ -254,6 +254,7 @@ const Stage2Wizard = () => {
     }
 
     localStorage.removeItem("stage2SubmissionId");
+    localStorage.removeItem("stage2DraftToken");
     setIsSubmitted(true);
     toast({
       title: "PRF Submitted Successfully",
