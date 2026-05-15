@@ -464,20 +464,31 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
     }
   }, [formData.weightPerUnit, formData.unitsPerPrimaryPack, formData.weightPerUnitUnit]);
 
+  const getOrCreateDraftToken = () => {
+    let token = localStorage.getItem("stage2DraftToken");
+    if (!token) {
+      token = crypto.randomUUID() + crypto.randomUUID();
+      localStorage.setItem("stage2DraftToken", token);
+    }
+    return token;
+  };
+
   const createNewSubmission = async () => {
     const newId = crypto.randomUUID();
+    const token = getOrCreateDraftToken();
     const draftPayload = {
       id: newId,
       company_stage: companyStage,
       status: "draft" as const,
       data_json: JSON.parse(JSON.stringify(initialData)),
+      draft_token: token,
     };
 
-    console.log("[PRF] Creating stage2 draft", draftPayload);
+    console.log("[PRF] Creating stage2 draft", { id: newId, company_stage: companyStage });
 
     const { data, error } = await supabase
       .from("stage2_prf_submissions")
-      .insert([draftPayload])
+      .insert([draftPayload as any])
       .select()
       .single();
 
@@ -493,8 +504,9 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
   };
 
   const loadDraft = async (id: string) => {
+    const token = getOrCreateDraftToken();
     const { data, error } = await supabase
-      .rpc("get_stage2_draft", { _id: id })
+      .rpc("get_stage2_draft", { _id: id, _token: token } as any)
       .maybeSingle();
 
     if (error || !data) {
@@ -511,18 +523,14 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
 
   const autoSave = async (updatedData: WizardData) => {
     if (!submissionId) return;
-    
-    setIsSaving(true);
-    const draftUpdatePayload = { data_json: JSON.parse(JSON.stringify(updatedData)) };
-    console.log("[PRF] Auto-saving stage2 draft", {
-      submissionId,
-      payload: draftUpdatePayload,
-    });
+    const token = getOrCreateDraftToken();
 
-    const { error } = await supabase
-      .from("stage2_prf_submissions")
-      .update(draftUpdatePayload)
-      .eq("id", submissionId);
+    setIsSaving(true);
+    const { error } = await supabase.rpc("save_stage2_draft" as any, {
+      _id: submissionId,
+      _token: token,
+      _data: JSON.parse(JSON.stringify(updatedData)),
+    });
 
     if (error) {
       console.error("Auto-save error:", error);
