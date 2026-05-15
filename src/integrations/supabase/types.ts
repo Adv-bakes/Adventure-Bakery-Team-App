@@ -1573,6 +1573,14 @@ export type Database = {
           vt: string
         }[]
       }
+      save_stage2_draft: {
+        Args: { _data: Json; _id: string; _token: string }
+        Returns: boolean
+      }
+      submit_stage2_draft: {
+        Args: { _data: Json; _id: string; _token: string }
+        Returns: boolean
+      }
       validate_invitation_token: {
         Args: { _token: string }
         Returns: {
