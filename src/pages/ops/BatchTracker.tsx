@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,8 +191,8 @@ export default function BatchTracker() {
           </TableHeader>
           <TableBody>
             {batches.map(b => (
-              <>
-                <TableRow key={b.id}>
+              <Fragment key={b.id}>
+                <TableRow>
                   <TableCell>
                     <Button size="sm" variant="ghost" onClick={() => setExpanded(e => ({ ...e, [b.id]: !e[b.id] }))}>
                       {expanded[b.id] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -215,7 +215,7 @@ export default function BatchTracker() {
                   </TableCell>
                 </TableRow>
                 {expanded[b.id] && (
-                  <TableRow key={b.id + "-x"}>
+                  <TableRow>
                     <TableCell colSpan={8} className="bg-black/20 p-4">
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="font-semibold text-sm" style={{ color: "#F5F1E6" }}>Ingredients</h4>
@@ -249,7 +249,7 @@ export default function BatchTracker() {
                     </TableCell>
                   </TableRow>
                 )}
-              </>
+              </Fragment>
             ))}
             {batches.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No batches yet.</TableCell></TableRow>}
           </TableBody>
