@@ -308,8 +308,36 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="/team/founder" element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><FounderDashboard /></TeamLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* ========== NEW SECTION SKELETONS (Phase 0) ========== */}
+          {[
+            ["/team/sales/pipeline", SalesPipeline],
+            ["/team/sales/clients", SalesClients],
+            ["/team/sales/inbox", SalesDocumentsInbox],
+            ["/team/ops/pipeline", OpsPipeline],
+            ["/team/ops/orders", OpsOrders],
+            ["/team/ops/schedule", OpsSchedule],
+            ["/team/compliance/sops", ComplianceSops],
+            ["/team/compliance/traceability", ComplianceTraceability],
+            ["/team/compliance/certifications", ComplianceCertifications],
+            ["/team/hr/directory", HrDirectory],
+            ["/team/hr/trainings", HrTrainings],
+            ["/team/hr/traceability", HrTraceability],
+            ["/team/internal/email", InternalEmail],
+          ].map(([path, Comp]: any) => (
+            <Route key={path} path={path} element={
+              <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+                <TeamLayout><Comp /></TeamLayout>
+              </ProtectedRoute>
+            } />
+          ))}
+          <Route path="/team/internal/finance" element={
+            <ProtectedRoute allowedRoles={["owner"]}>
+              <TeamLayout><InternalFinance /></TeamLayout>
             </ProtectedRoute>
           } />
 
