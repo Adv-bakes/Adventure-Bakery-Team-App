@@ -5,93 +5,102 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-  LayoutDashboard,
+  Home,
   Users,
-  UserPlus,
   FileText,
-  FileSignature,
-  ClipboardList,
-  DollarSign,
-  FlaskConical,
+  Kanban,
   Package,
-  Factory,
-  BarChart3,
   Boxes,
-  ListChecks,
   Bot,
   TrendingUp,
-  User as UserIcon,
+  ClipboardCheck,
+  ShieldCheck,
+  GraduationCap,
+  UserSquare2,
+  BookOpen,
+  ListTodo,
+  Inbox,
+  DollarSign,
+  Database,
   Settings,
+  User as UserIcon,
   LogOut,
   PanelLeftClose,
   PanelLeft,
+  Calendar,
+  ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 import { CoachChat } from "@/components/CoachChat";
 import { cn } from "@/lib/utils";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface TeamLayoutProps {
   children: ReactNode;
 }
 
+interface NavItem {
+  path: string;
+  icon: React.ElementType;
+  label: string;
+  ownerOnly?: boolean;
+}
 interface NavSection {
   title: string;
-  items: { path: string; icon: React.ElementType; label: string }[];
+  items: NavItem[];
 }
 
 const navSections: NavSection[] = [
   {
     title: "Home",
-    items: [
-      { path: "/team/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    ],
+    items: [{ path: "/team/dashboard", icon: Home, label: "Dashboard" }],
   },
   {
-    title: "Client Management",
+    title: "Sales",
     items: [
-      { path: "/team/customers", icon: Users, label: "Customers" },
-      { path: "/team/client/new", icon: UserPlus, label: "Add Client" },
-    ],
-  },
-  {
-    title: "Sales Pipeline",
-    items: [
-      { path: "/team/product-request", icon: FileText, label: "Product Requests" },
-      { path: "/team/nda-submissions", icon: FileSignature, label: "NDA Submissions" },
-      { path: "/team/spec-sheets", icon: ClipboardList, label: "Spec Sheets" },
-    ],
-  },
-  {
-    title: "Product & Finance",
-    items: [
-      { path: "/team/costing", icon: DollarSign, label: "Costing" },
-      { path: "/team/formulas", icon: FlaskConical, label: "Formulas" },
+      { path: "/team/sales/pipeline", icon: Kanban, label: "Pipeline" },
+      { path: "/team/sales/clients", icon: Users, label: "Clients" },
+      { path: "/team/sales/inbox", icon: FileText, label: "Documents Inbox" },
     ],
   },
   {
     title: "Operations",
     items: [
-      { path: "/team/sourcing", icon: Package, label: "Sourcing" },
-      { path: "/team/production", icon: Factory, label: "Production Orders" },
-      { path: "/team/reports", icon: BarChart3, label: "Reports" },
-    ],
-  },
-  {
-    title: "Operations System",
-    items: [
-      { path: "/team/ops/inventory", icon: Boxes, label: "Inventory" },
+      { path: "/team/ops/pipeline", icon: Kanban, label: "Pipeline" },
+      { path: "/team/ops/orders", icon: Package, label: "Orders" },
+      { path: "/team/ops/schedule", icon: Calendar, label: "Production Schedule" },
       { path: "/team/ops/batches", icon: ListChecks, label: "Batch Tracker" },
-      { path: "/team/ops/scout-bot", icon: Bot, label: "Scout Bot" },
+      { path: "/team/ops/inventory", icon: Boxes, label: "Inventory" },
+      { path: "/team/ops/scout-bot", icon: Bot, label: "Sourcing (Scout Bot)" },
       { path: "/team/ops/variance", icon: TrendingUp, label: "Variance Report" },
     ],
   },
   {
-    title: "Team",
+    title: "Compliance",
     items: [
+      { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library" },
+      { path: "/team/compliance/traceability", icon: ClipboardCheck, label: "Traceability" },
+      { path: "/team/compliance/certifications", icon: ShieldCheck, label: "Certifications" },
+    ],
+  },
+  {
+    title: "HR",
+    items: [
+      { path: "/team/hr/directory", icon: UserSquare2, label: "Team Directory" },
+      { path: "/team/hr/trainings", icon: GraduationCap, label: "Training & SOPs" },
+      { path: "/team/hr/traceability", icon: ListTodo, label: "Training Traceability" },
+    ],
+  },
+  {
+    title: "Internal",
+    items: [
+      { path: "/team/internal/email", icon: Inbox, label: "Email Inbox" },
+      { path: "/team/internal/finance", icon: DollarSign, label: "Finance", ownerOnly: true },
+      { path: "/team/sourcing", icon: Database, label: "Vendor DB" },
       { path: "/team/account", icon: UserIcon, label: "My Account" },
-      { path: "/team/settings", icon: Settings, label: "Team Settings" },
+      { path: "/team/settings", icon: Settings, label: "Settings" },
     ],
   },
 ];
@@ -101,6 +110,8 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const { role } = useUserRole();
+  const isOwner = role === "owner";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -126,7 +137,6 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
       <aside
         className={cn(
           "sticky top-0 h-screen flex flex-col border-r transition-all duration-300 shrink-0",
@@ -137,7 +147,6 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
           borderColor: "rgba(200, 155, 60, 0.15)",
         }}
       >
-        {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 shrink-0">
           <img src={logo} alt="AB" className="w-8 h-8 shrink-0" />
           {!collapsed && (
@@ -149,41 +158,43 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
 
         <Separator className="opacity-20" />
 
-        {/* Nav */}
         <ScrollArea className="flex-1 py-2">
-          {navSections.map((section) => (
-            <div key={section.title} className="mb-2">
-              {!collapsed && (
-                <p className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(245, 241, 230, 0.4)" }}>
-                  {section.title}
-                </p>
-              )}
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                const isActive =
-                  location.pathname === item.path ||
-                  (item.path !== "/team/dashboard" && location.pathname.startsWith(item.path));
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      "flex items-center gap-3 mx-2 px-3 py-2 rounded-md text-sm transition-colors",
-                      isActive ? "bg-[#C89B3C]/20 font-semibold" : "hover:bg-white/5"
-                    )}
-                    style={{ color: isActive ? "#C89B3C" : "rgba(245, 241, 230, 0.7)" }}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+          {navSections.map((section) => {
+            const visibleItems = section.items.filter((i) => !i.ownerOnly || isOwner);
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={section.title} className="mb-2">
+                {!collapsed && (
+                  <p className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(245, 241, 230, 0.4)" }}>
+                    {section.title}
+                  </p>
+                )}
+                {visibleItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    location.pathname === item.path ||
+                    (item.path !== "/team/dashboard" && location.pathname.startsWith(item.path));
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={cn(
+                        "flex items-center gap-3 mx-2 px-3 py-2 rounded-md text-sm transition-colors",
+                        isActive ? "bg-[#C89B3C]/20 font-semibold" : "hover:bg-white/5"
+                      )}
+                      style={{ color: isActive ? "#C89B3C" : "rgba(245, 241, 230, 0.7)" }}
+                      title={collapsed ? item.label : undefined}
+                    >
+                      <Icon className="w-4 h-4 shrink-0" />
+                      {!collapsed && <span>{item.label}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+          })}
         </ScrollArea>
 
-        {/* Bottom controls */}
         <div className="p-2 space-y-1 shrink-0">
           <Button
             variant="ghost"
@@ -207,7 +218,6 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 p-6 lg:p-8">{children}</main>
       </div>

@@ -61,6 +61,15 @@ import OpsBatchTracker from "./pages/ops/BatchTracker";
 import OpsScoutBot from "./pages/ops/ScoutBot";
 import OpsVariance from "./pages/ops/VarianceReport";
 
+// New section skeletons (Phase 0)
+import {
+  SalesPipeline, SalesClients, SalesDocumentsInbox,
+  OpsPipeline, OpsOrders, OpsSchedule,
+  ComplianceSops, ComplianceTraceability, ComplianceCertifications,
+  HrDirectory, HrTrainings, HrTraceability,
+  InternalEmail, InternalFinance,
+} from "./pages/sections";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -194,113 +203,141 @@ const App = () => (
 
           {/* ========== PORTAL 2: AB TEAM PORTAL ========== */}
           <Route path="/team/dashboard" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><AdminDashboard /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/admin" element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><AdminPortal /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/customers" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><AdminDashboard /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/client/new" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <AddClientFlow />
             </ProtectedRoute>
           } />
           <Route path="/team/client/:userId" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><ClientDetail /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/member/:userId" element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><TeamMemberDetail /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/product-request" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><ProductRequestForm /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/nda-submissions" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><NdaNext /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/spec-sheets" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><ProductSpecSheet /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/costing" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><Costing /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/formulas" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><Formulas /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/sourcing" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><Ingredients /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/production" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OperationsHub /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/reports" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><FounderDashboard /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/operations-hub" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OperationsHub /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/account" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><StaffAccount /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/settings" element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><AdminPortal /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/ops/inventory" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsInventory /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/ops/batches" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsBatchTracker /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/ops/scout-bot" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsScoutBot /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/ops/variance" element={
-            <ProtectedRoute allowedRoles={["admin", "staff"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsVariance /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/founder" element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "owner"]}>
               <TeamLayout><FounderDashboard /></TeamLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* ========== NEW SECTION SKELETONS (Phase 0) ========== */}
+          {[
+            ["/team/sales/pipeline", SalesPipeline],
+            ["/team/sales/clients", SalesClients],
+            ["/team/sales/inbox", SalesDocumentsInbox],
+            ["/team/ops/pipeline", OpsPipeline],
+            ["/team/ops/orders", OpsOrders],
+            ["/team/ops/schedule", OpsSchedule],
+            ["/team/compliance/sops", ComplianceSops],
+            ["/team/compliance/traceability", ComplianceTraceability],
+            ["/team/compliance/certifications", ComplianceCertifications],
+            ["/team/hr/directory", HrDirectory],
+            ["/team/hr/trainings", HrTrainings],
+            ["/team/hr/traceability", HrTraceability],
+            ["/team/internal/email", InternalEmail],
+          ].map(([path, Comp]: any) => (
+            <Route key={path} path={path} element={
+              <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+                <TeamLayout><Comp /></TeamLayout>
+              </ProtectedRoute>
+            } />
+          ))}
+          <Route path="/team/internal/finance" element={
+            <ProtectedRoute allowedRoles={["owner"]}>
+              <TeamLayout><InternalFinance /></TeamLayout>
             </ProtectedRoute>
           } />
 

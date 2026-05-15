@@ -1,0 +1,103 @@
+import SectionPlaceholder from "./SectionPlaceholder";
+
+export const SalesPipeline = () => (
+  <SectionPlaceholder
+    title="Sales Pipeline"
+    subtitle="All clients moving through the sales journey."
+    stages={["Lead In", "Send Documents", "Follow-Up", "Quote", "First Order"]}
+  />
+);
+
+export const SalesClients = () => (
+  <SectionPlaceholder
+    title="Clients"
+    subtitle="Search and open any client folder."
+  />
+);
+
+export const SalesDocumentsInbox = () => (
+  <SectionPlaceholder
+    title="Documents Inbox"
+    subtitle="Incoming PRFs, signed NDAs, completed PSS."
+  />
+);
+
+export const OpsPipeline = () => (
+  <SectionPlaceholder
+    title="Operations Pipeline"
+    subtitle="Active orders moving from confirmation to production."
+    stages={[
+      "Order Received & Confirmed",
+      "Materials Sourced",
+      "Scheduled",
+      "Produced",
+    ]}
+  />
+);
+
+export const OpsOrders = () => (
+  <SectionPlaceholder title="Orders" subtitle="Active orders + history." />
+);
+
+export const OpsSchedule = () => (
+  <SectionPlaceholder
+    title="Production Schedule"
+    subtitle="Batches by date and line."
+  />
+);
+
+export const ComplianceSops = () => (
+  <SectionPlaceholder
+    title="SOPs Library"
+    subtitle="Versioned standard operating procedures."
+  />
+);
+
+export const ComplianceTraceability = () => (
+  <SectionPlaceholder
+    title="Production Traceability"
+    subtitle="Lot code → ingredients → batch → order → client → shipped."
+  />
+);
+
+export const ComplianceCertifications = () => (
+  <SectionPlaceholder
+    title="Certifications"
+    subtitle="Audit-ready document archive."
+  />
+);
+
+export const HrDirectory = () => (
+  <SectionPlaceholder
+    title="Team Directory"
+    subtitle="Employees, roles, contact, emergency info."
+  />
+);
+
+export const HrTrainings = () => (
+  <SectionPlaceholder
+    title="Training & SOPs"
+    subtitle="Assigned trainings and SOPs to read & sign."
+  />
+);
+
+export const HrTraceability = () => (
+  <SectionPlaceholder
+    title="Training Traceability"
+    subtitle="Who was trained on what, when, by whom."
+  />
+);
+
+export const InternalEmail = () => (
+  <SectionPlaceholder
+    title="Email Inbox"
+    subtitle="Curated, important inbound emails only."
+  />
+);
+
+export const InternalFinance = () => (
+  <SectionPlaceholder
+    title="Finance"
+    subtitle="QuickBooks links and financial reports. Owner only."
+  />
+);
