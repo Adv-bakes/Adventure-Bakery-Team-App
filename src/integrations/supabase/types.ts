@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      client_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          client_id: string
+          created_at: string
+          id: string
+          payload: Json | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          payload?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          payload?: Json | null
+        }
+        Relationships: []
+      }
       client_documents: {
         Row: {
           document_type: string | null
@@ -763,6 +790,7 @@ export type Database = {
           net_weight_per_primary_pack_unit: string | null
           order_frequency: string | null
           order_quantity: string | null
+          owner_user_id: string | null
           packaging_readiness: string | null
           pallets_required: string | null
           phone: string | null
@@ -817,6 +845,7 @@ export type Database = {
           net_weight_per_primary_pack_unit?: string | null
           order_frequency?: string | null
           order_quantity?: string | null
+          owner_user_id?: string | null
           packaging_readiness?: string | null
           pallets_required?: string | null
           phone?: string | null
@@ -871,6 +900,7 @@ export type Database = {
           net_weight_per_primary_pack_unit?: string | null
           order_frequency?: string | null
           order_quantity?: string | null
+          owner_user_id?: string | null
           packaging_readiness?: string | null
           pallets_required?: string | null
           phone?: string | null
