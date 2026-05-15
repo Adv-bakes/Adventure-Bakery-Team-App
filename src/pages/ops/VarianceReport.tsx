@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 
 const cardStyle = {
@@ -68,6 +70,20 @@ export default function VarianceReport() {
     if (!r.qty_planned_lbs) return 0;
     return ((r.qty_actual_lbs - r.qty_planned_lbs) / r.qty_planned_lbs) * 100;
   }
+  function exportCsv() {
+    const headers = ["Batch Date","Lot Code","Product","Ingredient","Planned (lbs)","Actual (lbs)","Variance (lbs)","Variance %"];
+    const lines = [headers.join(",")];
+    rows.forEach(r => {
+      const p = pct(r).toFixed(2);
+      const esc = (v: any) => `"${String(v ?? "").replace(/"/g,'""')}"`;
+      lines.push([r.batch_date,r.lot_code,r.product_name,r.ingredient_name,r.qty_planned_lbs.toFixed(2),r.qty_actual_lbs.toFixed(2),r.variance_lbs.toFixed(2),p].map(esc).join(","));
+    });
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `variance-report-${from}-to-${to}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
   function color(p: number) {
     const a = Math.abs(p);
     if (a <= 2) return "text-green-400";
@@ -112,8 +128,11 @@ export default function VarianceReport() {
         <div className="flex gap-3 items-end mb-4">
           <div><Label>From</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} /></div>
           <div><Label>To</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} /></div>
-          <div className="text-sm ml-auto" style={{ color: "rgba(245,241,230,0.7)" }}>
-            <span className="text-green-400">●</span> ≤2% &nbsp; <span className="text-amber-400">●</span> 2–5% &nbsp; <span className="text-red-400">●</span> &gt;5%
+          <div className="text-sm ml-auto flex items-center gap-3" style={{ color: "rgba(245,241,230,0.7)" }}>
+            <span><span className="text-green-400">●</span> ≤2% &nbsp; <span className="text-amber-400">●</span> 2–5% &nbsp; <span className="text-red-400">●</span> &gt;5%</span>
+            <Button size="sm" variant="outline" onClick={exportCsv} disabled={!rows.length}>
+              <Download className="w-4 h-4 mr-1" />Export CSV
+            </Button>
           </div>
         </div>
 
