@@ -236,20 +236,18 @@ const Stage2Wizard = () => {
 
   const handleSubmit = async () => {
     if (!submissionId) return;
+    const token = getOrCreateDraftToken();
 
-    const { error } = await supabase
-      .from("stage2_prf_submissions")
-      .update({ 
-        status: "submitted",
-        submitted_at: new Date().toISOString(),
-        data_json: JSON.parse(JSON.stringify(formData))
-      })
-      .eq("id", submissionId);
+    const { data: ok, error } = await supabase.rpc("submit_stage2_draft" as any, {
+      _id: submissionId,
+      _token: token,
+      _data: JSON.parse(JSON.stringify(formData)),
+    });
 
-    if (error) {
+    if (error || !ok) {
       toast({
         title: "Submission failed",
-        description: error.message,
+        description: error?.message || "Could not submit draft",
         variant: "destructive",
       });
       return;
