@@ -1418,6 +1418,7 @@ export type Database = {
           company_stage: string | null
           created_at: string
           data_json: Json | null
+          draft_token: string | null
           id: string
           lead_id: string | null
           status: string | null
@@ -1427,6 +1428,7 @@ export type Database = {
           company_stage?: string | null
           created_at?: string
           data_json?: Json | null
+          draft_token?: string | null
           id?: string
           lead_id?: string | null
           status?: string | null
@@ -1436,6 +1438,7 @@ export type Database = {
           company_stage?: string | null
           created_at?: string
           data_json?: Json | null
+          draft_token?: string | null
           id?: string
           lead_id?: string | null
           status?: string | null
@@ -1528,16 +1531,27 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
       }
-      get_stage2_draft: {
-        Args: { _id: string }
-        Returns: {
-          company_stage: string
-          created_at: string
-          data_json: Json
-          id: string
-          status: string
-        }[]
-      }
+      get_stage2_draft:
+        | {
+            Args: { _id: string }
+            Returns: {
+              company_stage: string
+              created_at: string
+              data_json: Json
+              id: string
+              status: string
+            }[]
+          }
+        | {
+            Args: { _id: string; _token?: string }
+            Returns: {
+              company_stage: string
+              created_at: string
+              data_json: Json
+              id: string
+              status: string
+            }[]
+          }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_owner: { Args: { _user_id: string }; Returns: boolean }
       is_staff_or_admin: { Args: { _user_id: string }; Returns: boolean }
