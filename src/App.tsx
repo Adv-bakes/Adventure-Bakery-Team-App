@@ -61,6 +61,15 @@ import OpsBatchTracker from "./pages/ops/BatchTracker";
 import OpsScoutBot from "./pages/ops/ScoutBot";
 import OpsVariance from "./pages/ops/VarianceReport";
 
+// New section skeletons (Phase 0)
+import {
+  SalesPipeline, SalesClients, SalesDocumentsInbox,
+  OpsPipeline, OpsOrders, OpsSchedule,
+  ComplianceSops, ComplianceTraceability, ComplianceCertifications,
+  HrDirectory, HrTrainings, HrTraceability,
+  InternalEmail, InternalFinance,
+} from "./pages/sections";
+
 const queryClient = new QueryClient();
 
 const App = () => (
