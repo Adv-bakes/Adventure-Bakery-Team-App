@@ -1251,6 +1251,8 @@ export type Database = {
           phone: string | null
           product_type: string | null
           role: Database["public"]["Enums"]["user_role"] | null
+          sales_stage: string | null
+          sales_stage_updated_at: string | null
           target_market: string | null
           website: string | null
         }
@@ -1271,6 +1273,8 @@ export type Database = {
           phone?: string | null
           product_type?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          sales_stage?: string | null
+          sales_stage_updated_at?: string | null
           target_market?: string | null
           website?: string | null
         }
@@ -1291,6 +1295,8 @@ export type Database = {
           phone?: string | null
           product_type?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
+          sales_stage?: string | null
+          sales_stage_updated_at?: string | null
           target_market?: string | null
           website?: string | null
         }
@@ -1533,6 +1539,7 @@ export type Database = {
         }[]
       }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_owner: { Args: { _user_id: string }; Returns: boolean }
       is_staff_or_admin: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: { msg_id: number; queue_name: string }
