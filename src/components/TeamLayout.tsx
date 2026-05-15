@@ -61,6 +61,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const { role } = useUserRole();
   const isOwner = role === "owner";
+  const [inboxCount, setInboxCount] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -73,6 +74,20 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      const { count } = await supabase
+        .from("prf_submissions")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["new", "reviewing"]);
+      if (!cancelled) setInboxCount(count || 0);
+    };
+    refresh();
+    const t = setInterval(refresh, 30000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -108,6 +123,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
                   const Icon = item.icon;
                   const active = location.pathname === item.path ||
                     (item.path !== "/team/dashboard" && location.pathname.startsWith(item.path));
+                  const showBadge = item.path === "/team/sales/inbox" && inboxCount > 0;
                   return (
                     <Link
                       key={item.path}
@@ -116,7 +132,12 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
                       title={collapsed ? item.label : undefined}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
-                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      {!collapsed && <span className="truncate flex-1">{item.label}</span>}
+                      {showBadge && (
+                        <span className="ml-auto text-[10px] font-semibold bg-[hsl(var(--tp-gold))] text-black rounded-full px-1.5 min-w-[18px] text-center">
+                          {inboxCount}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
