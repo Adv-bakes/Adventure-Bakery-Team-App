@@ -452,3 +452,219 @@ All colors MUST be HSL.
     box-shadow: var(--shadow-premium);
   }
 }
+
+/* ============================================================
+   TEAM PORTAL — Noir & Gold design system
+   Scoped to .team-portal so the rest of the app keeps its beige theme.
+   ============================================================ */
+.team-portal {
+  --tp-bg: 0 0% 4%;              /* #0a0a0a */
+  --tp-surface: 0 0% 8%;         /* #141414 */
+  --tp-surface-2: 0 0% 11%;      /* #1c1c1c */
+  --tp-surface-3: 0 0% 14%;      /* #242424 */
+  --tp-hairline: 43 52% 50% / 0.12;
+  --tp-hairline-strong: 43 52% 50% / 0.25;
+  --tp-text: 44 38% 93%;         /* #f5f1e6 */
+  --tp-text-muted: 44 18% 70%;
+  --tp-text-dim: 44 12% 50%;
+  --tp-gold: 43 56% 54%;         /* #c9a84c */
+  --tp-gold-soft: 43 78% 75%;    /* #f0d78c */
+  --tp-gold-glow: 43 56% 54% / 0.18;
+  --tp-success: 152 56% 50%;
+  --tp-warning: 32 92% 60%;
+  --tp-danger: 0 72% 58%;
+
+  background: hsl(var(--tp-bg));
+  color: hsl(var(--tp-text));
+  font-family: 'Manrope', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+}
+.team-portal * { font-family: inherit; }
+.team-portal h1, .team-portal h2, .team-portal h3, .team-portal h4,
+.team-portal .font-display {
+  font-family: 'Sora', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+/* Subtle ambient gold gradient on the body of the portal */
+.team-portal-bg {
+  position: relative;
+  background:
+    radial-gradient(1200px 600px at 100% -10%, hsl(var(--tp-gold-glow)) 0%, transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, hsl(var(--tp-gold) / 0.08) 0%, transparent 60%),
+    hsl(var(--tp-bg));
+}
+
+/* Surfaces */
+.tp-surface {
+  background: hsl(var(--tp-surface));
+  border: 1px solid hsl(var(--tp-hairline));
+  border-radius: 14px;
+}
+.tp-surface-2 {
+  background: hsl(var(--tp-surface-2));
+  border: 1px solid hsl(var(--tp-hairline));
+  border-radius: 14px;
+}
+.tp-hairline { border-color: hsl(var(--tp-hairline)); }
+
+/* Card with gold edge halo */
+.tp-card {
+  background: linear-gradient(180deg, hsl(var(--tp-surface)) 0%, hsl(var(--tp-surface-2)) 100%);
+  border: 1px solid hsl(var(--tp-hairline));
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 hsl(0 0% 100% / 0.03) inset,
+    0 12px 28px -16px hsl(0 0% 0% / 0.6);
+  transition: transform 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
+}
+.tp-card:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--tp-hairline-strong));
+  box-shadow:
+    0 1px 0 hsl(0 0% 100% / 0.04) inset,
+    0 18px 36px -18px hsl(0 0% 0% / 0.7),
+    0 0 0 1px hsl(var(--tp-gold-glow));
+}
+
+/* KPI tile */
+.tp-kpi {
+  background: linear-gradient(180deg, hsl(var(--tp-surface-2)) 0%, hsl(var(--tp-surface)) 100%);
+  border: 1px solid hsl(var(--tp-hairline));
+  border-radius: 14px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.tp-kpi::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--tp-gold) / 0.4), transparent);
+}
+
+/* Chips */
+.tp-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px; font-weight: 500;
+  background: hsl(var(--tp-gold) / 0.1);
+  color: hsl(var(--tp-gold-soft));
+  border: 1px solid hsl(var(--tp-gold) / 0.18);
+}
+.tp-chip-muted {
+  background: hsl(0 0% 100% / 0.04);
+  color: hsl(var(--tp-text-muted));
+  border-color: hsl(0 0% 100% / 0.06);
+}
+
+/* Drop zone glow when dragging */
+.tp-dropzone-active {
+  background: hsl(var(--tp-gold) / 0.06) !important;
+  border-color: hsl(var(--tp-gold) / 0.45) !important;
+  box-shadow: 0 0 0 1px hsl(var(--tp-gold) / 0.25), 0 0 24px hsl(var(--tp-gold-glow));
+}
+
+/* Sidebar (TeamLayout) */
+.tp-sidebar {
+  background:
+    linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 3%) 100%);
+  border-right: 1px solid hsl(var(--tp-hairline));
+}
+.tp-nav-item {
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  margin: 1px 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: hsl(var(--tp-text-muted));
+  transition: color 160ms, background 160ms;
+}
+.tp-nav-item:hover { color: hsl(var(--tp-text)); background: hsl(0 0% 100% / 0.03); }
+.tp-nav-item.active {
+  color: hsl(var(--tp-gold-soft));
+  background: hsl(var(--tp-gold) / 0.08);
+}
+.tp-nav-item.active::before {
+  content: '';
+  position: absolute; left: -8px; top: 6px; bottom: 6px;
+  width: 2px; border-radius: 2px;
+  background: hsl(var(--tp-gold));
+  box-shadow: 0 0 12px hsl(var(--tp-gold) / 0.6);
+}
+.tp-nav-section {
+  padding: 14px 18px 6px;
+  font-family: 'Sora', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--tp-text-dim));
+}
+
+/* Buttons */
+.tp-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 500;
+  border: 1px solid hsl(var(--tp-hairline-strong));
+  color: hsl(var(--tp-text));
+  background: hsl(0 0% 100% / 0.02);
+  transition: all 160ms;
+}
+.tp-btn:hover { background: hsl(0 0% 100% / 0.05); border-color: hsl(var(--tp-gold) / 0.4); }
+.tp-btn-primary {
+  background: linear-gradient(180deg, hsl(var(--tp-gold)) 0%, hsl(43 56% 46%) 100%);
+  color: hsl(0 0% 8%);
+  border-color: hsl(var(--tp-gold-soft) / 0.4);
+  font-weight: 600;
+}
+.tp-btn-primary:hover { filter: brightness(1.06); }
+
+/* Inputs */
+.tp-input {
+  background: hsl(var(--tp-surface-2));
+  border: 1px solid hsl(var(--tp-hairline));
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: hsl(var(--tp-text));
+  transition: border-color 160ms;
+}
+.tp-input::placeholder { color: hsl(var(--tp-text-dim)); }
+.tp-input:focus { outline: none; border-color: hsl(var(--tp-gold) / 0.5); }
+
+/* Section header underline */
+.tp-h1-underline {
+  position: relative; padding-bottom: 12px;
+}
+.tp-h1-underline::after {
+  content: ''; position: absolute; left: 0; bottom: 0;
+  width: 36px; height: 2px;
+  background: linear-gradient(90deg, hsl(var(--tp-gold)), hsl(var(--tp-gold-soft)));
+  border-radius: 2px;
+}
+
+/* Doc dot indicator */
+.tp-dot {
+  width: 7px; height: 7px; border-radius: 999px;
+  display: inline-block;
+  background: hsl(0 0% 100% / 0.1);
+  border: 1px solid hsl(0 0% 100% / 0.2);
+}
+.tp-dot.on {
+  background: hsl(var(--tp-gold));
+  border-color: hsl(var(--tp-gold-soft));
+  box-shadow: 0 0 6px hsl(var(--tp-gold-glow));
+}
+
+@keyframes tp-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tp-fade-up { animation: tp-fade-up 220ms ease-out both; }

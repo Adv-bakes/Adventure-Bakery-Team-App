@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { TeamPage } from "@/components/team/TeamPage";
+import { Search } from "lucide-react";
 
 interface Row {
   id: string;
@@ -34,83 +35,63 @@ const SalesClients = () => {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return rows;
-    return rows.filter((r) =>
-      [r.full_name, r.business_name, r.email]
-        .some((v) => v && v.toLowerCase().includes(s))
-    );
+    return rows.filter((r) => [r.full_name, r.business_name, r.email].some((v) => v && v.toLowerCase().includes(s)));
   }, [rows, q]);
 
   return (
-    <div className="max-w-6xl">
-      <h1 className="text-3xl font-semibold mb-2" style={{ color: "#F5F1E6" }}>
-        Clients
-      </h1>
-      <p className="text-sm mb-6" style={{ color: "rgba(245,241,230,0.6)" }}>
-        Search and open any client folder.
-      </p>
-
-      <div className="mb-4 max-w-md">
-        <Input
-          placeholder="Search by name, company, or email…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-
-      <div
-        className="rounded-lg border overflow-hidden"
-        style={{
-          background: "rgba(200,155,60,0.04)",
-          borderColor: "rgba(200,155,60,0.15)",
-        }}
-      >
+    <TeamPage
+      eyebrow="Sales"
+      title="Clients"
+      description="Every client account at a glance. Open a folder for documents, PRFs, concepts, and activity."
+      actions={
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--tp-text-dim))]" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search…"
+            className="tp-input pl-9 w-[260px]"
+          />
+        </div>
+      }
+    >
+      <div className="tp-surface overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left" style={{ color: "rgba(245,241,230,0.5)" }}>
-              <th className="px-4 py-3 font-medium">Company</th>
-              <th className="px-4 py-3 font-medium">Contact</th>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Stage</th>
-              <th className="px-4 py-3 font-medium">Updated</th>
+            <tr className="text-left text-[11px] uppercase tracking-[0.12em] text-[hsl(var(--tp-text-dim))] border-b border-[hsl(var(--tp-hairline))]">
+              <th className="px-5 py-3 font-medium">Company</th>
+              <th className="px-5 py-3 font-medium">Contact</th>
+              <th className="px-5 py-3 font-medium">Email</th>
+              <th className="px-5 py-3 font-medium">Stage</th>
+              <th className="px-5 py-3 font-medium">Updated</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center" style={{ color: "rgba(245,241,230,0.4)" }}>Loading…</td></tr>
+              <tr><td colSpan={5} className="px-5 py-10 text-center text-[hsl(var(--tp-text-dim))]">Loading…</td></tr>
             )}
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center" style={{ color: "rgba(245,241,230,0.4)" }}>No clients found.</td></tr>
+              <tr><td colSpan={5} className="px-5 py-10 text-center text-[hsl(var(--tp-text-dim))]">No clients found.</td></tr>
             )}
             {filtered.map((r) => (
-              <tr
-                key={r.id}
-                className="border-t hover:bg-white/5"
-                style={{ borderColor: "rgba(200,155,60,0.1)", color: "#F5F1E6" }}
-              >
-                <td className="px-4 py-3">
-                  <Link to={`/team/sales/clients/${r.id}`} className="hover:underline">
+              <tr key={r.id} className="border-t border-[hsl(var(--tp-hairline))] hover:bg-white/[0.025] transition">
+                <td className="px-5 py-3.5">
+                  <Link to={`/team/sales/clients/${r.id}`} className="font-display font-semibold text-[hsl(var(--tp-text))] hover:text-[hsl(var(--tp-gold-soft))]">
                     {r.business_name || "—"}
                   </Link>
                 </td>
-                <td className="px-4 py-3">{r.full_name || "—"}</td>
-                <td className="px-4 py-3" style={{ color: "rgba(245,241,230,0.7)" }}>{r.email || "—"}</td>
-                <td className="px-4 py-3">
-                  <span className="px-2 py-0.5 rounded text-xs"
-                    style={{ background: "rgba(200,155,60,0.15)", color: "#C89B3C" }}>
-                    {r.sales_stage || "Lead In"}
-                  </span>
-                </td>
-                <td className="px-4 py-3" style={{ color: "rgba(245,241,230,0.5)" }}>
-                  {r.sales_stage_updated_at
-                    ? new Date(r.sales_stage_updated_at).toLocaleDateString()
-                    : "—"}
+                <td className="px-5 py-3.5 text-[hsl(var(--tp-text))]">{r.full_name || "—"}</td>
+                <td className="px-5 py-3.5 text-[hsl(var(--tp-text-muted))]">{r.email || "—"}</td>
+                <td className="px-5 py-3.5"><span className="tp-chip">{r.sales_stage || "Lead In"}</span></td>
+                <td className="px-5 py-3.5 text-[hsl(var(--tp-text-dim))] text-xs">
+                  {r.sales_stage_updated_at ? new Date(r.sales_stage_updated_at).toLocaleDateString() : "—"}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
+    </TeamPage>
   );
 };
 
