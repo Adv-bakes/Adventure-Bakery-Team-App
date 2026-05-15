@@ -627,10 +627,13 @@ const Stage2WizardContent = ({ companyStage, isStartup }: Stage2WizardContentPro
 
     setIsSubmitting(true);
 
-    const { error } = await supabase
-      .from("stage2_prf_submissions")
-      .update(stage2SubmitPayload)
-      .eq("id", submissionId);
+    const submitToken = getOrCreateDraftToken();
+    const { data: ok, error } = await supabase.rpc("submit_stage2_draft" as any, {
+      _id: submissionId,
+      _token: submitToken,
+      _data: JSON.parse(JSON.stringify(formData)),
+    });
+    const submitOk = !error && ok;
 
     if (error) {
       console.error("[PRF] stage2 submit update failed", {
