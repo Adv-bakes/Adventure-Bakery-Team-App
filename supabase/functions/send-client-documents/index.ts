@@ -79,7 +79,12 @@ Deno.serve(async (req) => {
       const { data: file } = await admin.storage.from("document-templates").download(nda.file_path);
       if (file) {
         const buf = new Uint8Array(await file.arrayBuffer());
-        const b64 = btoa(String.fromCharCode(...buf));
+        let bin = "";
+        const chunk = 0x8000;
+        for (let i = 0; i < buf.length; i += chunk) {
+          bin += String.fromCharCode(...buf.subarray(i, i + chunk));
+        }
+        const b64 = btoa(bin);
         ndaAttachment = { filename: nda.file_name || "NDA.pdf", content: b64 };
       }
     }
