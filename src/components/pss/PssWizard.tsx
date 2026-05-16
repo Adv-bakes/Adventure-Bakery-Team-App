@@ -13,6 +13,7 @@ export interface PssData {
   };
   product: {
     target_unit_weight_raw?: string;
+    target_unit_weight_raw_tbd?: boolean;
     target_unit_weight_baked?: string;
     weight_unit?: string;
     expected_bake_loss_pct?: string;
@@ -75,15 +76,20 @@ const emptyData = (): PssData => ({
 });
 
 const PROCESS_METHODS = [
-  "no-bake",
-  "melt (jacketed kettle)",
-  "loose-batter (depositor)",
-  "dough-extruder + wire-cut",
-  "round former",
-  "press with die",
-  "manual",
+  "Bake",
+  "No-bake (mix + deposit/shape, then pack)",
+  "No-bake (mix + deposit/shape, freeze, then pack)",
+  "Melt (jacketed kettle)",
+  "Loose-batter (depositor)",
+  "Dough-extruder + wire-cut",
+  "Round former",
+  "Press with die",
+  "Manual",
   "Not determined yet",
 ];
+
+const isNoBakeMethod = (m?: string) =>
+  !!m && /^no-?bake/i.test(m.trim());
 
 const STEPS = [
   { key: "header", label: "Company & product" },
@@ -155,7 +161,14 @@ export function PssWizard(props: {
     return { total, list: ings.map((i) => total > 0 ? ((parseFloat(i.weight || "0") || 0) / total) * 100 : 0) };
   }, [data.recipe.ingredients]);
 
+  const validationErrors = useMemo(() => validatePss(data), [data]);
+
   const submit = async () => {
+    if (validationErrors.length > 0) {
+      toast.error("Please complete required fields before submitting");
+      goReview();
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: ok, error } = await (supabase as any).rpc("submit_pss_draft_public", {
@@ -224,7 +237,25 @@ export function PssWizard(props: {
         <Section title="Product specs">
           <Row>
             <Field label="Target unit weight — raw">
-              <input className="tp-input" value={data.product.target_unit_weight_raw || ""} onChange={(e) => update((d) => (d.product.target_unit_weight_raw = e.target.value, d))} />
+              <input
+                className="tp-input"
+                disabled={!!data.product.target_unit_weight_raw_tbd}
+                value={data.product.target_unit_weight_raw_tbd ? "" : (data.product.target_unit_weight_raw || "")}
+                onChange={(e) => update((d) => (d.product.target_unit_weight_raw = e.target.value, d))}
+              />
+              <label className="flex items-center gap-2 text-[11px] mt-1 text-[hsl(var(--tp-text-dim))]">
+                <input
+                  type="checkbox"
+                  checked={!!data.product.target_unit_weight_raw_tbd}
+                  onChange={(e) => update((d) => {
+                    d.product.target_unit_weight_raw_tbd = e.target.checked;
+                    if (e.target.checked) d.product.target_unit_weight_raw = "TBD";
+                    else if (d.product.target_unit_weight_raw === "TBD") d.product.target_unit_weight_raw = "";
+                    return d;
+                  })}
+                />
+                To be determined (TBD)
+              </label>
             </Field>
             <Field label="Target unit weight — baked">
               <input className="tp-input" value={data.product.target_unit_weight_baked || ""} onChange={(e) => update((d) => (d.product.target_unit_weight_baked = e.target.value, d))} />
@@ -365,20 +396,24 @@ export function PssWizard(props: {
             <Plus className="w-3.5 h-3.5" /> Add step
           </button>
 
-          <h3 className="font-display text-sm font-semibold mt-2 mb-2">Bake</h3>
-          <Row>
-            <Field label="Bake temperature">
-              <input className="tp-input" value={data.process.bake.temperature || ""} onChange={(e) => update((d) => (d.process.bake.temperature = e.target.value, d))} />
-            </Field>
-            <Field label="Unit">
-              <select className="tp-input" value={data.process.bake.temp_unit || "°F"} onChange={(e) => update((d) => (d.process.bake.temp_unit = e.target.value, d))}>
-                {["°F", "°C"].map((u) => <option key={u} value={u}>{u}</option>)}
-              </select>
-            </Field>
-            <Field label="Bake time (min)">
-              <input className="tp-input" value={data.process.bake.time_minutes || ""} onChange={(e) => update((d) => (d.process.bake.time_minutes = e.target.value, d))} />
-            </Field>
-          </Row>
+          {!isNoBakeMethod(data.process.method) && (
+            <>
+              <h3 className="font-display text-sm font-semibold mt-2 mb-2">Bake</h3>
+              <Row>
+                <Field label="Bake temperature">
+                  <input className="tp-input" value={data.process.bake.temperature || ""} onChange={(e) => update((d) => (d.process.bake.temperature = e.target.value, d))} />
+                </Field>
+                <Field label="Unit">
+                  <select className="tp-input" value={data.process.bake.temp_unit || "°F"} onChange={(e) => update((d) => (d.process.bake.temp_unit = e.target.value, d))}>
+                    {["°F", "°C"].map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </Field>
+                <Field label="Bake time (min)">
+                  <input className="tp-input" value={data.process.bake.time_minutes || ""} onChange={(e) => update((d) => (d.process.bake.time_minutes = e.target.value, d))} />
+                </Field>
+              </Row>
+            </>
+          )}
 
           <h3 className="font-display text-sm font-semibold mt-6 mb-2">Post-bake</h3>
           <label className="flex items-center gap-2 text-sm">
@@ -487,8 +522,23 @@ export function PssWizard(props: {
             <Kv k="Shelf life" v={data.optional_sections.shelf_life ? "Provided" : "—"} />
           </ReviewBlock>
 
+          {validationErrors.length > 0 && (
+            <div className="mt-6 border border-[hsl(var(--tp-warning))]/40 bg-[hsl(var(--tp-warning))]/5 p-4 rounded">
+              <p className="text-[11px] uppercase tracking-wider text-[hsl(var(--tp-warning))] mb-2">
+                Please complete before submitting
+              </p>
+              <ul className="text-xs text-[hsl(var(--tp-text))] list-disc list-inside space-y-0.5">
+                {validationErrors.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            </div>
+          )}
           <div className="mt-8 flex items-center justify-end gap-3">
-            <button className="tp-btn tp-btn-primary" onClick={submit} disabled={submitting}>
+            <button
+              className="tp-btn tp-btn-primary disabled:opacity-50"
+              onClick={submit}
+              disabled={submitting || validationErrors.length > 0}
+              title={validationErrors.length > 0 ? "Resolve required fields above" : ""}
+            >
               <CheckCircle2 className="w-4 h-4" /> {submitting ? "Submitting…" : "Submit PSS"}
             </button>
           </div>
@@ -549,4 +599,53 @@ const Kv = ({ k, v }: { k: string; v: any }) => (
 function joinUnit(v?: string, u?: string) {
   if (!v) return "";
   return u ? `${v} ${u}` : v;
+}
+
+function validatePss(d: PssData): string[] {
+  const errors: string[] = [];
+  const need = (cond: any, label: string) => { if (!cond) errors.push(label); };
+
+  // Identity
+  need(d.header.company_name?.trim(), "Company name");
+  need(d.header.customer_name?.trim(), "Customer / contact name");
+  need(d.header.product_name?.trim(), "Product name");
+
+  // Product (raw weight may be TBD)
+  need(
+    d.product.target_unit_weight_raw_tbd || d.product.target_unit_weight_raw?.trim(),
+    "Target unit weight (raw) — or check TBD",
+  );
+  need(d.product.shape?.trim(), "Shape");
+  need(d.product.intended_use?.trim(), "Intended use");
+  need(d.product.target_shelf_life?.trim(), "Target shelf life");
+
+  // Recipe
+  const ings = (d.recipe.ingredients || []).filter((i) => i.name?.trim() && i.weight?.trim());
+  need(ings.length > 0, "At least one ingredient with name and weight");
+
+  // Process
+  need(d.process.method?.trim(), "Process method");
+  const steps = (d.process.pre_bake?.steps || []).filter((s) => s.action?.trim());
+  need(steps.length > 0, "At least one process step");
+
+  // Bake fields only required when method is not no-bake / not TBD
+  const m = d.process.method || "";
+  const noBake = /^no-?bake/i.test(m.trim());
+  const tbdMethod = m === "Not determined yet";
+  if (!noBake && !tbdMethod && m) {
+    need(d.process.bake?.temperature?.toString().trim(), "Bake temperature");
+    need(d.process.bake?.time_minutes?.toString().trim(), "Bake time (min)");
+  }
+
+  // Packaging — require primary unless user marks packaging as TBD via Adventure Bakery placeholder
+  const p = d.packaging.primary || {};
+  const packagingTbd = (p.vessel || "").toLowerCase().includes("tbd")
+    || (p.vessel || "").toLowerCase().includes("adventure bakery");
+  if (!packagingTbd) {
+    need(p.vessel?.trim(), "Primary packaging vessel (or note Adventure Bakery to design)");
+    need(p.units_per_pack?.toString().trim(), "Units per pack");
+    need(p.net_weight_per_pack?.toString().trim(), "Net weight per pack");
+  }
+
+  return errors;
 }

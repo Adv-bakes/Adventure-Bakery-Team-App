@@ -1,29 +1,126 @@
-## Fix the View button for uploaded templates
+# PSS → Batch Sheet plan
 
-Two real issues behind what you saw:
+## What will change
 
-1. **PDF NDA opened a blank tab.** The file was uploaded with whatever `file.type` the browser reported (often empty on drag-drop or `application/octet-stream`). The signed URL then serves it without `Content-Type: application/pdf`, so Chrome shows a blank tab instead of the PDF viewer. `createSignedUrl` does not let us override response headers, so re-pointing at the same URL won't help.
+### 1. Make the PSS process flexible for baked and non-baked products
+Update the PSS flow so the client can choose a process method that includes **No bake** and other non-bake flows like mixing, depositing, shaping, freezing, and packaging.
 
-2. **PSS "View" downloaded instead of opening.** That's an `.xlsx` file — browsers have no inline viewer for Excel, so any link to it will download. "View" for a workbook is not a thing the browser can do.
+Rules:
+- `method` is required.
+- If method is **No bake**, bake temperature/time are not required.
+- If method involves baking, bake temperature and bake time are required.
+- Freeze/packaging steps can exist whether or not the product is baked.
+- Equipment is **not** collected in this part of the flow.
 
-### Fix in `src/pages/team/Templates.tsx`
+### 2. Allow TBD for raw weight and incomplete packaging
+The PSS should allow missing values when they are legitimately not known yet.
 
-- **Rewrite `view()` to go through a blob with a corrected MIME type**, derived from the file extension (not the stored content-type):
-  - `.pdf` → `application/pdf` → opens inline in a new tab.
-  - `.xlsx` / `.xls` → no inline viewer exists; show a toast ("Excel files can't be previewed in the browser — use Download") and fall back to triggering a download. Optionally hide the View button entirely for workbook rows so the UI doesn't promise something it can't deliver.
-  - Anything else → open the blob URL in a new tab and let the browser decide.
-- Use `window.open(blobUrl, "_blank")` after constructing `new Blob([bytes], { type: correctedType })`, and revoke the URL on a short timeout.
-- Keep `download()` exactly as it is (you confirmed downloads work).
+Rules:
+- `target_unit_weight_raw` may be blank or explicitly marked `TBD`.
+- Packaging can still use the existing placeholder/service path when the client needs Adventure Bakery to complete it.
+- Validation should still require everything that belongs on the batch sheet unless it is one of the approved exceptions:
+  - raw fill/target raw weight can be TBD
+  - packaging can be incomplete if the client indicates Adventure Bakery will complete it
+  - bake fields are not required for no-bake products
 
-- **Fix `handleUpload()` so future uploads store the right content-type**: if `file.type` is empty or `application/octet-stream`, infer it from the extension (`.pdf` → `application/pdf`, `.xlsx` → `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`). This means *newly* uploaded PDFs would also render correctly if you ever switched back to a direct signed-URL open.
+### 3. Capture mixing/process order more precisely in the PSS
+Expand the process section so the client can describe the order of operations clearly.
 
-### UI tweak (small)
+For each process step, capture:
+- step order
+- action
+- ingredient(s) added at that step
+- mix time
+- mix speed
 
-For `pss_workbook` rows, render only the **Download** button (no "View"), since there is no in-browser preview for Excel. For `nda` (PDF) rows, keep **View** + **Download**.
+Behavior:
+- The client-entered process is the client-visible submitted version.
+- The batch-sheet generator uses this order when seeding the internal draft.
+- Coverage logic should tolerate grouped ingredient additions (multiple ingredients in one step).
 
-### Files touched
-- `src/pages/team/Templates.tsx` — new `view()` implementation, extension-based MIME inference on upload, conditional View button per kind.
+### 4. Separate client-submitted process from Adventure Bakery proprietary process edits
+Keep the client’s submitted process visible to the client, but store Adventure Bakery’s internal process changes separately and never expose them.
 
-### Out of scope
-- Converting the uploaded `.xlsx` to a PDF preview server-side (possible later via an edge function if you want true in-app preview of the workbook).
-- Re-uploading the existing NDA — not required; the new `view()` path forces the correct MIME from the blob, so the current file will render.
+Rules:
+- The client can see exactly what they submitted in the PSS.
+- Staff can later replace or refine the internal process for production purposes.
+- Internal process edits are proprietary and do not sync back into the client-facing PSS/concept copy.
+- Equipment stays out of this process table for now and will be added later in pricing/quote logic.
+
+### 5. Keep formula versioning
+Client formula edits should create a new version rather than overwrite the current one.
+
+Rules:
+- Latest visible formula is the active one.
+- Previous versions remain in history.
+- Batch-sheet generation uses the current active formula version.
+
+### 6. Remove sales review from PSS submission
+PSS submissions should not wait for sales approval.
+
+Rules:
+- Client submit goes straight through once validation passes.
+- Submission auto-creates/updates the downstream records and batch sheet draft.
+- Staff are notified and authorized users can edit afterward.
+- The Sales Documents Inbox should stop treating PSS as a manual review item.
+
+### 7. Fix NDA viewing where it is actually broken
+The remaining NDA issue appears to be in the **document review panel**, which currently opens the raw signed URL from `client_documents` storage. That can fail for PDFs served with the wrong content type.
+
+Plan:
+- Update the document review panel’s file-open behavior to use the same blob-with-corrected-MIME approach as the templates page.
+- Keep a direct-link fallback action for stubborn browser/ad-blocker cases.
+- Ensure NDA/PDF opens inline, while non-previewable files still download.
+
+## Technical implementation
+
+### Frontend
+- `src/components/pss/PssWizard.tsx`
+  - add no-bake aware validation
+  - allow raw weight to be blank/TBD
+  - refine process-step inputs for ordered ingredient additions, mix time, and mix speed
+  - keep equipment out of this section
+  - enforce conditional validation for bake vs no-bake flows
+- `src/pages/sales/SalesDocumentsInbox.tsx`
+  - remove PSS rows from the returned-documents review lane
+- `src/components/sales/DocumentReviewPanel.tsx`
+  - replace raw signed-link open with blob-based PDF viewing
+  - add direct-link fallback action
+
+### Edge functions
+- `supabase/functions/finalize-pss-submission/index.ts`
+  - validate submitted PSS using the new conditional rules
+  - auto-finalize without sales review
+  - create/update downstream records and notifications
+- `supabase/functions/generate-batch-sheet-from-pss/index.ts`
+  - respect no-bake flows
+  - allow raw weight TBD
+  - seed internal process draft from client-submitted ordered steps
+  - keep client-submitted process data distinct from future proprietary process edits
+
+### Database changes
+Create a migration for:
+- `formulas`
+  - add versioning fields for active/superseded formula rows
+- new `processes` table
+  - staff-only proprietary internal process records
+  - includes ordered steps, action, ingredients_added, mix_time, mix_speed, optional temp/time fields, notes, versioning markers
+  - excludes equipment for now
+- update server-side PSS submission validation logic to support conditional required fields
+- update formula read access so clients only see the current active version where appropriate
+
+## Data visibility rules
+- Client sees:
+  - everything they submitted in the PSS
+  - current formula version
+  - service outcomes / contracted deliverables
+- Client does not see:
+  - internal batch sheet
+  - proprietary process edits made by Adventure Bakery
+  - future internal-only additions unless they are part of a contracted service result
+
+## Out of scope
+- Process equipment modeling
+- Pricing/quote logic equipment capture
+- Rich formula diff UI
+- Replacing the downstream Replit costing engine in this pass

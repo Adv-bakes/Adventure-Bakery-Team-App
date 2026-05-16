@@ -25,23 +25,30 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-
-    const anon = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: { user: caller } } = await anon.auth.getUser();
-    if (!caller) return json({ error: "Unauthorized" }, 401);
+    const internalSecret = req.headers.get("x-internal-secret");
+    const isInternal = !!internalSecret && internalSecret === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-    const { data: isStaff } = await admin.rpc("is_staff_or_admin", { _user_id: caller.id });
-    if (!isStaff) return json({ error: "Forbidden" }, 403);
+
+    let callerId: string | null = null;
+    if (!isInternal) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+
+      const anon = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data: { user: caller } } = await anon.auth.getUser();
+      if (!caller) return json({ error: "Unauthorized" }, 401);
+      const { data: isStaff } = await admin.rpc("is_staff_or_admin", { _user_id: caller.id });
+      if (!isStaff) return json({ error: "Forbidden" }, 403);
+      callerId = caller.id;
+    }
 
     const { pss_document_id } = await req.json();
     if (!pss_document_id) return json({ error: "pss_document_id required" }, 400);
@@ -178,24 +185,38 @@ serve(async (req) => {
     };
 
     // ---------- PROCESS ----------
-    const preBakeSteps = Array.isArray(exProcess?.pre_bake?.steps) ? exProcess.pre_bake.steps : [];
+    // Normalize steps: ingredients_added may arrive as comma-separated string from the wizard.
+    const normalizedSteps = preBakeSteps.map((s: any, idx: number) => {
+      let added: string[] = [];
+      if (Array.isArray(s.ingredients_added)) added = s.ingredients_added.map(String);
+      else if (typeof s.ingredients_added === "string" && s.ingredients_added.trim())
+        added = s.ingredients_added.split(",").map((x: string) => x.trim()).filter(Boolean);
+      return { ...s, step_number: idx + 1, ingredients_added: added };
+    });
+
     const ingredientNames = new Set(normalizedIngredients.map((i) => (i.name || "").toLowerCase().trim()));
     const usedNames = new Set<string>();
-    for (const step of preBakeSteps) {
-      for (const n of (step.ingredients_added || [])) usedNames.add(String(n).toLowerCase().trim());
+    for (const step of normalizedSteps) {
+      for (const n of step.ingredients_added) usedNames.add(String(n).toLowerCase().trim());
     }
     const missing = [...ingredientNames].filter((n) => n && !usedNames.has(n));
     const extra = [...usedNames].filter((n) => n && !ingredientNames.has(n));
 
+    const methodStr = exProcess.method || null;
+    const isNoBake = typeof methodStr === "string" && /^no-?bake/i.test(methodStr.trim());
+
     const process = {
-      method: exProcess.method || null,
+      method: methodStr,
+      is_no_bake: isNoBake,
       pre_bake: {
-        steps: preBakeSteps,
+        steps: normalizedSteps,
         dough_temp_target: exProcess?.pre_bake?.dough_temp_target ?? null,
         dough_temp_unit: exProcess?.pre_bake?.dough_temp_unit ?? null,
       },
       forming: exProcess.forming || { machine: null, target_deposit_weight_raw: null, weight_unit: null, die_or_wire: null, notes: null },
-      bake: exProcess.bake || { time_minutes: pick(concept?.baking_time_minutes ? Number(concept.baking_time_minutes) : null), temperature: pick(concept?.baking_temp ? Number(concept.baking_temp) : null), temp_unit: concept?.baking_temp_unit || null, expected_loss_pct: null },
+      bake: isNoBake
+        ? { time_minutes: null, temperature: null, temp_unit: null, expected_loss_pct: null, skipped: true }
+        : exProcess.bake || { time_minutes: pick(concept?.baking_time_minutes ? Number(concept.baking_time_minutes) : null), temperature: pick(concept?.baking_temp ? Number(concept.baking_temp) : null), temp_unit: concept?.baking_temp_unit || null, expected_loss_pct: null },
       post_bake: exProcess.post_bake || { freeze_required: null, freeze_temp: null, freeze_time: null, notes: null },
       coverage_check: {
         all_recipe_ingredients_used: missing.length === 0 && ingredientNames.size > 0,
@@ -228,32 +249,72 @@ serve(async (req) => {
     if (!exOpt.nutritional_panel) services.push("Nutritional panel development");
     if (!exOpt.allergens) services.push("Allergen declaration & risk review");
     if (!exOpt.shelf_life) services.push("Shelf-life study & validation");
-    if (!process.bake.temperature || !process.bake.time_minutes) services.push("Bake profile development (time/temp)");
+    if (!isNoBake && (!process.bake.temperature || !process.bake.time_minutes)) {
+      services.push("Bake profile development (time/temp)");
+    }
     if (!packaging.palletizing.cases_per_pallet) services.push("Palletization & shipping plan");
     if (!process.method) services.push("Process method classification & equipment plan");
+    if (!product.target_unit_weight_raw || String(product.target_unit_weight_raw).toUpperCase() === "TBD") {
+      services.push("Target unit weight (raw) — define with client");
+    }
 
-    // ---------- CONFIDENTIAL FORMULA AUTO-CREATE ----------
+    // ---------- FORMULA AUTO-CREATE (versioned) ----------
     let conceptId: number | null = concept?.id || null;
     let formulaId: string | null = null;
-    if (normalizedIngredients.length > 0) {
-      if (conceptId) {
-        const { data: existing } = await admin.from("formulas").select("id").eq("concept_id", conceptId).limit(1).maybeSingle();
-        if (!existing) {
-          const rows = normalizedIngredients.map((i) => ({
+    if (normalizedIngredients.length > 0 && conceptId) {
+      const { data: existing } = await admin
+        .from("formulas")
+        .select("id, version")
+        .eq("concept_id", conceptId)
+        .is("superseded_at", null)
+        .limit(1);
+      const rows = normalizedIngredients.map((i) => ({
+        concept_id: conceptId,
+        user_id: clientUserId,
+        ingredient_name: i.name,
+        ingredient_category: i.category,
+        weight_g: i.weight,
+        percentage: i.percentage || 0,
+        percentage_formula: i.percentage,
+        notes: i.notes,
+        version: ((existing?.[0]?.version as number) || 0) + (existing && existing.length > 0 ? 1 : 0) || 1,
+      }));
+      if (existing && existing.length > 0) {
+        // Supersede current active rows, insert new version
+        const nextVersion = ((existing[0].version as number) || 1) + 1;
+        rows.forEach((r) => (r.version = nextVersion));
+        await admin
+          .from("formulas")
+          .update({ superseded_at: new Date().toISOString(), superseded_by_version: nextVersion })
+          .eq("concept_id", conceptId)
+          .is("superseded_at", null);
+      }
+      const { data: inserted } = await admin.from("formulas").insert(rows).select("id").limit(1);
+      formulaId = inserted?.[0]?.id || null;
+    }
+
+    // ---------- PROPRIETARY PROCESSES (staff-only, seed once per concept) ----------
+    if (conceptId && normalizedSteps.length > 0) {
+      const { data: existingProc } = await admin
+        .from("processes")
+        .select("id")
+        .eq("concept_id", conceptId)
+        .is("superseded_at", null)
+        .limit(1);
+      if (!existingProc || existingProc.length === 0) {
+        await admin.from("processes").insert(
+          normalizedSteps.map((s: any) => ({
             concept_id: conceptId,
-            user_id: clientUserId,
-            ingredient_name: i.name,
-            ingredient_category: i.category,
-            weight_g: i.weight,
-            percentage: i.percentage || 0,
-            percentage_formula: i.percentage,
-            notes: i.notes,
-          }));
-          const { data: inserted } = await admin.from("formulas").insert(rows).select("id").limit(1);
-          formulaId = inserted?.[0]?.id || null;
-        } else {
-          formulaId = existing.id;
-        }
+            step_number: s.step_number,
+            action: s.action || null,
+            ingredients_added: s.ingredients_added || [],
+            mix_time_min: s.mix_time_min ? Number(s.mix_time_min) : null,
+            mix_speed: s.mix_speed || null,
+            temperature: !isNoBake && process.bake?.temperature ? Number(process.bake.temperature) : null,
+            temp_unit: !isNoBake ? (process.bake?.temp_unit || null) : null,
+            created_by: callerId,
+          })),
+        );
       }
     }
 
@@ -299,7 +360,7 @@ serve(async (req) => {
     if (lead?.profile_id) {
       await admin.from("client_activity").insert({
         client_id: lead.profile_id,
-        actor_id: caller.id,
+        actor_id: callerId,
         action: "batch_sheet_drafted",
         payload: {
           pss_document_id,
@@ -310,6 +371,15 @@ serve(async (req) => {
         },
       });
     }
+
+    // Notify staff
+    await admin.from("internal_notifications").insert({
+      notification_type: "batch_sheet_drafted",
+      reference_id: upserted.id,
+      reference_table: "batch_sheets",
+      title: `Batch sheet drafted — ${header.product_name || header.company_name || "new PSS"}`,
+      message: `Auto-generated from PSS submission. ${services.length} services flagged.`,
+    });
 
     return json({ ok: true, batch_sheet: upserted, recipe_warnings: recipeWarnings, services_to_offer: services });
   } catch (e) {
