@@ -54,6 +54,8 @@ import Costing from "./pages/Costing";
 import OperationsHub from "./pages/OperationsHub";
 import FounderDashboard from "./pages/FounderDashboard";
 import StaffAccount from "./pages/StaffAccount";
+import BatchSheets from "./pages/team/operations/BatchSheets";
+import BatchSheetEditor from "./pages/team/operations/BatchSheetEditor";
 
 // Operations System
 import OpsInventory from "./pages/ops/Inventory";
@@ -316,6 +318,16 @@ const App = () => (
           <Route path="/team/ops/variance" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><OpsVariance /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/operations/batch-sheets" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><BatchSheets /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/operations/batch-sheets/:id" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><BatchSheetEditor /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/founder" element={

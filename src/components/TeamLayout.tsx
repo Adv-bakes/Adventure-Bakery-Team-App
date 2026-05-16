@@ -32,6 +32,7 @@ const navSections: NavSection[] = [
     { path: "/team/ops/orders", icon: Package, label: "Orders" },
     { path: "/team/ops/schedule", icon: Calendar, label: "Schedule" },
     { path: "/team/ops/batches", icon: ListChecks, label: "Batch Tracker" },
+    { path: "/team/operations/batch-sheets", icon: FileText, label: "Batch Sheets" },
     { path: "/team/ops/inventory", icon: Boxes, label: "Inventory" },
     { path: "/team/ops/scout-bot", icon: Bot, label: "Scout Bot" },
     { path: "/team/ops/variance", icon: TrendingUp, label: "Variance" },
