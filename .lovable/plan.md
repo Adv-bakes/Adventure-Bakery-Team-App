@@ -1,111 +1,139 @@
+## Decisions from this round
 
-# Align PSS extraction with Batch Sheet fields (domain-aware)
+1. **PSS = same content in two formats** (workbook + questionnaire). We mirror the PRF pattern: in-app wizard → DB → auto-PDF emailed to prospect + sales inbox. No manual upload of the PSS file.
+2. **NDA still needs file upload** (signed PDF). One pre-signed master NDA lives in a templates bucket; it's emailed out, prospect countersigns and uploads back.
+3. **No "Send Documents" button.** When sales accepts the PRF, the email goes out automatically and the lead advances to `Send Documents`. Saves a click and prevents drop-off.
+4. **`lead_id` is correct.** A "client" in this app = `sales_leads` row. `profile_id` only exists after signup. We key on `lead_id`, also stamp `profile_id` when present.
+5. **Resumable wizard with magic-link token** (same draft pattern as `stage2_prf_submissions`).
+6. **Review-all screen with per-field pencil edit** that jumps to that step and shows a `Return to review` button.
+7. **Multi-product**: `Submit` + `Submit and add another product` — second click clones the wizard with header pre-filled, fresh recipe/process.
 
-The PSS AI extracts only 4 fields today (`company`, `product`, `ingredients[name,%]`, `process_steps[string]`). The batch sheet needs much richer, production-aware data. This plan defines a single canonical schema shared by the AI extractor and the batch-sheet generator, encodes the production rules you just described, and keeps the recipe immutable.
-
-## Domain rules to encode
-
-1. **Weight-first**: the whole sheet starts from **weighed ingredients per batch**. Each ingredient row carries `weight + weight_unit` as the source of truth; `percentage` is **derived**.
-2. **% = (ingredient weight ÷ total batch weight) × 100**, rounded to **2 decimals minimum**. The generator always recomputes %; if the PSS provided both, mismatches are recorded as warnings (PSS weight wins).
-3. **Recipe sum check**: Σ(weights) = declared batch weight; Σ(%) = 100.00 ± 0.05. Mismatches surface as `recipe.warnings`.
-4. **Recipe is immutable in the batch-sheet UI** — every other field on the batch sheet is editable by the AB team, **but ingredient names and weights are locked**. Changing the formula requires a new formula revision (separate flow, out of scope here). The generator stamps `recipe.locked = true` and the UI hides edit controls on that table only.
-5. **Process is ordered and grouped**: each step references which ingredients enter at that step, mix time/speed, and station. Union of `ingredients_added` across steps must equal the recipe's ingredient list (warn on missing/extra).
-6. **Process taxonomy** the batch sheet must accommodate:
-   - Method: `no-bake` | `melt (jacketed kettle)` | `loose-batter (batter depositor / Unifiller-style)` | `dough-extruder + wire-cut` | `round former` | `press with die` | `manual`
-   - Each forming method carries **target raw deposit weight** and expected **bake-off weight loss %** → **target baked weight**
-   - Pre-bake **dough temperature**, **bake time**, **bake temperature** (with unit)
-   - Optional **post-bake freeze** before packaging
-7. **Packaging station** (separate from process): method/machine, **lot-code printing on retail unit + shipper case**, then **palletizing** (cases/pallet, pallet pattern).
-8. **Blanks are kept, not dropped**: every section above appears on the batch sheet even if the PSS is silent — empty fields render as TBD and add to `services_to_offer`.
-9. **Confidential formula auto-create**: if no `formulas` rows exist for this lead/concept, the generator inserts one row per recipe ingredient into `formulas`. That table already has staff-only RLS — never exposed to the brand portal. Stored `formula_id` is referenced from `data_json.source`.
-
-## Canonical `batch_sheets.data_json` shape
+## End-to-end flow
 
 ```text
-{
-  header: {
-    company_name, customer_name, product_name, product_code,
-    version_number, revision_number,
-    prepared_by, approved_by, date_of_issue
-  },
-  product: {
-    target_unit_weight_raw, target_unit_weight_baked, weight_unit,
-    expected_bake_loss_pct,
-    unit_dimensions { l, w, h, unit },
-    shape, appearance, intended_use, target_shelf_life
-  },
-  recipe: {
-    locked: true,                       // ← UI hides edit controls
-    total_batch_weight, weight_unit,
-    ingredients: [
-      { name, weight, weight_unit, percentage, category, notes }
-        // percentage = round((weight / total_batch_weight) * 100, 2)
-    ],
-    warnings: string[]
-  },
-  process: {
-    method,                             // taxonomy above
-    pre_bake: {
-      steps: [
-        { order, station, action, ingredients_added: string[],
-          mix_time_min, mix_speed, temperature, temp_unit, notes }
-      ],
-      dough_temp_target, dough_temp_unit
-    },
-    forming: { machine, target_deposit_weight_raw, weight_unit, die_or_wire, notes },
-    bake: { time_minutes, temperature, temp_unit, expected_loss_pct },
-    post_bake: { freeze_required, freeze_temp, freeze_time, notes },
-    coverage_check: { all_recipe_ingredients_used, missing: string[], extra: string[] }
-  },
-  packaging: {
-    primary: { vessel, units_per_pack, net_weight_per_pack, weight_unit, machine, lot_code_printed },
-    secondary: { type, units_per_case, machine, lot_code_printed },
-    palletizing: { cases_per_pallet, pattern, notes }
-  },
-  optional_sections: { nutritional_panel, allergens, shelf_life },
-  services_to_offer: string[],
-  source: { pss_document_id, prf_id, concept_id, formula_id, generated_at, ai_provider, ai_model }
-}
+Sales accepts PRF in inbox
+   ↓ (automatic, no button)
+   ├─ Stage → "Send Documents", stage_updated_at = now
+   ├─ Create document_send_token (60-day expiry)
+   ├─ Create empty pss_submissions row (status=draft, lead_id, draft_token)
+   └─ Resend email to prospect (CC sales team):
+       • Subject: "Next step — your NDA + product spec sheet"
+       • Body lists the PSS sections so they know what to gather:
+           Company & product · Target weight & dimensions · Recipe (ingredients + weights)
+           · Process (mix / form / bake / freeze) · Packaging · Optional: nutritionals / allergens / shelf life
+       • Two clear paths:
+           ① "Fill it online (recommended, save & resume)" → /p/pss/:token
+           ② "Prefer offline? Download the PSS workbook (.xlsx) and reply with it"
+       • Pre-signed NDA attached as PDF → countersign and upload at /p/pss/:token
+
+Prospect clicks magic link  → /p/pss/:token  (public, iframe-safe, no auth)
+   ├─ Panel A: NDA upload (drop a signed PDF)
+   └─ Panel B: PSS wizard (steps below). Auto-saves every step.
+                Closing the tab is fine — same link reopens to the last step.
+
+Wizard finishes → Review-all screen (pencil-edit per field) → Submit
+   ├─ Generates PSS PDF, stores in product-spec-sheets bucket
+   ├─ Inserts client_documents row (type=pss, review_status=ai_passed, data already structured)
+   ├─ Resend the PDF copy to prospect + CC sales team
+   ├─ Stage → "Follow-Up"
+   └─ Shows: [Done] · [Submit another product] (clones header, fresh recipe/process, same token reused)
 ```
 
-## Changes
+## PSS wizard — steps
 
-### A. AI extraction (`review-client-document`)
-Expand the PSS prompt to return the full shape above (everything nullable). Key instructions to the model:
-- For every ingredient, return **both `weight` and `percentage`** when present; never invent one from the other (the generator computes that).
-- Capture `total_batch_weight` if stated.
-- Tag every process step with `station`, `ingredients_added[]`, `mix_time_min`, `mix_speed`, `temperature`.
-- Classify `process.method` from the taxonomy; null if unclear.
-- Capture bake temp/time, dough temp target, post-bake freeze if mentioned.
-- Capture packaging machine, lot-code-print mentions, cases/pallet.
+1. Company & product header (most fields pre-filled from PRF)
+2. Product specs — target raw weight, baked weight, dimensions, shape, intended use, shelf-life target
+3. Recipe — repeater rows: ingredient name + weight (+ unit). Total batch weight auto-sums. % derived live (read-only preview)
+4. Process — method dropdown (no-bake / melt-kettle / loose-batter / extruder+wire / round former / die-press / manual), ordered steps with ingredients-added-at-this-step, mix time/speed, dough temp, bake temp/time, post-bake freeze
+5. Packaging — primary vessel + units/pack, secondary case + units/case + lot-code printing, palletizing
+6. Optional sections — nutritionals / allergens / shelf-life test data (clearly marked "skip if unknown")
+7. **Review-all** — every answer rendered with a pencil ✏ that jumps to that step. The destination step shows a `← Return to review` button at the top. Submit at the bottom.
 
-### B. Generator (`generate-batch-sheet-from-pss`) becomes a merger + calculator
-Field-merge precedence: **PSS → PRF → existing concept → null**. Then normalize:
+## Email — content sketch
 
-1. **Recipe normalization (weight-first)**: if `total_batch_weight` known, recompute every `percentage = round((weight/total)*100, 2)`; if total missing but all weights present, set total = Σ weights. Where PSS supplied a percentage that differs from computed, push to `recipe.warnings`. Set `recipe.locked = true`.
-2. **Process coverage check**: diff `recipe.ingredients[].name` against `pre_bake.steps[].ingredients_added` → `process.coverage_check`.
-3. **Forming defaults**: if `expected_bake_loss_pct` and `target_unit_weight_raw` known, compute `target_unit_weight_baked = raw * (1 - loss/100)`.
-4. **Services list**: every null required-ish field (packaging, bake specs, palletizing, nutritionals, allergens, shelf life) → `services_to_offer`.
-5. **Confidential formula auto-create**: if no `formulas` rows exist for this `concept_id` (create a draft concept linked to the lead if needed), insert one row per recipe ingredient. Stamp `formula_id`/`concept_id` into `data_json.source` and `batch_sheets.concept_id`.
-6. Continue to upsert on `pss_document_id` (overwrite on redraft).
+```text
+Subject: Next step with Adventure Bakery — your NDA + product spec sheet
 
-### C. Review-panel UX (`DocumentReviewPanel`)
-Add a "Will populate batch sheet" preview under PSS reviews:
-- Recipe: `12 ingredients · Σ = 99.97% ⚠ · locked` (warning chip when not 100 ± 0.05)
-- Process: `method: dough-extruder · 6 steps · coverage ✓`
-- Packaging: `TBD → offered as service`
-- Confidentiality note: "A confidential staff-only formula will be created on approval. The recipe will be locked on the batch sheet."
+Hi {first_name},
 
-### D. Batch-sheet UI lock (forward-looking marker only)
-The batch sheet doesn't have an edit UI yet, but we set `recipe.locked = true` and document the rule so whoever builds that editor next reads weights as read-only. **Out of scope this loop**: actually building the editor.
+Two short things to get your project moving:
+
+1) NDA — sign the attached PDF and upload it at the link below.
+
+2) Product Spec Sheet (PSS) — the easiest way is to fill it online.
+   It auto-saves, so you can step away and come back any time using
+   this same link.
+
+   Sections we'll cover (so you can gather what you need):
+     • Company & product info
+     • Target unit weight & dimensions
+     • Recipe — ingredients with their weights per batch
+     • Process — mixing, forming, baking, freezing
+     • Packaging — retail unit, case, pallet
+     • Optional — nutritionals, allergens, shelf-life data
+
+   → Open your secure link: https://app.../p/pss/{token}
+
+Prefer to do it offline? Download the workbook and reply with it filled in:
+   → PSS workbook (.xlsx)
+
+— Adventure Bakery sales team
+```
+
+## Database
+
+### New tables
+
+- **`document_templates`** — `kind` (`'nda' | 'pss_workbook'`), `version`, `file_path`, `file_name`, `is_active`, `uploaded_by`, `uploaded_at`. Staff write, service-role read.
+- **`pss_submissions`** — `id` (text PK), `lead_id` (uuid → sales_leads), `profile_id` (nullable), `prospect_email`, `draft_token`, `status` (`draft|submitted`), `data_json`, `submitted_at`, `created_at`. Public anon writes only via SECURITY DEFINER RPCs that match on `draft_token`. Staff full read.
+- **`document_send_tokens`** — `token` (PK), `lead_id`, `prospect_email`, `expires_at`, `created_at`. Resolved by anon only via RPC.
+
+### New RPCs (all SECURITY DEFINER)
+
+- `validate_send_token(token)` → `{ valid, expired, lead_id, prospect_email, company_name, contact_name }`
+- `get_pss_draft(_id, _token)` → row
+- `save_pss_draft(_id, _token, _data)` → bool (autosave)
+- `submit_pss_draft(_id, _token, _data)` → bool (flips to `submitted`)
+- `start_additional_pss(_token)` → new draft id (for "Submit another product")
+
+### New storage buckets
+
+- `document-templates` (private) — pre-signed NDA + PSS workbook master files.
+
+### Trigger / automation
+
+- When `prf_submissions.status` flips to `accepted`, edge function `send-client-documents` is called (no manual button). It creates the token + draft + sends the email.
+
+## Edge functions
+
+- **`send-client-documents`** — staff-callable AND callable from the inbox accept-handler. Creates `document_send_tokens` + empty `pss_submissions` draft, downloads active NDA PDF, sends Resend email with attachments + magic link, logs to `client_activity`.
+- **`finalize-pss-submission`** — called from the wizard's Submit. Renders PSS PDF, uploads to `product-spec-sheets/{lead_id}/pss_{id}.pdf`, inserts `client_documents` (type=pss, structured data already in `review_notes`), Resend's the PDF, advances `sales_leads.stage`. Returns `{ success, can_add_another: true }`.
+
+## Frontend
+
+### New
+
+- `src/pages/team/Templates.tsx` (`/team/sales/templates`, staff-only) — single card to upload the active pre-signed NDA + active PSS workbook (.xlsx).
+- `src/pages/public/PssIntake.tsx` (`/p/pss/:token`, public, iframe-safe) — token resolution + the two panels (NDA upload + PSS wizard).
+- `src/components/pss/PssWizard.tsx` — multi-step form, autosave on every step, review-all screen with per-field ✏ jump + `← Return to review` button.
+- `src/components/pss/PssWizardSubmitDialog.tsx` — post-submit choice: `Done` / `Submit another product`.
+
+### Edited
+
+- `src/pages/sales/SalesDocumentsInbox.tsx` — `accept(row)` no longer just stamps the stage; it invokes `send-client-documents` (success toast: "Accepted — documents emailed to {email}").
+- `src/pages/sales/SalesPipeline.tsx` — remove the future "Send Documents" button idea; `Send Documents` becomes purely a status column showing the lead is waiting on the prospect.
+- `src/components/sales/DocumentReviewPanel.tsx` — for PSS uploaded via wizard, skip AI extraction (data already canonical), jump straight to the batch-sheet preview.
+
+## What the user uploads after this ships
+
+Two files, one time, in `/team/sales/templates`:
+1. Pre-signed NDA PDF (use `Signed_NDA.pdf`).
+2. PSS workbook (.xlsx) for offline-preferring clients (use `PSS_Product_Spec_Sheet_1.xlsx`).
+
+The PDF questionnaire and the batch-sheet template are internal references — they don't ship into the running app.
 
 ## Out of scope
-- Editable batch-sheet UI (just stamping `locked` for now)
-- Process-tab ↔ batch_sheet two-way sync
-- Real digital PSS form
-- Formula-revision workflow
 
-## Files touched
-- `supabase/functions/review-client-document/index.ts` — expanded extraction prompt.
-- `supabase/functions/generate-batch-sheet-from-pss/index.ts` — merger + % calculator + coverage check + confidential formula auto-create + `recipe.locked`.
-- `src/components/sales/DocumentReviewPanel.tsx` — "Will populate" preview + lock/confidentiality note.
+- Embedded e-signature (still rely on client signing the NDA PDF themselves)
+- Reminder cron if prospect hasn't returned in N days (easy to add later)
+- Editable batch-sheet UI
