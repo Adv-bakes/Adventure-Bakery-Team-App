@@ -67,6 +67,24 @@ const SalesProjectWorkspace = () => {
     window.open(data.signedUrl, "_blank");
   };
 
+  const generateBatchSheet = async () => {
+    if (!pss?.id) return toast.error("No PSS on file");
+    setGeneratingBatch(true);
+    const { data, error } = await supabase.functions.invoke("generate-batch-sheet-from-pss", {
+      body: { pss_document_id: pss.id },
+    });
+    setGeneratingBatch(false);
+    if (error) return toast.error(error.message || "Failed to generate batch sheet");
+    toast.success("Batch sheet generated");
+    const { data: bs } = await (supabase as any)
+      .from("batch_sheets")
+      .select("*")
+      .eq("pss_document_id", pss.id)
+      .maybeSingle();
+    setBatchSheet(bs || null);
+    setBatchOpen(true);
+  };
+
   if (loading) return <TeamPage title="Loading…">…</TeamPage>;
   if (!prf || !lead) return (
     <TeamPage title="Not found">
