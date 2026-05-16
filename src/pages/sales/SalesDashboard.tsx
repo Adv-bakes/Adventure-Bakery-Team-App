@@ -28,6 +28,7 @@ const SalesDashboard = () => {
   const [q, setQ] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
   const [inboxCount, setInboxCount] = useState(0);
+  const [addOpen, setAddOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
