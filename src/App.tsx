@@ -64,12 +64,14 @@ import OpsScoutBot from "./pages/ops/ScoutBot";
 import OpsVariance from "./pages/ops/VarianceReport";
 
 // Sales (Phase 1)
+import SalesDashboard from "./pages/sales/SalesDashboard";
 import SalesPipeline from "./pages/sales/SalesPipeline";
 import SalesClients from "./pages/sales/SalesClients";
 import SalesClientFolder from "./pages/sales/SalesClientFolder";
 import SalesDocumentsInbox from "./pages/sales/SalesDocumentsInbox";
 import SalesArchive from "./pages/sales/SalesArchive";
 import SalesProjectWorkspace from "./pages/sales/SalesProjectWorkspace";
+import SalesProductWorkspace from "./pages/sales/SalesProductWorkspace";
 import MyPrfs from "./pages/MyPrfs";
 import Templates from "./pages/team/Templates";
 import PssIntake from "./pages/public/PssIntake";
@@ -337,6 +339,11 @@ const App = () => (
           } />
 
           {/* ========== SALES (Phase 1) ========== */}
+          <Route path="/team/sales/dashboard" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesDashboard /></TeamLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/team/sales/pipeline" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><SalesPipeline /></TeamLayout>
@@ -355,6 +362,11 @@ const App = () => (
           <Route path="/team/sales/clients/:leadId/projects/:prfId" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><SalesProjectWorkspace /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/sales/clients/:leadId/products/:productId" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SalesProductWorkspace /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/sales/inbox" element={
