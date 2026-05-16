@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TeamPage, KpiTile } from "@/components/team/TeamPage";
 import { Search, Plus } from "lucide-react";
+import { AddDealDialog } from "@/components/sales/AddDealDialog";
 
 const STAGES = ["Lead In", "Send Documents", "Follow-Up", "Quote", "Approved"] as const;
 type Stage = (typeof STAGES)[number];
@@ -27,6 +28,7 @@ const SalesDashboard = () => {
   const [q, setQ] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
   const [inboxCount, setInboxCount] = useState(0);
+  const [addOpen, setAddOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -90,9 +92,9 @@ const SalesDashboard = () => {
               className="tp-input pl-9 w-[240px]"
             />
           </div>
-          <Link to="/lead-qualifier" className="tp-btn tp-btn-primary">
+          <button onClick={() => setAddOpen(true)} className="tp-btn tp-btn-primary">
             <Plus className="w-4 h-4" /> Add Deal
-          </Link>
+          </button>
         </div>
       }
     >
@@ -145,6 +147,7 @@ const SalesDashboard = () => {
           })}
         </div>
       )}
+      <AddDealDialog open={addOpen} onOpenChange={setAddOpen} onCreated={() => load()} />
     </TeamPage>
   );
 };
