@@ -13,6 +13,7 @@ export interface PssData {
   };
   product: {
     target_unit_weight_raw?: string;
+    target_unit_weight_raw_tbd?: boolean;
     target_unit_weight_baked?: string;
     weight_unit?: string;
     expected_bake_loss_pct?: string;
@@ -75,15 +76,20 @@ const emptyData = (): PssData => ({
 });
 
 const PROCESS_METHODS = [
-  "no-bake",
-  "melt (jacketed kettle)",
-  "loose-batter (depositor)",
-  "dough-extruder + wire-cut",
-  "round former",
-  "press with die",
-  "manual",
+  "Bake",
+  "No-bake (mix + deposit/shape, then pack)",
+  "No-bake (mix + deposit/shape, freeze, then pack)",
+  "Melt (jacketed kettle)",
+  "Loose-batter (depositor)",
+  "Dough-extruder + wire-cut",
+  "Round former",
+  "Press with die",
+  "Manual",
   "Not determined yet",
 ];
+
+const isNoBakeMethod = (m?: string) =>
+  !!m && /^no-?bake/i.test(m.trim());
 
 const STEPS = [
   { key: "header", label: "Company & product" },
@@ -155,7 +161,14 @@ export function PssWizard(props: {
     return { total, list: ings.map((i) => total > 0 ? ((parseFloat(i.weight || "0") || 0) / total) * 100 : 0) };
   }, [data.recipe.ingredients]);
 
+  const validationErrors = useMemo(() => validatePss(data), [data]);
+
   const submit = async () => {
+    if (validationErrors.length > 0) {
+      toast.error("Please complete required fields before submitting");
+      goReview();
+      return;
+    }
     setSubmitting(true);
     try {
       const { data: ok, error } = await (supabase as any).rpc("submit_pss_draft_public", {
