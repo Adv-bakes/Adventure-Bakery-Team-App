@@ -50,6 +50,14 @@ const TemplatesPage = () => {
     load();
   }, []);
 
+  const mimeForExt = (name: string): string => {
+    const ext = name.split(".").pop()?.toLowerCase() || "";
+    if (ext === "pdf") return "application/pdf";
+    if (ext === "xlsx") return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    if (ext === "xls") return "application/vnd.ms-excel";
+    return "application/octet-stream";
+  };
+
   const handleUpload = async (kind: Kind, file: File) => {
     setUploading(kind);
     try {
@@ -58,9 +66,10 @@ const TemplatesPage = () => {
 
       const ext = file.name.split(".").pop() || "bin";
       const path = `${kind}/v${Date.now()}.${ext}`;
+      const ct = file.type && file.type !== "application/octet-stream" ? file.type : mimeForExt(file.name);
       const { error: upErr } = await supabase.storage
         .from("document-templates")
-        .upload(path, file, { upsert: false, contentType: file.type });
+        .upload(path, file, { upsert: false, contentType: ct });
       if (upErr) throw upErr;
 
       // Deactivate previous active.
@@ -102,9 +111,25 @@ const TemplatesPage = () => {
     return data.signedUrl;
   };
 
-  const view = async (path: string) => {
+  const view = async (path: string, name: string) => {
     const url = await getSignedUrl(path);
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
+    if (!url) return;
+    const ext = name.split(".").pop()?.toLowerCase() || "";
+    if (ext === "xlsx" || ext === "xls") {
+      toast.message("Excel files can't be previewed in the browser — downloading instead.");
+      return download(path, name);
+    }
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Open failed (${res.status})`);
+      const buf = await res.arrayBuffer();
+      const blob = new Blob([buf], { type: mimeForExt(name) });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not open file");
+    }
   };
 
   const download = async (path: string, name: string) => {
@@ -184,9 +209,11 @@ const TemplatesPage = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={() => view(r.file_path)} className="tp-btn">
-                        <ExternalLink className="w-3.5 h-3.5" /> View
-                      </button>
+                      {kind === "nda" && (
+                        <button onClick={() => view(r.file_path, r.file_name)} className="tp-btn">
+                          <ExternalLink className="w-3.5 h-3.5" /> View
+                        </button>
+                      )}
                       <button onClick={() => download(r.file_path, r.file_name)} className="tp-btn">
                         <Download className="w-3.5 h-3.5" /> Download
                       </button>
