@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
-import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink } from "lucide-react";
+import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send } from "lucide-react";
 import { toast } from "sonner";
 
 const TABS = ["concept", "ingredients", "formulas", "packaging", "shelf-life", "products", "costing", "notes"] as const;
@@ -99,7 +99,30 @@ const SalesProjectWorkspace = () => {
           <span className="text-[hsl(var(--tp-gold))]">Batch Sheet</span>
           <span className="text-[9px] text-[hsl(var(--tp-text-dim))]">internal</span>
         </button>
+        <button
+          onClick={() => toast.info("Send-to-client emails are coming in the next pass.")}
+          className="tp-btn ml-auto"
+        >
+          <Send className="w-3.5 h-3.5" /> Send to client
+        </button>
       </div>
+
+      {!pss && (
+        <div className="tp-surface p-4 mb-6 border border-[hsl(var(--tp-warning))]/30">
+          <p className="text-sm text-[hsl(var(--tp-text))]">
+            <span className="text-[hsl(var(--tp-warning))]">No PSS on file yet.</span>{" "}
+            Once the client returns the PSS and it's approved in the inbox, the batch sheet and recipe data will appear here automatically.
+          </p>
+        </div>
+      )}
+      {pss && pss.review_status !== "approved" && (
+        <div className="tp-surface p-4 mb-6 border border-[hsl(var(--tp-gold))]/30">
+          <p className="text-sm text-[hsl(var(--tp-text))]">
+            PSS uploaded but not yet approved (<span className="text-[hsl(var(--tp-gold))]">{pss.review_status}</span>). Review it in the{" "}
+            <Link to="/team/sales/inbox" className="underline">Documents Inbox</Link>.
+          </p>
+        </div>
+      )}
 
       <Tabs defaultValue="concept">
         <TabsList className="tp-surface mb-4 flex-wrap h-auto">
