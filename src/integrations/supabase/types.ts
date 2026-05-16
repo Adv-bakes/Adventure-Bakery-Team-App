@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      batch_sheets: {
+        Row: {
+          client_user_id: string | null
+          concept_id: number | null
+          created_at: string
+          data_json: Json | null
+          generated_from: string | null
+          id: string
+          lead_id: string | null
+          pss_document_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_user_id?: string | null
+          concept_id?: number | null
+          created_at?: string
+          data_json?: Json | null
+          generated_from?: string | null
+          id?: string
+          lead_id?: string | null
+          pss_document_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_user_id?: string | null
+          concept_id?: number | null
+          created_at?: string
+          data_json?: Json | null
+          generated_from?: string | null
+          id?: string
+          lead_id?: string | null
+          pss_document_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_history: {
         Row: {
           content: string
@@ -78,6 +117,10 @@ export type Database = {
           file_path: string | null
           id: string | null
           notes: string | null
+          review_notes: Json | null
+          review_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           uploaded_at: string | null
           uploaded_by: string | null
           user_id: string | null
@@ -88,6 +131,10 @@ export type Database = {
           file_path?: string | null
           id?: string | null
           notes?: string | null
+          review_notes?: Json | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           uploaded_at?: string | null
           uploaded_by?: string | null
           user_id?: string | null
@@ -98,6 +145,10 @@ export type Database = {
           file_path?: string | null
           id?: string | null
           notes?: string | null
+          review_notes?: Json | null
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           uploaded_at?: string | null
           uploaded_by?: string | null
           user_id?: string | null
@@ -772,6 +823,7 @@ export type Database = {
           artwork_readiness: string | null
           company_name: string | null
           company_stage: string
+          concept_id: number | null
           created_at: string
           customer_name: string | null
           data_json: Json | null
@@ -827,6 +879,7 @@ export type Database = {
           artwork_readiness?: string | null
           company_name?: string | null
           company_stage: string
+          concept_id?: number | null
           created_at?: string
           customer_name?: string | null
           data_json?: Json | null
@@ -882,6 +935,7 @@ export type Database = {
           artwork_readiness?: string | null
           company_name?: string | null
           company_stage?: string
+          concept_id?: number | null
           created_at?: string
           customer_name?: string | null
           data_json?: Json | null
