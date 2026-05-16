@@ -1,131 +1,44 @@
+## Goals
 
-## Mental model (locked)
+1. Reject must always complete, even if email fails.
+2. Outbound mail uses the existing sales channel `scale@adventurebakery.info` — drop `notify.adventurebakery.info`. No new domains, no extra $20/mo.
+3. Same channel everywhere: PRF confirmation, send-documents, and rejection all originate from the same address.
 
-- **Project = Concept = one product in presale** (Lead In → Send Documents → Follow-Up → Quote). Lives in Sales.
-- Quote approval **renames** Project → Product and moves it under the Products tab. Same documents carry over (PRF · PSS · Batch Sheet · Quote · other services). The pipeline changes — that's the only real difference.
-- **NDA is client-level only.** It lives on Documents & NDA at the top of the folder. It does **not** appear under any project or product.
-- **QB Estimate is the gate.** Nothing downstream runs until staff marks the QB estimate accepted. Then Material Estimator (Scout Bot) unlocks.
-- **Shipping address lives on the client profile**, not on the order. Default destination + option to choose an Adventure Bakery warehouse.
+## Approach — mailto handoff (no server send)
 
-## Sales sidebar
+Stop trying to send rejection email server-side. Instead:
 
-```text
-Sales
-├─ Dashboard          → presale-only project kanban + "Add Deal"
-├─ Documents Inbox 🔴
-└─ Archive
-```
+- Polish the draft with AI as today (`draft-rejection-email`), then **open a `mailto:` link** in the staff member's default desktop mail client, prefilled with To, CC `scale@adventurebakery.info`, Subject, Body.
+- Reject + archive happens **immediately on confirm**, independent of whether the mail client actually sends. The dialog shows the prefilled draft, a "Open in mail app" button, and a "Copy to clipboard" fallback for staff on browsers without a mailto handler.
+- Delete the `send-rejection-email` edge function entirely — it's the source of the 502 and not needed.
 
-## Staff Client Folder `/team/sales/clients/:id`
+Why mailto over Gmail compose: works for whatever client staff actually uses (Apple Mail, Outlook, Gmail-as-default-handler all honor mailto). Gmail-only would break staff not on Gmail. We can add a secondary "Open in Gmail" link as a fallback (`https://mail.google.com/mail/?view=cm&...`) for one click.
 
-Header on every tab: company name · collapsed contact card (expand on click) · **Add Order** button top-right · NDA status strip.
+## PRF confirmation + send-documents
 
-```text
-├─ Overview            Active Projects (presale) + Approved Products (post-quote)
-├─ Documents & NDA     NDA + client-level docs the portal exposes  ← ONLY place NDA appears
-├─ Projects            presale projects list → project detail sub-tabs:
-│    ├─ Documents      PRF · PSS · Batch Sheet · Quote · other offered services
-│    ├─ Packaging
-│    ├─ Shelf Life
-│    ├─ Activity       STAFF-ONLY
-│    └─ Notes          STAFF-ONLY
-├─ Products            approved products → product detail sub-tabs:
-│    ├─ Documents      SAME set as Projects (PRF · PSS · Batch Sheet · Quote · other) — carried over
-│    ├─ Packaging
-│    ├─ Shelf Life
-│    ├─ Orders History STAFF-ONLY
-│    ├─ Activity       STAFF-ONLY
-│    └─ Notes          STAFF-ONLY
-├─ Tolling Inventory   STAFF-ONLY (tab shell this pass)
-├─ Orders              STAFF-ONLY — QB-gated flow (see below)
-└─ Notes               STAFF-ONLY client-level notes
-```
+Both currently send via Resend from `noreply@notify.adventurebakery.info`. Two changes:
 
-## Add Order flow (QB-gated)
+- Switch `from` to `Adventure Bakery <scale@adventurebakery.info>` in both `send-prf-confirmation` and `send-client-documents`. Keep `reply_to` and CC the same.
+- This requires `adventurebakery.info` (root) to be verified in Resend. **If it isn't verified yet, the functions will return the same 403** — so the UI must treat email failure as non-fatal: the PRF still saves, the document tokens still mint, the magic link is still shown to staff to copy/paste manually.
 
-`Add Order` (header button) opens a dialog:
-- Multi-select of the client's **approved products**, qty + units/cases per product.
-- **Ship-to**: defaults to the client profile's shipping address; dropdown can switch to an Adventure Bakery warehouse. No free-text address on the order itself.
-- If originating quote is >30 days old → "Pricing review required" banner.
-- Submit creates `production_orders` row in status **`Awaiting QB Acceptance`** and routes to the Orders tab.
+Concretely:
+- `SalesDocumentsInbox.accept()` already mints the token server-side; on email failure, surface the magic link in a toast + "Copy link" button so staff can paste it into their own email. Lead still advances to "Send Documents".
+- PRF confirmation failure is logged but never blocks the submitter.
 
-Orders tab row, gated:
+## Recipient email visibility
 
-```text
-1. QB Estimate sent           → staff marks "Estimate sent" (qb_estimate_sent_at)
-2. QB Estimate accepted ⛔    → staff marks "Accepted" (qb_estimate_accepted_at)
-                                THE GATE. Nothing below visible/clickable until accepted.
-3. Material Estimator         → waste % + "Calculate ingredients" (Scout Bot stub)
-4. (future) Sourcing · Schedule · MPDs
-```
-
-## Sales Dashboard `/team/sales/dashboard`
-
-KPIs + **Add Deal** + project kanban grouped by `prf_submissions.sales_stage`: Lead In → Send Documents → Follow-Up → Quote → Approved.
-
-## Project Subfolder `/team/sales/clients/:leadId/projects/:projectId`
-
-Stage stepper. Approving Quote graduates project → Product (same docs carry over). Sub-tabs: Documents · Packaging · Shelf Life · Activity · Notes.
-
-## Data model
-
-```sql
-alter table prf_submissions
-  add column sales_stage text default 'Lead In',
-  add column sales_stage_updated_at timestamptz default now(),
-  add column quote_approved_at timestamptz,
-  add column lead_id uuid;
-
--- Shipping lives on the client, not the order
-alter table profiles
-  add column shipping_address_line1 text,
-  add column shipping_address_line2 text,
-  add column shipping_city text,
-  add column shipping_state text,
-  add column shipping_postal_code text,
-  add column shipping_country text;
-
--- New: Adventure Bakery warehouses (staff-managed)
-create table ab_warehouses (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  address text not null,
-  is_active boolean not null default true,
-  created_at timestamptz not null default now()
-);
--- Staff/admin RLS on ab_warehouses.
-
-alter table production_orders
-  add column client_id uuid,
-  add column items jsonb default '[]'::jsonb,         -- [{product_id, qty, unit:'units'|'cases'}]
-  add column ship_to_kind text default 'client',      -- 'client' | 'ab_warehouse'
-  add column ship_to_warehouse_id uuid,               -- null unless kind='ab_warehouse'
-  add column notes text,
-  add column qb_estimate_sent_at timestamptz,
-  add column qb_estimate_accepted_at timestamptz,
-  add column waste_pct numeric;
-```
-
-Backfill `prf_submissions.lead_id` from `sales_leads.email`. Tighten `production_orders` RLS from admin-only to staff/admin.
+The reject draft sometimes lacked the email because the project card only shows the contact name. Fix on the dialog side: show `To: <email>` prominently in the header, and disable the "Open in mail app" button (with a clear message) if `to` is empty — never silently fail.
 
 ## Files
 
-- `supabase/migrations/...` — column adds, `ab_warehouses` table, RLS, backfill.
-- `src/components/TeamLayout.tsx` — Sales sidebar trim.
-- `src/App.tsx` — `/team/sales/dashboard` + nested project/product routes.
-- `src/pages/sales/SalesDashboard.tsx` *(new)*
-- `src/pages/sales/SalesClientFolder.tsx` — retabbing + header Add Order + collapsed contact card + NDA strip.
-- `src/pages/sales/SalesProjectWorkspace.tsx` — stepper + sub-tabs.
-- `src/pages/sales/SalesProductWorkspace.tsx` *(new)* — product sub-tabs (no NDA).
-- `src/pages/sales/ClientOrders.tsx` *(new)* — QB-gated flow.
-- `src/components/sales/AddOrderDialog.tsx` *(new)* — ship-to picker (client default vs AB warehouse).
-- Client profile editor: add shipping-address block (separate small follow-up if not already in scope).
+- `src/components/sales/RejectEmailDialog.tsx` — replace `supabase.functions.invoke("send-rejection-email", …)` with mailto open + Gmail fallback link + Copy button. Mark PRF rejected + archive lead BEFORE the mailto open, so the flow completes regardless. Show `To:` email in header.
+- `supabase/functions/send-rejection-email/` — delete.
+- `supabase/functions/send-prf-confirmation/index.ts` — change `from` to `scale@adventurebakery.info`.
+- `supabase/functions/send-client-documents/index.ts` — change `from` to `scale@adventurebakery.info`; on Resend non-2xx, still return `success:true` with `magicLink` and an `emailError` field so the UI can surface "email didn't send — copy this link" without aborting the accept flow.
+- `src/pages/sales/SalesDocumentsInbox.tsx` (caller of send-client-documents) — handle the `emailError` branch: toast with magic link + Copy button, still advance the lead.
 
 ## Out of scope
 
-- Operations sidebar cleanup.
-- Tolling Inventory CRUD (tab shell only).
-- Real QB integration (manual mark-accepted).
-- Scout Bot beyond ingredient pull-list stub; sourcing/scheduling/MPDs.
-- Warehouse CRUD UI (seed manually this pass; admin screen later).
-- Brand-portal write-back.
+- Verifying `adventurebakery.info` in Resend (DNS work, user-side).
+- Switching to Lovable Emails or any new provider.
+- Moving to `orders@adventurebakery.com` (production cutover, later).
