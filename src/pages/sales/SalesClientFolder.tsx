@@ -133,7 +133,7 @@ const SalesClientFolder = () => {
       <Tabs defaultValue="overview">
         <TabsList className="tp-surface mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="prfs">PRFs ({prfs.length})</TabsTrigger>
+          <TabsTrigger value="prfs">Projects ({prfs.length})</TabsTrigger>
           <TabsTrigger value="documents">Documents ({docs.length})</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -172,17 +172,20 @@ const SalesClientFolder = () => {
 
         <TabsContent value="prfs">
           <div className="tp-surface divide-y divide-[hsl(var(--tp-hairline))]">
-            {prfs.length === 0 && <p className="p-8 text-sm text-[hsl(var(--tp-text-dim))] italic">No PRFs yet.</p>}
+            {prfs.length === 0 && <p className="p-8 text-sm text-[hsl(var(--tp-text-dim))] italic">No projects yet.</p>}
             {prfs.map((p) => (
               <div key={p.id} className="p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
+                <Link to={`/team/sales/clients/${lead.id}/projects/${p.id}`} className="min-w-0 flex-1 hover:opacity-80 transition">
                   <p className="font-display text-sm font-semibold text-[hsl(var(--tp-text))]">{p.product_name || "(unnamed)"}</p>
                   <p className="text-[11px] text-[hsl(var(--tp-text-dim))]">
                     {p.project_type || "—"} · {p.status} · {new Date(p.created_at).toLocaleDateString()}
                   </p>
-                </div>
+                </Link>
+                <Link to={`/team/sales/clients/${lead.id}/projects/${p.id}`} className="tp-btn">
+                  Open workspace
+                </Link>
                 <button onClick={() => setOpenPrf(p.id)} className="tp-btn">
-                  <Eye className="w-3.5 h-3.5" /> Open
+                  <Eye className="w-3.5 h-3.5" /> PRF
                 </button>
               </div>
             ))}
