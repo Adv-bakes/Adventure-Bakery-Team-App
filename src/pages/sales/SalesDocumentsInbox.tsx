@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
 import { RejectEmailDialog } from "@/components/sales/RejectEmailDialog";
-import { Eye, Check, X } from "lucide-react";
+import { DocumentReviewPanel } from "@/components/sales/DocumentReviewPanel";
+import { Eye, Check, X, FileSignature, FileCheck2 } from "lucide-react";
 
 interface PrfRow {
   id: string;
@@ -19,19 +20,42 @@ interface PrfRow {
 
 const SalesDocumentsInbox = () => {
   const [rows, setRows] = useState<PrfRow[]>([]);
+  const [docRows, setDocRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openDocId, setOpenDocId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<PrfRow | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("prf_submissions")
-      .select("id, product_name, company_name, founder_name, email, phone, status, created_at")
-      .in("status", ["new", "reviewing"])
-      .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
-    setRows((data || []) as any);
+    const [prfRes, docRes] = await Promise.all([
+      supabase
+        .from("prf_submissions")
+        .select("id, product_name, company_name, founder_name, email, phone, status, created_at")
+        .in("status", ["new", "reviewing"])
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("client_documents")
+        .select("id, document_type, file_name, file_path, uploaded_at, user_id, review_status, review_notes")
+        .in("document_type", ["nda", "pss", "NDA", "PSS"])
+        .in("review_status", ["pending", "ai_passed", "ai_flagged"])
+        .order("uploaded_at", { ascending: false }),
+    ]);
+    if (prfRes.error) toast.error(prfRes.error.message);
+    setRows((prfRes.data || []) as any);
+
+    // Enrich docs with lead/company info
+    const docs = docRes.data || [];
+    const userIds = Array.from(new Set(docs.map((d) => d.user_id).filter(Boolean)));
+    let leadMap: Record<string, any> = {};
+    if (userIds.length > 0) {
+      const { data: leads } = await (supabase as any)
+        .from("sales_leads")
+        .select("profile_id, company_name, contact_name, email")
+        .in("profile_id", userIds);
+      leadMap = Object.fromEntries((leads || []).map((l: any) => [l.profile_id, l]));
+    }
+    setDocRows(docs.map((d) => ({ ...d, lead: leadMap[d.user_id || ""] || null })));
     setLoading(false);
   };
 
