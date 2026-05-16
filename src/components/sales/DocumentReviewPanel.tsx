@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { X, Check, AlertTriangle, Sparkles, Download } from "lucide-react";
+import { X, Check, AlertTriangle, Sparkles, Download, Copy } from "lucide-react";
 
 interface Props {
   documentId: string | null;
@@ -15,6 +15,8 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
   const [reviewing, setReviewing] = useState(false);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [provider, setProvider] = useState<{ provider: string; model: string } | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
 
   useEffect(() => {
     if (!documentId) { setDoc(null); setSignedUrl(null); return; }
@@ -45,6 +47,7 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
     setReviewing(false);
     if (error) return toast.error(error.message || "AI review failed");
     if (data?.error) return toast.error(data.error);
+    if (data?.provider) setProvider({ provider: data.provider, model: data.model });
     toast.success("AI review complete");
     // Refresh
     const { data: fresh } = await supabase
@@ -109,8 +112,22 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
         toast.success(`${docType.toUpperCase()} approved`);
       }
     } else if (status === "rejected") {
+      if (doc.user_id) {
+        await supabase.from("client_activity").insert({
+          client_id: doc.user_id,
+          action: `${docType}_rejected`,
+          payload: { document_id: documentId, file_name: doc.file_name },
+        });
+      }
       toast.success("Document rejected — client can resubmit");
     } else {
+      if (doc.user_id) {
+        await supabase.from("client_activity").insert({
+          client_id: doc.user_id,
+          action: `${docType}_approved`,
+          payload: { document_id: documentId, file_name: doc.file_name },
+        });
+      }
       toast.success("Approved");
     }
 
