@@ -233,6 +233,7 @@ serve(async (req) => {
 
     // ---------- PROCESS ----------
     // Normalize steps: ingredients_added may arrive as comma-separated string from the wizard.
+    const preBakeSteps: any[] = Array.isArray(exProcess?.pre_bake?.steps) ? exProcess.pre_bake.steps : [];
     const normalizedSteps = preBakeSteps.map((s: any, idx: number) => {
       let added: string[] = [];
       if (Array.isArray(s.ingredients_added)) added = s.ingredients_added.map(String);
