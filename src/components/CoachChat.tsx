@@ -40,8 +40,8 @@ export const CoachChat = ({ currentSection = "Concept", progress = 0 }) => {
                 onClick={() => setIsOpen(true)}
                 className="relative group"
                 style={{
-                  width: "110px",
-                  height: "110px",
+                  width: "72px",
+                  height: "72px",
                   borderRadius: "50%",
                 }}
               >
