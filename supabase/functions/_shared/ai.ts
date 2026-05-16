@@ -20,9 +20,14 @@ const DEFAULT_MODELS: Record<string, string> = {
   ollama: "llama3.1",
 };
 
-export async function aiJSON({ system, user }: AiCallArgs): Promise<any> {
+export function activeProvider(): { provider: string; model: string } {
   const provider = (Deno.env.get("AI_PROVIDER") || "lovable").toLowerCase();
   const model = Deno.env.get("AI_MODEL") || DEFAULT_MODELS[provider] || DEFAULT_MODELS.lovable;
+  return { provider, model };
+}
+
+export async function aiJSON({ system, user }: AiCallArgs): Promise<any> {
+  const { provider, model } = activeProvider();
 
   const messages = [
     { role: "system", content: system },
