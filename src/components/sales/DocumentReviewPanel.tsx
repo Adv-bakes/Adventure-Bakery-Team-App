@@ -273,6 +273,63 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
                 </div>
               )}
 
+              {docType === "pss" && notes.extracted && (() => {
+                const ex = notes.extracted;
+                const ings = ex?.recipe?.ingredients || ex?.ingredients || [];
+                const total = ex?.recipe?.total_batch_weight;
+                let sumPct = 0;
+                let computedCount = 0;
+                if (total && total > 0) {
+                  for (const i of ings) if (typeof i.weight === "number") { sumPct += (i.weight / total) * 100; computedCount++; }
+                } else {
+                  for (const i of ings) if (typeof i.percentage === "number") { sumPct += i.percentage; computedCount++; }
+                }
+                const pctOk = computedCount > 0 && Math.abs(sumPct - 100) <= 0.05;
+                const steps = ex?.process?.pre_bake?.steps || ex?.process_steps || [];
+                const method = ex?.process?.method;
+                const used = new Set<string>();
+                for (const s of steps) for (const n of (s?.ingredients_added || [])) used.add(String(n).toLowerCase().trim());
+                const names = new Set(ings.map((i: any) => (i.name || "").toLowerCase().trim()));
+                const coverageOk = names.size > 0 && [...names].every((n) => used.has(n as string));
+                const packing = ex?.packaging?.primary?.vessel || ex?.packaging?.secondary?.type;
+                return (
+                  <div className="tp-surface p-4 border border-[hsl(var(--tp-gold))]/20 space-y-2">
+                    <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold))]">
+                      Will populate batch sheet
+                    </p>
+                    <div className="text-sm text-[hsl(var(--tp-text))] space-y-1">
+                      <div>
+                        Recipe: <span className="text-[hsl(var(--tp-text-dim))]">{ings.length} ingredients</span>
+                        {computedCount > 0 && (
+                          <span className={pctOk ? "text-green-400 ml-2" : "text-[hsl(var(--tp-warning))] ml-2"}>
+                            · Σ = {sumPct.toFixed(2)}% {pctOk ? "✓" : "⚠"}
+                          </span>
+                        )}
+                        <span className="text-[hsl(var(--tp-text-dim))] ml-2">· locked 🔒</span>
+                      </div>
+                      <div>
+                        Process: <span className="text-[hsl(var(--tp-text-dim))]">
+                          {method || "method TBD"} · {steps.length} step{steps.length === 1 ? "" : "s"}
+                        </span>
+                        {names.size > 0 && (
+                          <span className={coverageOk ? "text-green-400 ml-2" : "text-[hsl(var(--tp-warning))] ml-2"}>
+                            · coverage {coverageOk ? "✓" : "⚠"}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        Packaging: <span className="text-[hsl(var(--tp-text-dim))]">
+                          {packing || "TBD → offered as service"}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-[hsl(var(--tp-text-dim))] pt-2 border-t border-[hsl(var(--tp-hairline))]">
+                      On approval, a confidential staff-only formula will be created. Ingredient weights are locked on the batch sheet — all other fields editable by the AB team.
+                    </p>
+                  </div>
+                );
+              })()}
+
               {(notes.issues?.length ?? 0) > 0 && (
                 <div className="tp-surface p-4 border border-[hsl(var(--tp-warning))]/30">
                   <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-warning))] mb-2">Issues</p>
