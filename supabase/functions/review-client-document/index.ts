@@ -5,7 +5,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import * as XLSX from "npm:xlsx@0.18.5/xlsx.mjs";
-import { aiJSON } from "../_shared/ai.ts";
+import { aiJSON, activeProvider } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -161,7 +161,7 @@ Return ONLY a JSON object matching this exact schema:
       })
       .eq("id", document_id);
 
-    return json({ ok: true, review_status, verdict });
+    return json({ ok: true, review_status, verdict, ...activeProvider() });
   } catch (e) {
     console.error("review-client-document error:", e);
     return json({ error: (e as Error).message || "Unknown error" }, 500);

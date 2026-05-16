@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { X, Check, AlertTriangle, Sparkles, Download } from "lucide-react";
+import { X, Check, AlertTriangle, Sparkles, Download, Copy } from "lucide-react";
 
 interface Props {
   documentId: string | null;
@@ -15,6 +15,8 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
   const [reviewing, setReviewing] = useState(false);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [provider, setProvider] = useState<{ provider: string; model: string } | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
 
   useEffect(() => {
     if (!documentId) { setDoc(null); setSignedUrl(null); return; }
@@ -45,6 +47,7 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
     setReviewing(false);
     if (error) return toast.error(error.message || "AI review failed");
     if (data?.error) return toast.error(data.error);
+    if (data?.provider) setProvider({ provider: data.provider, model: data.model });
     toast.success("AI review complete");
     // Refresh
     const { data: fresh } = await supabase
@@ -82,6 +85,13 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
     }
 
     if (status === "approved" && doc.user_id) {
+      // Always log per-doc approval
+      await supabase.from("client_activity").insert({
+        client_id: doc.user_id,
+        action: `${docType}_approved`,
+        payload: { document_id: documentId, file_name: doc.file_name },
+      });
+
       // Check if this client has an approved NDA AND approved PSS
       const { data: clientDocs } = await supabase
         .from("client_documents")
@@ -109,8 +119,22 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
         toast.success(`${docType.toUpperCase()} approved`);
       }
     } else if (status === "rejected") {
+      if (doc.user_id) {
+        await supabase.from("client_activity").insert({
+          client_id: doc.user_id,
+          action: `${docType}_rejected`,
+          payload: { document_id: documentId, file_name: doc.file_name },
+        });
+      }
       toast.success("Document rejected — client can resubmit");
     } else {
+      if (doc.user_id) {
+        await supabase.from("client_activity").insert({
+          client_id: doc.user_id,
+          action: `${docType}_approved`,
+          payload: { document_id: documentId, file_name: doc.file_name },
+        });
+      }
       toast.success("Approved");
     }
 
@@ -167,7 +191,7 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className={`tp-chip text-[11px] ${
                   status === "ai_passed" ? "text-[hsl(var(--tp-gold))]" :
                   status === "ai_flagged" ? "text-[hsl(var(--tp-warning))]" :
@@ -178,10 +202,36 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
                   {status === "ai_flagged" && <AlertTriangle className="w-3 h-3 inline mr-1" />}
                   {status}
                 </span>
-                <button onClick={runAI} disabled={reviewing} className="tp-btn text-[11px] disabled:opacity-50">
-                  <Sparkles className="w-3 h-3" /> Re-run
-                </button>
+                <div className="flex items-center gap-2">
+                  {provider && (
+                    <span className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
+                      AI · {provider.provider} · {provider.model}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(notes, null, 2));
+                      toast.success("Raw JSON copied");
+                    }}
+                    className="tp-btn text-[11px]"
+                    title="Copy raw AI verdict JSON"
+                  >
+                    <Copy className="w-3 h-3" /> JSON
+                  </button>
+                  <button onClick={() => setShowRaw((v) => !v)} className="tp-btn text-[11px]">
+                    {showRaw ? "Hide" : "Show"} raw
+                  </button>
+                  <button onClick={runAI} disabled={reviewing} className="tp-btn text-[11px] disabled:opacity-50">
+                    <Sparkles className="w-3 h-3" /> Re-run
+                  </button>
+                </div>
               </div>
+
+              {showRaw && (
+                <pre className="tp-surface p-3 text-[10px] overflow-x-auto text-[hsl(var(--tp-text-dim))] whitespace-pre-wrap">
+                  {JSON.stringify(notes, null, 2)}
+                </pre>
+              )}
 
               {notes.summary && (
                 <div className="tp-surface p-4">
