@@ -206,7 +206,11 @@ const PssIntake = () => {
               token={token!}
               initialData={activeData}
               initialProductLabel={activeLabel}
-              prefill={{ company_name: info.company_name || undefined, customer_name: info.contact_name || undefined }}
+              prefill={{
+                company_name: info.company_name || prfPrefill?.company_name || undefined,
+                customer_name: info.contact_name || prfPrefill?.founder_name || undefined,
+                prf: prfPrefill || undefined,
+              }}
               onSubmitted={async () => { await reload(); }}
             />
           )}
