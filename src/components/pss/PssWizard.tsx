@@ -522,8 +522,23 @@ export function PssWizard(props: {
             <Kv k="Shelf life" v={data.optional_sections.shelf_life ? "Provided" : "—"} />
           </ReviewBlock>
 
+          {validationErrors.length > 0 && (
+            <div className="mt-6 border border-[hsl(var(--tp-warning))]/40 bg-[hsl(var(--tp-warning))]/5 p-4 rounded">
+              <p className="text-[11px] uppercase tracking-wider text-[hsl(var(--tp-warning))] mb-2">
+                Please complete before submitting
+              </p>
+              <ul className="text-xs text-[hsl(var(--tp-text))] list-disc list-inside space-y-0.5">
+                {validationErrors.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            </div>
+          )}
           <div className="mt-8 flex items-center justify-end gap-3">
-            <button className="tp-btn tp-btn-primary" onClick={submit} disabled={submitting}>
+            <button
+              className="tp-btn tp-btn-primary disabled:opacity-50"
+              onClick={submit}
+              disabled={submitting || validationErrors.length > 0}
+              title={validationErrors.length > 0 ? "Resolve required fields above" : ""}
+            >
               <CheckCircle2 className="w-4 h-4" /> {submitting ? "Submitting…" : "Submit PSS"}
             </button>
           </div>
