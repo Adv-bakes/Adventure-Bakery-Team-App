@@ -25,23 +25,30 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
-
-    const anon = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: { user: caller } } = await anon.auth.getUser();
-    if (!caller) return json({ error: "Unauthorized" }, 401);
+    const internalSecret = req.headers.get("x-internal-secret");
+    const isInternal = !!internalSecret && internalSecret === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-    const { data: isStaff } = await admin.rpc("is_staff_or_admin", { _user_id: caller.id });
-    if (!isStaff) return json({ error: "Forbidden" }, 403);
+
+    let callerId: string | null = null;
+    if (!isInternal) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+
+      const anon = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data: { user: caller } } = await anon.auth.getUser();
+      if (!caller) return json({ error: "Unauthorized" }, 401);
+      const { data: isStaff } = await admin.rpc("is_staff_or_admin", { _user_id: caller.id });
+      if (!isStaff) return json({ error: "Forbidden" }, 403);
+      callerId = caller.id;
+    }
 
     const { pss_document_id } = await req.json();
     if (!pss_document_id) return json({ error: "pss_document_id required" }, 400);
@@ -178,24 +185,38 @@ serve(async (req) => {
     };
 
     // ---------- PROCESS ----------
-    const preBakeSteps = Array.isArray(exProcess?.pre_bake?.steps) ? exProcess.pre_bake.steps : [];
+    // Normalize steps: ingredients_added may arrive as comma-separated string from the wizard.
+    const normalizedSteps = preBakeSteps.map((s: any, idx: number) => {
+      let added: string[] = [];
+      if (Array.isArray(s.ingredients_added)) added = s.ingredients_added.map(String);
+      else if (typeof s.ingredients_added === "string" && s.ingredients_added.trim())
+        added = s.ingredients_added.split(",").map((x: string) => x.trim()).filter(Boolean);
+      return { ...s, step_number: idx + 1, ingredients_added: added };
+    });
+
     const ingredientNames = new Set(normalizedIngredients.map((i) => (i.name || "").toLowerCase().trim()));
     const usedNames = new Set<string>();
-    for (const step of preBakeSteps) {
-      for (const n of (step.ingredients_added || [])) usedNames.add(String(n).toLowerCase().trim());
+    for (const step of normalizedSteps) {
+      for (const n of step.ingredients_added) usedNames.add(String(n).toLowerCase().trim());
     }
     const missing = [...ingredientNames].filter((n) => n && !usedNames.has(n));
     const extra = [...usedNames].filter((n) => n && !ingredientNames.has(n));
 
+    const methodStr = exProcess.method || null;
+    const isNoBake = typeof methodStr === "string" && /^no-?bake/i.test(methodStr.trim());
+
     const process = {
-      method: exProcess.method || null,
+      method: methodStr,
+      is_no_bake: isNoBake,
       pre_bake: {
-        steps: preBakeSteps,
+        steps: normalizedSteps,
         dough_temp_target: exProcess?.pre_bake?.dough_temp_target ?? null,
         dough_temp_unit: exProcess?.pre_bake?.dough_temp_unit ?? null,
       },
       forming: exProcess.forming || { machine: null, target_deposit_weight_raw: null, weight_unit: null, die_or_wire: null, notes: null },
-      bake: exProcess.bake || { time_minutes: pick(concept?.baking_time_minutes ? Number(concept.baking_time_minutes) : null), temperature: pick(concept?.baking_temp ? Number(concept.baking_temp) : null), temp_unit: concept?.baking_temp_unit || null, expected_loss_pct: null },
+      bake: isNoBake
+        ? { time_minutes: null, temperature: null, temp_unit: null, expected_loss_pct: null, skipped: true }
+        : exProcess.bake || { time_minutes: pick(concept?.baking_time_minutes ? Number(concept.baking_time_minutes) : null), temperature: pick(concept?.baking_temp ? Number(concept.baking_temp) : null), temp_unit: concept?.baking_temp_unit || null, expected_loss_pct: null },
       post_bake: exProcess.post_bake || { freeze_required: null, freeze_temp: null, freeze_time: null, notes: null },
       coverage_check: {
         all_recipe_ingredients_used: missing.length === 0 && ingredientNames.size > 0,
