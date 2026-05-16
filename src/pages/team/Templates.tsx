@@ -183,9 +183,14 @@ const TemplatesPage = () => {
                         Uploaded {new Date(r.uploaded_at).toLocaleString()}
                       </p>
                     </div>
-                    <button onClick={() => download(r.file_path, r.file_name)} className="tp-btn">
-                      <Download className="w-3.5 h-3.5" /> Download
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => view(r.file_path)} className="tp-btn">
+                        <ExternalLink className="w-3.5 h-3.5" /> View
+                      </button>
+                      <button onClick={() => download(r.file_path, r.file_name)} className="tp-btn">
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
