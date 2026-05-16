@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TeamPage } from "@/components/team/TeamPage";
-import { FileText, Upload, Download } from "lucide-react";
+import { FileText, Upload, Download, ExternalLink } from "lucide-react";
 
 type Kind = "nda" | "pss_workbook";
 
@@ -91,15 +91,40 @@ const TemplatesPage = () => {
     }
   };
 
-  const download = async (path: string, name: string) => {
+  const getSignedUrl = async (path: string) => {
     const { data, error } = await supabase.storage
       .from("document-templates")
-      .createSignedUrl(path, 300);
-    if (error || !data?.signedUrl) return toast.error(error?.message || "No URL");
-    const a = document.createElement("a");
-    a.href = data.signedUrl;
-    a.download = name;
-    a.click();
+      .createSignedUrl(path, 600);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message || "Could not get file URL");
+      return null;
+    }
+    return data.signedUrl;
+  };
+
+  const view = async (path: string) => {
+    const url = await getSignedUrl(path);
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const download = async (path: string, name: string) => {
+    const url = await getSignedUrl(path);
+    if (!url) return;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (e: any) {
+      toast.error(e?.message || "Download failed");
+    }
   };
 
   return (
@@ -158,9 +183,14 @@ const TemplatesPage = () => {
                         Uploaded {new Date(r.uploaded_at).toLocaleString()}
                       </p>
                     </div>
-                    <button onClick={() => download(r.file_path, r.file_name)} className="tp-btn">
-                      <Download className="w-3.5 h-3.5" /> Download
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => view(r.file_path)} className="tp-btn">
+                        <ExternalLink className="w-3.5 h-3.5" /> View
+                      </button>
+                      <button onClick={() => download(r.file_path, r.file_name)} className="tp-btn">
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -168,6 +198,7 @@ const TemplatesPage = () => {
           </div>
         );
       })}
+      <div className="h-24" aria-hidden />
     </TeamPage>
   );
 };
