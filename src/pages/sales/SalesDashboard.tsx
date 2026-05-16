@@ -147,6 +147,7 @@ const SalesDashboard = () => {
           })}
         </div>
       )}
+      <AddDealDialog open={addOpen} onOpenChange={setAddOpen} onCreated={() => load()} />
     </TeamPage>
   );
 };
