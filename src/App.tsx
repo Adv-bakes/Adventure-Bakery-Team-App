@@ -64,12 +64,14 @@ import OpsScoutBot from "./pages/ops/ScoutBot";
 import OpsVariance from "./pages/ops/VarianceReport";
 
 // Sales (Phase 1)
+import SalesDashboard from "./pages/sales/SalesDashboard";
 import SalesPipeline from "./pages/sales/SalesPipeline";
 import SalesClients from "./pages/sales/SalesClients";
 import SalesClientFolder from "./pages/sales/SalesClientFolder";
 import SalesDocumentsInbox from "./pages/sales/SalesDocumentsInbox";
 import SalesArchive from "./pages/sales/SalesArchive";
 import SalesProjectWorkspace from "./pages/sales/SalesProjectWorkspace";
+import SalesProductWorkspace from "./pages/sales/SalesProductWorkspace";
 import MyPrfs from "./pages/MyPrfs";
 import Templates from "./pages/team/Templates";
 import PssIntake from "./pages/public/PssIntake";
