@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     });
 
     const body: Record<string, unknown> = {
-      from: "Adventure Bakery <noreply@notify.adventurebakery.info>",
+      from: "Adventure Bakery <scale@adventurebakery.info>",
       to: [prospectEmail],
       cc: ["scale@adventurebakery.info"],
       subject: "Next step with Adventure Bakery — your NDA + product spec sheet",
@@ -117,18 +117,27 @@ Deno.serve(async (req) => {
     };
     if (ndaAttachment) body.attachments = [ndaAttachment];
 
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-      body: JSON.stringify(body),
-    });
-    const rData = await r.json();
-    if (!r.ok) {
-      console.error("Resend error", rData);
-      return json({ error: "Email send failed", details: rData }, 500);
+    let emailError: string | null = null;
+    let resendId: string | null = null;
+    try {
+      const r = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+        body: JSON.stringify(body),
+      });
+      const rData = await r.json();
+      if (!r.ok) {
+        console.error("Resend error", rData);
+        emailError = typeof rData?.message === "string" ? rData.message : "Email send failed";
+      } else {
+        resendId = rData.id ?? null;
+      }
+    } catch (e) {
+      console.error("Resend fetch failed", e);
+      emailError = String((e as any)?.message ?? e);
     }
 
-    // Advance lead to Send Documents.
+    // Advance lead to Send Documents regardless of email outcome — staff has the magic link.
     await admin
       .from("sales_leads")
       .update({ stage: "Send Documents", stage_updated_at: new Date().toISOString() })
@@ -139,10 +148,10 @@ Deno.serve(async (req) => {
       client_id: lead.id,
       actor_id: u.user.id,
       action: "documents_sent",
-      payload: { email: prospectEmail, magicLink, hasNda: !!ndaAttachment, hasWorkbook: !!workbookUrl },
+      payload: { email: prospectEmail, magicLink, hasNda: !!ndaAttachment, hasWorkbook: !!workbookUrl, emailError },
     });
 
-    return json({ success: true, token, magicLink, resendId: rData.id }, 200);
+    return json({ success: true, token, magicLink, resendId, emailError }, 200);
   } catch (e) {
     console.error(e);
     return json({ error: String(e?.message ?? e) }, 500);
