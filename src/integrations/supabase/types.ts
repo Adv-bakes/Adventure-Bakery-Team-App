@@ -553,7 +553,10 @@ export type Database = {
           percentage: number | null
           percentage_formula: number | null
           product_id: string | null
+          superseded_at: string | null
+          superseded_by_version: number | null
           user_id: string | null
+          version: number
           volume_amount: string | null
           volume_unit: string | null
           weight_g: number | null
@@ -568,7 +571,10 @@ export type Database = {
           percentage?: number | null
           percentage_formula?: number | null
           product_id?: string | null
+          superseded_at?: string | null
+          superseded_by_version?: number | null
           user_id?: string | null
+          version?: number
           volume_amount?: string | null
           volume_unit?: string | null
           weight_g?: number | null
@@ -583,7 +589,10 @@ export type Database = {
           percentage?: number | null
           percentage_formula?: number | null
           product_id?: string | null
+          superseded_at?: string | null
+          superseded_by_version?: number | null
           user_id?: string | null
+          version?: number
           volume_amount?: string | null
           volume_unit?: string | null
           weight_g?: number | null
@@ -1121,6 +1130,72 @@ export type Database = {
           shelf_life_requirements?: string | null
           status?: string | null
           units_per_pack?: string | null
+        }
+        Relationships: []
+      }
+      processes: {
+        Row: {
+          action: string | null
+          concept_id: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          ingredients_added: Json | null
+          is_critical_control_point: boolean | null
+          mix_speed: string | null
+          mix_time_min: number | null
+          product_id: string | null
+          proprietary_notes: string | null
+          step_number: number
+          superseded_at: string | null
+          superseded_by_version: number | null
+          temp_unit: string | null
+          temperature: number | null
+          time_minutes: number | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          action?: string | null
+          concept_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ingredients_added?: Json | null
+          is_critical_control_point?: boolean | null
+          mix_speed?: string | null
+          mix_time_min?: number | null
+          product_id?: string | null
+          proprietary_notes?: string | null
+          step_number: number
+          superseded_at?: string | null
+          superseded_by_version?: number | null
+          temp_unit?: string | null
+          temperature?: number | null
+          time_minutes?: number | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          action?: string | null
+          concept_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ingredients_added?: Json | null
+          is_critical_control_point?: boolean | null
+          mix_speed?: string | null
+          mix_time_min?: number | null
+          product_id?: string | null
+          proprietary_notes?: string | null
+          step_number?: number
+          superseded_at?: string | null
+          superseded_by_version?: number | null
+          temp_unit?: string | null
+          temperature?: number | null
+          time_minutes?: number | null
+          updated_at?: string
+          version?: number
         }
         Relationships: []
       }
