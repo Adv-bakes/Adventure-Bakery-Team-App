@@ -91,15 +91,40 @@ const TemplatesPage = () => {
     }
   };
 
-  const download = async (path: string, name: string) => {
+  const getSignedUrl = async (path: string) => {
     const { data, error } = await supabase.storage
       .from("document-templates")
-      .createSignedUrl(path, 300);
-    if (error || !data?.signedUrl) return toast.error(error?.message || "No URL");
-    const a = document.createElement("a");
-    a.href = data.signedUrl;
-    a.download = name;
-    a.click();
+      .createSignedUrl(path, 600);
+    if (error || !data?.signedUrl) {
+      toast.error(error?.message || "Could not get file URL");
+      return null;
+    }
+    return data.signedUrl;
+  };
+
+  const view = async (path: string) => {
+    const url = await getSignedUrl(path);
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const download = async (path: string, name: string) => {
+    const url = await getSignedUrl(path);
+    if (!url) return;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (e: any) {
+      toast.error(e?.message || "Download failed");
+    }
   };
 
   return (
