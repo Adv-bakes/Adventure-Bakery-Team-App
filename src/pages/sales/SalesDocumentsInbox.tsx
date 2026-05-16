@@ -79,10 +79,17 @@ const SalesDocumentsInbox = () => {
         const { data: sendRes, error: sendErr } = await supabase.functions.invoke("send-client-documents", {
           body: { leadId: lead.id },
         });
-        if (sendErr) {
-          toast.error(`Accepted, but email failed: ${sendErr.message}`);
-        } else if ((sendRes as any)?.error) {
-          toast.error(`Accepted, but email failed: ${(sendRes as any).error}`);
+        const res = sendRes as any;
+        const magicLink: string | undefined = res?.magicLink;
+        const emailError: string | undefined = res?.emailError || res?.error || sendErr?.message;
+        if (emailError && magicLink) {
+          try { await navigator.clipboard.writeText(magicLink); } catch {}
+          toast.warning(
+            `Accepted. Email didn't send (${emailError}). Magic link copied to clipboard — paste it into your own email.`,
+            { duration: 15000 }
+          );
+        } else if (emailError) {
+          toast.error(`Accepted, but email failed: ${emailError}`);
         } else {
           toast.success(`Accepted — documents emailed to ${row.email}`);
         }
