@@ -1,179 +1,60 @@
+# End-to-end dry run + polish
 
-## Goal
+Goal: walk one PRF through the full pipeline in the live preview, fix every gap we hit, and leave the flow demo-ready.
 
-1. **Documents Inbox lane #2** — review returned NDA + PSS, then promote the lead into a real client folder.
-2. **Project workspace** in the Client Folder mirroring the Brand Portal tabs (Concept, Ingredients, Formulas, Packaging, Shelf Life, Products), staff-side, with header quick-icons for **PRF · PSS · NDA · Batch Sheet**.
-3. **Batch Sheet is generated from the PSS** — internal artifact, **Adventure Bakery only**, never client-visible. Process edits feed back into it.
-
-## Workflow
+## The walk
 
 ```text
-PRF accepted ─► Send Documents stage
-                       │
-                       ▼
-   Client returns NDA + PSS  ──► Inbox lane #2
-                       │
-              AI review (generic provider)
-                       │
-              Staff Approves both
-                       │
-                       ├── PSS approved ──► auto-create/refresh Batch Sheet (internal)
-                       │                    linked: batch_sheet.pss_document_id
-                       │
-                       └── NDA + PSS approved ──► lead → "Follow-Up"
-                                                  client_activity('documents_completed')
+[PRF submitted]
+   → /team/sales/inbox  (Lane 1)  → Accept
+[Lead → "Send Documents"]
+   → /team/sales/clients/:leadId  → upload NDA + PSS  (using existing staff upload in ClientDetail/AddClientFlow)
+[Returned docs in inbox Lane 2]
+   → DocumentReviewPanel  → Run AI review  → Approve NDA, Approve PSS
+[Batch sheet auto-generated, stage → "Follow-Up"]
+   → /team/sales/clients/:leadId/projects/:prfId
+   → Quick-doc icons (PRF / PSS / NDA / Batch Sheet) all open
+   → Tabs read PRF + extracted PSS data
 ```
 
-## 1. PSS — partial submissions are OK
+## Known gaps to fix while walking
 
-The PSS template (digital + PDF) marks these as **mandatory** — the client cannot submit without them:
-- Company name
-- Product name
-- Recipe (ingredients + percentages)
-- Process (steps)
-- Target unit size + weight
-- Units per primary pack
-- Units per retail unit
-- Human signature (for the client's own protection)
+1. **Inbox case sensitivity.** Lane 2 query lists `["nda","pss","NDA","PSS"]` but new uploads aren't normalized. Normalize `document_type` to lowercase on insert in `ClientDetail.tsx` and `AddClientFlow.tsx`, and switch the inbox filter to a single canonical pair.
 
-These are **optional** — when missing, the AI flags them as **"service offered"** rather than rejecting the PSS:
-- Nutritional panel  → offer nutritional analysis service
-- Allergen declaration → offer allergen review service
-- Packaging spec  → offer packaging design service
-- Shelf life data → offer shelf-life testing service
+2. **PSS upload should land in inbox, not auto-approved.** Existing inserts don't set `review_status`, so the column default `'pending'` kicks in — good. But the migration force-approved all *existing* rows. Confirm new rows get `'pending'` and surface in Lane 2.
 
-The Document Review side panel surfaces these as a **"Services we can offer this client"** list, which the salesperson can use as upsell talking points. Approval is allowed even with optional sections missing.
+3. **Batch-sheet upsert type mismatch.** `batch_sheets.client_user_id` is `uuid` but `client_documents.user_id` is `text`. Cast/validate in the edge function before upsert (skip if not a valid UUID, log a warning) so a malformed user_id doesn't 500 the call.
 
-## 2. AI document review — generic provider
+4. **Lead lookup in batch-sheet generator.** Currently joins `sales_leads.profile_id = pss.user_id`. Confirm both sides resolve; otherwise fall back to email lookup via the document's uploader profile.
 
-A small `lib/ai/reviewer.ts` abstraction so we can swap providers without touching the edge function logic.
+5. **Project Workspace defensive loading.** When a client has multiple PRFs, the workspace currently picks "any PSS" — scope to the most recent approved PSS, and show a small "no approved PSS yet" banner instead of a disabled button with no explanation.
 
-```ts
-// supabase/functions/_shared/ai.ts
-export async function aiJSON({ system, user }): Promise<any> {
-  const provider = Deno.env.get('AI_PROVIDER') ?? 'lovable';  // 'lovable' | 'openai' | 'ollama'
-  // dispatches to the right gateway, all return parsed JSON
-}
-```
+6. **Stage advancement race.** `decide()` reads `client_documents` after the update but the just-approved doc may not be returned yet (RLS + timing). Already guarded with `justNda/justPss`, but also re-fetch the lead's PRFs and bump the linked PRF status to `accepted` if still `new`/`reviewing` — keeps the inbox tidy.
 
-- **Default**: Lovable AI Gateway (already wired, no extra cost configuration)
-- **Swap via env var** `AI_PROVIDER` + corresponding key — no code change needed
-- **Ollama path** posts to `OLLAMA_BASE_URL` for self-hosted/cheap inference
-- Model name is also env-driven (`AI_MODEL`)
+7. **Activity log.** Add `client_activity` rows for `nda_approved`, `pss_approved`, `documents_completed` already exists. Add `nda_rejected` / `pss_rejected` so the client folder Activity tab tells the full story.
 
-This way you compare costs later by flipping a secret, not by re-deploying a different function.
+8. **AI review UX.** Surface a tiny "AI provider: lovable/openai/ollama" hint in the panel header so we know which model produced the verdict; add a "Copy raw JSON" link for debugging.
 
-Edge function `review-client-document`:
-- Downloads from `product-spec-sheets` bucket (signed URL via service role)
-- Extracts text (PDF → pdfjs / xlsx → `npm:xlsx`)
-- Calls `aiJSON()` with a strict schema:
-  - **NDA**: `{ fully_executed, signer_name, company, date, signature_present, issues[] }`
-  - **PSS**: `{ has_required: { company, product, recipe, process, size_weight, units_per_primary, units_per_retail, signature }, missing_optional[], summary }`
-- Writes to `client_documents.review_status` + `review_notes` (jsonb)
+9. **Quick-doc strip on workspace.** Add a 5th icon: "Send to client" placeholder that just toasts "Coming soon" — it's the natural next step from this screen and prevents users from looking for it.
 
-## 3. PSS approval — generate / overwrite the internal Batch Sheet
+10. **Empty / error states.** Inbox loading skeletons; workspace "Project not found" copy improvements; workspace returns to client folder via breadcrumb.
 
-When a PSS row flips to `approved`, edge function `generate-batch-sheet-from-pss` runs:
-- Reads PSS structured data + reuses `parse-batch-sheet` extraction
-- **Upserts** `batch_sheets` keyed on `pss_document_id` — new drafts overwrite the previous one (per your rule)
-- Stores `data_json` (recipe, process steps, equipment)
-- Logs `client_activity('batch_sheet_drafted')`
+## Files touched
 
-Batch sheet is **internal-only** — RLS restricts it to `is_staff_or_admin(auth.uid())` and it has no client-portal route. The client never sees it.
+- `src/pages/sales/SalesDocumentsInbox.tsx` — normalize doc filter, loading skeleton.
+- `src/pages/ClientDetail.tsx`, `src/pages/AddClientFlow.tsx` — lowercase `document_type` on insert; ensure `review_status` is left default (`pending`).
+- `src/components/sales/DocumentReviewPanel.tsx` — provider hint, raw-JSON toggle, log rejection activity.
+- `src/pages/sales/SalesProjectWorkspace.tsx` — most-recent-approved-PSS scoping, banner when missing, breadcrumb, "Send to client" placeholder.
+- `supabase/functions/generate-batch-sheet-from-pss/index.ts` — UUID validation on `client_user_id`; email-fallback lead lookup.
+- `supabase/functions/review-client-document/index.ts` — return `provider` in response so the panel can show it.
 
-## 4. Process edits feed the Batch Sheet
+## Out of scope (next loop)
 
-When staff edit the **Process** tab of a project (existing process editor) for a project that has a batch sheet, those edits write through to `batch_sheets.data_json.process_steps`. A small `useSyncProcessToBatchSheet(projectId)` hook in the project workspace handles the sync.
+- Real PSS digital form with mandatory-field gating.
+- Process-tab → batch_sheet sync.
+- Filling out the workspace tabs with editable views (today they're read-only summaries).
+- Client onboarding email automation.
 
-Client-portal Process view stays read-only for the client (no change there).
+## Validation
 
-## 5. Client Folder — projects list
-
-In `SalesClientFolder.tsx`:
-- Rename **PRFs** tab → **Projects**
-- Each row + Overview "Latest project" card → `/team/sales/clients/:leadId/projects/:prfId`
-
-## 6. Project Workspace (NEW) — mirrors Brand Portal
-
-```text
-┌─ Header ─────────────────────────────────────────────────┐
-│ ← Back · Product name · stage chip                       │
-│ Quick docs:  [PRF] [PSS] [NDA] [Batch Sheet*]            │
-│              *internal-only icon, gold tint              │
-└──────────────────────────────────────────────────────────┘
-┌─ Tabs ───────────────────────────────────────────────────┐
-│ Concept · Ingredients · Formulas · Packaging ·           │
-│ Shelf Life · Products · Costing · Notes                  │
-└──────────────────────────────────────────────────────────┘
-```
-
-- Tabs are scoped read-views of existing data with "Open in editor" deep-link to the existing team pages — we don't rebuild editors.
-- **PRF** → `PrfReviewPanel`
-- **PSS** → signed URL (latest approved)
-- **NDA** → signed URL (latest approved)
-- **Batch Sheet** → side panel reading `batch_sheets`, staff-only
-
-## 7. Database migration
-
-```sql
-ALTER TABLE public.client_documents
-  ADD COLUMN review_status text DEFAULT 'pending',
-  ADD COLUMN review_notes jsonb,
-  ADD COLUMN reviewed_at timestamptz,
-  ADD COLUMN reviewed_by uuid;
-CREATE INDEX idx_client_docs_review
-  ON public.client_documents (review_status, document_type);
-UPDATE public.client_documents SET review_status = 'approved'
-  WHERE review_status IS NULL OR review_status = 'pending';
-
-ALTER TABLE public.prf_submissions ADD COLUMN concept_id bigint;
-CREATE INDEX idx_prf_concept ON public.prf_submissions (concept_id);
-
-CREATE TABLE public.batch_sheets (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  pss_document_id text UNIQUE,            -- one batch sheet per PSS, edits overwrite
-  concept_id bigint,
-  lead_id uuid,
-  client_user_id uuid,
-  status text NOT NULL DEFAULT 'draft',   -- draft | approved
-  data_json jsonb,                         -- recipe, process_steps, equipment
-  generated_from text DEFAULT 'pss',
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE public.batch_sheets ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Staff/admin all batch_sheets" ON public.batch_sheets
-  FOR ALL TO authenticated
-  USING (is_staff_or_admin(auth.uid()))
-  WITH CHECK (is_staff_or_admin(auth.uid()));
-```
-
-## 8. PSS digital form — mandatory-field gating (deferred but flagged)
-
-You're right that if the PSS is filled online we can simply prevent submit without the mandatory fields. That belongs in the Brand Portal PSS form, which is a **separate edit** I'll do right after this lands so this PR stays focused. Tracking it as a follow-up: "PSS form: enforce required fields client-side + server-side."
-
-## 9. Files
-
-**New**
-- `src/pages/sales/SalesProjectWorkspace.tsx`
-- `src/components/sales/DocumentReviewPanel.tsx`
-- `src/components/sales/project-tabs/` (Concept, Ingredients, Formula, Packaging, ShelfLife, Products, Costing, BatchSheetPanel)
-- `supabase/functions/_shared/ai.ts` (generic provider abstraction)
-- `supabase/functions/review-client-document/index.ts`
-- `supabase/functions/generate-batch-sheet-from-pss/index.ts`
-
-**Edited**
-- `src/pages/sales/SalesDocumentsInbox.tsx` — second lane
-- `src/pages/sales/SalesClientFolder.tsx` — Projects tab + workspace link
-- `src/App.tsx` — new route
-
-## Out of scope (explicit follow-ups)
-
-- PSS digital form mandatory-field gating (next PR)
-- Full edit parity with Brand Portal in the new tabs (read + deep-link for v1)
-- E-sign / NDA generation
-- Inline batch-sheet editor (v1 = view + auto-regenerate from PSS + auto-sync from Process edits)
-
-## Open question
-
-NDA "signature_present" — text-extraction heuristic (looks for "Signed by:", signature-line, or visible signed-glyph blob on the page) is fine for v1, with ambiguous cases flagged for human review. True image-signature verification is deferred. OK?
+- After edits I'll open the preview, walk the seven steps above, and report any remaining issues.
