@@ -54,6 +54,8 @@ import Costing from "./pages/Costing";
 import OperationsHub from "./pages/OperationsHub";
 import FounderDashboard from "./pages/FounderDashboard";
 import StaffAccount from "./pages/StaffAccount";
+import BatchSheets from "./pages/team/operations/BatchSheets";
+import BatchSheetEditor from "./pages/team/operations/BatchSheetEditor";
 
 // Operations System
 import OpsInventory from "./pages/ops/Inventory";
