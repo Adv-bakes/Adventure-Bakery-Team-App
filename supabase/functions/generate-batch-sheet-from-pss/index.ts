@@ -41,10 +41,23 @@ serve(async (req) => {
       .maybeSingle();
     if (!pss) return json({ error: "PSS not found" }, 404);
 
-    // Pull lead + concept linkage if available
-    const { data: lead } = pss.user_id
-      ? await admin.from("sales_leads").select("id, profile_id").eq("profile_id", pss.user_id).maybeSingle()
-      : { data: null };
+    // Validate user_id is a real UUID before storing in uuid columns
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const clientUserId = pss.user_id && UUID_RE.test(pss.user_id) ? pss.user_id : null;
+
+    // Pull lead, falling back to email lookup via the uploader profile
+    let lead: any = null;
+    if (clientUserId) {
+      const r = await admin.from("sales_leads").select("id, profile_id").eq("profile_id", clientUserId).maybeSingle();
+      lead = r.data;
+    }
+    if (!lead && clientUserId) {
+      const { data: prof } = await admin.from("profiles").select("email").eq("id", clientUserId).maybeSingle();
+      if (prof?.email) {
+        const r = await admin.from("sales_leads").select("id, profile_id").eq("email", prof.email.toLowerCase()).maybeSingle();
+        lead = r.data;
+      }
+    }
 
     // Source data: prefer the AI-extracted blob from review_notes
     const extracted = (pss.review_notes && pss.review_notes.extracted) || {};
@@ -63,7 +76,7 @@ serve(async (req) => {
       .upsert({
         pss_document_id,
         lead_id: lead?.id || null,
-        client_user_id: pss.user_id || null,
+        client_user_id: clientUserId,
         status: "draft",
         data_json: dataJson,
         generated_from: "pss",
