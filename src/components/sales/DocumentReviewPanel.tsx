@@ -1,7 +1,31 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { X, Check, AlertTriangle, Sparkles, Download, Copy } from "lucide-react";
+import { X, Check, AlertTriangle, Sparkles, Download, Copy, ExternalLink } from "lucide-react";
+
+const mimeForExt = (name: string): string => {
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  if (ext === "pdf") return "application/pdf";
+  if (ext === "xlsx") return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  if (ext === "xls") return "application/vnd.ms-excel";
+  if (ext === "png") return "image/png";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  return "application/octet-stream";
+};
+
+const openAsBlob = async (url: string, name: string) => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Open failed (${res.status})`);
+    const buf = await res.arrayBuffer();
+    const blob = new Blob([buf], { type: mimeForExt(name) });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, "_blank", "noopener,noreferrer");
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+  } catch (e: any) {
+    toast.error(e?.message || "Could not open — try the direct link instead");
+  }
+};
 
 interface Props {
   documentId: string | null;
@@ -167,9 +191,18 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
           </div>
           <div className="flex items-center gap-2">
             {signedUrl && (
-              <a href={signedUrl} target="_blank" rel="noreferrer" className="tp-btn">
-                <Download className="w-3.5 h-3.5" /> File
-              </a>
+              <>
+                <button
+                  onClick={() => openAsBlob(signedUrl, doc?.file_name || "file")}
+                  className="tp-btn"
+                  title="Open in a new tab with the correct file type"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> View
+                </button>
+                <a href={signedUrl} target="_blank" rel="noreferrer" className="tp-btn" title="Direct signed link (fallback)">
+                  <Download className="w-3.5 h-3.5" /> Direct
+                </a>
+              </>
             )}
             <button onClick={onClose} className="tp-btn" aria-label="Close"><X className="w-4 h-4" /></button>
           </div>
