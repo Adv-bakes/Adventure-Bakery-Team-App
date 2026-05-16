@@ -383,6 +383,78 @@ export type Database = {
         }
         Relationships: []
       }
+      document_send_tokens: {
+        Row: {
+          company_name: string | null
+          contact_name: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          last_opened_at: string | null
+          lead_id: string
+          prospect_email: string
+          token: string
+        }
+        Insert: {
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          last_opened_at?: string | null
+          lead_id: string
+          prospect_email: string
+          token: string
+        }
+        Update: {
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          last_opened_at?: string | null
+          lead_id?: string
+          prospect_email?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      document_templates: {
+        Row: {
+          file_name: string
+          file_path: string
+          id: string
+          is_active: boolean
+          kind: string
+          notes: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+          version: number
+        }
+        Insert: {
+          file_name: string
+          file_path: string
+          id?: string
+          is_active?: boolean
+          kind: string
+          notes?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Update: {
+          file_name?: string
+          file_path?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          notes?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -1386,6 +1458,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pss_submissions: {
+        Row: {
+          created_at: string
+          data_json: Json
+          draft_token: string
+          id: string
+          lead_id: string
+          product_label: string | null
+          profile_id: string | null
+          prospect_email: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_json?: Json
+          draft_token: string
+          id?: string
+          lead_id: string
+          product_label?: string | null
+          profile_id?: string | null
+          prospect_email: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_json?: Json
+          draft_token?: string
+          id?: string
+          lead_id?: string
+          product_label?: string | null
+          profile_id?: string | null
+          prospect_email?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       readiness: {
         Row: {
           concept_complete: boolean | null
@@ -1655,6 +1769,10 @@ export type Database = {
       }
       cleanup_old_stage2_drafts: { Args: never; Returns: undefined }
       complete_batch: { Args: { _batch_id: string }; Returns: undefined }
+      create_pss_draft_for_token: {
+        Args: { _product_label?: string; _token: string }
+        Returns: string
+      }
       delete_email: {
         Args: { msg_id: number; queue_name: string }
         Returns: boolean
@@ -1662,6 +1780,16 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
+      }
+      get_pss_draft_public: {
+        Args: { _id: string; _token: string }
+        Returns: {
+          data_json: Json
+          id: string
+          product_label: string
+          status: string
+          updated_at: string
+        }[]
       }
       get_stage2_draft:
         | {
@@ -1687,6 +1815,16 @@ export type Database = {
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_owner: { Args: { _user_id: string }; Returns: boolean }
       is_staff_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      list_pss_for_token: {
+        Args: { _token: string }
+        Returns: {
+          id: string
+          product_label: string
+          status: string
+          submitted_at: string
+          updated_at: string
+        }[]
+      }
       move_to_dlq: {
         Args: { msg_id: number; queue_name: string }
         Returns: boolean
@@ -1705,8 +1843,26 @@ export type Database = {
           vt: string
         }[]
       }
+      save_pss_draft_public: {
+        Args: {
+          _data: Json
+          _id: string
+          _product_label?: string
+          _token: string
+        }
+        Returns: boolean
+      }
       save_stage2_draft: {
         Args: { _data: Json; _id: string; _token: string }
+        Returns: boolean
+      }
+      submit_pss_draft_public: {
+        Args: {
+          _data: Json
+          _id: string
+          _product_label?: string
+          _token: string
+        }
         Returns: boolean
       }
       submit_stage2_draft: {
@@ -1718,6 +1874,17 @@ export type Database = {
         Returns: {
           email: string
           expired: boolean
+        }[]
+      }
+      validate_send_token: {
+        Args: { _token: string }
+        Returns: {
+          company_name: string
+          contact_name: string
+          expired: boolean
+          lead_id: string
+          prospect_email: string
+          valid: boolean
         }[]
       }
     }
