@@ -18,6 +18,7 @@ const SalesProjectWorkspace = () => {
   const [batchSheet, setBatchSheet] = useState<any>(null);
   const [openPrf, setOpenPrf] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
+  const [generatingBatch, setGeneratingBatch] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
