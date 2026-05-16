@@ -269,6 +269,23 @@ export function PssWizard(props: {
         ))}
       </div>
 
+      {prf && (
+        <div className="tp-surface p-4 mb-6 text-xs">
+          <div className="font-display text-[11px] uppercase tracking-wider text-[hsl(var(--tp-gold))] mb-2">
+            Carried over from your PRF
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1 text-[hsl(var(--tp-text-muted))]">
+            {prf.product_name && <div><span className="text-[hsl(var(--tp-text-dim))]">Product:</span> {prf.product_name}</div>}
+            {finishedFormLabel && <div><span className="text-[hsl(var(--tp-text-dim))]">Finished form:</span> {finishedFormLabel}</div>}
+            {prf.project_type && <div><span className="text-[hsl(var(--tp-text-dim))]">Project type:</span> {prf.project_type}</div>}
+            {prf.flavor_type && <div><span className="text-[hsl(var(--tp-text-dim))]">Flavor:</span> {prf.flavor_type}</div>}
+            {prf.primary_packaging_vessel && <div><span className="text-[hsl(var(--tp-text-dim))]">Primary pack:</span> {prf.primary_packaging_vessel}</div>}
+            {prf.weight_per_unit && <div><span className="text-[hsl(var(--tp-text-dim))]">Unit weight:</span> {prf.weight_per_unit} {prf.weight_per_unit_unit || ""}</div>}
+          </div>
+          <p className="mt-2 text-[10px] text-[hsl(var(--tp-text-dim))]">Pre-filled below — edit anywhere if anything has changed.</p>
+        </div>
+      )}
+
       {returnToReviewBtn}
 
       {/* STEP CONTENT */}
