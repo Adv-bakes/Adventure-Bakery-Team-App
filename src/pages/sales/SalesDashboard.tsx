@@ -92,9 +92,9 @@ const SalesDashboard = () => {
               className="tp-input pl-9 w-[240px]"
             />
           </div>
-          <Link to="/lead-qualifier" className="tp-btn tp-btn-primary">
+          <button onClick={() => setAddOpen(true)} className="tp-btn tp-btn-primary">
             <Plus className="w-4 h-4" /> Add Deal
-          </Link>
+          </button>
         </div>
       }
     >
