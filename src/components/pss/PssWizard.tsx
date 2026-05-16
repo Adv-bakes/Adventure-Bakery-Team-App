@@ -108,14 +108,73 @@ export function PssWizard(props: {
   token: string;
   initialData: PssData;
   initialProductLabel: string;
-  prefill?: { company_name?: string; customer_name?: string };
+  prefill?: { company_name?: string; customer_name?: string; prf?: Record<string, any> };
   onSubmitted: () => void;
 }) {
-  const [data, setData] = useState<PssData>(() => ({
-    ...emptyData(),
-    ...props.initialData,
-    header: { ...emptyData().header, ...(props.prefill || {}), ...props.initialData.header },
-  }));
+  const prf = props.prefill?.prf || null;
+  const finishedForm: string[] = Array.isArray(prf?.finished_form)
+    ? prf.finished_form
+    : (prf?.finished_form ? [String(prf.finished_form)] : []);
+  const finishedFormLabel = finishedForm.join(", ");
+
+  // Infer a default process method from PRF finished_form
+  const inferredMethod = (() => {
+    const ff = finishedFormLabel.toLowerCase();
+    if (!ff) return undefined;
+    if (/raw.*frozen|frozen dough|unbaked/.test(ff)) return "No-bake (mix + deposit/shape, freeze, then pack)";
+    if (/par.?bak/.test(ff)) return "Bake";
+    if (/bak/.test(ff)) return "Bake";
+    if (/no.?bake/.test(ff)) return "No-bake (mix + deposit/shape, then pack)";
+    return undefined;
+  })();
+
+  const mergedInitial: PssData = (() => {
+    const base = { ...emptyData(), ...props.initialData };
+    base.header = {
+      ...emptyData().header,
+      company_name: props.prefill?.company_name,
+      customer_name: props.prefill?.customer_name,
+      product_name: prf?.product_name || undefined,
+      ...props.initialData.header,
+    };
+    if (prf) {
+      base.product = {
+        ...base.product,
+        target_unit_weight_raw: base.product.target_unit_weight_raw || prf.weight_per_unit || undefined,
+        weight_unit: base.product.weight_unit || prf.weight_per_unit_unit || base.product.weight_unit,
+        unit_dimensions: {
+          unit: base.product.unit_dimensions?.unit || prf.unit_dimension_unit || "mm",
+          l: base.product.unit_dimensions?.l || prf.unit_dimension_l || undefined,
+          w: base.product.unit_dimensions?.w || prf.unit_dimension_w || undefined,
+          h: base.product.unit_dimensions?.h || prf.unit_dimension_h || undefined,
+        },
+        intended_use: base.product.intended_use ||
+          [prf.project_type, prf.flavor_type].filter(Boolean).join(" · ") || undefined,
+      };
+      base.process = {
+        ...base.process,
+        method: base.process.method || inferredMethod,
+      };
+      base.packaging = {
+        ...base.packaging,
+        primary: {
+          ...base.packaging.primary,
+          vessel: base.packaging.primary?.vessel || prf.primary_packaging_vessel || prf.primary_packaging_other || undefined,
+          units_per_pack: base.packaging.primary?.units_per_pack || prf.units_per_primary_pack || undefined,
+          net_weight_per_pack: base.packaging.primary?.net_weight_per_pack || prf.net_weight_per_primary_pack || undefined,
+          weight_unit: base.packaging.primary?.weight_unit || prf.net_weight_per_primary_pack_unit || undefined,
+        },
+        secondary: {
+          ...base.packaging.secondary,
+          type: base.packaging.secondary?.type || prf.secondary_packaging || undefined,
+          units_per_case: base.packaging.secondary?.units_per_case || prf.units_per_vessel || undefined,
+        },
+      };
+    }
+    return base;
+  })();
+
+  const [data, setData] = useState<PssData>(mergedInitial);
   const [productLabel, setProductLabel] = useState(props.initialProductLabel || "");
   const [stepIdx, setStepIdx] = useState(0);
   const [returnToReview, setReturnToReview] = useState(false);
@@ -209,6 +268,23 @@ export function PssWizard(props: {
           </button>
         ))}
       </div>
+
+      {prf && (
+        <div className="tp-surface p-4 mb-6 text-xs">
+          <div className="font-display text-[11px] uppercase tracking-wider text-[hsl(var(--tp-gold))] mb-2">
+            Carried over from your PRF
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1 text-[hsl(var(--tp-text-muted))]">
+            {prf.product_name && <div><span className="text-[hsl(var(--tp-text-dim))]">Product:</span> {prf.product_name}</div>}
+            {finishedFormLabel && <div><span className="text-[hsl(var(--tp-text-dim))]">Finished form:</span> {finishedFormLabel}</div>}
+            {prf.project_type && <div><span className="text-[hsl(var(--tp-text-dim))]">Project type:</span> {prf.project_type}</div>}
+            {prf.flavor_type && <div><span className="text-[hsl(var(--tp-text-dim))]">Flavor:</span> {prf.flavor_type}</div>}
+            {prf.primary_packaging_vessel && <div><span className="text-[hsl(var(--tp-text-dim))]">Primary pack:</span> {prf.primary_packaging_vessel}</div>}
+            {prf.weight_per_unit && <div><span className="text-[hsl(var(--tp-text-dim))]">Unit weight:</span> {prf.weight_per_unit} {prf.weight_per_unit_unit || ""}</div>}
+          </div>
+          <p className="mt-2 text-[10px] text-[hsl(var(--tp-text-dim))]">Pre-filled below — edit anywhere if anything has changed.</p>
+        </div>
+      )}
 
       {returnToReviewBtn}
 

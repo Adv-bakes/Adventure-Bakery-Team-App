@@ -31,6 +31,7 @@ const PssIntake = () => {
   const [activeLabel, setActiveLabel] = useState<string>("");
   const [ndaUploading, setNdaUploading] = useState(false);
   const [ndaUploaded, setNdaUploaded] = useState(false);
+  const [prfPrefill, setPrfPrefill] = useState<Record<string, any> | null>(null);
 
   // Resolve token + list drafts.
   const reload = useCallback(async () => {
@@ -39,6 +40,10 @@ const PssIntake = () => {
     const row = Array.isArray(t) ? t[0] : t;
     setInfo(row || { valid: false, expired: false });
     if (!row?.valid || row.expired) return;
+
+    // Pre-fill from prior PRF submission (finished form, weights, packaging…)
+    const { data: prf } = await (supabase as any).rpc("get_prf_prefill_for_token", { _token: token });
+    setPrfPrefill(prf || null);
 
     const { data: list } = await (supabase as any).rpc("list_pss_for_token", { _token: token });
     let rows: PssRow[] = list || [];
@@ -201,7 +206,11 @@ const PssIntake = () => {
               token={token!}
               initialData={activeData}
               initialProductLabel={activeLabel}
-              prefill={{ company_name: info.company_name || undefined, customer_name: info.contact_name || undefined }}
+              prefill={{
+                company_name: info.company_name || prfPrefill?.company_name || undefined,
+                customer_name: info.contact_name || prfPrefill?.founder_name || undefined,
+                prf: prfPrefill || undefined,
+              }}
               onSubmitted={async () => { await reload(); }}
             />
           )}

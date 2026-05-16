@@ -1856,6 +1856,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
       }
+      get_prf_prefill_for_token: { Args: { _token: string }; Returns: Json }
       get_pss_draft_public: {
         Args: { _id: string; _token: string }
         Returns: {
