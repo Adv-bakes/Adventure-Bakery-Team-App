@@ -191,7 +191,7 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className={`tp-chip text-[11px] ${
                   status === "ai_passed" ? "text-[hsl(var(--tp-gold))]" :
                   status === "ai_flagged" ? "text-[hsl(var(--tp-warning))]" :
@@ -202,10 +202,36 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
                   {status === "ai_flagged" && <AlertTriangle className="w-3 h-3 inline mr-1" />}
                   {status}
                 </span>
-                <button onClick={runAI} disabled={reviewing} className="tp-btn text-[11px] disabled:opacity-50">
-                  <Sparkles className="w-3 h-3" /> Re-run
-                </button>
+                <div className="flex items-center gap-2">
+                  {provider && (
+                    <span className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
+                      AI · {provider.provider} · {provider.model}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(notes, null, 2));
+                      toast.success("Raw JSON copied");
+                    }}
+                    className="tp-btn text-[11px]"
+                    title="Copy raw AI verdict JSON"
+                  >
+                    <Copy className="w-3 h-3" /> JSON
+                  </button>
+                  <button onClick={() => setShowRaw((v) => !v)} className="tp-btn text-[11px]">
+                    {showRaw ? "Hide" : "Show"} raw
+                  </button>
+                  <button onClick={runAI} disabled={reviewing} className="tp-btn text-[11px] disabled:opacity-50">
+                    <Sparkles className="w-3 h-3" /> Re-run
+                  </button>
+                </div>
               </div>
+
+              {showRaw && (
+                <pre className="tp-surface p-3 text-[10px] overflow-x-auto text-[hsl(var(--tp-text-dim))] whitespace-pre-wrap">
+                  {JSON.stringify(notes, null, 2)}
+                </pre>
+              )}
 
               {notes.summary && (
                 <div className="tp-surface p-4">
