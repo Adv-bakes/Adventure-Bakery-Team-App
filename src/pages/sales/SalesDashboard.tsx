@@ -53,7 +53,7 @@ const SalesDashboard = () => {
     const patch: any = { sales_stage: stage, sales_stage_updated_at: new Date().toISOString() };
     if (stage === "Approved") patch.quote_approved_at = new Date().toISOString();
     setProjects(ps => ps.map(p => p.id === id ? { ...p, ...patch } : p));
-    const { error } = await supabase.from("prf_submissions").update(patch).eq("id", id);
+    const { error } = await (supabase as any).from("prf_submissions").update(patch).eq("id", id);
     if (error) { toast.error(error.message); setProjects(prev); }
   };
 

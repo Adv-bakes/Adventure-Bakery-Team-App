@@ -42,7 +42,7 @@ export function AddOrderDialog({ open, onOpenChange, clientId, profileId, onCrea
         .eq("sales_stage", "Approved")
         .not("quote_approved_at", "is", null);
       setProducts((data ?? []) as any);
-      const { data: wh } = await supabase.from("ab_warehouses").select("id, name, address").eq("is_active", true);
+      const { data: wh } = await (supabase as any).from("ab_warehouses").select("id, name, address").eq("is_active", true);
       setWarehouses((wh ?? []) as any);
       setItems([]);
       setShipKind("client");
@@ -76,7 +76,7 @@ export function AddOrderDialog({ open, onOpenChange, clientId, profileId, onCrea
     if (!items.length) return toast.error("Pick at least one product");
     setSubmitting(true);
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("production_orders").insert({
+    const { error } = await (supabase as any).from("production_orders").insert({
       client_id: profileId,
       items: items as any,
       ship_to_kind: shipKind,
