@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TeamPage } from "@/components/team/TeamPage";
-import { FileText, Upload, Download } from "lucide-react";
+import { FileText, Upload, Download, ExternalLink } from "lucide-react";
 
 type Kind = "nda" | "pss_workbook";
 
