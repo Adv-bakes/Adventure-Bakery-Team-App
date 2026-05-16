@@ -109,32 +109,67 @@ Return ONLY a JSON object matching this exact schema:
       system = `You are reviewing a returned Product Spec Sheet (PSS) from a prospective bakery client.
 The PSS is allowed to be PARTIAL — missing optional sections become services we can offer them, not reasons to reject.
 
-Return ONLY a JSON object matching this exact schema:
+Return ONLY a JSON object matching this exact schema (any field may be null if not stated):
 {
   "has_required": {
-    "company": boolean,
-    "product": boolean,
-    "recipe": boolean,
-    "process": boolean,
-    "size_weight": boolean,
-    "units_per_primary": boolean,
-    "units_per_retail": boolean,
-    "signature": boolean
+    "company": boolean, "product": boolean, "recipe": boolean, "process": boolean,
+    "size_weight": boolean, "units_per_primary": boolean, "units_per_retail": boolean, "signature": boolean
   },
-  "missing_optional": string[],   // any of: "nutritional_panel", "allergens", "packaging", "shelf_life"
-  "services_to_offer": string[],  // human-readable upsell items derived from missing_optional
+  "missing_optional": string[],
+  "services_to_offer": string[],
   "extracted": {
-    "company_name": string | null,
-    "product_name": string | null,
-    "ingredients": [{ "name": string, "percentage": number | null }],
-    "process_steps": string[]
+    "header": {
+      "company_name": string|null, "customer_name": string|null,
+      "product_name": string|null, "product_code": string|null,
+      "version_number": string|null, "revision_number": string|null,
+      "prepared_by": string|null, "approved_by": string|null, "date_of_issue": string|null
+    },
+    "product": {
+      "target_unit_weight_raw": number|null, "target_unit_weight_baked": number|null, "weight_unit": string|null,
+      "expected_bake_loss_pct": number|null,
+      "unit_dimensions": { "l": number|null, "w": number|null, "h": number|null, "unit": string|null },
+      "shape": string|null, "appearance": string|null, "intended_use": string|null, "target_shelf_life": string|null
+    },
+    "recipe": {
+      "total_batch_weight": number|null, "weight_unit": string|null,
+      "ingredients": [
+        { "name": string, "weight": number|null, "weight_unit": string|null,
+          "percentage": number|null, "category": string|null, "notes": string|null }
+      ]
+    },
+    "process": {
+      "method": "no-bake"|"melt"|"loose-batter"|"dough-extruder"|"round-former"|"press-die"|"manual"|null,
+      "pre_bake": {
+        "steps": [
+          { "order": number, "station": string|null, "action": string,
+            "ingredients_added": string[], "mix_time_min": number|null,
+            "mix_speed": string|null, "temperature": number|null, "temp_unit": string|null, "notes": string|null }
+        ],
+        "dough_temp_target": number|null, "dough_temp_unit": string|null
+      },
+      "forming": { "machine": string|null, "target_deposit_weight_raw": number|null, "weight_unit": string|null, "die_or_wire": string|null, "notes": string|null },
+      "bake": { "time_minutes": number|null, "temperature": number|null, "temp_unit": string|null, "expected_loss_pct": number|null },
+      "post_bake": { "freeze_required": boolean|null, "freeze_temp": number|null, "freeze_time": string|null, "notes": string|null }
+    },
+    "packaging": {
+      "primary": { "vessel": string|null, "units_per_pack": number|null, "net_weight_per_pack": number|null, "weight_unit": string|null, "machine": string|null, "lot_code_printed": boolean|null },
+      "secondary": { "type": string|null, "units_per_case": number|null, "machine": string|null, "lot_code_printed": boolean|null },
+      "palletizing": { "cases_per_pallet": number|null, "pattern": string|null, "notes": string|null }
+    },
+    "optional_sections": {
+      "nutritional_panel": object|null, "allergens": object|null, "shelf_life": object|null
+    }
   },
   "summary": string
 }
-- recipe = true if at least 3 ingredients with a name are listed.
-- process = true if at least 2 ordered process steps are present.
+
+CRITICAL RULES:
+- Ingredient weights are the source of truth. Return BOTH "weight" and "percentage" when stated; never invent one from the other — leave null if not present.
+- recipe = true if at least 3 ingredients with a name are listed (weight strongly preferred).
+- process = true if at least 2 ordered steps are present; tag each with ingredients_added[] when possible.
+- Classify process.method from the allowed taxonomy; null if unclear.
 - signature = true ONLY if an explicit signature line / "Signed by" appears with a name.
-- Keep "process_steps" concise (≤ 20 items, each ≤ 120 chars).`;
+- Keep step "action" concise (≤ 120 chars). Cap pre_bake.steps at 20.`;
       userPrompt = `PSS contents (CSV/text):\n\n${extracted}`;
     }
 
