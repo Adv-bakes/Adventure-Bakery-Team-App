@@ -30,7 +30,7 @@ export const CoachChat = ({ currentSection = "Concept", progress = 0 }) => {
       {/* Floating Orb */}
       <TooltipProvider>
         <div
-          className="fixed bottom-12 right-12 z-50"
+          className="fixed bottom-6 right-6 z-50"
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
