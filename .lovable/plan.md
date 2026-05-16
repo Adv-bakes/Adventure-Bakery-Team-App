@@ -1,81 +1,131 @@
-## Batch Sheet — staff workspace + Excel export
 
-Right now `generate-batch-sheet-from-pss` writes a `batch_sheets` row on every PSS submit, but staff have no way to **see, edit, or export** it. This plan builds that — and only that. Costing/sourcing automation stays out of scope (downstream Replit engine).
+## Mental model (locked)
 
-### 1. Database (one small migration)
+- **Project = Concept = one product in presale** (Lead In → Send Documents → Follow-Up → Quote). Lives in Sales.
+- Quote approval **renames** Project → Product and moves it under the Products tab. Same documents carry over (PRF · PSS · Batch Sheet · Quote · other services). The pipeline changes — that's the only real difference.
+- **NDA is client-level only.** It lives on Documents & NDA at the top of the folder. It does **not** appear under any project or product.
+- **QB Estimate is the gate.** Nothing downstream runs until staff marks the QB estimate accepted. Then Material Estimator (Scout Bot) unlocks.
+- **Shipping address lives on the client profile**, not on the order. Default destination + option to choose an Adventure Bakery warehouse.
 
-Extend `batch_sheets.data_json.recipe.ingredients[]` to carry the columns the Replit costing engine reads:
+## Sales sidebar
 
+```text
+Sales
+├─ Dashboard          → presale-only project kanban + "Add Deal"
+├─ Documents Inbox 🔴
+└─ Archive
 ```
-{ name, weight_g, percentage, case_weight, case_weight_uom,
-  vendor_1, vendor_2, vendor_3, vendor_notes }
+
+## Staff Client Folder `/team/sales/clients/:id`
+
+Header on every tab: company name · collapsed contact card (expand on click) · **Add Order** button top-right · NDA status strip.
+
+```text
+├─ Overview            Active Projects (presale) + Approved Products (post-quote)
+├─ Documents & NDA     NDA + client-level docs the portal exposes  ← ONLY place NDA appears
+├─ Projects            presale projects list → project detail sub-tabs:
+│    ├─ Documents      PRF · PSS · Batch Sheet · Quote · other offered services
+│    ├─ Packaging
+│    ├─ Shelf Life
+│    ├─ Activity       STAFF-ONLY
+│    └─ Notes          STAFF-ONLY
+├─ Products            approved products → product detail sub-tabs:
+│    ├─ Documents      SAME set as Projects (PRF · PSS · Batch Sheet · Quote · other) — carried over
+│    ├─ Packaging
+│    ├─ Shelf Life
+│    ├─ Orders History STAFF-ONLY
+│    ├─ Activity       STAFF-ONLY
+│    └─ Notes          STAFF-ONLY
+├─ Tolling Inventory   STAFF-ONLY (tab shell this pass)
+├─ Orders              STAFF-ONLY — QB-gated flow (see below)
+└─ Notes               STAFF-ONLY client-level notes
 ```
 
-Add columns on `batch_sheets` for workflow:
-- `version` int default 1
-- `superseded_at` timestamptz null
-- `superseded_by_version` int null
-- `last_edited_by` uuid null
-- `xlsx_path` text null  (Storage path of the last exported file)
+## Add Order flow (QB-gated)
 
-Add a private Storage bucket **`batch-sheets`** (staff-only) with RLS: only `is_staff_or_admin()` can SELECT/INSERT/UPDATE/DELETE. Confirms the "never visible to client" rule.
+`Add Order` (header button) opens a dialog:
+- Multi-select of the client's **approved products**, qty + units/cases per product.
+- **Ship-to**: defaults to the client profile's shipping address; dropdown can switch to an Adventure Bakery warehouse. No free-text address on the order itself.
+- If originating quote is >30 days old → "Pricing review required" banner.
+- Submit creates `production_orders` row in status **`Awaiting QB Acceptance`** and routes to the Orders tab.
 
-No client-facing RLS on `batch_sheets` — current staff/admin-only policy stays.
+Orders tab row, gated:
 
-### 2. Generator updates (`generate-batch-sheet-from-pss`)
+```text
+1. QB Estimate sent           → staff marks "Estimate sent" (qb_estimate_sent_at)
+2. QB Estimate accepted ⛔    → staff marks "Accepted" (qb_estimate_accepted_at)
+                                THE GATE. Nothing below visible/clickable until accepted.
+3. Material Estimator         → waste % + "Calculate ingredients" (Scout Bot stub)
+4. (future) Sourcing · Schedule · MPDs
+```
 
-When building `recipe.ingredients`:
-- Leave `case_weight` **null** (staff fills manually — formula deferred per your note).
-- For each ingredient name, look up the **most recent prior batch sheet for this `client_user_id`** (or, if none, the most recent across all clients with the same normalized ingredient name) and copy `vendor_1/2/3` forward. Mark `vendor_source: "prior_sheet"` so the UI can show a subtle hint.
-- Never overwrite vendors that already exist on the current sheet (re-runs are non-destructive for staff-entered vendor data).
+## Sales Dashboard `/team/sales/dashboard`
 
-### 3. In-app Batch Sheet workspace (staff only)
+KPIs + **Add Deal** + project kanban grouped by `prf_submissions.sales_stage`: Lead In → Send Documents → Follow-Up → Quote → Approved.
 
-Route: `/team/operations/batch-sheets` (list) and `/team/operations/batch-sheets/:id` (editor).
+## Project Subfolder `/team/sales/clients/:leadId/projects/:projectId`
 
-**List view** — table of `batch_sheets`: product name, client, status (draft / in_review / approved / superseded), version, updated_at, link to edit, link to Excel export.
+Stage stepper. Approving Quote graduates project → Product (same docs carry over). Sub-tabs: Documents · Packaging · Shelf Life · Activity · Notes.
 
-**Editor view** — single page, three sections:
+## Data model
 
-1. **Header + product** — read-only summary card (company, product, version, source PSS link, finished form from PRF).
-2. **Recipe grid** — editable table mirroring the Replit columns:
-   ```
-   A #  | B Ingredient | C %Formula | D Weight(g) | E Case Weight | F UoM
-   G Vendor 1 | H Notes | I Vendor 2 | J Notes | K Vendor 3 | L Notes
-   ```
-   - %Formula and Weight(g) are **locked** (come from PSS, change only via new PSS version).
-   - Case Weight, UoM, and the 3 vendor columns are **editable**; cells flagged as "pre-filled from prior sheet" show a tiny "prior" chip until staff confirms or overwrites.
-   - Add-row / delete-row only for ingredients staff want to add that aren't in the recipe (e.g. processing aids).
-3. **Process & packaging** — collapsed read-only panels showing the proprietary `processes` rows and packaging spec, with a "Open proprietary process editor" link (separate screen — future).
+```sql
+alter table prf_submissions
+  add column sales_stage text default 'Lead In',
+  add column sales_stage_updated_at timestamptz default now(),
+  add column quote_approved_at timestamptz,
+  add column lead_id uuid;
 
-Save behavior: autosave to `batch_sheets.data_json` on blur with optimistic UI; bumps `last_edited_by`. Status toggle: `draft → in_review → approved`. Approving freezes the row and creates a new version row on next PSS edit (mirrors formula versioning).
+-- Shipping lives on the client, not the order
+alter table profiles
+  add column shipping_address_line1 text,
+  add column shipping_address_line2 text,
+  add column shipping_city text,
+  add column shipping_state text,
+  add column shipping_postal_code text,
+  add column shipping_country text;
 
-### 4. Excel export
+-- New: Adventure Bakery warehouses (staff-managed)
+create table ab_warehouses (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  address text not null,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+-- Staff/admin RLS on ab_warehouses.
 
-One new edge function: `export-batch-sheet-xlsx`.
-- Input: `batch_sheet_id`.
-- Auth: staff/admin only.
-- Generates an `.xlsx` matching Replit's column map (B/C/E/G/I/K) using a Deno-compatible xlsx lib (`xlsx` from `https://esm.sh/xlsx`). Header rows match the existing Replit template so the downstream parser keeps working without changes.
-- Uploads to `batch-sheets/{batch_sheet_id}/v{version}-{timestamp}.xlsx`, stores `xlsx_path`, returns a signed URL.
-- Editor's "Download Excel" button calls it and triggers a browser download.
+alter table production_orders
+  add column client_id uuid,
+  add column items jsonb default '[]'::jsonb,         -- [{product_id, qty, unit:'units'|'cases'}]
+  add column ship_to_kind text default 'client',      -- 'client' | 'ab_warehouse'
+  add column ship_to_warehouse_id uuid,               -- null unless kind='ab_warehouse'
+  add column notes text,
+  add column qb_estimate_sent_at timestamptz,
+  add column qb_estimate_accepted_at timestamptz,
+  add column waste_pct numeric;
+```
 
-### 5. Notifications + audit
+Backfill `prf_submissions.lead_id` from `sales_leads.email`. Tighten `production_orders` RLS from admin-only to staff/admin.
 
-- Existing `internal_notifications` insert ("batch_sheet_drafted") stays.
-- Add "batch_sheet_approved" notification on approval.
-- Append `client_activity` rows: `batch_sheet_edited`, `batch_sheet_approved`, `batch_sheet_exported` (keyed by `client_id` for the staff audit log — clients still never see this data).
+## Files
 
-### 6. Out of scope
+- `supabase/migrations/...` — column adds, `ab_warehouses` table, RLS, backfill.
+- `src/components/TeamLayout.tsx` — Sales sidebar trim.
+- `src/App.tsx` — `/team/sales/dashboard` + nested project/product routes.
+- `src/pages/sales/SalesDashboard.tsx` *(new)*
+- `src/pages/sales/SalesClientFolder.tsx` — retabbing + header Add Order + collapsed contact card + NDA strip.
+- `src/pages/sales/SalesProjectWorkspace.tsx` — stepper + sub-tabs.
+- `src/pages/sales/SalesProductWorkspace.tsx` *(new)* — product sub-tabs (no NDA).
+- `src/pages/sales/ClientOrders.tsx` *(new)* — QB-gated flow.
+- `src/components/sales/AddOrderDialog.tsx` *(new)* — ship-to picker (client default vs AB warehouse).
+- Client profile editor: add shipping-address block (separate small follow-up if not already in scope).
 
-- Proprietary process editor UI (separate future task — table exists, just no UI).
-- Vendor master / quote DB / shipping-threshold logic (downstream Replit engine).
-- Client visibility — explicitly **none**, confirmed.
-- Auto-computing Case Weight (deferred until you've defined the formula; cell stays manual).
+## Out of scope
 
-### Files
-
-- New migration: `batch_sheets` columns + `batch-sheets` storage bucket + RLS.
-- Edit: `supabase/functions/generate-batch-sheet-from-pss/index.ts` (vendor carry-forward, case_weight nulling).
-- New edge function: `supabase/functions/export-batch-sheet-xlsx/index.ts`.
-- New pages: `src/pages/team/operations/BatchSheets.tsx`, `BatchSheetEditor.tsx`.
-- Sidebar entry under Operations Hub.
+- Operations sidebar cleanup.
+- Tolling Inventory CRUD (tab shell only).
+- Real QB integration (manual mark-accepted).
+- Scout Bot beyond ingredient pull-list stub; sourcing/scheduling/MPDs.
+- Warehouse CRUD UI (seed manually this pass; admin screen later).
+- Brand-portal write-back.
