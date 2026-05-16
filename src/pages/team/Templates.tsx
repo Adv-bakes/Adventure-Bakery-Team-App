@@ -198,6 +198,7 @@ const TemplatesPage = () => {
           </div>
         );
       })}
+      <div className="h-24" aria-hidden />
     </TeamPage>
   );
 };
