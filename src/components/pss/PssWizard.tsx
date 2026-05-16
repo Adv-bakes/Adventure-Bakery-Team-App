@@ -396,20 +396,24 @@ export function PssWizard(props: {
             <Plus className="w-3.5 h-3.5" /> Add step
           </button>
 
-          <h3 className="font-display text-sm font-semibold mt-2 mb-2">Bake</h3>
-          <Row>
-            <Field label="Bake temperature">
-              <input className="tp-input" value={data.process.bake.temperature || ""} onChange={(e) => update((d) => (d.process.bake.temperature = e.target.value, d))} />
-            </Field>
-            <Field label="Unit">
-              <select className="tp-input" value={data.process.bake.temp_unit || "°F"} onChange={(e) => update((d) => (d.process.bake.temp_unit = e.target.value, d))}>
-                {["°F", "°C"].map((u) => <option key={u} value={u}>{u}</option>)}
-              </select>
-            </Field>
-            <Field label="Bake time (min)">
-              <input className="tp-input" value={data.process.bake.time_minutes || ""} onChange={(e) => update((d) => (d.process.bake.time_minutes = e.target.value, d))} />
-            </Field>
-          </Row>
+          {!isNoBakeMethod(data.process.method) && (
+            <>
+              <h3 className="font-display text-sm font-semibold mt-2 mb-2">Bake</h3>
+              <Row>
+                <Field label="Bake temperature">
+                  <input className="tp-input" value={data.process.bake.temperature || ""} onChange={(e) => update((d) => (d.process.bake.temperature = e.target.value, d))} />
+                </Field>
+                <Field label="Unit">
+                  <select className="tp-input" value={data.process.bake.temp_unit || "°F"} onChange={(e) => update((d) => (d.process.bake.temp_unit = e.target.value, d))}>
+                    {["°F", "°C"].map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </Field>
+                <Field label="Bake time (min)">
+                  <input className="tp-input" value={data.process.bake.time_minutes || ""} onChange={(e) => update((d) => (d.process.bake.time_minutes = e.target.value, d))} />
+                </Field>
+              </Row>
+            </>
+          )}
 
           <h3 className="font-display text-sm font-semibold mt-6 mb-2">Post-bake</h3>
           <label className="flex items-center gap-2 text-sm">
