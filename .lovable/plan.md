@@ -1,141 +1,179 @@
-## Sales workflow — what we're actually building
 
-A clean, decision-driven sales surface. PRFs land → salesperson reviews → Accept or Reject → client either becomes a folder you live inside, or gets archived with a polite AI-drafted email. No fake dollar signs anywhere.
+## Goal
 
-## Core mental model
+1. **Documents Inbox lane #2** — review returned NDA + PSS, then promote the lead into a real client folder.
+2. **Project workspace** in the Client Folder mirroring the Brand Portal tabs (Concept, Ingredients, Formulas, Packaging, Shelf Life, Products), staff-side, with header quick-icons for **PRF · PSS · NDA · Batch Sheet**.
+3. **Batch Sheet is generated from the PSS** — internal artifact, **Adventure Bakery only**, never client-visible. Process edits feed back into it.
+
+## Workflow
 
 ```text
-PRF submitted (public form)
-      │
-      ▼
-┌───────────────┐    Accept     ┌────────────────────────┐
-│ Documents     │ ───────────▶ │ Client Folder (micro app)│
-│ Inbox (queue) │               │ → stage: Send Documents │
-│  - Open PRF   │   Reject      └────────────────────────┘
-│  - Read it    │ ──────────┐
-│  - Decide     │           ▼
-└───────────────┘   ┌──────────────────┐
-                    │ Reject email      │  → Archive
-                    │  (talk-to-text +  │
-                    │   AI polish)      │
-                    └──────────────────┘
+PRF accepted ─► Send Documents stage
+                       │
+                       ▼
+   Client returns NDA + PSS  ──► Inbox lane #2
+                       │
+              AI review (generic provider)
+                       │
+              Staff Approves both
+                       │
+                       ├── PSS approved ──► auto-create/refresh Batch Sheet (internal)
+                       │                    linked: batch_sheet.pss_document_id
+                       │
+                       └── NDA + PSS approved ──► lead → "Follow-Up"
+                                                  client_activity('documents_completed')
 ```
 
-Key rules from your direction:
-- A submitted PRF **automatically creates a client card** (no manual data entry). The card pulls from the PRF.
-- **Pipeline has no $ values** — they mean nothing until first order. Replace dollar KPI with stage-count chips.
-- **Accept advances to "Send Documents"**, not "Quote". You need the PSS back before you can quote.
-- **Reject** archives the client + sends an AI-drafted email composed via talk-to-text by the salesperson.
-- Inbox items only leave the inbox when a decision is made. Opening the PRF without deciding keeps it in the queue.
-- Contact data (name, email, phone) is never deleted — archived clients keep their record, just hidden from active views.
+## 1. PSS — partial submissions are OK
 
-## Changes
+The PSS template (digital + PDF) marks these as **mandatory** — the client cannot submit without them:
+- Company name
+- Product name
+- Recipe (ingredients + percentages)
+- Process (steps)
+- Target unit size + weight
+- Units per primary pack
+- Units per retail unit
+- Human signature (for the client's own protection)
 
-### 1. Auto-create client card on PRF submission
+These are **optional** — when missing, the AI flags them as **"service offered"** rather than rejecting the PSS:
+- Nutritional panel  → offer nutritional analysis service
+- Allergen declaration → offer allergen review service
+- Packaging spec  → offer packaging design service
+- Shelf life data → offer shelf-life testing service
 
-Add a database trigger on `prf_submissions` (after insert):
-- If `email` is set and no `profiles` row exists for that email with role `Client`, create one.
-- Copy: `company_name → business_name`, `founder_name → full_name`, `email`, `phone`.
-- Set `sales_stage = 'Lead In'`.
-- Link the PRF to the new profile via `prf_submissions.owner_user_id` (already exists; trigger fills it when the email matches a future signup, but we also fill it at insert time when we create the profile).
+The Document Review side panel surfaces these as a **"Services we can offer this client"** list, which the salesperson can use as upsell talking points. Approval is allowed even with optional sections missing.
 
-This means: every PRF that lands shows up as a card in the **Lead In** column automatically, with its NDA/PSS/PRF dots reflecting reality.
+## 2. AI document review — generic provider
 
-### 2. Documents Inbox — true triage queue
+A small `lib/ai/reviewer.ts` abstraction so we can swap providers without touching the edge function logic.
 
-**What appears:**
-- Only PRFs with `status = 'new'` or `status = 'reviewing'`. Once accepted or rejected, they leave.
+```ts
+// supabase/functions/_shared/ai.ts
+export async function aiJSON({ system, user }): Promise<any> {
+  const provider = Deno.env.get('AI_PROVIDER') ?? 'lovable';  // 'lovable' | 'openai' | 'ollama'
+  // dispatches to the right gateway, all return parsed JSON
+}
+```
 
-**Per row:**
-- Company · contact · received-at · "Open PRF" button (opens the PRF detail in a side panel — read-only, with download).
-- Two decision buttons: **Accept** · **Reject**.
-- A salesperson can open the PRF, close it, come back later — status stays `new`/`reviewing` until they click Accept or Reject.
+- **Default**: Lovable AI Gateway (already wired, no extra cost configuration)
+- **Swap via env var** `AI_PROVIDER` + corresponding key — no code change needed
+- **Ollama path** posts to `OLLAMA_BASE_URL` for self-hosted/cheap inference
+- Model name is also env-driven (`AI_MODEL`)
 
-**Accept flow:**
-- Set PRF `status = 'accepted'`.
-- Move the linked client to **Send Documents** stage.
-- Log to `client_activity` (`prf_accepted`).
-- Toast: "Accepted — moved to Send Documents". Row disappears from inbox.
+This way you compare costs later by flipping a secret, not by re-deploying a different function.
 
-**Reject flow → talk-to-text + AI email composer:**
-- Open a small dialog with:
-  - Mic button (Web Speech API → live transcript) for the salesperson to dictate the gist of why.
-  - Text area showing the transcript (editable).
-  - **"Polish with AI"** button → calls a new edge function that uses Lovable AI Gateway (`google/gemini-2.5-flash`) to turn the dictated note into a short, professional, kind rejection email.
-  - Preview of the rendered email.
-  - **Send & Archive** button.
-- On send: edge function sends the email via existing transactional email infra (we already have `notify.adventurebakery.info` via Resend), sets PRF `status = 'rejected'`, sets profile `sales_stage = 'Archived'`, logs to `client_activity` (`prf_rejected_emailed`).
-- Row disappears from inbox; client moves to Archive view (not deleted).
+Edge function `review-client-document`:
+- Downloads from `product-spec-sheets` bucket (signed URL via service role)
+- Extracts text (PDF → pdfjs / xlsx → `npm:xlsx`)
+- Calls `aiJSON()` with a strict schema:
+  - **NDA**: `{ fully_executed, signer_name, company, date, signature_present, issues[] }`
+  - **PSS**: `{ has_required: { company, product, recipe, process, size_weight, units_per_primary, units_per_retail, signature }, missing_optional[], summary }`
+- Writes to `client_documents.review_status` + `review_notes` (jsonb)
 
-**Empty state:** "Inbox zero. Nothing to review."
+## 3. PSS approval — generate / overwrite the internal Batch Sheet
 
-### 3. Pipeline — drop the dollar sign, fix the KPIs
+When a PSS row flips to `approved`, edge function `generate-batch-sheet-from-pss` runs:
+- Reads PSS structured data + reuses `parse-batch-sheet` extraction
+- **Upserts** `batch_sheets` keyed on `pss_document_id` — new drafts overwrite the previous one (per your rule)
+- Stores `data_json` (recipe, process steps, equipment)
+- Logs `client_activity('batch_sheet_drafted')`
 
-KPIs that actually mean something at this stage of a relationship:
-- **Open deals** (count of non-archived clients)
-- **Stuck >7d** (no stage change in a week)
-- **Awaiting docs** (in Send Documents stage)
-- **PRFs to review** (inbox count)
+Batch sheet is **internal-only** — RLS restricts it to `is_staff_or_admin(auth.uid())` and it has no client-portal route. The client never sees it.
 
-No `MoneyOnly` `$—` tile. No "pipeline value". We can revisit dollar metrics after first orders exist (then it's real revenue, not guessed deal value).
+## 4. Process edits feed the Batch Sheet
 
-Above the kanban: a 5-chip strip (`Lead In · Send Documents · Follow-Up · Quote · First Order`) with live counts so the eye sees "here are the 5 stages" before scanning columns.
+When staff edit the **Process** tab of a project (existing process editor) for a project that has a batch sheet, those edits write through to `batch_sheets.data_json.process_steps`. A small `useSyncProcessToBatchSheet(projectId)` hook in the project workspace handles the sync.
 
-### 4. Client Folder — micro app per client
+Client-portal Process view stays read-only for the client (no change there).
 
-`/team/sales/clients/:id` becomes the place a salesperson actually lives. It already exists as a route — we'll redesign the content:
+## 5. Client Folder — projects list
 
-- **Header**: company, contact, email, phone, current stage (with stage stepper).
-- **Tabs**:
-  - **Overview** — contact card, key project info pulled from latest PRF, recent activity timeline.
-  - **PRFs** — list of every PRF this client has submitted (a client can have multiple projects). Each row: product name, submitted date, status, Open + Download buttons.
-  - **Documents** — NDA, PSS, batch sheets — upload/view (uses existing `client_documents`).
-  - **Activity** — full `client_activity` log.
-  - **Notes** — free-text notes the salesperson can keep.
+In `SalesClientFolder.tsx`:
+- Rename **PRFs** tab → **Projects**
+- Each row + Overview "Latest project" card → `/team/sales/clients/:leadId/projects/:prfId`
 
-Out of scope for this pass: the deeper "what info to show on Overview" — that's the next conversation you flagged.
+## 6. Project Workspace (NEW) — mirrors Brand Portal
 
-### 5. Archive view
+```text
+┌─ Header ─────────────────────────────────────────────────┐
+│ ← Back · Product name · stage chip                       │
+│ Quick docs:  [PRF] [PSS] [NDA] [Batch Sheet*]            │
+│              *internal-only icon, gold tint              │
+└──────────────────────────────────────────────────────────┘
+┌─ Tabs ───────────────────────────────────────────────────┐
+│ Concept · Ingredients · Formulas · Packaging ·           │
+│ Shelf Life · Products · Costing · Notes                  │
+└──────────────────────────────────────────────────────────┘
+```
 
-New route `/team/sales/archive`:
-- All profiles with `sales_stage = 'Archived'`.
-- Shows: company, contact, email, phone, archived date, reason snippet, "Restore" action.
-- Restore = move back to **Lead In**.
-- Cleanup cadence is manual for now (no auto-purge); we can add a "delete forever" button later.
+- Tabs are scoped read-views of existing data with "Open in editor" deep-link to the existing team pages — we don't rebuild editors.
+- **PRF** → `PrfReviewPanel`
+- **PSS** → signed URL (latest approved)
+- **NDA** → signed URL (latest approved)
+- **Batch Sheet** → side panel reading `batch_sheets`, staff-only
 
-### 6. Sidebar tweaks (TeamLayout)
+## 7. Database migration
 
-- Add **Archive** under Sales.
-- Add a small badge on **Documents Inbox** with count of `status='new'/'reviewing'` PRFs.
-- Add a small badge on Pipeline showing total open deals (optional — say the word).
+```sql
+ALTER TABLE public.client_documents
+  ADD COLUMN review_status text DEFAULT 'pending',
+  ADD COLUMN review_notes jsonb,
+  ADD COLUMN reviewed_at timestamptz,
+  ADD COLUMN reviewed_by uuid;
+CREATE INDEX idx_client_docs_review
+  ON public.client_documents (review_status, document_type);
+UPDATE public.client_documents SET review_status = 'approved'
+  WHERE review_status IS NULL OR review_status = 'pending';
 
-## Files touched
+ALTER TABLE public.prf_submissions ADD COLUMN concept_id bigint;
+CREATE INDEX idx_prf_concept ON public.prf_submissions (concept_id);
 
-- `src/pages/sales/SalesPipeline.tsx` — drop $ KPI, add stage-chip strip, update KPIs
-- `src/pages/sales/SalesDocumentsInbox.tsx` — filter to undecided PRFs, Open/Accept/Reject actions
-- `src/pages/sales/SalesClientFolder.tsx` — tabbed micro-app layout
-- `src/pages/sales/SalesArchive.tsx` — **new** archive view
-- `src/components/sales/PrfReviewPanel.tsx` — **new** side panel: read PRF, download, decide
-- `src/components/sales/RejectEmailDialog.tsx` — **new** talk-to-text + AI polish + send
-- `src/components/TeamLayout.tsx` — add Archive nav item, inbox count badge
-- `src/components/sales/PipelineCard.tsx` — minor: remove `$—` chip
-- `supabase/functions/draft-rejection-email/index.ts` — **new** edge function (Lovable AI Gateway → polish dictated note)
-- `supabase/functions/send-rejection-email/index.ts` — **new** edge function (renders + sends via existing transactional infra)
-- `src/App.tsx` — register `/team/sales/archive` route
+CREATE TABLE public.batch_sheets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pss_document_id text UNIQUE,            -- one batch sheet per PSS, edits overwrite
+  concept_id bigint,
+  lead_id uuid,
+  client_user_id uuid,
+  status text NOT NULL DEFAULT 'draft',   -- draft | approved
+  data_json jsonb,                         -- recipe, process_steps, equipment
+  generated_from text DEFAULT 'pss',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.batch_sheets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Staff/admin all batch_sheets" ON public.batch_sheets
+  FOR ALL TO authenticated
+  USING (is_staff_or_admin(auth.uid()))
+  WITH CHECK (is_staff_or_admin(auth.uid()));
+```
 
-## Database changes
+## 8. PSS digital form — mandatory-field gating (deferred but flagged)
 
-One migration:
-1. **Trigger `prf_create_client_profile`** on `prf_submissions` after insert: upsert a `profiles` row with role `Client` for the submitter's email, copy contact fields, set `sales_stage='Lead In'`, link `owner_user_id` if a profile already exists for that email.
-2. **Add `'reviewing'`, `'accepted'`, `'rejected'`** as accepted values in `prf_submissions.status` (it's already free text — no constraint change needed; just documenting).
-3. **Add `'Archived'`** as a valid `sales_stage` value (also free text — no constraint).
-4. **Index** on `prf_submissions(status, created_at)` for inbox query speed.
+You're right that if the PSS is filled online we can simply prevent submit without the mandatory fields. That belongs in the Brand Portal PSS form, which is a **separate edit** I'll do right after this lands so this PR stays focused. Tracking it as a follow-up: "PSS form: enforce required fields client-side + server-side."
 
-No schema-breaking changes. Existing PRFs stay where they are; the trigger only fires for new inserts. We'll backfill the 6 existing `status='new'` PRFs as a one-time data step (insert tool, not migration).
+## 9. Files
 
-## Out of scope (for the next pass)
+**New**
+- `src/pages/sales/SalesProjectWorkspace.tsx`
+- `src/components/sales/DocumentReviewPanel.tsx`
+- `src/components/sales/project-tabs/` (Concept, Ingredients, Formula, Packaging, ShelfLife, Products, Costing, BatchSheetPanel)
+- `supabase/functions/_shared/ai.ts` (generic provider abstraction)
+- `supabase/functions/review-client-document/index.ts`
+- `supabase/functions/generate-batch-sheet-from-pss/index.ts`
 
-- The exact information architecture of the Client Folder Overview tab — you flagged this as its own conversation.
-- Auto-purge schedule for archived clients.
-- Dollar-based metrics — revisit once first orders flow through.
-- Voice transcription accuracy guarantees — using browser Web Speech API; works in Chrome/Edge, falls back to plain typing in Safari.
+**Edited**
+- `src/pages/sales/SalesDocumentsInbox.tsx` — second lane
+- `src/pages/sales/SalesClientFolder.tsx` — Projects tab + workspace link
+- `src/App.tsx` — new route
+
+## Out of scope (explicit follow-ups)
+
+- PSS digital form mandatory-field gating (next PR)
+- Full edit parity with Brand Portal in the new tabs (read + deep-link for v1)
+- E-sign / NDA generation
+- Inline batch-sheet editor (v1 = view + auto-regenerate from PSS + auto-sync from Process edits)
+
+## Open question
+
+NDA "signature_present" — text-extraction heuristic (looks for "Signed by:", signature-line, or visible signed-glyph blob on the page) is fine for v1, with ambiguous cases flagged for human review. True image-signature verification is deferred. OK?

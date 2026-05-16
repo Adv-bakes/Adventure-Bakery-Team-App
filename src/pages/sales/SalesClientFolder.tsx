@@ -133,7 +133,7 @@ const SalesClientFolder = () => {
       <Tabs defaultValue="overview">
         <TabsList className="tp-surface mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="prfs">PRFs ({prfs.length})</TabsTrigger>
+          <TabsTrigger value="prfs">Projects ({prfs.length})</TabsTrigger>
           <TabsTrigger value="documents">Documents ({docs.length})</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -156,15 +156,16 @@ const SalesClientFolder = () => {
             <div className="tp-surface p-5">
               <p className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-text-dim))] mb-3">Latest project</p>
               {prfs[0] ? (
-                <>
+                <Link to={`/team/sales/clients/${lead.id}/projects/${prfs[0].id}`} className="block hover:opacity-80 transition">
                   <p className="font-display text-lg text-[hsl(var(--tp-text))]">{prfs[0].product_name || "—"}</p>
                   <p className="text-sm text-[hsl(var(--tp-text-muted))] mt-1">{prfs[0].project_type || "—"}</p>
                   <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mt-2">
                     Submitted {new Date(prfs[0].created_at).toLocaleDateString()} · {prfs[0].status}
                   </p>
-                </>
+                  <p className="text-[11px] text-[hsl(var(--tp-gold))] mt-3">Open project workspace →</p>
+                </Link>
               ) : (
-                <p className="text-sm italic text-[hsl(var(--tp-text-dim))]">No PRFs yet.</p>
+                <p className="text-sm italic text-[hsl(var(--tp-text-dim))]">No projects yet.</p>
               )}
             </div>
           </div>
@@ -172,17 +173,20 @@ const SalesClientFolder = () => {
 
         <TabsContent value="prfs">
           <div className="tp-surface divide-y divide-[hsl(var(--tp-hairline))]">
-            {prfs.length === 0 && <p className="p-8 text-sm text-[hsl(var(--tp-text-dim))] italic">No PRFs yet.</p>}
+            {prfs.length === 0 && <p className="p-8 text-sm text-[hsl(var(--tp-text-dim))] italic">No projects yet.</p>}
             {prfs.map((p) => (
               <div key={p.id} className="p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
+                <Link to={`/team/sales/clients/${lead.id}/projects/${p.id}`} className="min-w-0 flex-1 hover:opacity-80 transition">
                   <p className="font-display text-sm font-semibold text-[hsl(var(--tp-text))]">{p.product_name || "(unnamed)"}</p>
                   <p className="text-[11px] text-[hsl(var(--tp-text-dim))]">
                     {p.project_type || "—"} · {p.status} · {new Date(p.created_at).toLocaleDateString()}
                   </p>
-                </div>
+                </Link>
+                <Link to={`/team/sales/clients/${lead.id}/projects/${p.id}`} className="tp-btn">
+                  Open workspace
+                </Link>
                 <button onClick={() => setOpenPrf(p.id)} className="tp-btn">
-                  <Eye className="w-3.5 h-3.5" /> Open
+                  <Eye className="w-3.5 h-3.5" /> PRF
                 </button>
               </div>
             ))}
