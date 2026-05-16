@@ -93,6 +93,25 @@ Deno.serve(async (req) => {
       .eq("id", row.lead_id)
       .eq("stage", "Send Documents");
 
+    // Auto-generate batch sheet draft from this PSS (no sales review).
+    try {
+      const genUrl = `${SUPABASE_URL}/functions/v1/generate-batch-sheet-from-pss`;
+      const r = await fetch(genUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-internal-secret": SERVICE_KEY,
+        },
+        body: JSON.stringify({ pss_document_id: documentId }),
+      });
+      if (!r.ok) {
+        const txt = await r.text();
+        console.warn("generate-batch-sheet-from-pss failed:", r.status, txt);
+      }
+    } catch (e) {
+      console.warn("generate-batch-sheet-from-pss invoke error:", e);
+    }
+
     return json({ success: true, documentId, filePath }, 200);
   } catch (e) {
     console.error(e);
