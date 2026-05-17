@@ -22,6 +22,11 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [prfTpl, setPrfTpl] = useState<ActiveTemplate | null>(null);
+
+  useEffect(() => {
+    if (open) fetchActiveTemplates().then(t => setPrfTpl(t.prf_template));
+  }, [open]);
 
   const reset = () => {
     setCompany(""); setContact(""); setEmail(""); setProduct(""); setFile(null);
