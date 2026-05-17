@@ -1,11 +1,12 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, Download } from "lucide-react";
+import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate } from "@/lib/templates";
 
 interface AddDealDialogProps {
   open: boolean;
@@ -21,6 +22,11 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [prfTpl, setPrfTpl] = useState<ActiveTemplate | null>(null);
+
+  useEffect(() => {
+    if (open) fetchActiveTemplates().then(t => setPrfTpl(t.prf_template));
+  }, [open]);
 
   const reset = () => {
     setCompany(""); setContact(""); setEmail(""); setProduct(""); setFile(null);
@@ -114,7 +120,18 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
           </div>
 
           <div>
-            <Label>PRF file *</Label>
+            <div className="flex items-center justify-between">
+              <Label>PRF file *</Label>
+              <button
+                type="button"
+                onClick={() => downloadTemplate(prfTpl, "prf_template")}
+                disabled={!prfTpl}
+                className="text-xs text-primary underline-offset-2 hover:underline disabled:opacity-40 disabled:no-underline inline-flex items-center gap-1"
+                title={prfTpl ? "Download a blank PRF to fill out" : "No PRF template uploaded yet (admin must add one in Templates)"}
+              >
+                <Download className="w-3 h-3" /> Don't have one? Download blank PRF
+              </button>
+            </div>
             <input
               ref={fileRef}
               type="file"

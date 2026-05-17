@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
-import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send } from "lucide-react";
+import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
+import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
 
 const TABS = ["concept", "ingredients", "formulas", "packaging", "shelf-life", "products", "costing", "notes"] as const;
 
@@ -20,6 +21,10 @@ const SalesProjectWorkspace = () => {
   const [batchOpen, setBatchOpen] = useState(false);
   const [generatingBatch, setGeneratingBatch] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [templates, setTemplates] = useState<Record<TemplateKind, ActiveTemplate | null> | null>(null);
+  const [uploadingKind, setUploadingKind] = useState<"pss" | "nda" | null>(null);
+  const pssInputRef = useRef<HTMLInputElement>(null);
+  const ndaInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     (async () => {
@@ -57,6 +62,54 @@ const SalesProjectWorkspace = () => {
       setLoading(false);
     })();
   }, [leadId, prfId]);
+
+  useEffect(() => { fetchActiveTemplates().then(setTemplates); }, []);
+
+  const refreshDocs = async () => {
+    if (!lead?.profile_id) return;
+    const { data: docs } = await supabase
+      .from("client_documents")
+      .select("*")
+      .eq("user_id", lead.profile_id)
+      .order("uploaded_at", { ascending: false });
+    const pssDoc = (docs || []).find((d) => (d.document_type || "").toLowerCase() === "pss" && d.review_status === "approved")
+      || (docs || []).find((d) => (d.document_type || "").toLowerCase() === "pss");
+    const ndaDoc = (docs || []).find((d) => (d.document_type || "").toLowerCase() === "nda" && d.review_status === "approved")
+      || (docs || []).find((d) => (d.document_type || "").toLowerCase() === "nda");
+    setPss(pssDoc || null);
+    setNda(ndaDoc || null);
+  };
+
+  const uploadDoc = async (kind: "pss" | "nda", file: File) => {
+    if (!lead?.profile_id) return toast.error("This lead has no client profile yet — cannot attach documents.");
+    setUploadingKind(kind);
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${lead.profile_id}/${kind}/${Date.now()}-${safe}`;
+      const { error: upErr } = await supabase.storage
+        .from("product-spec-sheets")
+        .upload(path, file, { contentType: file.type || undefined, upsert: false });
+      if (upErr) throw upErr;
+      const { data: u } = await supabase.auth.getUser();
+      const { error: insErr } = await (supabase as any).from("client_documents").insert({
+        id: crypto.randomUUID(),
+        user_id: lead.profile_id,
+        uploaded_by: u.user?.id || null,
+        document_type: kind,
+        file_path: path,
+        file_name: file.name,
+        uploaded_at: new Date().toISOString(),
+        review_status: "pending",
+      });
+      if (insErr) throw insErr;
+      toast.success(`${kind.toUpperCase()} uploaded — review it in the Documents Inbox.`);
+      await refreshDocs();
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingKind(null);
+    }
+  };
 
   const openSigned = async (doc: any) => {
     if (!doc?.file_path) return toast.error("No file on record");
@@ -107,16 +160,70 @@ const SalesProjectWorkspace = () => {
         <button onClick={() => setOpenPrf(true)} className="tp-btn">
           <FileText className="w-3.5 h-3.5" /> PRF
         </button>
-        <button onClick={() => openSigned(pss)} disabled={!pss?.file_path} className="tp-btn disabled:opacity-40" title={!pss ? "No PSS on file" : "Open PSS"}>
-          <FileCheck2 className="w-3.5 h-3.5" /> PSS {pss && pss.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{pss.review_status}</span>}
-        </button>
-        <button onClick={() => openSigned(nda)} disabled={!nda?.file_path} className="tp-btn disabled:opacity-40" title={!nda ? "No NDA on file" : "Open NDA"}>
-          <FileSignature className="w-3.5 h-3.5" /> NDA {nda && nda.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{nda.review_status}</span>}
-        </button>
+
+        {/* PSS */}
+        {pss ? (
+          <button onClick={() => openSigned(pss)} className="tp-btn" title="Open PSS">
+            <FileCheck2 className="w-3.5 h-3.5" /> PSS
+            {pss.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{pss.review_status}</span>}
+          </button>
+        ) : (
+          <>
+            <input
+              ref={pssInputRef}
+              type="file"
+              accept=".pdf,.xlsx,.xls,.doc,.docx"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc("pss", f); e.target.value = ""; }}
+            />
+            <button onClick={() => pssInputRef.current?.click()} disabled={uploadingKind === "pss"} className="tp-btn" title="Upload signed PSS">
+              <Upload className="w-3.5 h-3.5" /> {uploadingKind === "pss" ? "Uploading…" : "Upload PSS"}
+            </button>
+            <button
+              onClick={() => downloadTemplate(templates?.pss_workbook ?? null, "pss_workbook")}
+              disabled={!templates?.pss_workbook}
+              className="tp-btn disabled:opacity-40"
+              title={templates?.pss_workbook ? "Download blank PSS workbook" : "No PSS template uploaded yet"}
+            >
+              <Download className="w-3.5 h-3.5" /> Blank PSS
+            </button>
+          </>
+        )}
+
+        {/* NDA */}
+        {nda ? (
+          <button onClick={() => openSigned(nda)} className="tp-btn" title="Open NDA">
+            <FileSignature className="w-3.5 h-3.5" /> NDA
+            {nda.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{nda.review_status}</span>}
+          </button>
+        ) : (
+          <>
+            <input
+              ref={ndaInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc("nda", f); e.target.value = ""; }}
+            />
+            <button onClick={() => ndaInputRef.current?.click()} disabled={uploadingKind === "nda"} className="tp-btn" title="Upload signed NDA">
+              <Upload className="w-3.5 h-3.5" /> {uploadingKind === "nda" ? "Uploading…" : "Upload NDA"}
+            </button>
+            <button
+              onClick={() => downloadTemplate(templates?.nda ?? null, "nda")}
+              disabled={!templates?.nda}
+              className="tp-btn disabled:opacity-40"
+              title={templates?.nda ? "Download blank NDA" : "No NDA template uploaded yet"}
+            >
+              <Download className="w-3.5 h-3.5" /> Blank NDA
+            </button>
+          </>
+        )}
+
+        {/* Batch sheet — always visible */}
         {batchSheet ? (
           <button onClick={() => setBatchOpen(true)} className="tp-btn border-[hsl(var(--tp-gold))]/40" title="Open internal batch sheet">
             <FlaskConical className="w-3.5 h-3.5 text-[hsl(var(--tp-gold))]" />
-            <span className="text-[hsl(var(--tp-gold))]">Batch Sheet</span>
+            <span className="text-[hsl(var(--tp-gold))]">Open Batch Sheet</span>
             <span className="text-[9px] text-[hsl(var(--tp-text-dim))]">internal</span>
           </button>
         ) : (
@@ -124,12 +231,21 @@ const SalesProjectWorkspace = () => {
             onClick={generateBatchSheet}
             disabled={!pss?.id || pss?.review_status !== "approved" || generatingBatch}
             className="tp-btn disabled:opacity-40 border-[hsl(var(--tp-gold))]/40"
-            title={!pss ? "No PSS on file" : pss.review_status !== "approved" ? "Approve the PSS in Documents Inbox first" : "Generate batch sheet from approved PSS"}
+            title={!pss ? "Upload a PSS first" : pss.review_status !== "approved" ? "Approve the PSS in Documents Inbox first" : "Generate batch sheet from approved PSS"}
           >
             <FlaskConical className="w-3.5 h-3.5 text-[hsl(var(--tp-gold))]" />
-            <span className="text-[hsl(var(--tp-gold))]">{generatingBatch ? "Generating…" : "Generate Batch Sheet"}</span>
+            <span className="text-[hsl(var(--tp-gold))]">
+              {generatingBatch
+                ? "Generating…"
+                : !pss
+                ? "Upload PSS to generate batch sheet"
+                : pss.review_status !== "approved"
+                ? "Approve PSS to generate batch sheet"
+                : "Generate Batch Sheet"}
+            </span>
           </button>
         )}
+
         <button
           onClick={() => toast.info("Send-to-client emails are coming in the next pass.")}
           className="tp-btn ml-auto"

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { TeamPage } from "@/components/team/TeamPage";
 import { FileText, Upload, Download, ExternalLink } from "lucide-react";
 
-type Kind = "nda" | "pss_workbook";
+type Kind = "nda" | "pss_workbook" | "prf_template";
 
 interface Template {
   id: string;
@@ -27,6 +27,11 @@ const KIND_META: Record<Kind, { title: string; desc: string; accept: string }> =
     desc: "Excel workbook offered as a download link for clients who prefer to fill the PSS offline.",
     accept:
       ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  },
+  prf_template: {
+    title: "PRF template (blank)",
+    desc: "Blank Project Request Form sent or handed to prospects. Salespeople can download it from the Sales Dashboard.",
+    accept: ".pdf,.doc,.docx,.xlsx",
   },
 };
 
