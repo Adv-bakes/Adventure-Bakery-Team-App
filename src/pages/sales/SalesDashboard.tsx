@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TeamPage, KpiTile } from "@/components/team/TeamPage";
-import { Search, Plus, Download, FileText, FileSignature, FileCheck2 } from "lucide-react";
+import { Search, Plus, Download, FileText, FileSignature, FileCheck2, ChevronDown } from "lucide-react";
 import { AddDealDialog } from "@/components/sales/AddDealDialog";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const STAGES = ["Lead In", "Send Documents", "Follow-Up", "Quote", "Approved"] as const;
 type Stage = (typeof STAGES)[number];
@@ -162,33 +163,38 @@ const SalesDashboard = () => {
         <KpiTile label="PRFs to review" value={inboxCount} emphasis={inboxCount > 0} />
       </div>
 
-      {/* Templates strip — download blank master files */}
-      <div className="tp-surface p-3 mb-6 flex flex-wrap items-center gap-2">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-text-dim))] mr-2">Blank templates</span>
-        <button
-          onClick={() => downloadTemplate(templates?.prf_template ?? null, "prf_template")}
-          disabled={!templates?.prf_template}
-          className="tp-btn disabled:opacity-40"
-          title={templates?.prf_template ? "Download blank PRF" : "No PRF template uploaded yet"}
-        >
-          <FileText className="w-3.5 h-3.5" /> <Download className="w-3 h-3" /> PRF
-        </button>
-        <button
-          onClick={() => downloadTemplate(templates?.nda ?? null, "nda")}
-          disabled={!templates?.nda}
-          className="tp-btn disabled:opacity-40"
-          title={templates?.nda ? "Download NDA" : "No NDA template uploaded yet"}
-        >
-          <FileSignature className="w-3.5 h-3.5" /> <Download className="w-3 h-3" /> NDA
-        </button>
-        <button
-          onClick={() => downloadTemplate(templates?.pss_workbook ?? null, "pss_workbook")}
-          disabled={!templates?.pss_workbook}
-          className="tp-btn disabled:opacity-40"
-          title={templates?.pss_workbook ? "Download PSS workbook" : "No PSS workbook uploaded yet"}
-        >
-          <FileCheck2 className="w-3.5 h-3.5" /> <Download className="w-3 h-3" /> PSS
-        </button>
+      {/* Templates dropdown — download blank master files */}
+      <div className="mb-6">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="tp-btn">
+              <Download className="w-3.5 h-3.5" /> Download Templates <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="z-50 bg-[hsl(var(--tp-surface))] border-[hsl(var(--tp-hairline))]">
+            <DropdownMenuItem
+              disabled={!templates?.prf_template}
+              onClick={() => downloadTemplate(templates?.prf_template ?? null, "prf_template")}
+            >
+              <FileText className="w-3.5 h-3.5 mr-2" /> Blank PRF
+              {!templates?.prf_template && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!templates?.nda}
+              onClick={() => downloadTemplate(templates?.nda ?? null, "nda")}
+            >
+              <FileSignature className="w-3.5 h-3.5 mr-2" /> NDA
+              {!templates?.nda && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!templates?.pss_workbook}
+              onClick={() => downloadTemplate(templates?.pss_workbook ?? null, "pss_workbook")}
+            >
+              <FileCheck2 className="w-3.5 h-3.5 mr-2" /> PSS workbook
+              {!templates?.pss_workbook && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {loading ? (

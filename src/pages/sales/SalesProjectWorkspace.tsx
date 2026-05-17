@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
-import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send, Upload, Download } from "lucide-react";
+import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send, Upload, Download, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const TABS = ["concept", "ingredients", "formulas", "packaging", "shelf-life", "products", "costing", "notes"] as const;
 
@@ -161,63 +162,77 @@ const SalesProjectWorkspace = () => {
           <FileText className="w-3.5 h-3.5" /> PRF
         </button>
 
-        {/* PSS */}
-        {pss ? (
+        {/* PSS — view only when present */}
+        {pss && (
           <button onClick={() => openSigned(pss)} className="tp-btn" title="Open PSS">
             <FileCheck2 className="w-3.5 h-3.5" /> PSS
             {pss.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{pss.review_status}</span>}
           </button>
-        ) : (
-          <>
-            <input
-              ref={pssInputRef}
-              type="file"
-              accept=".pdf,.xlsx,.xls,.doc,.docx"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc("pss", f); e.target.value = ""; }}
-            />
-            <button onClick={() => pssInputRef.current?.click()} disabled={uploadingKind === "pss"} className="tp-btn" title="Upload signed PSS">
-              <Upload className="w-3.5 h-3.5" /> {uploadingKind === "pss" ? "Uploading…" : "Upload PSS"}
-            </button>
-            <button
-              onClick={() => downloadTemplate(templates?.pss_workbook ?? null, "pss_workbook")}
-              disabled={!templates?.pss_workbook}
-              className="tp-btn disabled:opacity-40"
-              title={templates?.pss_workbook ? "Download blank PSS workbook" : "No PSS template uploaded yet"}
-            >
-              <Download className="w-3.5 h-3.5" /> Blank PSS
-            </button>
-          </>
         )}
 
-        {/* NDA */}
-        {nda ? (
+        {/* NDA — view only when present */}
+        {nda && (
           <button onClick={() => openSigned(nda)} className="tp-btn" title="Open NDA">
             <FileSignature className="w-3.5 h-3.5" /> NDA
             {nda.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{nda.review_status}</span>}
           </button>
-        ) : (
-          <>
-            <input
-              ref={ndaInputRef}
-              type="file"
-              accept=".pdf"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc("nda", f); e.target.value = ""; }}
-            />
-            <button onClick={() => ndaInputRef.current?.click()} disabled={uploadingKind === "nda"} className="tp-btn" title="Upload signed NDA">
-              <Upload className="w-3.5 h-3.5" /> {uploadingKind === "nda" ? "Uploading…" : "Upload NDA"}
-            </button>
-            <button
-              onClick={() => downloadTemplate(templates?.nda ?? null, "nda")}
-              disabled={!templates?.nda}
-              className="tp-btn disabled:opacity-40"
-              title={templates?.nda ? "Download blank NDA" : "No NDA template uploaded yet"}
-            >
-              <Download className="w-3.5 h-3.5" /> Blank NDA
-            </button>
-          </>
         )}
+
+        {/* Hidden file inputs powering the Upload Form dropdown */}
+        <input
+          ref={pssInputRef}
+          type="file"
+          accept=".pdf,.xlsx,.xls,.doc,.docx"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc("pss", f); e.target.value = ""; }}
+        />
+        <input
+          ref={ndaInputRef}
+          type="file"
+          accept=".pdf"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc("nda", f); e.target.value = ""; }}
+        />
+
+        {/* Download Templates dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="tp-btn">
+              <Download className="w-3.5 h-3.5" /> Download Templates <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="z-50 bg-[hsl(var(--tp-surface))] border-[hsl(var(--tp-hairline))]">
+            <DropdownMenuItem disabled={!templates?.prf_template} onClick={() => downloadTemplate(templates?.prf_template ?? null, "prf_template")}>
+              <FileText className="w-3.5 h-3.5 mr-2" /> Blank PRF
+              {!templates?.prf_template && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!templates?.nda} onClick={() => downloadTemplate(templates?.nda ?? null, "nda")}>
+              <FileSignature className="w-3.5 h-3.5 mr-2" /> NDA
+              {!templates?.nda && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!templates?.pss_workbook} onClick={() => downloadTemplate(templates?.pss_workbook ?? null, "pss_workbook")}>
+              <FileCheck2 className="w-3.5 h-3.5 mr-2" /> PSS workbook
+              {!templates?.pss_workbook && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Upload Form dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="tp-btn" disabled={uploadingKind !== null}>
+              <Upload className="w-3.5 h-3.5" /> {uploadingKind ? "Uploading…" : "Upload Form"} <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="z-50 bg-[hsl(var(--tp-surface))] border-[hsl(var(--tp-hairline))]">
+            <DropdownMenuItem onClick={() => pssInputRef.current?.click()}>
+              <FileCheck2 className="w-3.5 h-3.5 mr-2" /> Upload PSS
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => ndaInputRef.current?.click()}>
+              <FileSignature className="w-3.5 h-3.5 mr-2" /> Upload NDA
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Batch sheet — always visible */}
         {batchSheet ? (
