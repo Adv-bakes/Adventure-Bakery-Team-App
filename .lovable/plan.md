@@ -1,44 +1,55 @@
-## Why it's still broken
+# Revised plan
 
-Bahama Burger was accepted **before** the previous fix shipped. Its `prf_submissions.lead_id` is still `NULL`, even though the matching `sales_leads` row exists (`Morini Brands`, same email). The new accept-time logic only links *future* accepts — it never backfilled the existing card.
+## 1. Templates live on the Sales Dashboard — no sidebar entry
 
-Confirmed in the DB:
-- `prf_submissions`: Bahama Burger, `status=accepted`, `sales_stage=Follow-Up`, `lead_id=NULL`
-- `sales_leads`: Morini Brands row exists with same email
+On the main Sales Dashboard (the screen you land on at `/team/sales/dashboard`), add a small "Templates" strip near the top with three download buttons side by side:
 
-So the card on the dashboard still renders as non-clickable (`!p.lead_id` → "accept in inbox").
+- **Download blank PRF**
+- **Download NDA**
+- **Download PSS workbook**
 
-## Fix
+Each button fetches the currently active template from storage and downloads it directly — one click, no extra page. If no template has been uploaded yet for that kind, the button is disabled with a hover tooltip ("No template uploaded yet"). No sidebar item is added.
 
-### 1. Backfill existing accepted PRFs (one-time migration)
+(The existing `/team/sales/templates` admin page stays as-is for uploading new versions, just unlinked from the sidebar — reachable only by URL when you need to swap a master file.)
 
-```sql
-UPDATE prf_submissions p
-SET lead_id = l.id
-FROM sales_leads l
-WHERE p.lead_id IS NULL
-  AND p.email IS NOT NULL
-  AND lower(p.email) = lower(l.email);
-```
+## 2. Download button sits next to every Upload button
 
-This immediately makes Bahama Burger (and any other historical accepts) clickable.
+Wherever the app currently shows an Upload control, add a matching Download-template button right next to it, so if you don't have the file you can grab a blank copy in the same spot:
 
-### 2. Make the dashboard self-healing
+- **Add Deal dialog** — under the PRF upload box: "Don't have a PRF? Download blank template" link.
+- **Project workspace, PRF row** — if no PRF on file: show **Upload PRF** + **Download blank PRF** side by side.
+- **Project workspace, PSS row** — if no PSS on file: show **Upload PSS** + **Download PSS workbook** side by side.
+- **Project workspace, NDA row** — if no signed NDA on file: show **Upload signed NDA** + **Download blank NDA** side by side.
 
-In `SalesDashboard.load()`, after fetching projects, for any row where `lead_id` is null but `email` is set, look up the lead by email and patch `prf_submissions.lead_id` in the background. This guarantees we never get stuck again if a PRF ever lands without a lead link (e.g. accept flow fails halfway, manual DB insert, etc.).
+No "send to client" button for now — the salesperson handles delivery themselves.
 
-Single batched query: `select id, email from sales_leads where lower(email) in (...)`, then `update prf_submissions set lead_id = ... where id = ...` per match. Update local state so cards become clickable without a page refresh.
+## 3. Inbox: keep the existing one-line layout, just include PSS
 
-### 3. No UI logic change
+The inbox stays the same simple list it is today. Only change: the query also pulls PSS uploads (not just NDAs). Each row shows a small chip telling you which kind it is (NDA / PSS), the client, the file name, and the Review button. No new columns, no wide layout.
 
-Cards already render as a real `<Link>` when `lead_id` is set — once #1 + #2 land, Bahama Burger becomes clickable on next load.
+## 4. Client/project card lights up when something is waiting
 
-## Files
+When a PSS or NDA is uploaded for a client and not yet approved, the project card on the Sales Dashboard gets a small gold pill: **"PSS pending review"** (or NDA). Clicking the card opens the project workspace as today; from there a "Review in Inbox" button deep-links to the inbox row.
 
-- `supabase/migrations/<new>.sql` — backfill query above.
-- `src/pages/sales/SalesDashboard.tsx` — add self-heal pass inside `load()`.
+This is what makes Bahama Burger visibly "wake up" the moment you upload the PSS directly.
+
+## 5. Batch sheet button always visible on the project workspace
+
+Today the Generate Batch Sheet button only appears once a PSS is approved. Make it permanent in the project header, with its label reflecting state:
+
+- No PSS yet → disabled, label: "Upload PSS to generate batch sheet"
+- PSS pending review → disabled, label: "Approve PSS to generate batch sheet" (tooltip links to inbox)
+- PSS approved → enabled, label: "Generate Batch Sheet"
+- Batch sheet already created → label: "Open Batch Sheet"
 
 ## Out of scope
 
-- Accept-flow code is already correct for new PRFs — no change there.
-- No changes to `SalesDocumentsInbox`, `SalesProjectWorkspace`, or any edge function.
+- The "background flash on page change" — fixing that separately so it can be tested in isolation.
+- Any change to how the batch sheet itself is generated.
+- Email-to-client flow for templates (skipped per your call — sales person fills it out themselves).
+
+## Technical notes
+
+- Download buttons call `supabase.storage.from('document-templates').createSignedUrl(...)` for the row in `document_templates` where `is_active = true` for that `kind`. No schema changes. New kind `prf_template` will be added to the existing `document_templates` table (it's a free-text column, no migration needed) — once you upload a PRF master via the existing `/team/sales/templates` admin page, the dashboard download button activates.
+- Inbox query widens from `document_type = 'nda'` to `document_type IN ('nda','pss')`. `DocumentReviewPanel` already branches on `document_type`, so PSS reviews reuse the same side panel.
+- Project-card "pending" pill driven by a single batched query of `client_documents` filtered to `review_status IN ('pending','ai_passed','ai_flagged')` keyed by lead.
