@@ -30,6 +30,8 @@ const SalesDashboard = () => {
   const [dragging, setDragging] = useState<string | null>(null);
   const [inboxCount, setInboxCount] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
+  const [templates, setTemplates] = useState<Record<TemplateKind, ActiveTemplate | null> | null>(null);
+  const [pendingByLead, setPendingByLead] = useState<Record<string, { nda: boolean; pss: boolean }>>({});
 
   const load = async () => {
     setLoading(true);
