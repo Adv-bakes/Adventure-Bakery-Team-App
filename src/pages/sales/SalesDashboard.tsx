@@ -210,9 +210,20 @@ const SalesDashboard = () => {
                 </div>
                 <div className="space-y-2">
                   {cards.map(p => {
+                    const pend = p.lead_id ? pendingByLead[p.lead_id] : null;
+                    const pendChips: string[] = [];
+                    if (pend?.pss) pendChips.push("PSS");
+                    if (pend?.nda) pendChips.push("NDA");
                     const inner = (
                       <>
-                        <p className="font-display text-sm text-[hsl(var(--tp-text))] truncate">{p.product_name || "(unnamed)"}</p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-display text-sm text-[hsl(var(--tp-text))] truncate">{p.product_name || "(unnamed)"}</p>
+                          {pendChips.length > 0 && (
+                            <span className="tp-chip text-[9px] uppercase tracking-wider text-[hsl(var(--tp-gold))] border-[hsl(var(--tp-gold))]/40 shrink-0">
+                              {pendChips.join(" + ")} pending
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-[hsl(var(--tp-text-dim))] truncate">{p.company_name || p.email}</p>
                         <p className="text-[10px] text-[hsl(var(--tp-text-dim))] mt-1">
                           {daysSince(p.sales_stage_updated_at)}d in stage
