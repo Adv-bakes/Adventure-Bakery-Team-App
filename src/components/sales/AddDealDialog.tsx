@@ -120,7 +120,18 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
           </div>
 
           <div>
-            <Label>PRF file *</Label>
+            <div className="flex items-center justify-between">
+              <Label>PRF file *</Label>
+              <button
+                type="button"
+                onClick={() => downloadTemplate(prfTpl, "prf_template")}
+                disabled={!prfTpl}
+                className="text-xs text-primary underline-offset-2 hover:underline disabled:opacity-40 disabled:no-underline inline-flex items-center gap-1"
+                title={prfTpl ? "Download a blank PRF to fill out" : "No PRF template uploaded yet (admin must add one in Templates)"}
+              >
+                <Download className="w-3 h-3" /> Don't have one? Download blank PRF
+              </button>
+            </div>
             <input
               ref={fileRef}
               type="file"
