@@ -28,6 +28,11 @@ const KIND_META: Record<Kind, { title: string; desc: string; accept: string }> =
     accept:
       ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   },
+  prf_template: {
+    title: "PRF template (blank)",
+    desc: "Blank Project Request Form sent or handed to prospects. Salespeople can download it from the Sales Dashboard.",
+    accept: ".pdf,.doc,.docx,.xlsx",
+  },
 };
 
 const TemplatesPage = () => {
