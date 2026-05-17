@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TeamPage, KpiTile } from "@/components/team/TeamPage";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Download, FileText, FileSignature, FileCheck2 } from "lucide-react";
 import { AddDealDialog } from "@/components/sales/AddDealDialog";
+import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
 
 const STAGES = ["Lead In", "Send Documents", "Follow-Up", "Quote", "Approved"] as const;
 type Stage = (typeof STAGES)[number];
