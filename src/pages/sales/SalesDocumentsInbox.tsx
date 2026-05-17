@@ -191,7 +191,7 @@ const SalesDocumentsInbox = () => {
 
       {/* Lane 2 — Returned NDA / PSS */}
       <h2 className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-text-dim))] mb-2">
-        Returned NDAs {docRows.length > 0 && <span className="text-[hsl(var(--tp-gold))]">· {docRows.length}</span>}
+        Returned documents {docRows.length > 0 && <span className="text-[hsl(var(--tp-gold))]">· {docRows.length}</span>}
       </h2>
       <div className="tp-surface divide-y divide-[hsl(var(--tp-hairline))]">
         {!loading && docRows.length === 0 && (
