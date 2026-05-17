@@ -155,11 +155,40 @@ const SalesDashboard = () => {
         </div>
       }
     >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <KpiTile label="Open projects" value={open} />
         <KpiTile label="Stuck >7d" value={stuck} hint={stuck ? "Needs follow-up" : "All moving"} />
         <KpiTile label="Approved this month" value={approvedThisMonth} />
         <KpiTile label="PRFs to review" value={inboxCount} emphasis={inboxCount > 0} />
+      </div>
+
+      {/* Templates strip — download blank master files */}
+      <div className="tp-surface p-3 mb-6 flex flex-wrap items-center gap-2">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-text-dim))] mr-2">Blank templates</span>
+        <button
+          onClick={() => downloadTemplate(templates?.prf_template ?? null, "prf_template")}
+          disabled={!templates?.prf_template}
+          className="tp-btn disabled:opacity-40"
+          title={templates?.prf_template ? "Download blank PRF" : "No PRF template uploaded yet"}
+        >
+          <FileText className="w-3.5 h-3.5" /> <Download className="w-3 h-3" /> PRF
+        </button>
+        <button
+          onClick={() => downloadTemplate(templates?.nda ?? null, "nda")}
+          disabled={!templates?.nda}
+          className="tp-btn disabled:opacity-40"
+          title={templates?.nda ? "Download NDA" : "No NDA template uploaded yet"}
+        >
+          <FileSignature className="w-3.5 h-3.5" /> <Download className="w-3 h-3" /> NDA
+        </button>
+        <button
+          onClick={() => downloadTemplate(templates?.pss_workbook ?? null, "pss_workbook")}
+          disabled={!templates?.pss_workbook}
+          className="tp-btn disabled:opacity-40"
+          title={templates?.pss_workbook ? "Download PSS workbook" : "No PSS workbook uploaded yet"}
+        >
+          <FileCheck2 className="w-3.5 h-3.5" /> <Download className="w-3 h-3" /> PSS
+        </button>
       </div>
 
       {loading ? (
