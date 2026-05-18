@@ -133,13 +133,9 @@ const SalesProjectWorkspace = () => {
     });
     setGeneratingBatch(false);
     if (error) return toast.error(error.message || "Failed to generate batch sheet");
-    toast.success("Batch sheet generated");
-    const { data: bs } = await (supabase as any)
-      .from("batch_sheets")
-      .select("*")
-      .eq("pss_document_id", pss.id)
-      .maybeSingle();
-    setBatchSheet(bs || null);
+    const sheet = (data as any)?.batch_sheet;
+    if (sheet) setBatchSheet(sheet);
+    toast.success(`Batch sheet v${sheet?.version ?? "?"} generated`);
     setBatchOpen(true);
   };
 
