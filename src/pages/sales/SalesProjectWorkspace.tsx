@@ -292,6 +292,10 @@ const SalesProjectWorkspace = () => {
             <DropdownMenuItem onClick={() => ndaInputRef.current?.click()}>
               <FileSignature className="w-3.5 h-3.5 mr-2" /> Upload NDA
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => batchInputRef.current?.click()}>
+              <FlaskConical className="w-3.5 h-3.5 mr-2" /> Upload Batch Sheet
+            </DropdownMenuItem>
+
           </TeamDropdownContent>
         </DropdownMenu>
 
