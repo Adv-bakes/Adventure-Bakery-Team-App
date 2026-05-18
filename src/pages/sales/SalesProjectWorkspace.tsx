@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
+import { PssPreviewDrawer } from "@/components/sales/PssPreviewDrawer";
 import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send, Upload, Download, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TeamDropdownContent } from "@/components/team/TeamDropdownContent";
+
 
 const TABS = ["concept", "ingredients", "formulas", "packaging", "shelf-life", "products", "costing", "notes"] as const;
 
@@ -20,13 +22,16 @@ const SalesProjectWorkspace = () => {
   const [nda, setNda] = useState<any>(null);
   const [batchSheet, setBatchSheet] = useState<any>(null);
   const [openPrf, setOpenPrf] = useState(false);
+  const [openPss, setOpenPss] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
   const [generatingBatch, setGeneratingBatch] = useState(false);
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<Record<TemplateKind, ActiveTemplate | null> | null>(null);
-  const [uploadingKind, setUploadingKind] = useState<"pss" | "nda" | null>(null);
+  const [uploadingKind, setUploadingKind] = useState<"pss" | "nda" | "batch_sheet" | null>(null);
   const pssInputRef = useRef<HTMLInputElement>(null);
   const ndaInputRef = useRef<HTMLInputElement>(null);
+  const batchInputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     (async () => {
@@ -116,14 +121,51 @@ const SalesProjectWorkspace = () => {
     }
   };
 
-  const openSigned = async (doc: any) => {
-    if (!doc?.file_path) return toast.error("No file on record");
-    const { data, error } = await supabase.storage
-      .from("product-spec-sheets")
-      .createSignedUrl(doc.file_path, 600);
-    if (error || !data?.signedUrl) return toast.error("Could not generate signed link");
-    window.open(data.signedUrl, "_blank");
+  const uploadBatchSheet = async (file: File) => {
+    if (!lead?.id) return toast.error("Lead not found");
+    setUploadingKind("batch_sheet");
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const folder = lead.profile_id || lead.id;
+      const path = `${folder}/batch-sheet/${Date.now()}-${safe}`;
+      const { error: upErr } = await supabase.storage
+        .from("batch-sheets")
+        .upload(path, file, { contentType: file.type || undefined, upsert: false });
+      if (upErr) throw upErr;
+      const { data, error } = await supabase.functions.invoke("ingest-batch-sheet", {
+        body: { file_path: path, lead_id: lead.id, pss_document_id: pss?.id || null },
+      });
+      if (error) throw error;
+      const sheet = (data as any)?.batch_sheet;
+      if (sheet) setBatchSheet(sheet);
+      const filled = (data as any)?.reconciled?.filled;
+      if (filled && (filled.pss_filled_count || filled.batch_filled_count)) {
+        toast.success(`Batch sheet v${sheet?.version ?? "?"} uploaded. Synced ${filled.pss_filled_count} PSS field(s).`);
+      } else {
+        toast.success(`Batch sheet v${sheet?.version ?? "?"} uploaded`);
+      }
+      setBatchOpen(true);
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingKind(null);
+    }
   };
+
+  const refreshBatchSheet = async () => {
+    if (!pss?.id) return;
+    const { data: bs } = await (supabase as any)
+      .from("batch_sheets")
+      .select("*")
+      .eq("pss_document_id", pss.id)
+      .is("superseded_at", null)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setBatchSheet(bs || null);
+  };
+
+
 
   const generateBatchSheet = async () => {
     if (!pss?.id) return toast.error("No PSS on file");
@@ -162,17 +204,28 @@ const SalesProjectWorkspace = () => {
           <FileText className="w-3.5 h-3.5" /> PRF
         </button>
 
-        {/* PSS — view only when present */}
+        {/* PSS — open editable preview */}
         {pss && (
-          <button onClick={() => openSigned(pss)} className="tp-btn" title="Open PSS">
+          <button onClick={() => setOpenPss(true)} className="tp-btn" title="Open PSS preview & editor">
             <FileCheck2 className="w-3.5 h-3.5" /> PSS
             {pss.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{pss.review_status}</span>}
           </button>
         )}
 
-        {/* NDA — view only when present */}
+        {/* NDA — download/open original */}
         {nda && (
-          <button onClick={() => openSigned(nda)} className="tp-btn" title="Open NDA">
+          <button
+            onClick={async () => {
+              if (!nda?.file_path) return toast.error("No file on record");
+              const { data, error } = await supabase.storage
+                .from("product-spec-sheets")
+                .createSignedUrl(nda.file_path, 600);
+              if (error || !data?.signedUrl) return toast.error("Could not generate signed link");
+              window.open(data.signedUrl, "_blank");
+            }}
+            className="tp-btn"
+            title="Open NDA"
+          >
             <FileSignature className="w-3.5 h-3.5" /> NDA
             {nda.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{nda.review_status}</span>}
           </button>
@@ -193,6 +246,14 @@ const SalesProjectWorkspace = () => {
           className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc("nda", f); e.target.value = ""; }}
         />
+        <input
+          ref={batchInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBatchSheet(f); e.target.value = ""; }}
+        />
+
 
         {/* Download Templates dropdown */}
         <DropdownMenu>
@@ -231,6 +292,10 @@ const SalesProjectWorkspace = () => {
             <DropdownMenuItem onClick={() => ndaInputRef.current?.click()}>
               <FileSignature className="w-3.5 h-3.5 mr-2" /> Upload NDA
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => batchInputRef.current?.click()}>
+              <FlaskConical className="w-3.5 h-3.5 mr-2" /> Upload Batch Sheet
+            </DropdownMenuItem>
+
           </TeamDropdownContent>
         </DropdownMenu>
 
@@ -372,6 +437,12 @@ const SalesProjectWorkspace = () => {
       </Tabs>
 
       <PrfReviewPanel prfId={openPrf ? (prfId as string) : null} onClose={() => setOpenPrf(false)} />
+      <PssPreviewDrawer
+        pssDocumentId={openPss && pss?.id ? pss.id : null}
+        onClose={() => setOpenPss(false)}
+        onSaved={() => { refreshDocs(); refreshBatchSheet(); }}
+      />
+
 
       {/* Batch sheet side panel — staff-only */}
       {batchOpen && batchSheet && (
