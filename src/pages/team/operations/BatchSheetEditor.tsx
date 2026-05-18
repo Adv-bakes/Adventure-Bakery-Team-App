@@ -22,11 +22,15 @@ interface Ingredient {
 
 const BatchSheetEditor = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [sheet, setSheet] = useState<any>(null);
   const [ings, setIngs] = useState<Ingredient[]>([]);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const load = useCallback(async () => {
     const { data, error } = await (supabase as any)
@@ -34,28 +38,51 @@ const BatchSheetEditor = () => {
     if (error) { toast.error(error.message); return; }
     setSheet(data);
     setIngs(data.data_json?.recipe?.ingredients || []);
+    if (data.pss_document_id) {
+      const { data: versions } = await (supabase as any)
+        .from("batch_sheets")
+        .select("id, version, updated_at, source_change, last_edited_by, superseded_at, status")
+        .eq("pss_document_id", data.pss_document_id)
+        .order("version", { ascending: false });
+      setHistory(versions || []);
+    }
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
 
+  const isSuperseded = !!sheet?.superseded_at;
+
   const updateIng = (idx: number, patch: Partial<Ingredient>) => {
+    if (isSuperseded) return;
     setIngs((prev) => prev.map((r, i) => i === idx ? { ...r, ...patch, vendor_source: "staff" } : r));
     setDirty(true);
   };
 
   const save = async () => {
-    if (!sheet) return;
+    if (!sheet || isSuperseded) return;
     setSaving(true);
     const dataJson = { ...sheet.data_json, recipe: { ...sheet.data_json?.recipe, ingredients: ings } };
-    const { error } = await (supabase as any)
-      .from("batch_sheets")
-      .update({ data_json: dataJson, updated_at: new Date().toISOString() })
-      .eq("id", sheet.id);
+    const { data, error } = await (supabase as any).functions.invoke("revise-batch-sheet", {
+      body: { batch_sheet_id: sheet.id, data_json: dataJson, source_change: "staff_edit" },
+    });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Saved");
+    if (error || data?.error) { toast.error(error?.message || data?.error); return; }
+    toast.success(`Saved as v${data.batch_sheet.version}`);
     setDirty(false);
-    setSheet({ ...sheet, data_json: dataJson });
+    navigate(`/team/operations/batch-sheets/${data.batch_sheet.id}`);
+  };
+
+  const regenerateFromPss = async () => {
+    if (!sheet?.pss_document_id) return;
+    if (!confirm("Re-extract from the PSS and create a new version? Staff-entered vendors will carry over.")) return;
+    setRegenerating(true);
+    const { data, error } = await (supabase as any).functions.invoke("generate-batch-sheet-from-pss", {
+      body: { pss_document_id: sheet.pss_document_id },
+    });
+    setRegenerating(false);
+    if (error || data?.error) { toast.error(error?.message || data?.error); return; }
+    toast.success(`Regenerated as v${data.batch_sheet.version}`);
+    navigate(`/team/operations/batch-sheets/${data.batch_sheet.id}`);
   };
 
   const setStatus = async (status: string) => {
@@ -67,7 +94,7 @@ const BatchSheetEditor = () => {
   };
 
   const exportXlsx = async () => {
-    if (dirty) { toast.info("Saving first…"); await save(); }
+    if (dirty) { toast.info("Saving first…"); await save(); return; }
     setExporting(true);
     const { data, error } = await (supabase as any).functions.invoke("export-batch-sheet-xlsx", {
       body: { batch_sheet_id: sheet.id },
@@ -77,6 +104,7 @@ const BatchSheetEditor = () => {
     if (data?.signed_url) window.open(data.signed_url, "_blank");
     toast.success("Excel exported");
   };
+
 
   if (!sheet) return <TeamPage title="Batch sheet">Loading…</TeamPage>;
   const d = sheet.data_json || {};
