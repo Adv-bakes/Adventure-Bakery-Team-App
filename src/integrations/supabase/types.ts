@@ -49,6 +49,7 @@ export type Database = {
           last_edited_by: string | null
           lead_id: string | null
           pss_document_id: string | null
+          source_change: string | null
           status: string
           superseded_at: string | null
           superseded_by_version: number | null
@@ -66,6 +67,7 @@ export type Database = {
           last_edited_by?: string | null
           lead_id?: string | null
           pss_document_id?: string | null
+          source_change?: string | null
           status?: string
           superseded_at?: string | null
           superseded_by_version?: number | null
@@ -83,6 +85,7 @@ export type Database = {
           last_edited_by?: string | null
           lead_id?: string | null
           pss_document_id?: string | null
+          source_change?: string | null
           status?: string
           superseded_at?: string | null
           superseded_by_version?: number | null
