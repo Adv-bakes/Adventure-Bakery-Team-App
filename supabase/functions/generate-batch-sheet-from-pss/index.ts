@@ -388,18 +388,42 @@ serve(async (req) => {
       },
     };
 
+    // Versioning: if an active sheet exists for this PSS, supersede it and insert v+1.
+    const { data: activeExisting } = await admin
+      .from("batch_sheets")
+      .select("id, version, status")
+      .eq("pss_document_id", pss_document_id)
+      .is("superseded_at", null)
+      .maybeSingle();
+
+    const nextVersion = (activeExisting?.version || 0) + 1;
+    const sourceChange = activeExisting ? "pss_change" : "initial";
+
+    if (activeExisting) {
+      await admin
+        .from("batch_sheets")
+        .update({
+          superseded_at: new Date().toISOString(),
+          superseded_by_version: nextVersion,
+        })
+        .eq("id", activeExisting.id);
+    }
+
     const { data: upserted, error: upsertErr } = await admin
       .from("batch_sheets")
-      .upsert({
+      .insert({
         pss_document_id,
         lead_id: lead?.id || null,
         client_user_id: clientUserId,
         concept_id: conceptId,
-        status: "draft",
+        status: activeExisting?.status === "approved" ? "draft" : (activeExisting?.status || "draft"),
         data_json: dataJson,
         generated_from: "pss",
+        version: nextVersion,
+        source_change: sourceChange,
+        last_edited_by: callerId,
         updated_at: new Date().toISOString(),
-      }, { onConflict: "pss_document_id" })
+      })
       .select()
       .single();
 
