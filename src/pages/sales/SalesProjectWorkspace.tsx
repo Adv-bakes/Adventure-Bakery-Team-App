@@ -57,6 +57,9 @@ const SalesProjectWorkspace = () => {
             .from("batch_sheets")
             .select("*")
             .eq("pss_document_id", pssDoc.id)
+            .is("superseded_at", null)
+            .order("version", { ascending: false })
+            .limit(1)
             .maybeSingle();
           setBatchSheet(bs || null);
         }
