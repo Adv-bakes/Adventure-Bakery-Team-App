@@ -315,10 +315,10 @@ const SalesProjectWorkspace = () => {
         <TabsContent value="ingredients">
           <ScopedReadCard title="Ingredients (from PSS)" href="/team/ingredients"
             empty="Ingredients appear here after PSS approval.">
-            {(batchSheet?.data_json?.ingredients || []).slice(0, 50).map((ing: any, i: number) => (
+            {(batchSheet?.data_json?.recipe?.ingredients || []).slice(0, 50).map((ing: any, i: number) => (
               <div key={i} className="flex justify-between text-sm py-1.5 border-b border-[hsl(var(--tp-hairline))] last:border-0">
-                <span className="text-[hsl(var(--tp-text))]">{ing.name || ing.ingredient_name}</span>
-                <span className="text-[hsl(var(--tp-text-dim))]">{ing.percentage ?? ing.percentage_formula ?? "—"}%</span>
+                <span className="text-[hsl(var(--tp-text))]">{ing.name}</span>
+                <span className="text-[hsl(var(--tp-text-dim))]">{ing.percentage ?? "—"}%</span>
               </div>
             ))}
           </ScopedReadCard>
