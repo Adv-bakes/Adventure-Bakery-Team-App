@@ -121,14 +121,51 @@ const SalesProjectWorkspace = () => {
     }
   };
 
-  const openSigned = async (doc: any) => {
-    if (!doc?.file_path) return toast.error("No file on record");
-    const { data, error } = await supabase.storage
-      .from("product-spec-sheets")
-      .createSignedUrl(doc.file_path, 600);
-    if (error || !data?.signedUrl) return toast.error("Could not generate signed link");
-    window.open(data.signedUrl, "_blank");
+  const uploadBatchSheet = async (file: File) => {
+    if (!lead?.id) return toast.error("Lead not found");
+    setUploadingKind("batch_sheet");
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const folder = lead.profile_id || lead.id;
+      const path = `${folder}/batch-sheet/${Date.now()}-${safe}`;
+      const { error: upErr } = await supabase.storage
+        .from("batch-sheets")
+        .upload(path, file, { contentType: file.type || undefined, upsert: false });
+      if (upErr) throw upErr;
+      const { data, error } = await supabase.functions.invoke("ingest-batch-sheet", {
+        body: { file_path: path, lead_id: lead.id, pss_document_id: pss?.id || null },
+      });
+      if (error) throw error;
+      const sheet = (data as any)?.batch_sheet;
+      if (sheet) setBatchSheet(sheet);
+      const filled = (data as any)?.reconciled?.filled;
+      if (filled && (filled.pss_filled_count || filled.batch_filled_count)) {
+        toast.success(`Batch sheet v${sheet?.version ?? "?"} uploaded. Synced ${filled.pss_filled_count} PSS field(s).`);
+      } else {
+        toast.success(`Batch sheet v${sheet?.version ?? "?"} uploaded`);
+      }
+      setBatchOpen(true);
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingKind(null);
+    }
   };
+
+  const refreshBatchSheet = async () => {
+    if (!pss?.id) return;
+    const { data: bs } = await (supabase as any)
+      .from("batch_sheets")
+      .select("*")
+      .eq("pss_document_id", pss.id)
+      .is("superseded_at", null)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setBatchSheet(bs || null);
+  };
+
+
 
   const generateBatchSheet = async () => {
     if (!pss?.id) return toast.error("No PSS on file");
