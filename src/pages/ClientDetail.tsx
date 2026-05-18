@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Building2, Package, Cookie, ShieldCheck, ShieldX, FileText, Upload, Plus } from "lucide-react";
+import { ArrowLeft, Building2, Package, Cookie, ShieldCheck, ShieldX, FileText, Upload, Plus, Sparkles, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface Profile {
@@ -53,6 +53,8 @@ export default function ClientDetail() {
   const [concepts, setConcepts] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
+  const [batchSheetsByPss, setBatchSheetsByPss] = useState<Record<string, { id: string; version: number }>>({});
+  const [generatingForPss, setGeneratingForPss] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -80,8 +82,33 @@ export default function ClientDetail() {
     if (profileRes.data) setProfile(profileRes.data as Profile);
     if (conceptsRes.data) setConcepts(conceptsRes.data);
     if (productsRes.data) setProducts(productsRes.data);
-    if (docsRes.data) setDocuments(docsRes.data as unknown as ClientDocument[]);
+    if (docsRes.data) {
+      const docs = docsRes.data as unknown as ClientDocument[];
+      setDocuments(docs);
+      const pssIds = docs.filter((d) => d.document_type === "pss").map((d) => d.id);
+      if (pssIds.length) {
+        const { data: sheets } = await (supabase as any)
+          .from("batch_sheets")
+          .select("id, version, pss_document_id")
+          .in("pss_document_id", pssIds)
+          .is("superseded_at", null);
+        const map: Record<string, { id: string; version: number }> = {};
+        (sheets || []).forEach((s: any) => { map[s.pss_document_id] = { id: s.id, version: s.version }; });
+        setBatchSheetsByPss(map);
+      }
+    }
     setLoading(false);
+  };
+
+  const createBatchSheet = async (pssId: string) => {
+    setGeneratingForPss(pssId);
+    const { data, error } = await (supabase as any).functions.invoke("generate-batch-sheet-from-pss", {
+      body: { pss_document_id: pssId },
+    });
+    setGeneratingForPss(null);
+    if (error || data?.error) { toast.error(error?.message || data?.error); return; }
+    toast.success(`Batch sheet v${data.batch_sheet.version} created`);
+    setBatchSheetsByPss((prev) => ({ ...prev, [pssId]: { id: data.batch_sheet.id, version: data.batch_sheet.version } }));
   };
 
   const toggleAccess = async () => {
@@ -334,19 +361,41 @@ export default function ClientDetail() {
             <p className="text-muted-foreground text-sm">No documents uploaded yet.</p>
           ) : (
             <div className="space-y-2">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-foreground text-sm">{doc.file_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {doc.document_type.toUpperCase()} · {new Date(doc.uploaded_at).toLocaleDateString()}
-                      </p>
+              {documents.map((doc) => {
+                const isPss = doc.document_type === "pss";
+                const sheet = isPss ? batchSheetsByPss[doc.id] : undefined;
+                return (
+                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground text-sm truncate">{doc.file_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.document_type.toUpperCase()} · {new Date(doc.uploaded_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
+                    {isPss && (
+                      sheet ? (
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to={`/team/operations/batch-sheets/${sheet.id}`}>
+                            <ExternalLink className="h-3.5 w-3.5 mr-1" />Open batch sheet v{sheet.version}
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => createBatchSheet(doc.id)}
+                          disabled={generatingForPss === doc.id}
+                        >
+                          <Sparkles className="h-3.5 w-3.5 mr-1" />
+                          {generatingForPss === doc.id ? "Creating…" : "Create batch sheet"}
+                        </Button>
+                      )
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

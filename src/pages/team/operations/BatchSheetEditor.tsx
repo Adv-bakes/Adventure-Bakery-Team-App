@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Save, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw } from "lucide-react";
 
 interface Ingredient {
   name?: string | null;
@@ -22,11 +22,15 @@ interface Ingredient {
 
 const BatchSheetEditor = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [sheet, setSheet] = useState<any>(null);
   const [ings, setIngs] = useState<Ingredient[]>([]);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const load = useCallback(async () => {
     const { data, error } = await (supabase as any)
@@ -34,28 +38,51 @@ const BatchSheetEditor = () => {
     if (error) { toast.error(error.message); return; }
     setSheet(data);
     setIngs(data.data_json?.recipe?.ingredients || []);
+    if (data.pss_document_id) {
+      const { data: versions } = await (supabase as any)
+        .from("batch_sheets")
+        .select("id, version, updated_at, source_change, last_edited_by, superseded_at, status")
+        .eq("pss_document_id", data.pss_document_id)
+        .order("version", { ascending: false });
+      setHistory(versions || []);
+    }
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
 
+  const isSuperseded = !!sheet?.superseded_at;
+
   const updateIng = (idx: number, patch: Partial<Ingredient>) => {
+    if (isSuperseded) return;
     setIngs((prev) => prev.map((r, i) => i === idx ? { ...r, ...patch, vendor_source: "staff" } : r));
     setDirty(true);
   };
 
   const save = async () => {
-    if (!sheet) return;
+    if (!sheet || isSuperseded) return;
     setSaving(true);
     const dataJson = { ...sheet.data_json, recipe: { ...sheet.data_json?.recipe, ingredients: ings } };
-    const { error } = await (supabase as any)
-      .from("batch_sheets")
-      .update({ data_json: dataJson, updated_at: new Date().toISOString() })
-      .eq("id", sheet.id);
+    const { data, error } = await (supabase as any).functions.invoke("revise-batch-sheet", {
+      body: { batch_sheet_id: sheet.id, data_json: dataJson, source_change: "staff_edit" },
+    });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Saved");
+    if (error || data?.error) { toast.error(error?.message || data?.error); return; }
+    toast.success(`Saved as v${data.batch_sheet.version}`);
     setDirty(false);
-    setSheet({ ...sheet, data_json: dataJson });
+    navigate(`/team/operations/batch-sheets/${data.batch_sheet.id}`);
+  };
+
+  const regenerateFromPss = async () => {
+    if (!sheet?.pss_document_id) return;
+    if (!confirm("Re-extract from the PSS and create a new version? Staff-entered vendors will carry over.")) return;
+    setRegenerating(true);
+    const { data, error } = await (supabase as any).functions.invoke("generate-batch-sheet-from-pss", {
+      body: { pss_document_id: sheet.pss_document_id },
+    });
+    setRegenerating(false);
+    if (error || data?.error) { toast.error(error?.message || data?.error); return; }
+    toast.success(`Regenerated as v${data.batch_sheet.version}`);
+    navigate(`/team/operations/batch-sheets/${data.batch_sheet.id}`);
   };
 
   const setStatus = async (status: string) => {
@@ -67,7 +94,7 @@ const BatchSheetEditor = () => {
   };
 
   const exportXlsx = async () => {
-    if (dirty) { toast.info("Saving first…"); await save(); }
+    if (dirty) { toast.info("Saving first…"); await save(); return; }
     setExporting(true);
     const { data, error } = await (supabase as any).functions.invoke("export-batch-sheet-xlsx", {
       body: { batch_sheet_id: sheet.id },
@@ -78,6 +105,7 @@ const BatchSheetEditor = () => {
     toast.success("Excel exported");
   };
 
+
   if (!sheet) return <TeamPage title="Batch sheet">Loading…</TeamPage>;
   const d = sheet.data_json || {};
   const header = d.header || {};
@@ -87,21 +115,29 @@ const BatchSheetEditor = () => {
 
   return (
     <TeamPage
-      eyebrow={`Batch sheet · v${sheet.version}`}
+      eyebrow={`Batch sheet · v${sheet.version}${isSuperseded ? " (superseded)" : ""}`}
       title={header.product_name || "Batch sheet"}
-      description={header.company_name || ""}
+      description={`${header.company_name || ""}${header.company_name ? " · " : ""}Last changed ${new Date(sheet.updated_at).toLocaleString()}${sheet.source_change ? ` · ${sheet.source_change.replace(/_/g, " ")}` : ""}`}
       actions={
         <>
           <Link to="/team/operations/batch-sheets" className="text-sm text-muted-foreground hover:underline flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> All sheets
           </Link>
-          <Button size="sm" variant="outline" onClick={save} disabled={saving || !dirty}>
-            <Save className="w-4 h-4 mr-1" />{saving ? "Saving…" : "Save"}
+          <Button size="sm" variant="outline" onClick={() => setShowHistory((v) => !v)}>
+            <History className="w-4 h-4 mr-1" />History ({history.length})
+          </Button>
+          {sheet.pss_document_id && !isSuperseded && (
+            <Button size="sm" variant="outline" onClick={regenerateFromPss} disabled={regenerating}>
+              <RefreshCw className="w-4 h-4 mr-1" />{regenerating ? "Regenerating…" : "Regenerate from PSS"}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={save} disabled={saving || !dirty || isSuperseded}>
+            <Save className="w-4 h-4 mr-1" />{saving ? "Saving…" : "Save as new version"}
           </Button>
           <Button size="sm" variant="outline" onClick={exportXlsx} disabled={exporting}>
             <Download className="w-4 h-4 mr-1" />{exporting ? "Exporting…" : "Excel"}
           </Button>
-          {sheet.status !== "approved" && (
+          {sheet.status !== "approved" && !isSuperseded && (
             <Button size="sm" onClick={() => setStatus("approved")}>
               <CheckCircle2 className="w-4 h-4 mr-1" />Approve
             </Button>
@@ -109,6 +145,42 @@ const BatchSheetEditor = () => {
         </>
       }
     >
+      {isSuperseded && (
+        <div className="mb-4 border border-amber-500/40 bg-amber-500/10 rounded-md p-3 text-sm">
+          This is an older version (read-only). A newer version (v{sheet.superseded_by_version}) exists.
+        </div>
+      )}
+      {showHistory && (
+        <section className="mb-6 border border-border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left">Version</th>
+                <th className="px-3 py-2 text-left">Changed</th>
+                <th className="px-3 py-2 text-left">Reason</th>
+                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((h) => (
+                <tr key={h.id} className={`border-t border-border ${h.id === sheet.id ? "bg-accent/10" : ""}`}>
+                  <td className="px-3 py-2 font-medium">v{h.version}{!h.superseded_at && " (active)"}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{new Date(h.updated_at).toLocaleString()}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{(h.source_change || "—").replace(/_/g, " ")}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{h.status}</td>
+                  <td className="px-3 py-2 text-right">
+                    {h.id !== sheet.id && (
+                      <Link to={`/team/operations/batch-sheets/${h.id}`} className="text-xs text-accent hover:underline">Open</Link>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       {/* Summary */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <SummaryCard label="Method" value={process.method || "—"} />
