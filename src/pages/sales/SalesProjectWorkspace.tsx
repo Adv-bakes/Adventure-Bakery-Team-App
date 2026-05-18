@@ -8,6 +8,7 @@ import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalL
 import { toast } from "sonner";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { TeamDropdownContent } from "@/components/team/TeamDropdownContent";
 
 const TABS = ["concept", "ingredients", "formulas", "packaging", "shelf-life", "products", "costing", "notes"] as const;
 
@@ -201,7 +202,7 @@ const SalesProjectWorkspace = () => {
               <Download className="w-3.5 h-3.5" /> Download Templates <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="z-[100] min-w-[220px] bg-[#0d0d0d] border-2 border-[hsl(var(--tp-gold))] text-[hsl(var(--tp-text))] shadow-2xl p-1 [&_[role=menuitem]]:text-[hsl(var(--tp-text))] [&_[role=menuitem]]:cursor-pointer [&_[role=menuitem]:focus]:bg-[hsl(var(--tp-gold))] [&_[role=menuitem]:focus]:text-black [&_[role=menuitem][data-disabled]]:opacity-50">
+          <TeamDropdownContent align="start">
             <DropdownMenuItem disabled={!templates?.prf_template} onClick={() => downloadTemplate(templates?.prf_template ?? null, "prf_template")}>
               <FileText className="w-3.5 h-3.5 mr-2" /> Blank PRF
               {!templates?.prf_template && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
@@ -214,7 +215,7 @@ const SalesProjectWorkspace = () => {
               <FileCheck2 className="w-3.5 h-3.5 mr-2" /> PSS workbook
               {!templates?.pss_workbook && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
             </DropdownMenuItem>
-          </DropdownMenuContent>
+          </TeamDropdownContent>
         </DropdownMenu>
 
         {/* Upload Form dropdown */}
@@ -224,14 +225,14 @@ const SalesProjectWorkspace = () => {
               <Upload className="w-3.5 h-3.5" /> {uploadingKind ? "Uploading…" : "Upload Form"} <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="z-[100] min-w-[220px] bg-[#0d0d0d] border-2 border-[hsl(var(--tp-gold))] text-[hsl(var(--tp-text))] shadow-2xl p-1 [&_[role=menuitem]]:text-[hsl(var(--tp-text))] [&_[role=menuitem]]:cursor-pointer [&_[role=menuitem]:focus]:bg-[hsl(var(--tp-gold))] [&_[role=menuitem]:focus]:text-black [&_[role=menuitem][data-disabled]]:opacity-50">
+          <TeamDropdownContent align="start">
             <DropdownMenuItem onClick={() => pssInputRef.current?.click()}>
               <FileCheck2 className="w-3.5 h-3.5 mr-2" /> Upload PSS
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => ndaInputRef.current?.click()}>
               <FileSignature className="w-3.5 h-3.5 mr-2" /> Upload NDA
             </DropdownMenuItem>
-          </DropdownMenuContent>
+          </TeamDropdownContent>
         </DropdownMenu>
 
         {/* Batch sheet — always visible */}
