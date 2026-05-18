@@ -53,6 +53,8 @@ export default function ClientDetail() {
   const [concepts, setConcepts] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
+  const [batchSheetsByPss, setBatchSheetsByPss] = useState<Record<string, { id: string; version: number }>>({});
+  const [generatingForPss, setGeneratingForPss] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
