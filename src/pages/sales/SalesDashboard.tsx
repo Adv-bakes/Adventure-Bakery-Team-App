@@ -7,6 +7,7 @@ import { Search, Plus, Download, FileText, FileSignature, FileCheck2, ChevronDow
 import { AddDealDialog } from "@/components/sales/AddDealDialog";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { TeamDropdownContent } from "@/components/team/TeamDropdownContent";
 
 const STAGES = ["Lead In", "Send Documents", "Follow-Up", "Quote", "Approved"] as const;
 type Stage = (typeof STAGES)[number];
@@ -171,7 +172,7 @@ const SalesDashboard = () => {
               <Download className="w-3.5 h-3.5" /> Download Templates <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="z-[100] min-w-[220px] bg-[#0d0d0d] border-2 border-[hsl(var(--tp-gold))] text-[hsl(var(--tp-text))] shadow-2xl p-1 [&_[role=menuitem]]:text-[hsl(var(--tp-text))] [&_[role=menuitem]]:cursor-pointer [&_[role=menuitem]:focus]:bg-[hsl(var(--tp-gold))] [&_[role=menuitem]:focus]:text-black [&_[role=menuitem][data-disabled]]:opacity-50">
+          <TeamDropdownContent align="start">
             <DropdownMenuItem
               disabled={!templates?.prf_template}
               onClick={() => downloadTemplate(templates?.prf_template ?? null, "prf_template")}
@@ -193,7 +194,7 @@ const SalesDashboard = () => {
               <FileCheck2 className="w-3.5 h-3.5 mr-2" /> PSS workbook
               {!templates?.pss_workbook && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
             </DropdownMenuItem>
-          </DropdownMenuContent>
+          </TeamDropdownContent>
         </DropdownMenu>
       </div>
 
