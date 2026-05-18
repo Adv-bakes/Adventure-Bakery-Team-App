@@ -105,6 +105,24 @@ const BatchSheetEditor = () => {
     if (data?.signed_url) window.open(data.signed_url, "_blank");
     toast.success("Excel exported");
   };
+  const syncWithPss = async () => {
+    if (!sheet) return;
+    setSyncing(true);
+    const { data, error } = await (supabase as any).functions.invoke("reconcile-pss-batch", {
+      body: { batch_sheet_id: sheet.id },
+    });
+    setSyncing(false);
+    if (error || data?.error) { toast.error(error?.message || data?.error || "Sync failed"); return; }
+    const f = data?.filled || {};
+    const total = (f.pss_filled_count || 0) + (f.batch_filled_count || 0);
+    if (total > 0) {
+      toast.success(`Synced: ${f.batch_filled_count || 0} batch field(s), ${f.pss_filled_count || 0} PSS field(s).`);
+      await load();
+      setDirty(false);
+    } else {
+      toast.info("Nothing to sync — both sides already aligned.");
+    }
+  };
 
 
   if (!sheet) return <TeamPage title="Batch sheet">Loading…</TeamPage>;
