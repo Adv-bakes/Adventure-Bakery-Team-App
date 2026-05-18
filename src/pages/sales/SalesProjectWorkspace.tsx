@@ -204,17 +204,28 @@ const SalesProjectWorkspace = () => {
           <FileText className="w-3.5 h-3.5" /> PRF
         </button>
 
-        {/* PSS — view only when present */}
+        {/* PSS — open editable preview */}
         {pss && (
-          <button onClick={() => openSigned(pss)} className="tp-btn" title="Open PSS">
+          <button onClick={() => setOpenPss(true)} className="tp-btn" title="Open PSS preview & editor">
             <FileCheck2 className="w-3.5 h-3.5" /> PSS
             {pss.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{pss.review_status}</span>}
           </button>
         )}
 
-        {/* NDA — view only when present */}
+        {/* NDA — download/open original */}
         {nda && (
-          <button onClick={() => openSigned(nda)} className="tp-btn" title="Open NDA">
+          <button
+            onClick={async () => {
+              if (!nda?.file_path) return toast.error("No file on record");
+              const { data, error } = await supabase.storage
+                .from("product-spec-sheets")
+                .createSignedUrl(nda.file_path, 600);
+              if (error || !data?.signedUrl) return toast.error("Could not generate signed link");
+              window.open(data.signedUrl, "_blank");
+            }}
+            className="tp-btn"
+            title="Open NDA"
+          >
             <FileSignature className="w-3.5 h-3.5" /> NDA
             {nda.review_status !== "approved" && <span className="text-[10px] text-[hsl(var(--tp-warning))]">·{nda.review_status}</span>}
           </button>
@@ -235,6 +246,14 @@ const SalesProjectWorkspace = () => {
           className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDoc("nda", f); e.target.value = ""; }}
         />
+        <input
+          ref={batchInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadBatchSheet(f); e.target.value = ""; }}
+        />
+
 
         {/* Download Templates dropdown */}
         <DropdownMenu>
