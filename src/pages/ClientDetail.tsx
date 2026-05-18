@@ -82,8 +82,33 @@ export default function ClientDetail() {
     if (profileRes.data) setProfile(profileRes.data as Profile);
     if (conceptsRes.data) setConcepts(conceptsRes.data);
     if (productsRes.data) setProducts(productsRes.data);
-    if (docsRes.data) setDocuments(docsRes.data as unknown as ClientDocument[]);
+    if (docsRes.data) {
+      const docs = docsRes.data as unknown as ClientDocument[];
+      setDocuments(docs);
+      const pssIds = docs.filter((d) => d.document_type === "pss").map((d) => d.id);
+      if (pssIds.length) {
+        const { data: sheets } = await (supabase as any)
+          .from("batch_sheets")
+          .select("id, version, pss_document_id")
+          .in("pss_document_id", pssIds)
+          .is("superseded_at", null);
+        const map: Record<string, { id: string; version: number }> = {};
+        (sheets || []).forEach((s: any) => { map[s.pss_document_id] = { id: s.id, version: s.version }; });
+        setBatchSheetsByPss(map);
+      }
+    }
     setLoading(false);
+  };
+
+  const createBatchSheet = async (pssId: string) => {
+    setGeneratingForPss(pssId);
+    const { data, error } = await (supabase as any).functions.invoke("generate-batch-sheet-from-pss", {
+      body: { pss_document_id: pssId },
+    });
+    setGeneratingForPss(null);
+    if (error || data?.error) { toast.error(error?.message || data?.error); return; }
+    toast.success(`Batch sheet v${data.batch_sheet.version} created`);
+    setBatchSheetsByPss((prev) => ({ ...prev, [pssId]: { id: data.batch_sheet.id, version: data.batch_sheet.version } }));
   };
 
   const toggleAccess = async () => {
