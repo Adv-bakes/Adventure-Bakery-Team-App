@@ -35,6 +35,7 @@ interface Props {
 }
 
 export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) => {
+  const navigate = useNavigate();
   const [doc, setDoc] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [reviewing, setReviewing] = useState(false);
