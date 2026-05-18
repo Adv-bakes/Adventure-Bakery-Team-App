@@ -28,6 +28,7 @@ const BatchSheetEditor = () => {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
