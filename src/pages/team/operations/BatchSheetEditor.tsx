@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Save, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw } from "lucide-react";
 
 interface Ingredient {
   name?: string | null;
