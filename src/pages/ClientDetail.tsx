@@ -16,7 +16,7 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Building2, Package, Cookie, ShieldCheck, ShieldX, FileText, Upload, Plus } from "lucide-react";
+import { ArrowLeft, Building2, Package, Cookie, ShieldCheck, ShieldX, FileText, Upload, Plus, Sparkles, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface Profile {
