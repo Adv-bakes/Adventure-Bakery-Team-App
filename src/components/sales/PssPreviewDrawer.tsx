@@ -469,21 +469,49 @@ export function PssPreviewDrawer({
               </div>
             </Section>
 
-            <Section title="9 · Processing steps (client-supplied)">
-              <div className="col-span-2 grid grid-cols-1 gap-2">
-                {(data.client_process_steps || []).map((s, i) => (
-                  <div key={i} className="grid grid-cols-12 items-center gap-2">
-                    <span className="col-span-1 text-xs text-[hsl(var(--tp-text-dim))]">Step {s.step}</span>
-                    <input className="tp-input col-span-11" value={s.text || ""} onChange={(e) => {
-                      const steps = [...(data.client_process_steps || [])];
-                      steps[i] = { ...steps[i], text: e.target.value };
-                      setData((p) => ({ ...p, client_process_steps: steps }));
-                    }} />
+            <Section
+              title={`9 · Processing steps (${(data.client_process_steps || []).length})`}
+              action={<button onClick={addStep} className="tp-btn text-[11px]"><Plus className="w-3 h-3" /> Add step</button>}
+            >
+              <div className="col-span-2 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
+                    <tr>
+                      <th className="text-left py-1 w-10">#</th>
+                      <th className="text-left w-28">Station</th>
+                      <th className="text-left">Action / description</th>
+                      <th className="text-left w-20">Time (min)</th>
+                      <th className="text-left w-24">Temp</th>
+                      <th className="text-left">Notes</th>
+                      <th className="w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.client_process_steps || []).map((s, i) => (
+                      <tr key={i} className="border-t border-[hsl(var(--tp-hairline))]">
+                        <td className="py-1 pr-1 text-[hsl(var(--tp-text-dim))]">{s.step ?? i + 1}</td>
+                        <td className="py-1 pr-1">
+                          <select className="tp-input w-full" value={s.station || ""} onChange={(e) => updateStep(i, { station: e.target.value })}>
+                            <option value="">—</option>
+                            {STATIONS.map((st) => <option key={st} value={st}>{st}</option>)}
+                          </select>
+                        </td>
+                        <td className="py-1 pr-1"><input className="tp-input w-full" value={s.action ?? s.text ?? ""} onChange={(e) => updateStep(i, { action: e.target.value, text: e.target.value })} /></td>
+                        <td className="py-1 pr-1"><input className="tp-input w-full" value={s.time_min || ""} onChange={(e) => updateStep(i, { time_min: e.target.value })} /></td>
+                        <td className="py-1 pr-1"><input className="tp-input w-full" value={s.temp || ""} onChange={(e) => updateStep(i, { temp: e.target.value })} /></td>
+                        <td className="py-1 pr-1"><input className="tp-input w-full" value={s.notes || ""} onChange={(e) => updateStep(i, { notes: e.target.value })} /></td>
+                        <td className="py-1"><button className="tp-btn" onClick={() => removeStep(i)} title="Remove"><Trash2 className="w-3 h-3" /></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="grid grid-cols-3 gap-3 pt-4">
+                  <TextField label="Bake temperature" v={data.bake?.temperature} onChange={(v) => update(["bake", "temperature"], v)} placeholder="e.g. 350 °F or None" />
+                  <TextField label="Bake time (min)" v={data.bake?.time_minutes} onChange={(v) => update(["bake", "time_minutes"], v)} placeholder="e.g. 12 or None" />
+                  <div className="grid grid-cols-3 gap-1">
+                    <div className="col-span-2"><TextField label="Internal temp target" v={data.bake?.internal_temp_target} onChange={(v) => update(["bake", "internal_temp_target"], v)} placeholder="e.g. 200 or None" /></div>
+                    <SelectField label="Unit" v={data.bake?.internal_temp_unit} onChange={(v) => update(["bake", "internal_temp_unit"], v)} options={["°F", "°C"]} />
                   </div>
-                ))}
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <TextField label="Bake temperature" v={(data as any).bake?.temperature} onChange={(v) => update(["bake", "temperature"], v)} />
-                  <TextField label="Bake time (min)" v={(data as any).bake?.time_minutes} onChange={(v) => update(["bake", "time_minutes"], v)} />
                 </div>
               </div>
             </Section>
