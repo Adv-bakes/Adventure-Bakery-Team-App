@@ -560,11 +560,23 @@ const Section = ({ title, action, children }: { title: string; action?: React.Re
 );
 
 const TextField = ({
-  label, v, onChange, type = "text",
-}: { label: string; v: any; onChange: (v: any) => void; type?: string }) => (
+  label, v, onChange, type = "text", placeholder,
+}: { label: string; v: any; onChange: (v: any) => void; type?: string; placeholder?: string }) => (
   <label className="block">
     <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">{label}</span>
-    <input className="tp-input w-full" type={type} value={v ?? ""} onChange={(e) => onChange(e.target.value)} />
+    <input className="tp-input w-full" type={type} value={v ?? ""} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+  </label>
+);
+
+const SelectField = ({
+  label, v, onChange, options,
+}: { label: string; v: any; onChange: (v: any) => void; options: string[] }) => (
+  <label className="block">
+    <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">{label}</span>
+    <select className="tp-input w-full" value={v ?? ""} onChange={(e) => onChange(e.target.value)}>
+      <option value="">—</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
   </label>
 );
 
