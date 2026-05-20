@@ -452,12 +452,15 @@ const BatchSheetEditor = () => {
             <thead className="bg-[hsl(var(--tp-surface-2))] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
+                <th className="px-2 py-2 text-left w-28">Station</th>
                 <th className="px-2 py-2 text-left">Action</th>
                 <th className="px-2 py-2 text-left">Ingredients → kettle</th>
-                <th className="px-2 py-2 text-left">Min to melt</th>
+                <th className="px-2 py-2 text-left w-20">Min to melt</th>
                 <th className="px-2 py-2 text-left">Ingredients → mixer</th>
-                <th className="px-2 py-2 text-left">Total mix min</th>
-                <th className="px-2 py-2 text-left">Speed</th>
+                <th className="px-2 py-2 text-left w-20">Mix min</th>
+                <th className="px-2 py-2 text-left w-24">Speed</th>
+                <th className="px-2 py-2 text-left w-20">Temp</th>
+                <th className="px-2 py-2 text-left">Notes</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -465,16 +468,24 @@ const BatchSheetEditor = () => {
               {mixSteps.map((s, i) => (
                 <tr key={i} className="border-t border-[hsl(var(--tp-hairline))]">
                   <td className="px-2 py-1 text-[hsl(var(--tp-text-dim))]">{s.step}</td>
+                  <td className="px-2 py-1">
+                    <select className="tp-input w-full" value={s.station ?? ""} onChange={(e) => updateMix(i, { station: e.target.value })}>
+                      <option value="">—</option>
+                      {STATIONS.map((st) => <option key={st} value={st}>{st}</option>)}
+                    </select>
+                  </td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.action ?? ""} onChange={(e) => updateMix(i, { action: e.target.value })} /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.ingredients_to_kettle ?? ""} onChange={(e) => updateMix(i, { ingredients_to_kettle: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-20" value={s.min_to_melt ?? ""} onChange={(e) => updateMix(i, { min_to_melt: e.target.value })} /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.min_to_melt ?? ""} onChange={(e) => updateMix(i, { min_to_melt: e.target.value })} /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.ingredients_to_mixer ?? ""} onChange={(e) => updateMix(i, { ingredients_to_mixer: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-20" value={s.total_mix_min ?? ""} onChange={(e) => updateMix(i, { total_mix_min: e.target.value })} /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.total_mix_min ?? ""} onChange={(e) => updateMix(i, { total_mix_min: e.target.value })} /></td>
                   <td className="px-2 py-1">
                     <select className="tp-input w-full" value={s.speed ?? ""} onChange={(e) => updateMix(i, { speed: e.target.value })}>
                       <option value="">—</option><option>Low</option><option>Med</option><option>High</option>
                     </select>
                   </td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.temp ?? ""} onChange={(e) => updateMix(i, { temp: e.target.value })} /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.notes ?? ""} onChange={(e) => updateMix(i, { notes: e.target.value })} /></td>
                   <td className="px-2 py-1"><button className="tp-btn" onClick={() => removeMix(i)} disabled={isSuperseded}><Trash2 className="w-3 h-3" /></button></td>
                 </tr>
               ))}
@@ -482,31 +493,57 @@ const BatchSheetEditor = () => {
           </table>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-4 max-w-md">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
           <label className="block">
             <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Bake temperature</span>
-            <input className="tp-input w-full" value={bakeTemp} onChange={(e) => { setBakeTemp(e.target.value); setDirty(true); }} placeholder="e.g. 350 °F" disabled={isSuperseded} />
+            <input className="tp-input w-full" value={bakeTemp} onChange={(e) => { setBakeTemp(e.target.value); setDirty(true); }} placeholder="e.g. 350 °F or None" disabled={isSuperseded} />
           </label>
           <label className="block">
             <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Bake time (min)</span>
-            <input className="tp-input w-full" value={bakeMin} onChange={(e) => { setBakeMin(e.target.value); setDirty(true); }} placeholder="e.g. 12" disabled={isSuperseded} />
+            <input className="tp-input w-full" value={bakeMin} onChange={(e) => { setBakeMin(e.target.value); setDirty(true); }} placeholder="e.g. 12 or None" disabled={isSuperseded} />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Internal temp target</span>
+            <input className="tp-input w-full" value={bakeInternal} onChange={(e) => { setBakeInternal(e.target.value); setDirty(true); }} placeholder="e.g. 200 or None" disabled={isSuperseded} />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Internal temp unit</span>
+            <select className="tp-input w-full" value={bakeInternalUnit} onChange={(e) => { setBakeInternalUnit(e.target.value); setDirty(true); }} disabled={isSuperseded}>
+              <option>°F</option><option>°C</option>
+            </select>
           </label>
         </div>
       </section>
 
-      {/* Packaging (editable) */}
+      {/* Packaging (editable, 3-tier) */}
       <section className="mb-8 border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
         <h3 className="font-semibold mb-3">Packaging</h3>
-        <div className="grid md:grid-cols-2 gap-3">
-          <PkgField label="Primary vessel" v={editablePkg.primary?.vessel} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, vessel: v } })); setDirty(true); }} />
+
+        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Primary vessel</p>
+        <div className="grid md:grid-cols-2 gap-3 mb-4">
+          <PkgSelect label="Vessel type" v={editablePkg.primary?.vessel_type} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, vessel_type: v } })); setDirty(true); }} options={VESSEL_TYPES} />
+          <PkgField label="Vessel size / spec" v={editablePkg.primary?.vessel} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, vessel: v } })); setDirty(true); }} placeholder="e.g. 5×9 pre-made bag" />
           <PkgField label="Units / primary pack" v={editablePkg.primary?.units_per_pack} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, units_per_pack: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-          <PkgField label="Net wt / pack" v={editablePkg.primary?.net_weight_per_pack} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, net_weight_per_pack: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+          <PkgField label="Net wt / primary pack" v={editablePkg.primary?.net_weight_per_pack} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, net_weight_per_pack: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
           <PkgField label="Weight unit" v={editablePkg.primary?.weight_unit} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, weight_unit: v } })); setDirty(true); }} />
-          <PkgField label="Secondary (case/caddy/shipper)" v={editablePkg.secondary?.type} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, type: v } })); setDirty(true); }} />
-          <PkgField label="Units / case" v={editablePkg.secondary?.units_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, units_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-          <PkgField label="Cases / pallet" v={editablePkg.palletizing?.cases_per_pallet} on={(v) => { setEditablePkg((p: any) => ({ ...p, palletizing: { ...p.palletizing, cases_per_pallet: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+        </div>
+
+        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
+        <div className="grid md:grid-cols-2 gap-3 mb-4">
+          <PkgSelect label="Type" v={editablePkg.secondary?.type} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, type: v } })); setDirty(true); }} options={SECONDARY_TYPES} />
+          <PkgField label="Primaries / secondary" v={editablePkg.secondary?.primaries_per_secondary} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, primaries_per_secondary: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+          <PkgField label="Units / secondary" v={editablePkg.secondary?.units_per_secondary ?? editablePkg.secondary?.units_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, units_per_secondary: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+        </div>
+
+        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Shipper case (master carton)</p>
+        <div className="grid md:grid-cols-2 gap-3">
+          <PkgSelect label="Case type" v={editablePkg.shipper?.case_type} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, case_type: v } })); setDirty(true); }} options={SHIPPER_TYPES} />
+          <PkgField label="Secondaries / case" v={editablePkg.shipper?.secondaries_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, secondaries_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+          <PkgField label="Units / case" v={editablePkg.shipper?.units_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, units_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+          <PkgField label="Cases / pallet" v={editablePkg.shipper?.cases_per_pallet ?? editablePkg.palletizing?.cases_per_pallet} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, cases_per_pallet: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
         </div>
       </section>
+
 
       {(d.services_to_offer?.length || 0) > 0 && (
         <section className="mt-6 border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
