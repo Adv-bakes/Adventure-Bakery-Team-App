@@ -553,18 +553,32 @@ const BatchSheetEditor = () => {
           <table className="w-full text-sm" style={{ minWidth: 820 }}>
             <thead className="bg-[hsl(var(--tp-surface-2))] text-xs uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
+                <th className="px-1 py-2 w-6"></th>
                 <th className="px-2 py-2 text-left w-10">#</th>
                 <th className="px-2 py-2 text-left min-w-[120px]">Station</th>
-                <th className="px-2 py-2 text-left min-w-[260px]">Action / description</th>
-                <th className="px-2 py-2 text-left min-w-[90px]">Time (min)</th>
-                <th className="px-2 py-2 text-left min-w-[90px]">Temp</th>
-                <th className="px-2 py-2 text-left min-w-[200px]">Notes</th>
+                <th className="px-2 py-2 text-left min-w-[240px]">Action / description</th>
+                <th className="px-2 py-2 text-left min-w-[80px]">Time (min)</th>
+                <th className="px-2 py-2 text-left min-w-[80px]">Temp</th>
+                <th className="px-2 py-2 text-left min-w-[110px]">Speed</th>
+                <th className="px-2 py-2 text-left min-w-[180px]">Notes</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
             <tbody>
               {mixSteps.map((s, i) => (
-                <tr key={i} className="border-t border-[hsl(var(--tp-hairline))]">
+                <tr
+                  key={i}
+                  className={`border-t border-[hsl(var(--tp-hairline))] ${dragIdx === i ? "opacity-50" : ""} ${dropIdx === i && dragIdx !== null && dragIdx !== i ? "outline outline-2 outline-[hsl(var(--tp-gold-soft))]" : ""}`}
+                  draggable={!isSuperseded}
+                  onDragStart={(e) => { setDragIdx(i); e.dataTransfer.effectAllowed = "move"; }}
+                  onDragOver={(e) => { e.preventDefault(); if (dropIdx !== i) setDropIdx(i); }}
+                  onDragLeave={() => { if (dropIdx === i) setDropIdx(null); }}
+                  onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) moveMix(dragIdx, i); setDragIdx(null); setDropIdx(null); }}
+                  onDragEnd={() => { setDragIdx(null); setDropIdx(null); }}
+                >
+                  <td className="px-1 py-2 text-[hsl(var(--tp-text-dim))] cursor-grab active:cursor-grabbing select-none" title="Drag to reorder">
+                    <GripVertical className="w-3.5 h-3.5" />
+                  </td>
                   <td className="px-2 py-2 text-[hsl(var(--tp-text-dim))]">{s.step}</td>
                   <td className="px-2 py-1">
                     <select className="tp-input w-full" value={s.station ?? ""} onChange={(e) => updateMix(i, { station: e.target.value })}>
@@ -575,7 +589,8 @@ const BatchSheetEditor = () => {
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.action ?? ""} onChange={(e) => updateMix(i, { action: e.target.value })} placeholder="Describe the step…" /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.total_mix_min ?? ""} onChange={(e) => updateMix(i, { total_mix_min: e.target.value })} /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.temp ?? ""} onChange={(e) => updateMix(i, { temp: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.notes ?? ""} onChange={(e) => updateMix(i, { notes: e.target.value })} placeholder="Speed, equipment, ingredients added…" /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.speed ?? ""} onChange={(e) => updateMix(i, { speed: e.target.value })} placeholder="low / med / 60 rpm" /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.notes ?? ""} onChange={(e) => updateMix(i, { notes: e.target.value })} placeholder="Equipment, ingredients added…" /></td>
                   <td className="px-2 py-1"><button className="tp-btn" onClick={() => removeMix(i)} disabled={isSuperseded}><Trash2 className="w-3 h-3" /></button></td>
                 </tr>
               ))}
