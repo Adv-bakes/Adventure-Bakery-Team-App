@@ -4,7 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PssPreviewDrawer } from "@/components/sales/PssPreviewDrawer";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw, Plus, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw, Plus, Trash2, FileText, GripVertical, Lock } from "lucide-react";
+
+// Recompute Formula % from grams. Used both inside the editor closure and on load.
+const _recomputePercents = <T extends { weight_g?: number | null; weight?: number | null; percentage?: number | null }>(rows: T[]): T[] => {
+  const sum = rows.reduce((s, r) => s + (Number(r.weight_g ?? r.weight) || 0), 0);
+  if (!sum) return rows;
+  return rows.map((r) => {
+    const g = Number(r.weight_g ?? r.weight) || 0;
+    return { ...r, percentage: Math.round((g / sum) * 10000) / 100 };
+  });
+};
 
 interface Ingredient {
   name?: string | null;
