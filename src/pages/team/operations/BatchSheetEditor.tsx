@@ -532,20 +532,37 @@ const BatchSheetEditor = () => {
 
         </div>
 
-        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
-        <div className="grid md:grid-cols-2 gap-3 mb-4">
-          <PkgSelect label="Type" v={editablePkg.secondary?.type} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, type: v } })); setDirty(true); }} options={SECONDARY_TYPES} />
-          <PkgField label="Primaries / secondary" v={editablePkg.secondary?.primaries_per_secondary} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, primaries_per_secondary: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-          <PkgField label="Units / secondary" v={editablePkg.secondary?.units_per_secondary ?? editablePkg.secondary?.units_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, units_per_secondary: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-        </div>
+        {(() => {
+          const upPrim = Number(editablePkg.primary?.units_per_pack) || 0;
+          const primPerSec = Number(editablePkg.secondary?.primaries_per_secondary) || 0;
+          const unitsPerSec = upPrim && primPerSec ? upPrim * primPerSec : null;
+          const secPerCase = Number(editablePkg.shipper?.secondaries_per_case) || 0;
+          const unitsPerCase = unitsPerSec && secPerCase ? unitsPerSec * secPerCase : null;
+          return (
+            <>
+              <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
+              <div className="grid md:grid-cols-2 gap-3 mb-1">
+                <PkgSelect label="Type" v={editablePkg.secondary?.type} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, type: v } })); setDirty(true); }} options={SECONDARY_TYPES} />
+                <PkgField label="Primaries / secondary" v={editablePkg.secondary?.primaries_per_secondary} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, primaries_per_secondary: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+              </div>
+              <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mb-4">
+                Units per secondary = <strong className="text-[hsl(var(--tp-text))]">{unitsPerSec ?? "—"}</strong>
+                {upPrim && primPerSec ? ` (${primPerSec} × ${upPrim})` : " (fill primary units & primaries/secondary above)"}
+              </p>
 
-        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Shipper case (master carton)</p>
-        <div className="grid md:grid-cols-2 gap-3">
-          <PkgSelect label="Case type" v={editablePkg.shipper?.case_type} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, case_type: v } })); setDirty(true); }} options={SHIPPER_TYPES} />
-          <PkgField label="Secondaries / case" v={editablePkg.shipper?.secondaries_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, secondaries_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-          <PkgField label="Units / case" v={editablePkg.shipper?.units_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, units_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-          <PkgField label="Cases / pallet" v={editablePkg.shipper?.cases_per_pallet ?? editablePkg.palletizing?.cases_per_pallet} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, cases_per_pallet: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-        </div>
+              <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Shipper case (master carton)</p>
+              <div className="grid md:grid-cols-2 gap-3 mb-1">
+                <PkgSelect label="Case type" v={editablePkg.shipper?.case_type} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, case_type: v } })); setDirty(true); }} options={SHIPPER_TYPES} />
+                <PkgField label="Secondaries / case" v={editablePkg.shipper?.secondaries_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, secondaries_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+                <PkgField label="Cases / pallet" v={editablePkg.shipper?.cases_per_pallet ?? editablePkg.palletizing?.cases_per_pallet} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, cases_per_pallet: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+              </div>
+              <p className="text-[11px] text-[hsl(var(--tp-text-dim))]">
+                Units per case = <strong className="text-[hsl(var(--tp-text))]">{unitsPerCase ?? "—"}</strong>
+                {unitsPerSec && secPerCase ? ` (${secPerCase} × ${unitsPerSec})` : " (fill the multipliers above)"}
+              </p>
+            </>
+          );
+        })()}
       </section>
 
 
