@@ -57,6 +57,7 @@ const BatchSheetEditor = () => {
   const [dirty, setDirty] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [pssOpen, setPssOpen] = useState(false);
 
   const load = useCallback(async () => {
     const { data, error } = await (supabase as any)
