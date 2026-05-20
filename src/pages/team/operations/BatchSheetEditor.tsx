@@ -591,6 +591,12 @@ const BatchSheetEditor = () => {
           </ul>
         </section>
       )}
+
+      <PssPreviewDrawer
+        pssDocumentId={pssOpen && sheet?.pss_document_id ? sheet.pss_document_id : null}
+        onClose={() => setPssOpen(false)}
+        onSaved={() => load()}
+      />
     </TeamPage>
   );
 };
