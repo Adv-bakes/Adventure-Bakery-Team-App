@@ -158,6 +158,18 @@ const BatchSheetEditor = () => {
     setMixSteps((p) => p.filter((_, i) => i !== idx).map((s, i) => ({ ...s, step: i + 1 })));
     setDirty(true);
   };
+  const moveMix = (from: number, to: number) => {
+    if (isSuperseded || from === to) return;
+    setMixSteps((p) => {
+      const next = [...p];
+      const [row] = next.splice(from, 1);
+      next.splice(to, 0, row);
+      return next.map((s, i) => ({ ...s, step: i + 1 }));
+    });
+    setDirty(true);
+  };
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dropIdx, setDropIdx] = useState<number | null>(null);
 
   const save = async () => {
     if (!sheet || isSuperseded) return;
