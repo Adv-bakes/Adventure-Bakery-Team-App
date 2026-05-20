@@ -98,7 +98,7 @@ export function PssPreviewDrawer({
     return {
       header: ex.header || {},
       product: { ...(ex.product || {}), unit_dimensions: ex.product?.unit_dimensions || {} },
-      recipe: { ...(ex.recipe || {}), ingredients: ex.recipe?.ingredients || [] },
+      recipe: { ...(ex.recipe || {}), ingredients: recomputePssPercents(ex.recipe?.ingredients || []) },
       packaging: {
         primary: { ...(ex.packaging?.primary || {}), vessel: cleanedVessel },
         secondary: ex.packaging?.secondary || {},
