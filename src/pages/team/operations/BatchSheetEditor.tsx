@@ -288,6 +288,11 @@ const BatchSheetEditor = () => {
           <Link to="/team/operations/batch-sheets" className="tp-btn">
             <ArrowLeft className="w-3.5 h-3.5" /> All sheets
           </Link>
+          {sheet.pss_document_id && (
+            <button className="tp-btn" onClick={() => setPssOpen(true)} title="Open the source PSS in a side drawer">
+              <FileText className="w-3.5 h-3.5" /> View PSS
+            </button>
+          )}
           <button className="tp-btn" onClick={() => setShowHistory((v) => !v)}>
             <History className="w-3.5 h-3.5" /> History ({history.length})
           </button>
