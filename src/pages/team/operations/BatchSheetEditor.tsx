@@ -141,6 +141,7 @@ const BatchSheetEditor = () => {
   };
 
   const totalPct = useMemo(() => ings.reduce((s, r) => s + (Number(r.percentage) || 0), 0), [ings]);
+  const totalGrams = useMemo(() => ings.reduce((s, r) => s + (Number(r.weight_g ?? r.weight) || 0), 0), [ings]);
   const pctDrift = Math.abs(totalPct - 100) > 0.5 && totalPct > 0;
 
   // ---- Mix steps ----
