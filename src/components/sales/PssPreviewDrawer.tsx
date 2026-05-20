@@ -238,7 +238,22 @@ export function PssPreviewDrawer({
         extracted: prevExtracted,
       });
     }
-    const newNotes = { ...prevNotes, extracted: data, versions };
+    // Compute units_per_secondary and shipper.units_per_case from multipliers so
+    // downstream consumers (Sourcing Bot, xlsx exporter) still see the resolved values.
+    const upPrim = Number(data?.packaging?.primary?.units_per_pack) || 0;
+    const primPerSec = Number(data?.packaging?.secondary?.primaries_per_secondary) || 0;
+    const compUnitsPerSec = upPrim && primPerSec ? upPrim * primPerSec : (data?.packaging?.secondary?.units_per_secondary ?? null);
+    const secPerCase = Number(data?.packaging?.shipper?.secondaries_per_case) || 0;
+    const compUnitsPerCase = compUnitsPerSec && secPerCase ? Number(compUnitsPerSec) * secPerCase : (data?.packaging?.shipper?.units_per_case ?? null);
+    const dataWithComputed = {
+      ...data,
+      packaging: {
+        ...(data?.packaging || {}),
+        secondary: { ...(data?.packaging?.secondary || {}), units_per_secondary: compUnitsPerSec, units_per_case: compUnitsPerSec },
+        shipper: { ...(data?.packaging?.shipper || {}), units_per_case: compUnitsPerCase },
+      },
+    };
+    const newNotes = { ...prevNotes, extracted: dataWithComputed, versions };
     const { error } = await (supabase as any)
       .from("client_documents").update({ review_notes: newNotes }).eq("id", doc.id);
     setSaving(false);
@@ -385,24 +400,41 @@ export function PssPreviewDrawer({
                   </div>
                 </div>
                 {/* Secondary */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <SelectField label="Type" v={data.packaging?.secondary?.type} onChange={(v) => update(["packaging", "secondary", "type"], v)} options={SECONDARY_TYPES} />
-                    <TextField label="Primaries per secondary" v={data.packaging?.secondary?.primaries_per_secondary} onChange={(v) => update(["packaging", "secondary", "primaries_per_secondary"], num(v))} type="number" />
-                    <TextField label="Units / secondary" v={data.packaging?.secondary?.units_per_secondary ?? data.packaging?.secondary?.units_per_case} onChange={(v) => update(["packaging", "secondary", "units_per_secondary"], num(v))} type="number" />
-                  </div>
-                </div>
-                {/* Shipper case */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Shipper case (master carton)</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <SelectField label="Case type" v={data.packaging?.shipper?.case_type} onChange={(v) => update(["packaging", "shipper", "case_type"], v)} options={SHIPPER_TYPES} />
-                    <TextField label="Secondaries / case" v={data.packaging?.shipper?.secondaries_per_case} onChange={(v) => update(["packaging", "shipper", "secondaries_per_case"], num(v))} type="number" />
-                    <TextField label="Units / case" v={data.packaging?.shipper?.units_per_case} onChange={(v) => update(["packaging", "shipper", "units_per_case"], num(v))} type="number" />
-                    <TextField label="Cases / pallet" v={data.packaging?.shipper?.cases_per_pallet ?? data.packaging?.palletizing?.cases_per_pallet} onChange={(v) => update(["packaging", "shipper", "cases_per_pallet"], num(v))} type="number" />
-                  </div>
-                </div>
+                {(() => {
+                  const upPrim = Number(data.packaging?.primary?.units_per_pack) || 0;
+                  const primPerSec = Number(data.packaging?.secondary?.primaries_per_secondary) || 0;
+                  const unitsPerSec = upPrim && primPerSec ? upPrim * primPerSec : null;
+                  const secPerCase = Number(data.packaging?.shipper?.secondaries_per_case) || 0;
+                  const unitsPerCase = unitsPerSec && secPerCase ? unitsPerSec * secPerCase : null;
+                  return (
+                    <>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <SelectField label="Type" v={data.packaging?.secondary?.type} onChange={(v) => update(["packaging", "secondary", "type"], v)} options={SECONDARY_TYPES} />
+                          <TextField label="Primaries per secondary" v={data.packaging?.secondary?.primaries_per_secondary} onChange={(v) => update(["packaging", "secondary", "primaries_per_secondary"], num(v))} type="number" />
+                        </div>
+                        <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mt-2">
+                          Units per secondary = <strong className="text-[hsl(var(--tp-text))]">{unitsPerSec ?? "—"}</strong>
+                          {upPrim && primPerSec ? ` (${primPerSec} × ${upPrim})` : " (auto from primary units × primaries/secondary)"}
+                        </p>
+                      </div>
+                      {/* Shipper case */}
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Shipper case (master carton)</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <SelectField label="Case type" v={data.packaging?.shipper?.case_type} onChange={(v) => update(["packaging", "shipper", "case_type"], v)} options={SHIPPER_TYPES} />
+                          <TextField label="Secondaries / case" v={data.packaging?.shipper?.secondaries_per_case} onChange={(v) => update(["packaging", "shipper", "secondaries_per_case"], num(v))} type="number" />
+                          <TextField label="Cases / pallet" v={data.packaging?.shipper?.cases_per_pallet ?? data.packaging?.palletizing?.cases_per_pallet} onChange={(v) => update(["packaging", "shipper", "cases_per_pallet"], num(v))} type="number" />
+                        </div>
+                        <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mt-2">
+                          Units per case = <strong className="text-[hsl(var(--tp-text))]">{unitsPerCase ?? "—"}</strong>
+                          {unitsPerSec && secPerCase ? ` (${secPerCase} × ${unitsPerSec})` : " (auto once the multipliers are filled)"}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
                 <TextAreaField label="Label / regulatory requirements" v={data.packaging?.primary?.label_requirements} onChange={(v) => update(["packaging", "primary", "label_requirements"], v)} />
               </div>
             </Section>

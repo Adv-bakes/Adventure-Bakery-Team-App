@@ -59,10 +59,22 @@ const FIELD_MAP: Array<[string[], string[]]> = [
   [["packaging", "primary", "vessel"], ["packaging", "primary", "vessel"]],
   [["packaging", "primary", "units_per_pack"], ["packaging", "primary", "units_per_pack"]],
   [["packaging", "primary", "net_weight_per_pack"], ["packaging", "primary", "net_weight_per_pack"]],
+  [["packaging", "primary", "vessel_type"], ["packaging", "primary", "vessel_type"]],
+  [["packaging", "primary", "weight_unit"], ["packaging", "primary", "weight_unit"]],
   [["packaging", "secondary", "type"], ["packaging", "secondary", "type"]],
+  [["packaging", "secondary", "primaries_per_secondary"], ["packaging", "secondary", "primaries_per_secondary"]],
+  [["packaging", "secondary", "units_per_secondary"], ["packaging", "secondary", "units_per_secondary"]],
   [["packaging", "secondary", "units_per_case"], ["packaging", "secondary", "units_per_case"]],
+  [["packaging", "shipper", "case_type"], ["packaging", "shipper", "case_type"]],
+  [["packaging", "shipper", "secondaries_per_case"], ["packaging", "shipper", "secondaries_per_case"]],
+  [["packaging", "shipper", "units_per_case"], ["packaging", "shipper", "units_per_case"]],
+  [["packaging", "shipper", "cases_per_pallet"], ["packaging", "shipper", "cases_per_pallet"]],
   [["packaging", "palletizing", "cases_per_pallet"], ["packaging", "palletizing", "cases_per_pallet"]],
+  [["bake", "internal_temp_target"], ["process", "bake", "internal_temp_target"]],
+  [["bake", "internal_temp_unit"], ["process", "bake", "internal_temp_unit"]],
 ];
+
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
