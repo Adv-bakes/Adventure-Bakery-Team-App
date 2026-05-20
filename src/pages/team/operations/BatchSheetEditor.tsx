@@ -159,21 +159,31 @@ const BatchSheetEditor = () => {
     // Mirror structured mix steps into the legacy process.pre_bake.steps path
     // so the existing xlsx exporter and Sourcing Bot continue to work.
     const pre_bake_steps = mixSteps.map((s) => ({
+      step_number: s.step,
+      station: s.station || "",
       action: s.action || "",
       mix_time_min: s.total_mix_min ? Number(s.total_mix_min) : null,
       mix_speed: s.speed || "",
+      temperature: s.temp ? Number(s.temp) : null,
+      notes: s.notes || "",
       ingredients_added: [],
     }));
+    const existingProcess = sheet.data_json?.process || {};
     const newProcess = {
-      ...(sheet.data_json?.process || {}),
+      ...existingProcess,
       method_text: methodText,
       method: methodText, // keep legacy key in sync for the Sourcing Bot
       specifications: mixSteps,
-      pre_bake: { ...(sheet.data_json?.process?.pre_bake || {}), steps: pre_bake_steps },
+      // Once team has edited, the batch sheet diverges from the PSS.
+      seeded_from_pss_at: existingProcess.seeded_from_pss_at || new Date().toISOString(),
+      team_edited_at: new Date().toISOString(),
+      pre_bake: { ...(existingProcess.pre_bake || {}), steps: pre_bake_steps },
       bake: {
-        ...(sheet.data_json?.process?.bake || {}),
+        ...(existingProcess.bake || {}),
         temperature: bakeTemp ? Number(bakeTemp) : null,
         time_minutes: bakeMin ? Number(bakeMin) : null,
+        internal_temp_target: bakeInternal ? Number(bakeInternal) : null,
+        internal_temp_unit: bakeInternalUnit || null,
       },
     };
     const dataJson = {
