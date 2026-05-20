@@ -4,7 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PssPreviewDrawer } from "@/components/sales/PssPreviewDrawer";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw, Plus, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw, Plus, Trash2, FileText, GripVertical, Lock } from "lucide-react";
+
+// Recompute Formula % from grams. Used both inside the editor closure and on load.
+const _recomputePercents = <T extends { weight_g?: number | null; weight?: number | null; percentage?: number | null }>(rows: T[]): T[] => {
+  const sum = rows.reduce((s, r) => s + (Number(r.weight_g ?? r.weight) || 0), 0);
+  if (!sum) return rows;
+  return rows.map((r) => {
+    const g = Number(r.weight_g ?? r.weight) || 0;
+    return { ...r, percentage: Math.round((g / sum) * 10000) / 100 };
+  });
+};
 
 interface Ingredient {
   name?: string | null;
@@ -65,7 +75,7 @@ const BatchSheetEditor = () => {
     if (error) { toast.error(error.message); return; }
     setSheet(data);
     const d = data.data_json || {};
-    setIngs(d.recipe?.ingredients || []);
+    setIngs(_recomputePercents(d.recipe?.ingredients || []));
     setMethodText(d.process?.method_text || d.process?.method || "");
     const specs: MixStep[] = d.process?.specifications && d.process.specifications.length
       ? d.process.specifications.map((s: any, i: number) => ({ step: i + 1, ...s }))
@@ -109,14 +119,7 @@ const BatchSheetEditor = () => {
   const isSuperseded = !!sheet?.superseded_at;
 
   // ---- Ingredient editing with auto-% recompute ----
-  const recomputePercents = (rows: Ingredient[]): Ingredient[] => {
-    const sum = rows.reduce((s, r) => s + (Number(r.weight_g ?? r.weight) || 0), 0);
-    if (!sum) return rows;
-    return rows.map((r) => {
-      const g = Number(r.weight_g ?? r.weight) || 0;
-      return { ...r, percentage: Math.round((g / sum) * 10000) / 100 };
-    });
-  };
+  const recomputePercents = _recomputePercents;
 
   const updateIng = (idx: number, patch: Partial<Ingredient>) => {
     if (isSuperseded) return;
@@ -155,6 +158,18 @@ const BatchSheetEditor = () => {
     setMixSteps((p) => p.filter((_, i) => i !== idx).map((s, i) => ({ ...s, step: i + 1 })));
     setDirty(true);
   };
+  const moveMix = (from: number, to: number) => {
+    if (isSuperseded || from === to) return;
+    setMixSteps((p) => {
+      const next = [...p];
+      const [row] = next.splice(from, 1);
+      next.splice(to, 0, row);
+      return next.map((s, i) => ({ ...s, step: i + 1 }));
+    });
+    setDirty(true);
+  };
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dropIdx, setDropIdx] = useState<number | null>(null);
 
   const save = async () => {
     if (!sheet || isSuperseded) return;
@@ -212,6 +227,31 @@ const BatchSheetEditor = () => {
       process: newProcess,
       packaging: persistedPkg,
     };
+
+    // Draft-stage edits update in place. Once the sheet is finalized/approved,
+    // edits create a new version via revise-batch-sheet.
+    const isDraftStage = !sheet.status || sheet.status === "draft";
+
+    if (isDraftStage) {
+      const { error: updErr } = await (supabase as any)
+        .from("batch_sheets")
+        .update({
+          data_json: dataJson,
+          last_edited_by: (await (supabase as any).auth.getUser()).data?.user?.id ?? null,
+          source_change: "staff_edit",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sheet.id);
+      setSaving(false);
+      if (updErr) { toast.error(updErr.message); return; }
+      toast.success("Saved");
+      setSheet((prev: any) => ({ ...prev, data_json: dataJson, updated_at: new Date().toISOString() }));
+      setDirty(false);
+      // Reconcile blanks back to PSS in the background — non-blocking.
+      (supabase as any).functions.invoke("reconcile-pss-batch", { body: { batch_sheet_id: sheet.id } }).catch(() => {});
+      return;
+    }
+
     const { data, error } = await (supabase as any).functions.invoke("revise-batch-sheet", {
       body: { batch_sheet_id: sheet.id, data_json: dataJson, source_change: "staff_edit" },
     });
@@ -308,9 +348,39 @@ const BatchSheetEditor = () => {
               {syncing ? "Syncing…" : "Sync with PSS"}
             </button>
           )}
-          <button className="tp-btn" onClick={save} disabled={saving || !dirty || isSuperseded}>
-            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Save as new version"}
-          </button>
+          {(() => {
+            const isDraftStage = !sheet.status || sheet.status === "draft";
+            return (
+              <>
+                {dirty && (
+                  <span className="text-[11px] px-2 py-1 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30">
+                    Unsaved changes
+                  </span>
+                )}
+                <button
+                  className={`tp-btn ${dirty ? "tp-btn-primary" : ""}`}
+                  onClick={save}
+                  disabled={saving || !dirty || isSuperseded}
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {saving ? "Saving…" : isDraftStage ? "Save" : "Save as new version"}
+                </button>
+                {isDraftStage && !isSuperseded && (
+                  <button
+                    className="tp-btn"
+                    onClick={async () => {
+                      if (dirty) { toast.info("Save first, then finalize."); return; }
+                      if (!confirm("Finalize this batch sheet? After finalizing, edits will create new versions.")) return;
+                      await setStatus("final");
+                    }}
+                    title="Lock as a finalized version. After this, edits create new versions."
+                  >
+                    <Lock className="w-3.5 h-3.5" /> Finalize
+                  </button>
+                )}
+              </>
+            );
+          })()}
           <button className="tp-btn" onClick={exportXlsx} disabled={exporting}>
             <Download className="w-3.5 h-3.5" /> {exporting ? "Exporting…" : "Excel"}
           </button>
@@ -480,21 +550,35 @@ const BatchSheetEditor = () => {
           <button className="tp-btn" onClick={addMix} disabled={isSuperseded}><Plus className="w-3.5 h-3.5" /> Add step</button>
         </div>
         <div className="border border-[hsl(var(--tp-hairline))] rounded-lg overflow-x-auto">
-          <table className="w-full text-sm" style={{ minWidth: 820 }}>
+          <table className="w-full text-sm" style={{ minWidth: 960 }}>
             <thead className="bg-[hsl(var(--tp-surface-2))] text-xs uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
+                <th className="px-1 py-2 w-6"></th>
                 <th className="px-2 py-2 text-left w-10">#</th>
                 <th className="px-2 py-2 text-left min-w-[120px]">Station</th>
-                <th className="px-2 py-2 text-left min-w-[260px]">Action / description</th>
-                <th className="px-2 py-2 text-left min-w-[90px]">Time (min)</th>
-                <th className="px-2 py-2 text-left min-w-[90px]">Temp</th>
-                <th className="px-2 py-2 text-left min-w-[200px]">Notes</th>
+                <th className="px-2 py-2 text-left min-w-[240px]">Action / description</th>
+                <th className="px-2 py-2 text-left min-w-[80px]">Time (min)</th>
+                <th className="px-2 py-2 text-left min-w-[80px]">Temp</th>
+                <th className="px-2 py-2 text-left min-w-[110px]">Speed</th>
+                <th className="px-2 py-2 text-left min-w-[180px]">Notes</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
             <tbody>
               {mixSteps.map((s, i) => (
-                <tr key={i} className="border-t border-[hsl(var(--tp-hairline))]">
+                <tr
+                  key={i}
+                  className={`border-t border-[hsl(var(--tp-hairline))] ${dragIdx === i ? "opacity-50" : ""} ${dropIdx === i && dragIdx !== null && dragIdx !== i ? "outline outline-2 outline-[hsl(var(--tp-gold-soft))]" : ""}`}
+                  draggable={!isSuperseded}
+                  onDragStart={(e) => { setDragIdx(i); e.dataTransfer.effectAllowed = "move"; }}
+                  onDragOver={(e) => { e.preventDefault(); if (dropIdx !== i) setDropIdx(i); }}
+                  onDragLeave={() => { if (dropIdx === i) setDropIdx(null); }}
+                  onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) moveMix(dragIdx, i); setDragIdx(null); setDropIdx(null); }}
+                  onDragEnd={() => { setDragIdx(null); setDropIdx(null); }}
+                >
+                  <td className="px-1 py-2 text-[hsl(var(--tp-text-dim))] cursor-grab active:cursor-grabbing select-none" title="Drag to reorder">
+                    <GripVertical className="w-3.5 h-3.5" />
+                  </td>
                   <td className="px-2 py-2 text-[hsl(var(--tp-text-dim))]">{s.step}</td>
                   <td className="px-2 py-1">
                     <select className="tp-input w-full" value={s.station ?? ""} onChange={(e) => updateMix(i, { station: e.target.value })}>
@@ -505,7 +589,8 @@ const BatchSheetEditor = () => {
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.action ?? ""} onChange={(e) => updateMix(i, { action: e.target.value })} placeholder="Describe the step…" /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.total_mix_min ?? ""} onChange={(e) => updateMix(i, { total_mix_min: e.target.value })} /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.temp ?? ""} onChange={(e) => updateMix(i, { temp: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.notes ?? ""} onChange={(e) => updateMix(i, { notes: e.target.value })} placeholder="Speed, equipment, ingredients added…" /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.speed ?? ""} onChange={(e) => updateMix(i, { speed: e.target.value })} placeholder="low / med / 60 rpm" /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.notes ?? ""} onChange={(e) => updateMix(i, { notes: e.target.value })} placeholder="Equipment, ingredients added…" /></td>
                   <td className="px-2 py-1"><button className="tp-btn" onClick={() => removeMix(i)} disabled={isSuperseded}><Trash2 className="w-3 h-3" /></button></td>
                 </tr>
               ))}

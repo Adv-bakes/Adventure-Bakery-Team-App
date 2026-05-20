@@ -64,6 +64,16 @@ const VESSEL_TYPES = ["Bag", "Pouch", "Tray", "Clamshell", "Film / Flow-wrap", "
 const SECONDARY_TYPES = ["Retail box", "Retail display", "Caddy", "Shrink bundle", "None", "Other"];
 const SHIPPER_TYPES = ["Corrugated RSC", "Telescoping", "Tray pack", "Other"];
 
+// Auto-compute Formula % from grams. PSS uses `weight` (not `weight_g`).
+const recomputePssPercents = (rows: Ing[]): Ing[] => {
+  const sum = rows.reduce((s, r) => s + (Number(r?.weight) || 0), 0);
+  if (!sum) return rows;
+  return rows.map((r) => {
+    const g = Number(r?.weight) || 0;
+    return { ...r, percentage: Math.round((g / sum) * 10000) / 100 };
+  });
+};
+
 export function PssPreviewDrawer({
   pssDocumentId,
   onClose,
@@ -88,7 +98,7 @@ export function PssPreviewDrawer({
     return {
       header: ex.header || {},
       product: { ...(ex.product || {}), unit_dimensions: ex.product?.unit_dimensions || {} },
-      recipe: { ...(ex.recipe || {}), ingredients: ex.recipe?.ingredients || [] },
+      recipe: { ...(ex.recipe || {}), ingredients: recomputePssPercents(ex.recipe?.ingredients || []) },
       packaging: {
         primary: { ...(ex.packaging?.primary || {}), vessel: cleanedVessel },
         secondary: ex.packaging?.secondary || {},
@@ -145,8 +155,10 @@ export function PssPreviewDrawer({
 
   const updateIngredient = (i: number, key: keyof Ing, value: any) => {
     setData((prev) => {
-      const ings = [...(prev.recipe?.ingredients || [])];
+      let ings = [...(prev.recipe?.ingredients || [])];
       ings[i] = { ...(ings[i] || {}), [key]: value };
+      // Re-sync % whenever weight changes; leave manual % overrides alone otherwise.
+      if (key === "weight") ings = recomputePssPercents(ings);
       return { ...prev, recipe: { ...(prev.recipe || {}), ingredients: ings } };
     });
   };
@@ -163,7 +175,7 @@ export function PssPreviewDrawer({
     setData((prev) => {
       const ings = [...(prev.recipe?.ingredients || [])];
       ings.splice(i, 1);
-      return { ...prev, recipe: { ...(prev.recipe || {}), ingredients: ings } };
+      return { ...prev, recipe: { ...(prev.recipe || {}), ingredients: recomputePssPercents(ings) } };
     });
   };
 
