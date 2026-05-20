@@ -1,70 +1,58 @@
-## What's wrong
+## Scope (this revision)
 
-1. **Secondary "Primaries / secondary" and "Units / secondary" feel redundant.** When `units_per_primary` is known, units/secondary = primaries × units/primary, so two editable fields just confuse the operator. Same redundancy exists in the Shipper tier (Secondaries / case vs Units / case).
-2. **Formula grid clips % and grams cells.** The table has 10 columns (#, Ingredient, %, g, Preblend, Vendor 1, 2, 3, Notes, ✕) in a card that only has ~1100px of usable width. Numeric inputs collapse to ~60px wide and the unit gets cut off.
-3. **Processing specifications still renders as one giant textarea.** The "Method / procedure (free text — paste here)" textarea dominates the block; the mix-step table is below it and visually secondary. PSS uses only a numbered step list — batch sheet should mirror that.
-4. **Packaging from PSS does not carry over to existing batch sheets.** First-time generation reads `exPack.primary/secondary/shipper`, but `reconcile-pss-batch` (the "Sync with PSS" button) has an outdated `FIELD_MAP` that only knows about a handful of legacy keys. New PSS fields (vessel_type, primaries_per_secondary, units_per_secondary, all shipper fields, bake internal temp) are never copied to a batch sheet that was created before those fields existed.
+Four fixes on the batch sheet editor (+ matching `%` fix on the PSS drawer).
 
-## Plan
+### 1. Auto-compute Formula `%` from grams (broken on load)
 
-### A. Packaging — remove redundant fields (PSS + batch sheet)
+`src/pages/team/operations/BatchSheetEditor.tsx`
+- Run existing `recomputePercents()` inside `load()` before `setIngs`. Rows arrive from the DB with grams but blank `%`, and the helper only fires on edit today.
+- Same after "Sync with PSS" reload.
 
-Both `PssPreviewDrawer.tsx` and `BatchSheetEditor.tsx`:
+`src/components/sales/PssPreviewDrawer.tsx`
+- Add `recomputePssPercents(ings)` helper: `pct = grams / sum(grams) × 100`, 2 decimals, against the `weight` field.
+- Call on extracted-data load, on add/remove ingredient, and inside `updateIngredient` whenever `weight` changes.
+- `%` stays editable as a manual override; any weight change re-syncs it.
 
-- **Secondary tier** keeps a single editable count: `Primaries / secondary`. Drop the `Units / secondary` input and show it as a read-only computed label underneath: `= {primaries} × {units_per_primary} units`. Keep writing the computed number to `packaging.secondary.units_per_secondary` on save so the Sourcing Bot and reconcile field map still see it.
-- **Shipper tier** keeps `Secondaries / case` editable. Drop `Units / case` input; show as computed label `= {secondaries} × {units_per_secondary} units`. Persist computed value to `packaging.shipper.units_per_case`.
-- Keep `Cases / pallet` editable on the shipper tier.
+### 2. Process steps: add `Speed` column + drag-to-reorder
 
-### B. Formula grid — readable numbers, no clipping (`BatchSheetEditor.tsx`)
+Columns: `⋮⋮ | # | Station | Action | Time | Temp | Speed | Notes | ✕`
 
-- Restructure the table:
-  - Default columns: `# | Ingredient | % Formula | Grams / unit | Preblend | Vendor | Notes | ✕`.
-  - Collapse Vendor 1/2/3 into a single `Vendor` cell that opens a small popover (or inline "+ alt vendor" link) for vendors 2 and 3. The most common case is one vendor — three columns wasted horizontal space.
-- Set explicit minimum widths so numerics don't clip:
-  - `%` column: `min-w-[88px]`, right-aligned, `tabular-nums`, input padded so the value never overlaps the spinner.
-  - `Grams / unit` column: `min-w-[100px]`, right-aligned, `tabular-nums`. Show unit suffix (`g`) inside the cell as a static badge, not inside the input.
-- Wrap the table in `overflow-x-auto` with `min-w-[960px]` on the inner table so it scrolls horizontally on narrow viewports instead of squeezing.
-- Slightly larger font on numeric cells (`text-sm` instead of `text-xs`) and tighter horizontal padding on text cells to free up space.
+- **Speed** — free-text input bound to `step.speed` (e.g. "low", "med", "60 rpm"). Stored in `process.steps[i].speed`. JSONB already open-shape — no edge-function change.
+- **Drag handle** — leftmost cell `⋮⋮` (`GripVertical`). Native HTML5 DnD on `<tr>` (`draggable`, `onDragStart`, `onDragOver`, `onDrop`). On drop, splice from old index to new index, renumber. Dragged row gets `opacity-50`; drop target gets top-border highlight. Disabled when `isSuperseded`.
 
-### C. Processing specifications — step list only (`BatchSheetEditor.tsx`)
+### 3. Save behavior — in-place while drafting, versioned after finalize
 
-- **Remove** the "Method / procedure (free text — paste here)" textarea entirely. The block now opens directly with the numbered step table, matching PSS Section 9.
-- Keep `process.method_text` in the JSON for back-compat (don't blank it on save — leave whatever's there untouched), but no UI exposes it.
-- Step table columns mirror PSS exactly: `# | Station | Action / Description | Time (min) | Temp | Notes | ✕`. Drop the kettle/mixer/melt/speed columns from the default view — those were over-specific and made each row 11 columns wide. If a row needs that detail it goes in `Notes`.
-- "+ Add step" stays at the top right of the section. Numbering auto-renumbers.
-- Bake block (temp / time / internal temp target / unit) stays below the step table unchanged.
+This is the key change to the save model.
 
-### D. Sync packaging from PSS into existing batch sheets (`reconcile-pss-batch/index.ts`)
+Current behavior: every save calls `revise-batch-sheet`, which always supersedes the current row and inserts v+1. That's wrong while staff is still filling out the sheet for the first time — it creates v2, v3, v4 just from typing.
 
-Expand `FIELD_MAP` so the "Sync with PSS" button actually copies the new fields:
+New rule, keyed off `batch_sheets.status`:
 
-```
-packaging.primary.vessel_type
-packaging.primary.vessel
-packaging.primary.units_per_pack
-packaging.primary.net_weight_per_pack
-packaging.primary.weight_unit
-packaging.secondary.type
-packaging.secondary.primaries_per_secondary
-packaging.secondary.units_per_secondary
-packaging.shipper.case_type
-packaging.shipper.secondaries_per_case
-packaging.shipper.units_per_case
-packaging.shipper.cases_per_pallet
-bake.internal_temp_target
-bake.internal_temp_unit
-```
+| Current status | Save action | Endpoint |
+|---|---|---|
+| `draft` (or null) | **In-place update** — overwrite `data_json`, no version bump | direct `supabase.from('batch_sheets').update(...)` |
+| `final` / `approved` / any non-draft | **Versioned revise** — supersede + insert v+1 | existing `revise-batch-sheet` edge function |
 
-Reconcile rule stays the same: only fills blanks, never overwrites a value the team has typed. This is what makes the user's current batch sheet (generated before these PSS fields existed) finally show the packaging they entered after clicking "Sync with PSS".
+UI implications:
+- While `status === 'draft'`: Save button reads **"Save"**. Toast: "Saved" (no version number).
+- Once finalized: Save button reads **"Save as new version"** (current label). Same toast as today.
+- Add an explicit **"Finalize"** action button (only visible when `status === 'draft'` and not superseded) that sets `status = 'final'` and triggers reconcile. After finalize, the editor flips into versioned-save mode automatically.
 
-### E. Out of scope
+`reconcile-pss-batch` still runs after both save paths (already wired inside `revise-batch-sheet`; mirror the call after the in-place draft update).
 
-- No DB migration. All changes live in component JSX and the existing JSONB shapes.
-- No change to xlsx exporter or Sourcing Bot — they keep reading `units_per_secondary` / `units_per_case` (still written, just computed).
-- Process-step "seed once" rule from the prior pass stays as-is.
+### 4. Save visibility
+
+- Sticky header bar (`sticky top-0 z-10`) so Save stays on screen while scrolling.
+- "Unsaved changes" pill next to the button when `dirty === true`.
+- No autosave.
 
 ### Files touched
 
-- `src/pages/team/operations/BatchSheetEditor.tsx` — formula grid widths, vendor collapse, remove method textarea, simplify step table, computed secondary/shipper units.
-- `src/components/sales/PssPreviewDrawer.tsx` — same secondary/shipper computed-units treatment for consistency.
-- `supabase/functions/reconcile-pss-batch/index.ts` — expand `FIELD_MAP`.
+- `src/pages/team/operations/BatchSheetEditor.tsx` — recompute on load, Speed column, drag-reorder, dual-mode save (in-place vs versioned), Finalize button, sticky toolbar.
+- `src/components/sales/PssPreviewDrawer.tsx` — auto-`%` helper.
+
+### Out of scope
+
+- No edge-function changes (`process.steps[].speed` is open JSONB; in-place save uses the standard table client). `revise-batch-sheet` stays as-is for the post-finalize path.
+- No DB migration; uses existing `status` column.
+- No autosave; no changes to xlsx exporter, packaging, vendor cells.
