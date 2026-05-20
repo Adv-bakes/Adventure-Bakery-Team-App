@@ -23,18 +23,29 @@ type Ing = {
   notes?: string | null;
 };
 
+type ProcStep = {
+  step?: number;
+  station?: string;
+  text?: string;        // legacy free-text
+  action?: string;
+  time_min?: string;
+  temp?: string;
+  notes?: string;
+};
+
 type Extracted = {
   header?: any;
   product?: any;
   recipe?: { ingredients?: Ing[] };
-  packaging?: { primary?: any; secondary?: any; palletizing?: any };
+  packaging?: { primary?: any; secondary?: any; shipper?: any; palletizing?: any };
   nutrition?: { rows?: { nutrient: string; amount?: string; dv?: string }[]; serving_size?: string };
   allergens?: Record<string, { present?: boolean; source?: string }>;
   qc?: any;
   certifications?: Record<string, boolean | string>;
   storage?: any;
+  bake?: { temperature?: any; time_minutes?: any; internal_temp_target?: any; internal_temp_unit?: string };
   document_history?: { version?: string; date?: string; changes?: string; approved_by?: string }[];
-  client_process_steps?: { step: number; text: string }[];
+  client_process_steps?: ProcStep[];
 };
 
 const NUTRIENT_ROWS = [
@@ -46,6 +57,12 @@ const NUTRIENT_ROWS = [
 const ALLERGEN_KEYS = ["Milk", "Eggs", "Tree nuts", "Peanuts", "Wheat / Gluten", "Soy", "Sesame", "Fish", "Shellfish"];
 
 const CERT_KEYS = ["Kosher", "Gluten-Free", "Organic", "Non-GMO", "Halal", "Vegan", "None"];
+
+const STATIONS = ["Prep", "Kettle", "Mixer", "Sheeter", "Depositor", "Oven", "Cool", "Pack", "Other"];
+
+const VESSEL_TYPES = ["Bag", "Pouch", "Tray", "Clamshell", "Film / Flow-wrap", "Jar", "Bottle", "Box", "Other"];
+const SECONDARY_TYPES = ["Retail box", "Retail display", "Caddy", "Shrink bundle", "None", "Other"];
+const SHIPPER_TYPES = ["Corrugated RSC", "Telescoping", "Tray pack", "Other"];
 
 export function PssPreviewDrawer({
   pssDocumentId,
@@ -64,13 +81,18 @@ export function PssPreviewDrawer({
 
   const hydrate = (d: any): Extracted => {
     const ex: Extracted = (d?.review_notes?.extracted as any) || {};
+    // Bug fix: vessel sometimes got auto-populated with the product name. Treat that as blank.
+    const productName = (ex.header?.product_name || "").toString().trim().toLowerCase();
+    const rawVessel = (ex.packaging?.primary?.vessel || "").toString().trim();
+    const cleanedVessel = productName && rawVessel.toLowerCase() === productName ? "" : rawVessel;
     return {
       header: ex.header || {},
       product: { ...(ex.product || {}), unit_dimensions: ex.product?.unit_dimensions || {} },
       recipe: { ...(ex.recipe || {}), ingredients: ex.recipe?.ingredients || [] },
       packaging: {
-        primary: ex.packaging?.primary || {},
+        primary: { ...(ex.packaging?.primary || {}), vessel: cleanedVessel },
         secondary: ex.packaging?.secondary || {},
+        shipper: ex.packaging?.shipper || {},
         palletizing: ex.packaging?.palletizing || {},
       },
       nutrition: {
@@ -83,12 +105,13 @@ export function PssPreviewDrawer({
       qc: ex.qc || {},
       certifications: ex.certifications || {},
       storage: ex.storage || {},
+      bake: ex.bake || {},
       document_history: ex.document_history && ex.document_history.length
         ? ex.document_history
         : [{ version: "", date: "", changes: "", approved_by: "" }],
       client_process_steps: ex.client_process_steps && ex.client_process_steps.length
-        ? ex.client_process_steps
-        : Array.from({ length: 8 }, (_, i) => ({ step: i + 1, text: "" })),
+        ? ex.client_process_steps.map((s: any, i: number) => ({ step: i + 1, ...s }))
+        : [{ step: 1, station: "", action: "", time_min: "", temp: "", notes: "" }],
     };
   };
 
@@ -172,6 +195,24 @@ export function PssPreviewDrawer({
   };
   const addHistory = () => setData((p) => ({ ...p, document_history: [...(p.document_history || []), { version: "", date: "", changes: "", approved_by: "" }] }));
 
+  const updateStep = (i: number, patch: Partial<ProcStep>) => {
+    setData((prev) => {
+      const steps = [...(prev.client_process_steps || [])];
+      steps[i] = { ...(steps[i] || {}), ...patch };
+      return { ...prev, client_process_steps: steps };
+    });
+  };
+  const addStep = () => setData((p) => {
+    const steps = [...(p.client_process_steps || [])];
+    steps.push({ step: steps.length + 1, station: "", action: "", time_min: "", temp: "", notes: "" });
+    return { ...p, client_process_steps: steps };
+  });
+  const removeStep = (i: number) => setData((p) => {
+    const steps = [...(p.client_process_steps || [])];
+    steps.splice(i, 1);
+    return { ...p, client_process_steps: steps.map((s, idx) => ({ ...s, step: idx + 1 })) };
+  });
+
   const downloadOriginal = async () => {
     if (!doc?.file_path) return toast.error("No file on record");
     const { data: u, error } = await supabase.storage
@@ -183,16 +224,31 @@ export function PssPreviewDrawer({
   const save = async () => {
     if (!doc) return;
     setSaving(true);
-    const newNotes = { ...(doc.review_notes || {}), extracted: data };
+    // Snapshot prior extracted into versions[] before overwriting (AB-side history).
+    const prevNotes = doc.review_notes || {};
+    const prevExtracted = prevNotes.extracted || null;
+    const versions = Array.isArray(prevNotes.versions) ? [...prevNotes.versions] : [];
+    if (prevExtracted) {
+      const { data: { user } } = await supabase.auth.getUser();
+      versions.push({
+        version: versions.length + 1,
+        saved_at: new Date().toISOString(),
+        saved_by: user?.id || null,
+        saved_by_email: user?.email || null,
+        extracted: prevExtracted,
+      });
+    }
+    const newNotes = { ...prevNotes, extracted: data, versions };
     const { error } = await (supabase as any)
       .from("client_documents").update({ review_notes: newNotes }).eq("id", doc.id);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("PSS saved");
+    toast.success(`PSS saved (v${versions.length + 1})`);
     setDoc({ ...doc, review_notes: newNotes });
     onSaved?.();
     syncWithBatchSheet(true);
   };
+
 
   const syncWithBatchSheet = async (silent = false) => {
     if (!doc) return;
@@ -316,14 +372,39 @@ export function PssPreviewDrawer({
             </Section>
 
             <Section title="4 · Packaging">
-              <TextField label="Primary vessel" v={data.packaging?.primary?.vessel} onChange={(v) => update(["packaging", "primary", "vessel"], v)} />
-              <TextField label="Units / primary pack" v={data.packaging?.primary?.units_per_pack} onChange={(v) => update(["packaging", "primary", "units_per_pack"], num(v))} type="number" />
-              <TextField label="Net weight / pack" v={data.packaging?.primary?.net_weight_per_pack} onChange={(v) => update(["packaging", "primary", "net_weight_per_pack"], num(v))} type="number" />
-              <TextField label="Pack weight unit" v={data.packaging?.primary?.weight_unit} onChange={(v) => update(["packaging", "primary", "weight_unit"], v)} />
-              <TextField label="Secondary type (case/caddy/shipper)" v={data.packaging?.secondary?.type} onChange={(v) => update(["packaging", "secondary", "type"], v)} />
-              <TextField label="Units / case" v={data.packaging?.secondary?.units_per_case} onChange={(v) => update(["packaging", "secondary", "units_per_case"], num(v))} type="number" />
-              <TextField label="Cases / pallet" v={data.packaging?.palletizing?.cases_per_pallet} onChange={(v) => update(["packaging", "palletizing", "cases_per_pallet"], num(v))} type="number" />
-              <TextAreaField className="col-span-2" label="Label / regulatory requirements" v={data.packaging?.primary?.label_requirements} onChange={(v) => update(["packaging", "primary", "label_requirements"], v)} />
+              <div className="col-span-2 space-y-4">
+                {/* Primary vessel */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Primary vessel (touches the product)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField label="Vessel type" v={data.packaging?.primary?.vessel_type} onChange={(v) => update(["packaging", "primary", "vessel_type"], v)} options={VESSEL_TYPES} />
+                    <TextField label="Vessel size / spec" v={data.packaging?.primary?.vessel} onChange={(v) => update(["packaging", "primary", "vessel"], v)} placeholder="e.g. 5×9 pre-made bag" />
+                    <TextField label="Units / primary pack" v={data.packaging?.primary?.units_per_pack} onChange={(v) => update(["packaging", "primary", "units_per_pack"], num(v))} type="number" />
+                    <TextField label="Net weight / primary pack" v={data.packaging?.primary?.net_weight_per_pack} onChange={(v) => update(["packaging", "primary", "net_weight_per_pack"], num(v))} type="number" />
+                    <TextField label="Pack weight unit" v={data.packaging?.primary?.weight_unit} onChange={(v) => update(["packaging", "primary", "weight_unit"], v)} />
+                  </div>
+                </div>
+                {/* Secondary */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField label="Type" v={data.packaging?.secondary?.type} onChange={(v) => update(["packaging", "secondary", "type"], v)} options={SECONDARY_TYPES} />
+                    <TextField label="Primaries per secondary" v={data.packaging?.secondary?.primaries_per_secondary} onChange={(v) => update(["packaging", "secondary", "primaries_per_secondary"], num(v))} type="number" />
+                    <TextField label="Units / secondary" v={data.packaging?.secondary?.units_per_secondary ?? data.packaging?.secondary?.units_per_case} onChange={(v) => update(["packaging", "secondary", "units_per_secondary"], num(v))} type="number" />
+                  </div>
+                </div>
+                {/* Shipper case */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Shipper case (master carton)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField label="Case type" v={data.packaging?.shipper?.case_type} onChange={(v) => update(["packaging", "shipper", "case_type"], v)} options={SHIPPER_TYPES} />
+                    <TextField label="Secondaries / case" v={data.packaging?.shipper?.secondaries_per_case} onChange={(v) => update(["packaging", "shipper", "secondaries_per_case"], num(v))} type="number" />
+                    <TextField label="Units / case" v={data.packaging?.shipper?.units_per_case} onChange={(v) => update(["packaging", "shipper", "units_per_case"], num(v))} type="number" />
+                    <TextField label="Cases / pallet" v={data.packaging?.shipper?.cases_per_pallet ?? data.packaging?.palletizing?.cases_per_pallet} onChange={(v) => update(["packaging", "shipper", "cases_per_pallet"], num(v))} type="number" />
+                  </div>
+                </div>
+                <TextAreaField label="Label / regulatory requirements" v={data.packaging?.primary?.label_requirements} onChange={(v) => update(["packaging", "primary", "label_requirements"], v)} />
+              </div>
             </Section>
 
             <Section title="5 · Storage & shelf life">
@@ -388,21 +469,49 @@ export function PssPreviewDrawer({
               </div>
             </Section>
 
-            <Section title="9 · Processing steps (client-supplied)">
-              <div className="col-span-2 grid grid-cols-1 gap-2">
-                {(data.client_process_steps || []).map((s, i) => (
-                  <div key={i} className="grid grid-cols-12 items-center gap-2">
-                    <span className="col-span-1 text-xs text-[hsl(var(--tp-text-dim))]">Step {s.step}</span>
-                    <input className="tp-input col-span-11" value={s.text || ""} onChange={(e) => {
-                      const steps = [...(data.client_process_steps || [])];
-                      steps[i] = { ...steps[i], text: e.target.value };
-                      setData((p) => ({ ...p, client_process_steps: steps }));
-                    }} />
+            <Section
+              title={`9 · Processing steps (${(data.client_process_steps || []).length})`}
+              action={<button onClick={addStep} className="tp-btn text-[11px]"><Plus className="w-3 h-3" /> Add step</button>}
+            >
+              <div className="col-span-2 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
+                    <tr>
+                      <th className="text-left py-1 w-10">#</th>
+                      <th className="text-left w-28">Station</th>
+                      <th className="text-left">Action / description</th>
+                      <th className="text-left w-20">Time (min)</th>
+                      <th className="text-left w-24">Temp</th>
+                      <th className="text-left">Notes</th>
+                      <th className="w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data.client_process_steps || []).map((s, i) => (
+                      <tr key={i} className="border-t border-[hsl(var(--tp-hairline))]">
+                        <td className="py-1 pr-1 text-[hsl(var(--tp-text-dim))]">{s.step ?? i + 1}</td>
+                        <td className="py-1 pr-1">
+                          <select className="tp-input w-full" value={s.station || ""} onChange={(e) => updateStep(i, { station: e.target.value })}>
+                            <option value="">—</option>
+                            {STATIONS.map((st) => <option key={st} value={st}>{st}</option>)}
+                          </select>
+                        </td>
+                        <td className="py-1 pr-1"><input className="tp-input w-full" value={s.action ?? s.text ?? ""} onChange={(e) => updateStep(i, { action: e.target.value, text: e.target.value })} /></td>
+                        <td className="py-1 pr-1"><input className="tp-input w-full" value={s.time_min || ""} onChange={(e) => updateStep(i, { time_min: e.target.value })} /></td>
+                        <td className="py-1 pr-1"><input className="tp-input w-full" value={s.temp || ""} onChange={(e) => updateStep(i, { temp: e.target.value })} /></td>
+                        <td className="py-1 pr-1"><input className="tp-input w-full" value={s.notes || ""} onChange={(e) => updateStep(i, { notes: e.target.value })} /></td>
+                        <td className="py-1"><button className="tp-btn" onClick={() => removeStep(i)} title="Remove"><Trash2 className="w-3 h-3" /></button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="grid grid-cols-3 gap-3 pt-4">
+                  <TextField label="Bake temperature" v={data.bake?.temperature} onChange={(v) => update(["bake", "temperature"], v)} placeholder="e.g. 350 °F or None" />
+                  <TextField label="Bake time (min)" v={data.bake?.time_minutes} onChange={(v) => update(["bake", "time_minutes"], v)} placeholder="e.g. 12 or None" />
+                  <div className="grid grid-cols-3 gap-1">
+                    <div className="col-span-2"><TextField label="Internal temp target" v={data.bake?.internal_temp_target} onChange={(v) => update(["bake", "internal_temp_target"], v)} placeholder="e.g. 200 or None" /></div>
+                    <SelectField label="Unit" v={data.bake?.internal_temp_unit} onChange={(v) => update(["bake", "internal_temp_unit"], v)} options={["°F", "°C"]} />
                   </div>
-                ))}
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <TextField label="Bake temperature" v={(data as any).bake?.temperature} onChange={(v) => update(["bake", "temperature"], v)} />
-                  <TextField label="Bake time (min)" v={(data as any).bake?.time_minutes} onChange={(v) => update(["bake", "time_minutes"], v)} />
                 </div>
               </div>
             </Section>
@@ -451,11 +560,23 @@ const Section = ({ title, action, children }: { title: string; action?: React.Re
 );
 
 const TextField = ({
-  label, v, onChange, type = "text",
-}: { label: string; v: any; onChange: (v: any) => void; type?: string }) => (
+  label, v, onChange, type = "text", placeholder,
+}: { label: string; v: any; onChange: (v: any) => void; type?: string; placeholder?: string }) => (
   <label className="block">
     <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">{label}</span>
-    <input className="tp-input w-full" type={type} value={v ?? ""} onChange={(e) => onChange(e.target.value)} />
+    <input className="tp-input w-full" type={type} value={v ?? ""} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+  </label>
+);
+
+const SelectField = ({
+  label, v, onChange, options,
+}: { label: string; v: any; onChange: (v: any) => void; options: string[] }) => (
+  <label className="block">
+    <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">{label}</span>
+    <select className="tp-input w-full" value={v ?? ""} onChange={(e) => onChange(e.target.value)}>
+      <option value="">—</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
   </label>
 );
 

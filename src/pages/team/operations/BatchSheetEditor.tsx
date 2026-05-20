@@ -21,13 +21,21 @@ interface Ingredient {
 
 interface MixStep {
   step: number;
+  station?: string;
   action?: string;
   ingredients_to_kettle?: string;
   min_to_melt?: string;
   ingredients_to_mixer?: string;
   total_mix_min?: string;
   speed?: string;   // Low / Med / High
+  temp?: string;
+  notes?: string;
 }
+
+const STATIONS = ["Prep", "Kettle", "Mixer", "Sheeter", "Depositor", "Oven", "Cool", "Pack", "Other"];
+const VESSEL_TYPES = ["Bag", "Pouch", "Tray", "Clamshell", "Film / Flow-wrap", "Jar", "Bottle", "Box", "Other"];
+const SECONDARY_TYPES = ["Retail box", "Retail display", "Caddy", "Shrink bundle", "None", "Other"];
+const SHIPPER_TYPES = ["Corrugated RSC", "Telescoping", "Tray pack", "Other"];
 
 const BatchSheetEditor = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +46,8 @@ const BatchSheetEditor = () => {
   const [mixSteps, setMixSteps] = useState<MixStep[]>([]);
   const [bakeTemp, setBakeTemp] = useState<string>("");
   const [bakeMin, setBakeMin] = useState<string>("");
+  const [bakeInternal, setBakeInternal] = useState<string>("");
+  const [bakeInternalUnit, setBakeInternalUnit] = useState<string>("°F");
   const [editablePkg, setEditablePkg] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -56,19 +66,29 @@ const BatchSheetEditor = () => {
     setIngs(d.recipe?.ingredients || []);
     setMethodText(d.process?.method_text || d.process?.method || "");
     const specs: MixStep[] = d.process?.specifications && d.process.specifications.length
-      ? d.process.specifications
+      ? d.process.specifications.map((s: any, i: number) => ({ step: i + 1, ...s }))
       : (d.process?.pre_bake?.steps || []).map((s: any, i: number) => ({
           step: i + 1,
+          station: s.station || "",
           action: s.action || "",
           total_mix_min: s.mix_time_min != null ? String(s.mix_time_min) : "",
           speed: s.mix_speed || "",
+          temp: s.temperature != null ? String(s.temperature) : "",
+          notes: s.notes || "",
         }));
     setMixSteps(specs.length ? specs : [{ step: 1 }]);
     setBakeTemp(d.process?.bake?.temperature != null ? String(d.process.bake.temperature) : "");
     setBakeMin(d.process?.bake?.time_minutes != null ? String(d.process.bake.time_minutes) : "");
+    setBakeInternal(d.process?.bake?.internal_temp_target != null ? String(d.process.bake.internal_temp_target) : "");
+    setBakeInternalUnit(d.process?.bake?.internal_temp_unit || "°F");
+    // Strip the product-name-as-vessel bug
+    const productName = (d.header?.product_name || "").toString().trim().toLowerCase();
+    const rawVessel = (d.packaging?.primary?.vessel || "").toString().trim();
+    const cleanedVessel = productName && rawVessel.toLowerCase() === productName ? "" : rawVessel;
     setEditablePkg({
-      primary: { ...(d.packaging?.primary || {}) },
+      primary: { ...(d.packaging?.primary || {}), vessel: cleanedVessel },
       secondary: { ...(d.packaging?.secondary || {}) },
+      shipper: { ...(d.packaging?.shipper || {}) },
       palletizing: { ...(d.packaging?.palletizing || {}) },
     });
     setDirty(false);
@@ -139,21 +159,31 @@ const BatchSheetEditor = () => {
     // Mirror structured mix steps into the legacy process.pre_bake.steps path
     // so the existing xlsx exporter and Sourcing Bot continue to work.
     const pre_bake_steps = mixSteps.map((s) => ({
+      step_number: s.step,
+      station: s.station || "",
       action: s.action || "",
       mix_time_min: s.total_mix_min ? Number(s.total_mix_min) : null,
       mix_speed: s.speed || "",
+      temperature: s.temp ? Number(s.temp) : null,
+      notes: s.notes || "",
       ingredients_added: [],
     }));
+    const existingProcess = sheet.data_json?.process || {};
     const newProcess = {
-      ...(sheet.data_json?.process || {}),
+      ...existingProcess,
       method_text: methodText,
       method: methodText, // keep legacy key in sync for the Sourcing Bot
       specifications: mixSteps,
-      pre_bake: { ...(sheet.data_json?.process?.pre_bake || {}), steps: pre_bake_steps },
+      // Once team has edited, the batch sheet diverges from the PSS.
+      seeded_from_pss_at: existingProcess.seeded_from_pss_at || new Date().toISOString(),
+      team_edited_at: new Date().toISOString(),
+      pre_bake: { ...(existingProcess.pre_bake || {}), steps: pre_bake_steps },
       bake: {
-        ...(sheet.data_json?.process?.bake || {}),
+        ...(existingProcess.bake || {}),
         temperature: bakeTemp ? Number(bakeTemp) : null,
         time_minutes: bakeMin ? Number(bakeMin) : null,
+        internal_temp_target: bakeInternal ? Number(bakeInternal) : null,
+        internal_temp_unit: bakeInternalUnit || null,
       },
     };
     const dataJson = {
@@ -422,12 +452,15 @@ const BatchSheetEditor = () => {
             <thead className="bg-[hsl(var(--tp-surface-2))] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
+                <th className="px-2 py-2 text-left w-28">Station</th>
                 <th className="px-2 py-2 text-left">Action</th>
                 <th className="px-2 py-2 text-left">Ingredients → kettle</th>
-                <th className="px-2 py-2 text-left">Min to melt</th>
+                <th className="px-2 py-2 text-left w-20">Min to melt</th>
                 <th className="px-2 py-2 text-left">Ingredients → mixer</th>
-                <th className="px-2 py-2 text-left">Total mix min</th>
-                <th className="px-2 py-2 text-left">Speed</th>
+                <th className="px-2 py-2 text-left w-20">Mix min</th>
+                <th className="px-2 py-2 text-left w-24">Speed</th>
+                <th className="px-2 py-2 text-left w-20">Temp</th>
+                <th className="px-2 py-2 text-left">Notes</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -435,16 +468,24 @@ const BatchSheetEditor = () => {
               {mixSteps.map((s, i) => (
                 <tr key={i} className="border-t border-[hsl(var(--tp-hairline))]">
                   <td className="px-2 py-1 text-[hsl(var(--tp-text-dim))]">{s.step}</td>
+                  <td className="px-2 py-1">
+                    <select className="tp-input w-full" value={s.station ?? ""} onChange={(e) => updateMix(i, { station: e.target.value })}>
+                      <option value="">—</option>
+                      {STATIONS.map((st) => <option key={st} value={st}>{st}</option>)}
+                    </select>
+                  </td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.action ?? ""} onChange={(e) => updateMix(i, { action: e.target.value })} /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.ingredients_to_kettle ?? ""} onChange={(e) => updateMix(i, { ingredients_to_kettle: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-20" value={s.min_to_melt ?? ""} onChange={(e) => updateMix(i, { min_to_melt: e.target.value })} /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.min_to_melt ?? ""} onChange={(e) => updateMix(i, { min_to_melt: e.target.value })} /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.ingredients_to_mixer ?? ""} onChange={(e) => updateMix(i, { ingredients_to_mixer: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-20" value={s.total_mix_min ?? ""} onChange={(e) => updateMix(i, { total_mix_min: e.target.value })} /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.total_mix_min ?? ""} onChange={(e) => updateMix(i, { total_mix_min: e.target.value })} /></td>
                   <td className="px-2 py-1">
                     <select className="tp-input w-full" value={s.speed ?? ""} onChange={(e) => updateMix(i, { speed: e.target.value })}>
                       <option value="">—</option><option>Low</option><option>Med</option><option>High</option>
                     </select>
                   </td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.temp ?? ""} onChange={(e) => updateMix(i, { temp: e.target.value })} /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.notes ?? ""} onChange={(e) => updateMix(i, { notes: e.target.value })} /></td>
                   <td className="px-2 py-1"><button className="tp-btn" onClick={() => removeMix(i)} disabled={isSuperseded}><Trash2 className="w-3 h-3" /></button></td>
                 </tr>
               ))}
@@ -452,31 +493,57 @@ const BatchSheetEditor = () => {
           </table>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-4 max-w-md">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
           <label className="block">
             <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Bake temperature</span>
-            <input className="tp-input w-full" value={bakeTemp} onChange={(e) => { setBakeTemp(e.target.value); setDirty(true); }} placeholder="e.g. 350 °F" disabled={isSuperseded} />
+            <input className="tp-input w-full" value={bakeTemp} onChange={(e) => { setBakeTemp(e.target.value); setDirty(true); }} placeholder="e.g. 350 °F or None" disabled={isSuperseded} />
           </label>
           <label className="block">
             <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Bake time (min)</span>
-            <input className="tp-input w-full" value={bakeMin} onChange={(e) => { setBakeMin(e.target.value); setDirty(true); }} placeholder="e.g. 12" disabled={isSuperseded} />
+            <input className="tp-input w-full" value={bakeMin} onChange={(e) => { setBakeMin(e.target.value); setDirty(true); }} placeholder="e.g. 12 or None" disabled={isSuperseded} />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Internal temp target</span>
+            <input className="tp-input w-full" value={bakeInternal} onChange={(e) => { setBakeInternal(e.target.value); setDirty(true); }} placeholder="e.g. 200 or None" disabled={isSuperseded} />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Internal temp unit</span>
+            <select className="tp-input w-full" value={bakeInternalUnit} onChange={(e) => { setBakeInternalUnit(e.target.value); setDirty(true); }} disabled={isSuperseded}>
+              <option>°F</option><option>°C</option>
+            </select>
           </label>
         </div>
       </section>
 
-      {/* Packaging (editable) */}
+      {/* Packaging (editable, 3-tier) */}
       <section className="mb-8 border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
         <h3 className="font-semibold mb-3">Packaging</h3>
-        <div className="grid md:grid-cols-2 gap-3">
-          <PkgField label="Primary vessel" v={editablePkg.primary?.vessel} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, vessel: v } })); setDirty(true); }} />
+
+        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Primary vessel</p>
+        <div className="grid md:grid-cols-2 gap-3 mb-4">
+          <PkgSelect label="Vessel type" v={editablePkg.primary?.vessel_type} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, vessel_type: v } })); setDirty(true); }} options={VESSEL_TYPES} />
+          <PkgField label="Vessel size / spec" v={editablePkg.primary?.vessel} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, vessel: v } })); setDirty(true); }} placeholder="e.g. 5×9 pre-made bag" />
           <PkgField label="Units / primary pack" v={editablePkg.primary?.units_per_pack} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, units_per_pack: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-          <PkgField label="Net wt / pack" v={editablePkg.primary?.net_weight_per_pack} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, net_weight_per_pack: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+          <PkgField label="Net wt / primary pack" v={editablePkg.primary?.net_weight_per_pack} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, net_weight_per_pack: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
           <PkgField label="Weight unit" v={editablePkg.primary?.weight_unit} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, weight_unit: v } })); setDirty(true); }} />
-          <PkgField label="Secondary (case/caddy/shipper)" v={editablePkg.secondary?.type} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, type: v } })); setDirty(true); }} />
-          <PkgField label="Units / case" v={editablePkg.secondary?.units_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, units_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
-          <PkgField label="Cases / pallet" v={editablePkg.palletizing?.cases_per_pallet} on={(v) => { setEditablePkg((p: any) => ({ ...p, palletizing: { ...p.palletizing, cases_per_pallet: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+        </div>
+
+        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
+        <div className="grid md:grid-cols-2 gap-3 mb-4">
+          <PkgSelect label="Type" v={editablePkg.secondary?.type} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, type: v } })); setDirty(true); }} options={SECONDARY_TYPES} />
+          <PkgField label="Primaries / secondary" v={editablePkg.secondary?.primaries_per_secondary} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, primaries_per_secondary: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+          <PkgField label="Units / secondary" v={editablePkg.secondary?.units_per_secondary ?? editablePkg.secondary?.units_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, secondary: { ...p.secondary, units_per_secondary: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+        </div>
+
+        <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Shipper case (master carton)</p>
+        <div className="grid md:grid-cols-2 gap-3">
+          <PkgSelect label="Case type" v={editablePkg.shipper?.case_type} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, case_type: v } })); setDirty(true); }} options={SHIPPER_TYPES} />
+          <PkgField label="Secondaries / case" v={editablePkg.shipper?.secondaries_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, secondaries_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+          <PkgField label="Units / case" v={editablePkg.shipper?.units_per_case} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, units_per_case: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
+          <PkgField label="Cases / pallet" v={editablePkg.shipper?.cases_per_pallet ?? editablePkg.palletizing?.cases_per_pallet} on={(v) => { setEditablePkg((p: any) => ({ ...p, shipper: { ...p.shipper, cases_per_pallet: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
         </div>
       </section>
+
 
       {(d.services_to_offer?.length || 0) > 0 && (
         <section className="mt-6 border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
@@ -497,10 +564,20 @@ const SummaryCard = ({ label, value, warn }: { label: string; value: string; war
   </div>
 );
 
-const PkgField = ({ label, v, on, type = "text" }: { label: string; v: any; on: (v: string) => void; type?: string }) => (
+const PkgField = ({ label, v, on, type = "text", placeholder }: { label: string; v: any; on: (v: string) => void; type?: string; placeholder?: string }) => (
   <label className="block">
     <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">{label}</span>
-    <input className="tp-input w-full" type={type} value={v ?? ""} onChange={(e) => on(e.target.value)} />
+    <input className="tp-input w-full" type={type} value={v ?? ""} placeholder={placeholder} onChange={(e) => on(e.target.value)} />
+  </label>
+);
+
+const PkgSelect = ({ label, v, on, options }: { label: string; v: any; on: (v: string) => void; options: string[] }) => (
+  <label className="block">
+    <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">{label}</span>
+    <select className="tp-input w-full" value={v ?? ""} onChange={(e) => on(e.target.value)}>
+      <option value="">—</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
   </label>
 );
 

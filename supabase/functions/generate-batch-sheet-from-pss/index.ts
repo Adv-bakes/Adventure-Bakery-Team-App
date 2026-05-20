@@ -232,14 +232,30 @@ serve(async (req) => {
     };
 
     // ---------- PROCESS ----------
-    // Normalize steps: ingredients_added may arrive as comma-separated string from the wizard.
+    // Prefer client-supplied processing steps (PSS Section 9) when seeding.
+    // Once the team has edited the batch sheet (seeded_from_pss_at set), preserve
+    // their version — the batch sheet diverges from the original client PSS.
+    const existingProcess = existingSheet?.data_json?.process || {};
+    const alreadySeeded = !!existingProcess.seeded_from_pss_at;
+
+    const clientSteps: any[] = Array.isArray(ex.client_process_steps) ? ex.client_process_steps : [];
     const preBakeSteps: any[] = Array.isArray(exProcess?.pre_bake?.steps) ? exProcess.pre_bake.steps : [];
-    const normalizedSteps = preBakeSteps.map((s: any, idx: number) => {
+    const seedSource = clientSteps.length ? clientSteps : preBakeSteps;
+    const normalizedSteps = seedSource.map((s: any, idx: number) => {
       let added: string[] = [];
       if (Array.isArray(s.ingredients_added)) added = s.ingredients_added.map(String);
       else if (typeof s.ingredients_added === "string" && s.ingredients_added.trim())
         added = s.ingredients_added.split(",").map((x: string) => x.trim()).filter(Boolean);
-      return { ...s, step_number: idx + 1, ingredients_added: added };
+      return {
+        step_number: idx + 1,
+        station: s.station || null,
+        action: s.action || s.text || "",
+        ingredients_added: added,
+        mix_time_min: s.time_min ? Number(s.time_min) : (s.mix_time_min ?? null),
+        mix_speed: s.mix_speed || null,
+        temperature: s.temp ? Number(s.temp) : (s.temperature ?? null),
+        notes: s.notes || null,
+      };
     });
 
     const ingredientNames = new Set(normalizedIngredients.map((i) => (i.name || "").toLowerCase().trim()));
@@ -253,9 +269,22 @@ serve(async (req) => {
     const methodStr = exProcess.method || null;
     const isNoBake = typeof methodStr === "string" && /^no-?bake/i.test(methodStr.trim());
 
-    const process = {
+    const seededSpecs = normalizedSteps.map((s) => ({
+      step: s.step_number,
+      station: s.station || "",
+      action: s.action || "",
+      total_mix_min: s.mix_time_min != null ? String(s.mix_time_min) : "",
+      speed: s.mix_speed || "",
+      temp: s.temperature != null ? String(s.temperature) : "",
+      notes: s.notes || "",
+    }));
+
+    const process = alreadySeeded ? existingProcess : {
       method: methodStr,
+      method_text: methodStr,
       is_no_bake: isNoBake,
+      seeded_from_pss_at: new Date().toISOString(),
+      specifications: seededSpecs,
       pre_bake: {
         steps: normalizedSteps,
         dough_temp_target: exProcess?.pre_bake?.dough_temp_target ?? null,
@@ -263,8 +292,16 @@ serve(async (req) => {
       },
       forming: exProcess.forming || { machine: null, target_deposit_weight_raw: null, weight_unit: null, die_or_wire: null, notes: null },
       bake: isNoBake
-        ? { time_minutes: null, temperature: null, temp_unit: null, expected_loss_pct: null, skipped: true }
-        : exProcess.bake || { time_minutes: pick(concept?.baking_time_minutes ? Number(concept.baking_time_minutes) : null), temperature: pick(concept?.baking_temp ? Number(concept.baking_temp) : null), temp_unit: concept?.baking_temp_unit || null, expected_loss_pct: null },
+        ? { time_minutes: null, temperature: null, temp_unit: null, internal_temp_target: null, internal_temp_unit: null, expected_loss_pct: null, skipped: true }
+        : {
+            ...(exProcess.bake || {}),
+            time_minutes: pick(exProcess?.bake?.time_minutes, ex.bake?.time_minutes, concept?.baking_time_minutes ? Number(concept.baking_time_minutes) : null),
+            temperature: pick(exProcess?.bake?.temperature, ex.bake?.temperature, concept?.baking_temp ? Number(concept.baking_temp) : null),
+            temp_unit: exProcess?.bake?.temp_unit || concept?.baking_temp_unit || null,
+            internal_temp_target: pick(exProcess?.bake?.internal_temp_target, ex.bake?.internal_temp_target),
+            internal_temp_unit: pick(exProcess?.bake?.internal_temp_unit, ex.bake?.internal_temp_unit),
+            expected_loss_pct: exProcess?.bake?.expected_loss_pct ?? null,
+          },
       post_bake: exProcess.post_bake || { freeze_required: null, freeze_temp: null, freeze_time: null, notes: null },
       coverage_check: {
         all_recipe_ingredients_used: missing.length === 0 && ingredientNames.size > 0,
@@ -274,9 +311,18 @@ serve(async (req) => {
     };
 
     // ---------- PACKAGING ----------
+    // Bug fix: never copy product_name into primary.vessel
+    const productNameLc = (header.product_name || "").toString().trim().toLowerCase();
+    const cleanVessel = (v: any) => {
+      const s = (v || "").toString().trim();
+      if (!s) return null;
+      if (productNameLc && s.toLowerCase() === productNameLc) return null;
+      return s;
+    };
     const packaging = {
       primary: {
-        vessel: pick(exPack?.primary?.vessel, prf?.primary_packaging_vessel),
+        vessel_type: exPack?.primary?.vessel_type ?? null,
+        vessel: cleanVessel(pick(exPack?.primary?.vessel, prf?.primary_packaging_vessel)),
         units_per_pack: pick(exPack?.primary?.units_per_pack, prf?.units_per_primary_pack ? Number(prf.units_per_primary_pack) : null),
         net_weight_per_pack: pick(exPack?.primary?.net_weight_per_pack, prf?.net_weight_per_primary_pack ? Number(prf.net_weight_per_primary_pack) : null),
         weight_unit: pick(exPack?.primary?.weight_unit, prf?.net_weight_per_primary_pack_unit),
@@ -285,9 +331,17 @@ serve(async (req) => {
       },
       secondary: {
         type: pick(exPack?.secondary?.type, prf?.secondary_packaging),
-        units_per_case: pick(exPack?.secondary?.units_per_case, prf?.units_per_vessel ? Number(prf.units_per_vessel) : null),
+        primaries_per_secondary: exPack?.secondary?.primaries_per_secondary ?? null,
+        units_per_secondary: pick(exPack?.secondary?.units_per_secondary, exPack?.secondary?.units_per_case, prf?.units_per_vessel ? Number(prf.units_per_vessel) : null),
+        units_per_case: pick(exPack?.secondary?.units_per_case, prf?.units_per_vessel ? Number(prf.units_per_vessel) : null), // legacy
         machine: exPack?.secondary?.machine ?? null,
         lot_code_printed: exPack?.secondary?.lot_code_printed ?? null,
+      },
+      shipper: {
+        case_type: exPack?.shipper?.case_type ?? null,
+        secondaries_per_case: exPack?.shipper?.secondaries_per_case ?? null,
+        units_per_case: exPack?.shipper?.units_per_case ?? null,
+        cases_per_pallet: pick(exPack?.shipper?.cases_per_pallet, exPack?.palletizing?.cases_per_pallet),
       },
       palletizing: exPack?.palletizing || { cases_per_pallet: null, pattern: null, notes: null },
     };
