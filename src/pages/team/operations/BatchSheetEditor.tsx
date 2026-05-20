@@ -550,7 +550,7 @@ const BatchSheetEditor = () => {
           <button className="tp-btn" onClick={addMix} disabled={isSuperseded}><Plus className="w-3.5 h-3.5" /> Add step</button>
         </div>
         <div className="border border-[hsl(var(--tp-hairline))] rounded-lg overflow-x-auto">
-          <table className="w-full text-sm" style={{ minWidth: 820 }}>
+          <table className="w-full text-sm" style={{ minWidth: 960 }}>
             <thead className="bg-[hsl(var(--tp-surface-2))] text-xs uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
                 <th className="px-1 py-2 w-6"></th>
