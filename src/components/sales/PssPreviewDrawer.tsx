@@ -372,14 +372,39 @@ export function PssPreviewDrawer({
             </Section>
 
             <Section title="4 · Packaging">
-              <TextField label="Primary vessel" v={data.packaging?.primary?.vessel} onChange={(v) => update(["packaging", "primary", "vessel"], v)} />
-              <TextField label="Units / primary pack" v={data.packaging?.primary?.units_per_pack} onChange={(v) => update(["packaging", "primary", "units_per_pack"], num(v))} type="number" />
-              <TextField label="Net weight / pack" v={data.packaging?.primary?.net_weight_per_pack} onChange={(v) => update(["packaging", "primary", "net_weight_per_pack"], num(v))} type="number" />
-              <TextField label="Pack weight unit" v={data.packaging?.primary?.weight_unit} onChange={(v) => update(["packaging", "primary", "weight_unit"], v)} />
-              <TextField label="Secondary type (case/caddy/shipper)" v={data.packaging?.secondary?.type} onChange={(v) => update(["packaging", "secondary", "type"], v)} />
-              <TextField label="Units / case" v={data.packaging?.secondary?.units_per_case} onChange={(v) => update(["packaging", "secondary", "units_per_case"], num(v))} type="number" />
-              <TextField label="Cases / pallet" v={data.packaging?.palletizing?.cases_per_pallet} onChange={(v) => update(["packaging", "palletizing", "cases_per_pallet"], num(v))} type="number" />
-              <TextAreaField className="col-span-2" label="Label / regulatory requirements" v={data.packaging?.primary?.label_requirements} onChange={(v) => update(["packaging", "primary", "label_requirements"], v)} />
+              <div className="col-span-2 space-y-4">
+                {/* Primary vessel */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Primary vessel (touches the product)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField label="Vessel type" v={data.packaging?.primary?.vessel_type} onChange={(v) => update(["packaging", "primary", "vessel_type"], v)} options={VESSEL_TYPES} />
+                    <TextField label="Vessel size / spec" v={data.packaging?.primary?.vessel} onChange={(v) => update(["packaging", "primary", "vessel"], v)} placeholder="e.g. 5×9 pre-made bag" />
+                    <TextField label="Units / primary pack" v={data.packaging?.primary?.units_per_pack} onChange={(v) => update(["packaging", "primary", "units_per_pack"], num(v))} type="number" />
+                    <TextField label="Net weight / primary pack" v={data.packaging?.primary?.net_weight_per_pack} onChange={(v) => update(["packaging", "primary", "net_weight_per_pack"], num(v))} type="number" />
+                    <TextField label="Pack weight unit" v={data.packaging?.primary?.weight_unit} onChange={(v) => update(["packaging", "primary", "weight_unit"], v)} />
+                  </div>
+                </div>
+                {/* Secondary */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField label="Type" v={data.packaging?.secondary?.type} onChange={(v) => update(["packaging", "secondary", "type"], v)} options={SECONDARY_TYPES} />
+                    <TextField label="Primaries per secondary" v={data.packaging?.secondary?.primaries_per_secondary} onChange={(v) => update(["packaging", "secondary", "primaries_per_secondary"], num(v))} type="number" />
+                    <TextField label="Units / secondary" v={data.packaging?.secondary?.units_per_secondary ?? data.packaging?.secondary?.units_per_case} onChange={(v) => update(["packaging", "secondary", "units_per_secondary"], num(v))} type="number" />
+                  </div>
+                </div>
+                {/* Shipper case */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Shipper case (master carton)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SelectField label="Case type" v={data.packaging?.shipper?.case_type} onChange={(v) => update(["packaging", "shipper", "case_type"], v)} options={SHIPPER_TYPES} />
+                    <TextField label="Secondaries / case" v={data.packaging?.shipper?.secondaries_per_case} onChange={(v) => update(["packaging", "shipper", "secondaries_per_case"], num(v))} type="number" />
+                    <TextField label="Units / case" v={data.packaging?.shipper?.units_per_case} onChange={(v) => update(["packaging", "shipper", "units_per_case"], num(v))} type="number" />
+                    <TextField label="Cases / pallet" v={data.packaging?.shipper?.cases_per_pallet ?? data.packaging?.palletizing?.cases_per_pallet} onChange={(v) => update(["packaging", "shipper", "cases_per_pallet"], num(v))} type="number" />
+                  </div>
+                </div>
+                <TextAreaField label="Label / regulatory requirements" v={data.packaging?.primary?.label_requirements} onChange={(v) => update(["packaging", "primary", "label_requirements"], v)} />
+              </div>
             </Section>
 
             <Section title="5 · Storage & shelf life">
