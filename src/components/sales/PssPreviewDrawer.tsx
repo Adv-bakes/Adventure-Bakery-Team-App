@@ -64,6 +64,16 @@ const VESSEL_TYPES = ["Bag", "Pouch", "Tray", "Clamshell", "Film / Flow-wrap", "
 const SECONDARY_TYPES = ["Retail box", "Retail display", "Caddy", "Shrink bundle", "None", "Other"];
 const SHIPPER_TYPES = ["Corrugated RSC", "Telescoping", "Tray pack", "Other"];
 
+// Auto-compute Formula % from grams. PSS uses `weight` (not `weight_g`).
+const recomputePssPercents = (rows: Ing[]): Ing[] => {
+  const sum = rows.reduce((s, r) => s + (Number(r?.weight) || 0), 0);
+  if (!sum) return rows;
+  return rows.map((r) => {
+    const g = Number(r?.weight) || 0;
+    return { ...r, percentage: Math.round((g / sum) * 10000) / 100 };
+  });
+};
+
 export function PssPreviewDrawer({
   pssDocumentId,
   onClose,
