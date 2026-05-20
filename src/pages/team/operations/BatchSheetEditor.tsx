@@ -380,62 +380,73 @@ const BatchSheetEditor = () => {
           <button className="tp-btn" onClick={addIng} disabled={isSuperseded}><Plus className="w-3.5 h-3.5" /> Add ingredient</button>
         </div>
         <div className="border border-[hsl(var(--tp-hairline))] rounded-lg overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" style={{ minWidth: 960 }}>
             <thead className="bg-[hsl(var(--tp-surface-2))] text-xs uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
-                <th className="px-2 py-2 text-left min-w-[200px]">Ingredient</th>
-                <th className="px-2 py-2 text-right w-24">% Formula</th>
-                <th className="px-2 py-2 text-right w-28">Grams / unit</th>
-                <th className="px-2 py-2 text-left w-28">Preblend</th>
-                <th className="px-2 py-2 text-left min-w-[140px]">Vendor 1</th>
-                <th className="px-2 py-2 text-left min-w-[140px]">Vendor 2</th>
-                <th className="px-2 py-2 text-left min-w-[140px]">Vendor 3</th>
-                <th className="px-2 py-2 text-left min-w-[160px]">Notes</th>
+                <th className="px-2 py-2 text-left min-w-[220px]">Ingredient</th>
+                <th className="px-2 py-2 text-right min-w-[110px]">% Formula</th>
+                <th className="px-2 py-2 text-right min-w-[130px]">Grams / unit</th>
+                <th className="px-2 py-2 text-left min-w-[110px]">Preblend</th>
+                <th className="px-2 py-2 text-left min-w-[180px]">Vendor</th>
+                <th className="px-2 py-2 text-left min-w-[180px]">Notes</th>
                 <th className="px-2 py-2 w-10"></th>
               </tr>
             </thead>
             <tbody>
-              {ings.map((r, i) => (
-                <tr key={i} className="border-t border-[hsl(var(--tp-hairline))]">
-                  <td className="px-2 py-1 text-[hsl(var(--tp-text-dim))]">{i + 1}</td>
-                  <td className="px-2 py-1">
-                    <input className="tp-input w-full" value={r.name ?? ""} onChange={(e) => updateIng(i, { name: e.target.value })} placeholder="Ingredient name" />
-                  </td>
-                  <td className="px-2 py-1">
-                    <input className="tp-input w-full text-right tabular-nums" type="number" step="0.01"
-                      value={r.percentage ?? ""} onChange={(e) => updateIng(i, { percentage: e.target.value === "" ? null : Number(e.target.value) })} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <input className="tp-input w-full text-right tabular-nums" type="number" step="0.01"
-                      value={r.weight_g ?? r.weight ?? ""} onChange={(e) => {
-                        const v = e.target.value === "" ? null : Number(e.target.value);
-                        updateIng(i, { weight_g: v, weight: v });
-                      }} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <input className="tp-input w-full" value={r.preblend ?? ""} onChange={(e) => updateIng(i, { preblend: e.target.value })} placeholder="—" />
-                  </td>
-                  {[1, 2, 3].map((n) => {
-                    const key = `vendor_${n}` as keyof Ingredient;
-                    return (
-                      <td key={n} className="px-2 py-1">
-                        <input className="tp-input w-full" value={(r[key] as string) ?? ""} onChange={(e) => updateIng(i, { [key]: e.target.value } as any)} />
-                      </td>
-                    );
-                  })}
-                  <td className="px-2 py-1">
-                    <input className="tp-input w-full" value={r.vendor_notes ?? ""} onChange={(e) => updateIng(i, { vendor_notes: e.target.value })} />
-                  </td>
-                  <td className="px-2 py-1">
-                    <button className="tp-btn" onClick={() => removeIng(i)} disabled={isSuperseded} title="Remove"><Trash2 className="w-3 h-3" /></button>
-                  </td>
-                </tr>
-              ))}
+              {ings.map((r, i) => {
+                const hasAlt = !!(r.vendor_2 || r.vendor_3);
+                return (
+                  <tr key={i} className="border-t border-[hsl(var(--tp-hairline))] align-top">
+                    <td className="px-2 py-2 text-[hsl(var(--tp-text-dim))]">{i + 1}</td>
+                    <td className="px-2 py-1">
+                      <input className="tp-input w-full" value={r.name ?? ""} onChange={(e) => updateIng(i, { name: e.target.value })} placeholder="Ingredient name" />
+                    </td>
+                    <td className="px-2 py-1">
+                      <div className="flex items-center justify-end gap-1">
+                        <input className="tp-input w-full text-right tabular-nums" type="number" step="0.01"
+                          value={r.percentage ?? ""} onChange={(e) => updateIng(i, { percentage: e.target.value === "" ? null : Number(e.target.value) })} />
+                        <span className="text-[hsl(var(--tp-text-dim))] text-xs">%</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1">
+                      <div className="flex items-center justify-end gap-1">
+                        <input className="tp-input w-full text-right tabular-nums" type="number" step="0.01"
+                          value={r.weight_g ?? r.weight ?? ""} onChange={(e) => {
+                            const v = e.target.value === "" ? null : Number(e.target.value);
+                            updateIng(i, { weight_g: v, weight: v });
+                          }} />
+                        <span className="text-[hsl(var(--tp-text-dim))] text-xs">g</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1">
+                      <input className="tp-input w-full" value={r.preblend ?? ""} onChange={(e) => updateIng(i, { preblend: e.target.value })} placeholder="—" />
+                    </td>
+                    <td className="px-2 py-1">
+                      <input className="tp-input w-full" value={r.vendor_1 ?? ""} placeholder="Primary vendor" onChange={(e) => updateIng(i, { vendor_1: e.target.value })} />
+                      {hasAlt ? (
+                        <div className="mt-1 space-y-1">
+                          <input className="tp-input w-full" value={r.vendor_2 ?? ""} placeholder="Alt vendor 2" onChange={(e) => updateIng(i, { vendor_2: e.target.value })} />
+                          <input className="tp-input w-full" value={r.vendor_3 ?? ""} placeholder="Alt vendor 3" onChange={(e) => updateIng(i, { vendor_3: e.target.value })} />
+                        </div>
+                      ) : (
+                        <button type="button" className="text-[11px] text-[hsl(var(--tp-gold-soft))] hover:underline mt-1"
+                          onClick={() => updateIng(i, { vendor_2: " " })}>+ alt vendor</button>
+                      )}
+                    </td>
+                    <td className="px-2 py-1">
+                      <input className="tp-input w-full" value={r.vendor_notes ?? ""} onChange={(e) => updateIng(i, { vendor_notes: e.target.value })} />
+                    </td>
+                    <td className="px-2 py-1">
+                      <button className="tp-btn" onClick={() => removeIng(i)} disabled={isSuperseded} title="Remove"><Trash2 className="w-3 h-3" /></button>
+                    </td>
+                  </tr>
+                );
+              })}
               <tr className="border-t border-[hsl(var(--tp-hairline-strong))] bg-[hsl(var(--tp-surface-2))] font-medium">
                 <td colSpan={2} className="px-2 py-2 text-right text-[hsl(var(--tp-text-dim))]">Totals</td>
                 <td className={`px-2 py-2 text-right tabular-nums ${pctDrift ? "text-amber-500" : "text-[hsl(var(--tp-text))]"}`}>{totalPct.toFixed(2)}%</td>
-                <td colSpan={7}></td>
+                <td colSpan={5}></td>
               </tr>
             </tbody>
           </table>
@@ -445,64 +456,39 @@ const BatchSheetEditor = () => {
         </p>
       </section>
 
-      {/* Processing Specifications */}
+      {/* Processing Specifications — step list only, mirrors PSS Section 9 */}
       <section className="mb-8 border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
-        <h3 className="font-semibold mb-3">Processing specifications (proprietary)</h3>
-
-        <label className="block mb-4">
-          <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Method / procedure (free text — paste here)</span>
-          <textarea
-            className="tp-input w-full min-h-[120px] font-mono text-xs"
-            value={methodText}
-            onChange={(e) => { setMethodText(e.target.value); setDirty(true); }}
-            placeholder="Paste or describe the full method here…"
-            disabled={isSuperseded}
-          />
-        </label>
-
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-[hsl(var(--tp-text-dim))]">Mix-step schedule</p>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Processing specifications (proprietary)</h3>
           <button className="tp-btn" onClick={addMix} disabled={isSuperseded}><Plus className="w-3.5 h-3.5" /> Add step</button>
         </div>
         <div className="border border-[hsl(var(--tp-hairline))] rounded-lg overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-[hsl(var(--tp-surface-2))] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
+          <table className="w-full text-sm" style={{ minWidth: 820 }}>
+            <thead className="bg-[hsl(var(--tp-surface-2))] text-xs uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
-                <th className="px-2 py-2 text-left w-28">Station</th>
-                <th className="px-2 py-2 text-left">Action</th>
-                <th className="px-2 py-2 text-left">Ingredients → kettle</th>
-                <th className="px-2 py-2 text-left w-20">Min to melt</th>
-                <th className="px-2 py-2 text-left">Ingredients → mixer</th>
-                <th className="px-2 py-2 text-left w-20">Mix min</th>
-                <th className="px-2 py-2 text-left w-24">Speed</th>
-                <th className="px-2 py-2 text-left w-20">Temp</th>
-                <th className="px-2 py-2 text-left">Notes</th>
+                <th className="px-2 py-2 text-left min-w-[120px]">Station</th>
+                <th className="px-2 py-2 text-left min-w-[260px]">Action / description</th>
+                <th className="px-2 py-2 text-left min-w-[90px]">Time (min)</th>
+                <th className="px-2 py-2 text-left min-w-[90px]">Temp</th>
+                <th className="px-2 py-2 text-left min-w-[200px]">Notes</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
             <tbody>
               {mixSteps.map((s, i) => (
                 <tr key={i} className="border-t border-[hsl(var(--tp-hairline))]">
-                  <td className="px-2 py-1 text-[hsl(var(--tp-text-dim))]">{s.step}</td>
+                  <td className="px-2 py-2 text-[hsl(var(--tp-text-dim))]">{s.step}</td>
                   <td className="px-2 py-1">
                     <select className="tp-input w-full" value={s.station ?? ""} onChange={(e) => updateMix(i, { station: e.target.value })}>
                       <option value="">—</option>
                       {STATIONS.map((st) => <option key={st} value={st}>{st}</option>)}
                     </select>
                   </td>
-                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.action ?? ""} onChange={(e) => updateMix(i, { action: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.ingredients_to_kettle ?? ""} onChange={(e) => updateMix(i, { ingredients_to_kettle: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.min_to_melt ?? ""} onChange={(e) => updateMix(i, { min_to_melt: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.ingredients_to_mixer ?? ""} onChange={(e) => updateMix(i, { ingredients_to_mixer: e.target.value })} /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.action ?? ""} onChange={(e) => updateMix(i, { action: e.target.value })} placeholder="Describe the step…" /></td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.total_mix_min ?? ""} onChange={(e) => updateMix(i, { total_mix_min: e.target.value })} /></td>
-                  <td className="px-2 py-1">
-                    <select className="tp-input w-full" value={s.speed ?? ""} onChange={(e) => updateMix(i, { speed: e.target.value })}>
-                      <option value="">—</option><option>Low</option><option>Med</option><option>High</option>
-                    </select>
-                  </td>
                   <td className="px-2 py-1"><input className="tp-input w-full" value={s.temp ?? ""} onChange={(e) => updateMix(i, { temp: e.target.value })} /></td>
-                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.notes ?? ""} onChange={(e) => updateMix(i, { notes: e.target.value })} /></td>
+                  <td className="px-2 py-1"><input className="tp-input w-full" value={s.notes ?? ""} onChange={(e) => updateMix(i, { notes: e.target.value })} placeholder="Speed, equipment, ingredients added…" /></td>
                   <td className="px-2 py-1"><button className="tp-btn" onClick={() => removeMix(i)} disabled={isSuperseded}><Trash2 className="w-3 h-3" /></button></td>
                 </tr>
               ))}
@@ -543,6 +529,7 @@ const BatchSheetEditor = () => {
           <PkgField label="Units / primary pack" v={editablePkg.primary?.units_per_pack} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, units_per_pack: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
           <PkgField label="Net wt / primary pack" v={editablePkg.primary?.net_weight_per_pack} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, net_weight_per_pack: v === "" ? null : Number(v) } })); setDirty(true); }} type="number" />
           <PkgField label="Weight unit" v={editablePkg.primary?.weight_unit} on={(v) => { setEditablePkg((p: any) => ({ ...p, primary: { ...p.primary, weight_unit: v } })); setDirty(true); }} />
+
         </div>
 
         <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Secondary package (retail display / retail box)</p>
