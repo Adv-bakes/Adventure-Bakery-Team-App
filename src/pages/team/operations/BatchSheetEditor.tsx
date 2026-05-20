@@ -21,13 +21,21 @@ interface Ingredient {
 
 interface MixStep {
   step: number;
+  station?: string;
   action?: string;
   ingredients_to_kettle?: string;
   min_to_melt?: string;
   ingredients_to_mixer?: string;
   total_mix_min?: string;
   speed?: string;   // Low / Med / High
+  temp?: string;
+  notes?: string;
 }
+
+const STATIONS = ["Prep", "Kettle", "Mixer", "Sheeter", "Depositor", "Oven", "Cool", "Pack", "Other"];
+const VESSEL_TYPES = ["Bag", "Pouch", "Tray", "Clamshell", "Film / Flow-wrap", "Jar", "Bottle", "Box", "Other"];
+const SECONDARY_TYPES = ["Retail box", "Retail display", "Caddy", "Shrink bundle", "None", "Other"];
+const SHIPPER_TYPES = ["Corrugated RSC", "Telescoping", "Tray pack", "Other"];
 
 const BatchSheetEditor = () => {
   const { id } = useParams<{ id: string }>();
