@@ -195,6 +195,24 @@ export function PssPreviewDrawer({
   };
   const addHistory = () => setData((p) => ({ ...p, document_history: [...(p.document_history || []), { version: "", date: "", changes: "", approved_by: "" }] }));
 
+  const updateStep = (i: number, patch: Partial<ProcStep>) => {
+    setData((prev) => {
+      const steps = [...(prev.client_process_steps || [])];
+      steps[i] = { ...(steps[i] || {}), ...patch };
+      return { ...prev, client_process_steps: steps };
+    });
+  };
+  const addStep = () => setData((p) => {
+    const steps = [...(p.client_process_steps || [])];
+    steps.push({ step: steps.length + 1, station: "", action: "", time_min: "", temp: "", notes: "" });
+    return { ...p, client_process_steps: steps };
+  });
+  const removeStep = (i: number) => setData((p) => {
+    const steps = [...(p.client_process_steps || [])];
+    steps.splice(i, 1);
+    return { ...p, client_process_steps: steps.map((s, idx) => ({ ...s, step: idx + 1 })) };
+  });
+
   const downloadOriginal = async () => {
     if (!doc?.file_path) return toast.error("No file on record");
     const { data: u, error } = await supabase.storage
@@ -206,16 +224,31 @@ export function PssPreviewDrawer({
   const save = async () => {
     if (!doc) return;
     setSaving(true);
-    const newNotes = { ...(doc.review_notes || {}), extracted: data };
+    // Snapshot prior extracted into versions[] before overwriting (AB-side history).
+    const prevNotes = doc.review_notes || {};
+    const prevExtracted = prevNotes.extracted || null;
+    const versions = Array.isArray(prevNotes.versions) ? [...prevNotes.versions] : [];
+    if (prevExtracted) {
+      const { data: { user } } = await supabase.auth.getUser();
+      versions.push({
+        version: versions.length + 1,
+        saved_at: new Date().toISOString(),
+        saved_by: user?.id || null,
+        saved_by_email: user?.email || null,
+        extracted: prevExtracted,
+      });
+    }
+    const newNotes = { ...prevNotes, extracted: data, versions };
     const { error } = await (supabase as any)
       .from("client_documents").update({ review_notes: newNotes }).eq("id", doc.id);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("PSS saved");
+    toast.success(`PSS saved (v${versions.length + 1})`);
     setDoc({ ...doc, review_notes: newNotes });
     onSaved?.();
     syncWithBatchSheet(true);
   };
+
 
   const syncWithBatchSheet = async (silent = false) => {
     if (!doc) return;
