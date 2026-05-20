@@ -156,8 +156,6 @@ const BatchSheetEditor = () => {
   const save = async () => {
     if (!sheet || isSuperseded) return;
     setSaving(true);
-    // Mirror structured mix steps into the legacy process.pre_bake.steps path
-    // so the existing xlsx exporter and Sourcing Bot continue to work.
     const pre_bake_steps = mixSteps.map((s) => ({
       step_number: s.step,
       station: s.station || "",
@@ -171,10 +169,9 @@ const BatchSheetEditor = () => {
     const existingProcess = sheet.data_json?.process || {};
     const newProcess = {
       ...existingProcess,
-      method_text: methodText,
-      method: methodText, // keep legacy key in sync for the Sourcing Bot
+      method_text: existingProcess.method_text || methodText || "",
+      method: existingProcess.method || methodText || "",
       specifications: mixSteps,
-      // Once team has edited, the batch sheet diverges from the PSS.
       seeded_from_pss_at: existingProcess.seeded_from_pss_at || new Date().toISOString(),
       team_edited_at: new Date().toISOString(),
       pre_bake: { ...(existingProcess.pre_bake || {}), steps: pre_bake_steps },
@@ -186,11 +183,31 @@ const BatchSheetEditor = () => {
         internal_temp_unit: bakeInternalUnit || null,
       },
     };
+    // Compute units/secondary and units/case from the multipliers so the
+    // operator never has to type a number that's just A × B.
+    const upPrimary = Number(editablePkg.primary?.units_per_pack) || 0;
+    const primPerSec = Number(editablePkg.secondary?.primaries_per_secondary) || 0;
+    const computedUnitsPerSecondary = upPrimary && primPerSec
+      ? upPrimary * primPerSec
+      : (editablePkg.secondary?.units_per_secondary ?? null);
+    const secPerCase = Number(editablePkg.shipper?.secondaries_per_case) || 0;
+    const computedUnitsPerCase = computedUnitsPerSecondary && secPerCase
+      ? Number(computedUnitsPerSecondary) * secPerCase
+      : (editablePkg.shipper?.units_per_case ?? null);
+    const persistedPkg = {
+      ...editablePkg,
+      secondary: {
+        ...editablePkg.secondary,
+        units_per_secondary: computedUnitsPerSecondary,
+        units_per_case: computedUnitsPerSecondary, // legacy mirror
+      },
+      shipper: { ...editablePkg.shipper, units_per_case: computedUnitsPerCase },
+    };
     const dataJson = {
       ...sheet.data_json,
       recipe: { ...sheet.data_json?.recipe, ingredients: ings },
       process: newProcess,
-      packaging: editablePkg,
+      packaging: persistedPkg,
     };
     const { data, error } = await (supabase as any).functions.invoke("revise-batch-sheet", {
       body: { batch_sheet_id: sheet.id, data_json: dataJson, source_change: "staff_edit" },
