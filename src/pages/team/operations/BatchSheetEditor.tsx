@@ -348,9 +348,39 @@ const BatchSheetEditor = () => {
               {syncing ? "Syncing…" : "Sync with PSS"}
             </button>
           )}
-          <button className="tp-btn" onClick={save} disabled={saving || !dirty || isSuperseded}>
-            <Save className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Save as new version"}
-          </button>
+          {(() => {
+            const isDraftStage = !sheet.status || sheet.status === "draft";
+            return (
+              <>
+                {dirty && (
+                  <span className="text-[11px] px-2 py-1 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30">
+                    Unsaved changes
+                  </span>
+                )}
+                <button
+                  className={`tp-btn ${dirty ? "tp-btn-primary" : ""}`}
+                  onClick={save}
+                  disabled={saving || !dirty || isSuperseded}
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {saving ? "Saving…" : isDraftStage ? "Save" : "Save as new version"}
+                </button>
+                {isDraftStage && !isSuperseded && (
+                  <button
+                    className="tp-btn"
+                    onClick={async () => {
+                      if (dirty) { toast.info("Save first, then finalize."); return; }
+                      if (!confirm("Finalize this batch sheet? After finalizing, edits will create new versions.")) return;
+                      await setStatus("final");
+                    }}
+                    title="Lock as a finalized version. After this, edits create new versions."
+                  >
+                    <Lock className="w-3.5 h-3.5" /> Finalize
+                  </button>
+                )}
+              </>
+            );
+          })()}
           <button className="tp-btn" onClick={exportXlsx} disabled={exporting}>
             <Download className="w-3.5 h-3.5" /> {exporting ? "Exporting…" : "Excel"}
           </button>
