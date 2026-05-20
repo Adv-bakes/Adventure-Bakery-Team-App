@@ -238,7 +238,22 @@ export function PssPreviewDrawer({
         extracted: prevExtracted,
       });
     }
-    const newNotes = { ...prevNotes, extracted: data, versions };
+    // Compute units_per_secondary and shipper.units_per_case from multipliers so
+    // downstream consumers (Sourcing Bot, xlsx exporter) still see the resolved values.
+    const upPrim = Number(data?.packaging?.primary?.units_per_pack) || 0;
+    const primPerSec = Number(data?.packaging?.secondary?.primaries_per_secondary) || 0;
+    const compUnitsPerSec = upPrim && primPerSec ? upPrim * primPerSec : (data?.packaging?.secondary?.units_per_secondary ?? null);
+    const secPerCase = Number(data?.packaging?.shipper?.secondaries_per_case) || 0;
+    const compUnitsPerCase = compUnitsPerSec && secPerCase ? Number(compUnitsPerSec) * secPerCase : (data?.packaging?.shipper?.units_per_case ?? null);
+    const dataWithComputed = {
+      ...data,
+      packaging: {
+        ...(data?.packaging || {}),
+        secondary: { ...(data?.packaging?.secondary || {}), units_per_secondary: compUnitsPerSec, units_per_case: compUnitsPerSec },
+        shipper: { ...(data?.packaging?.shipper || {}), units_per_case: compUnitsPerCase },
+      },
+    };
+    const newNotes = { ...prevNotes, extracted: dataWithComputed, versions };
     const { error } = await (supabase as any)
       .from("client_documents").update({ review_notes: newNotes }).eq("id", doc.id);
     setSaving(false);
