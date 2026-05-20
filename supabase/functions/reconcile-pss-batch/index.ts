@@ -72,6 +72,9 @@ const FIELD_MAP: Array<[string[], string[]]> = [
   [["packaging", "palletizing", "cases_per_pallet"], ["packaging", "palletizing", "cases_per_pallet"]],
   [["bake", "internal_temp_target"], ["process", "bake", "internal_temp_target"]],
   [["bake", "internal_temp_unit"], ["process", "bake", "internal_temp_unit"]],
+];
+
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
