@@ -564,10 +564,20 @@ const SummaryCard = ({ label, value, warn }: { label: string; value: string; war
   </div>
 );
 
-const PkgField = ({ label, v, on, type = "text" }: { label: string; v: any; on: (v: string) => void; type?: string }) => (
+const PkgField = ({ label, v, on, type = "text", placeholder }: { label: string; v: any; on: (v: string) => void; type?: string; placeholder?: string }) => (
   <label className="block">
     <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">{label}</span>
-    <input className="tp-input w-full" type={type} value={v ?? ""} onChange={(e) => on(e.target.value)} />
+    <input className="tp-input w-full" type={type} value={v ?? ""} placeholder={placeholder} onChange={(e) => on(e.target.value)} />
+  </label>
+);
+
+const PkgSelect = ({ label, v, on, options }: { label: string; v: any; on: (v: string) => void; options: string[] }) => (
+  <label className="block">
+    <span className="block text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">{label}</span>
+    <select className="tp-input w-full" value={v ?? ""} onChange={(e) => on(e.target.value)}>
+      <option value="">—</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+    </select>
   </label>
 );
 
