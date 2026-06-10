@@ -198,34 +198,62 @@ const TemplatesPage = () => {
               <p className="text-sm text-[hsl(var(--tp-text-dim))]">Loading…</p>
             ) : items.length === 0 ? (
               <p className="text-sm text-[hsl(var(--tp-text-dim))] italic">No template uploaded yet.</p>
-            ) : (
-              <div className="divide-y divide-[hsl(var(--tp-hairline))]">
-                {items.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <p className="text-sm text-[hsl(var(--tp-text))] truncate">
-                        <span className="tp-chip text-[10px] uppercase tracking-wider mr-2">v{r.version}</span>
-                        {r.is_active && (
-                          <span className="tp-chip text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold))] mr-2">Active</span>
-                        )}
-                        {r.file_name}
-                      </p>
-                      <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mt-0.5">
-                        Uploaded {new Date(r.uploaded_at).toLocaleString()}
-                      </p>
+            ) : (() => {
+              const activeItem = items.find((r) => r.is_active);
+              const history = items.filter((r) => !r.is_active);
+              return (
+                <div>
+                  {activeItem && (
+                    <div className="flex items-center justify-between gap-3 py-2">
+                      <div className="min-w-0">
+                        <p className="text-sm text-[hsl(var(--tp-text))] truncate">
+                          <span className="tp-chip text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold))] mr-2">Active v{activeItem.version}</span>
+                          {activeItem.file_name}
+                        </p>
+                        <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mt-0.5">
+                          Uploaded {new Date(activeItem.uploaded_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => view(activeItem.file_path, activeItem.file_name)} className="tp-btn">
+                          <ExternalLink className="w-3.5 h-3.5" /> View
+                        </button>
+                        <button onClick={() => download(activeItem.file_path, activeItem.file_name)} className="tp-btn">
+                          <Download className="w-3.5 h-3.5" /> Download
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={() => view(r.file_path, r.file_name)} className="tp-btn">
-                        <ExternalLink className="w-3.5 h-3.5" /> View
-                      </button>
-                      <button onClick={() => download(r.file_path, r.file_name)} className="tp-btn">
-                        <Download className="w-3.5 h-3.5" /> Download
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  )}
+                  {history.length > 0 && (
+                    <details className="mt-2">
+                      <summary className="text-[11px] text-[hsl(var(--tp-text-dim))] cursor-pointer select-none hover:text-[hsl(var(--tp-text-muted))]">
+                        Version history ({history.length})
+                      </summary>
+                      <div className="divide-y divide-[hsl(var(--tp-hairline))] mt-1 opacity-50">
+                        {history.map((r) => (
+                          <div key={r.id} className="flex items-center justify-between gap-3 py-2">
+                            <div className="min-w-0">
+                              <p className="text-xs text-[hsl(var(--tp-text))] truncate">
+                                <span className="tp-chip text-[10px] uppercase tracking-wider mr-2">v{r.version}</span>
+                                {r.file_name}
+                              </p>
+                              <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mt-0.5">
+                                {new Date(r.uploaded_at).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button onClick={() => view(r.file_path, r.file_name)} className="tp-btn">
+                                <ExternalLink className="w-3 h-3" /> View
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         );
       })}

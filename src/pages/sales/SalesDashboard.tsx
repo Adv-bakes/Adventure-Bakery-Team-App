@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TeamPage, KpiTile } from "@/components/team/TeamPage";
@@ -26,6 +26,7 @@ interface ProjectCard {
 const daysSince = (iso: string | null) => iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : 0;
 
 const SalesDashboard = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -174,11 +175,13 @@ const SalesDashboard = () => {
           </DropdownMenuTrigger>
           <TeamDropdownContent align="start">
             <DropdownMenuItem
-              disabled={!templates?.prf_template}
-              onClick={() => downloadTemplate(templates?.prf_template ?? null, "prf_template")}
+              onClick={() => templates?.prf_template
+                ? downloadTemplate(templates.prf_template, "prf_template")
+                : navigate("/team/sales/templates")
+              }
             >
               <FileText className="w-3.5 h-3.5 mr-2" /> Blank PRF
-              {!templates?.prf_template && <span className="ml-2 text-[10px] opacity-60">not uploaded</span>}
+              {!templates?.prf_template && <span className="ml-2 text-[10px] opacity-60">→ upload in Templates</span>}
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={!templates?.nda}

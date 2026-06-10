@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
 import { PssPreviewDrawer } from "@/components/sales/PssPreviewDrawer";
-import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send, Upload, Download, ChevronDown } from "lucide-react";
+import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send, Upload, Download, ChevronDown, Pencil, Check, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -28,10 +28,41 @@ const SalesProjectWorkspace = () => {
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<Record<TemplateKind, ActiveTemplate | null> | null>(null);
   const [uploadingKind, setUploadingKind] = useState<"pss" | "nda" | "batch_sheet" | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const pssInputRef = useRef<HTMLInputElement>(null);
   const ndaInputRef = useRef<HTMLInputElement>(null);
   const batchInputRef = useRef<HTMLInputElement>(null);
 
+  const startEditName = () => {
+    setEditName(prf.product_name || "");
+    setEditingName(true);
+    setTimeout(() => nameInputRef.current?.focus(), 0);
+  };
+  const cancelEditName = () => setEditingName(false);
+  const saveEditName = async () => {
+    const name = editName.trim();
+    if (!name || name === prf.product_name) { setEditingName(false); return; }
+    const { error } = await (supabase as any)
+      .from("prf_submissions").update({ product_name: name }).eq("id", prfId);
+    if (error) { toast.error(error.message); return; }
+    setPrf((p: any) => ({ ...p, product_name: name }));
+    setEditingName(false);
+    toast.success("Product name updated");
+  };
+
+
+  const approveForProduction = async () => {
+    const now = new Date().toISOString();
+    const { error } = await (supabase as any)
+      .from("prf_submissions")
+      .update({ product_approved_at: now })
+      .eq("id", prfId);
+    if (error) { toast.error(error.message); return; }
+    setPrf((p: any) => ({ ...p, product_approved_at: now }));
+    toast.success("Product approved for production");
+  };
 
   useEffect(() => {
     (async () => {
@@ -188,13 +219,47 @@ const SalesProjectWorkspace = () => {
     </TeamPage>
   );
 
+  const titleNode = editingName ? (
+    <span className="flex items-center gap-2">
+      <input
+        ref={nameInputRef}
+        value={editName}
+        onChange={e => setEditName(e.target.value)}
+        onKeyDown={e => { if (e.key === "Enter") saveEditName(); if (e.key === "Escape") cancelEditName(); }}
+        className="font-display text-3xl md:text-4xl bg-transparent border-b-2 border-[hsl(var(--tp-gold))] outline-none text-[hsl(var(--tp-text))] w-full min-w-[240px]"
+      />
+      <button onClick={saveEditName} className="tp-btn tp-btn-primary shrink-0"><Check className="w-4 h-4" /></button>
+      <button onClick={cancelEditName} className="tp-btn shrink-0"><X className="w-4 h-4" /></button>
+    </span>
+  ) : (
+    <span className="flex items-center gap-3 group">
+      {prf.product_name || "(unnamed project)"}
+      <button onClick={startEditName} className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity">
+        <Pencil className="w-5 h-5" />
+      </button>
+    </span>
+  );
+
   return (
     <TeamPage
       eyebrow={lead.company_name || lead.email}
       title={prf.product_name || "(unnamed project)"}
+      titleNode={titleNode}
       description={`${prf.project_type || ""} · submitted ${new Date(prf.created_at).toLocaleDateString()}`}
       actions={
-        <Link to={`/team/sales/clients/${leadId}`} className="tp-btn"><ArrowLeft className="w-4 h-4" /> Back to folder</Link>
+        <div className="flex items-center gap-2">
+          {!prf.product_approved_at && (
+            <button onClick={approveForProduction} className="tp-btn tp-btn-primary flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4" /> Approve for Production
+            </button>
+          )}
+          {prf.product_approved_at && (
+            <span className="flex items-center gap-1.5 text-sm text-emerald-500">
+              <ShieldCheck className="w-4 h-4" /> Production approved {new Date(prf.product_approved_at).toLocaleDateString()}
+            </span>
+          )}
+          <Link to={`/team/sales/clients/${leadId}`} className="tp-btn"><ArrowLeft className="w-4 h-4" /> Back to folder</Link>
+        </div>
       }
     >
       {/* Header quick-doc strip */}
@@ -460,7 +525,7 @@ const SalesProjectWorkspace = () => {
                 </h2>
               </div>
               <div className="flex items-center gap-2">
-                <Link to={`/team/operations/batch-sheets/${batchSheet.id}`} className="tp-btn tp-btn-primary">
+                <Link to={`/team/operations/batch-sheets/${batchSheet.id}?leadId=${leadId}&conceptId=${prfId}`} className="tp-btn tp-btn-primary">
                   <ExternalLink className="w-3.5 h-3.5" /> Open full editor
                 </Link>
                 <button onClick={() => setBatchOpen(false)} className="tp-btn">Close</button>
@@ -504,10 +569,10 @@ const SalesProjectWorkspace = () => {
               <section>
                 <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-2">Packaging</p>
                 <div className="tp-surface p-4 text-sm space-y-1">
-                  <div className="flex justify-between"><span className="text-[hsl(var(--tp-text-dim))]">Primary</span><span>{batchSheet.data_json?.packaging?.primary?.vessel || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-[hsl(var(--tp-text-dim))]">Units / pack</span><span>{batchSheet.data_json?.packaging?.primary?.units_per_pack ?? "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-[hsl(var(--tp-text-dim))]">Secondary</span><span>{batchSheet.data_json?.packaging?.secondary?.type || "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-[hsl(var(--tp-text-dim))]">Units / case</span><span>{batchSheet.data_json?.packaging?.secondary?.units_per_case ?? "—"}</span></div>
+                  <div className="flex gap-3"><span className="text-[hsl(var(--tp-text-dim))] w-28 shrink-0">Primary</span><span>{batchSheet.data_json?.packaging?.primary?.vessel || "—"}</span></div>
+                  <div className="flex gap-3"><span className="text-[hsl(var(--tp-text-dim))] w-28 shrink-0">Units / pack</span><span>{batchSheet.data_json?.packaging?.primary?.units_per_pack ?? "—"}</span></div>
+                  <div className="flex gap-3"><span className="text-[hsl(var(--tp-text-dim))] w-28 shrink-0">Secondary</span><span>{batchSheet.data_json?.packaging?.secondary?.type || "—"}</span></div>
+                  <div className="flex gap-3"><span className="text-[hsl(var(--tp-text-dim))] w-28 shrink-0">Units / case</span><span>{batchSheet.data_json?.packaging?.secondary?.units_per_case ?? "—"}</span></div>
                 </div>
               </section>
               <p className="text-[10px] text-[hsl(var(--tp-text-dim))]">

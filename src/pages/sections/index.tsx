@@ -36,7 +36,25 @@ export const OpsPipeline = () => (
 );
 
 export const OpsOrders = () => (
-  <SectionPlaceholder title="Orders" subtitle="Active orders + history." />
+  <SectionPlaceholder
+    title="Order Board"
+    subtitle="Active orders Kanban. New Order: select company → products → confirm."
+    stages={["Confirmed", "In Estimation", "Sourcing", "Scheduled", "In Production", "QC", "Shipped"]}
+  />
+);
+
+export const OpsFloorExecution = () => (
+  <SectionPlaceholder
+    title="Floor Execution"
+    subtitle="Production schedule, station work cards (Measuring, Mixing, Depositing, Baking, Packaging), and QA sign-off."
+  />
+);
+
+export const OpsInsights = () => (
+  <SectionPlaceholder
+    title="Insights"
+    subtitle="Cost variance, yield variance, waste factor analysis, and full production reports."
+  />
 );
 
 export const OpsSchedule = () => (
@@ -71,20 +89,6 @@ export const HrDirectory = () => (
   <SectionPlaceholder
     title="Team Directory"
     subtitle="Employees, roles, contact, emergency info."
-  />
-);
-
-export const HrTrainings = () => (
-  <SectionPlaceholder
-    title="Training & SOPs"
-    subtitle="Assigned trainings and SOPs to read & sign."
-  />
-);
-
-export const HrTraceability = () => (
-  <SectionPlaceholder
-    title="Training Traceability"
-    subtitle="Who was trained on what, when, by whom."
   />
 );
 

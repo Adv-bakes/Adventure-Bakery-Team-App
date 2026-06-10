@@ -2,13 +2,14 @@ import { ReactNode } from "react";
 
 interface TeamPageProps {
   title: string;
+  titleNode?: ReactNode;
   eyebrow?: string;
   description?: string;
   actions?: ReactNode;
   children: ReactNode;
 }
 
-export const TeamPage = ({ title, eyebrow, description, actions, children }: TeamPageProps) => (
+export const TeamPage = ({ title, titleNode, eyebrow, description, actions, children }: TeamPageProps) => (
   <div className="tp-fade-up">
     <header className="flex items-end justify-between mb-8 gap-6 flex-wrap">
       <div>
@@ -18,7 +19,7 @@ export const TeamPage = ({ title, eyebrow, description, actions, children }: Tea
           </p>
         )}
         <h1 className="font-display text-3xl md:text-4xl tp-h1-underline text-[hsl(var(--tp-text))]">
-          {title}
+          {titleNode ?? title}
         </h1>
         {description && (
           <p className="text-sm mt-3 max-w-xl text-[hsl(var(--tp-text-muted))]">

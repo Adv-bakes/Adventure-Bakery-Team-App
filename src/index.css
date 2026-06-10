@@ -458,18 +458,18 @@ All colors MUST be HSL.
    Scoped to .team-portal so the rest of the app keeps its beige theme.
    ============================================================ */
 .team-portal {
-  --tp-bg: 0 0% 4%;              /* #0a0a0a */
-  --tp-surface: 0 0% 8%;         /* #141414 */
-  --tp-surface-2: 0 0% 11%;      /* #1c1c1c */
-  --tp-surface-3: 0 0% 14%;      /* #242424 */
-  --tp-hairline: 43 52% 50% / 0.12;
-  --tp-hairline-strong: 43 52% 50% / 0.25;
-  --tp-text: 44 38% 93%;         /* #f5f1e6 */
-  --tp-text-muted: 44 18% 70%;
-  --tp-text-dim: 44 12% 50%;
-  --tp-gold: 43 56% 54%;         /* #c9a84c */
-  --tp-gold-soft: 43 78% 75%;    /* #f0d78c */
-  --tp-gold-glow: 43 56% 54% / 0.18;
+  --tp-bg: 0 0% 4%;              /* #0a0a0a — sidebar bg */
+  --tp-surface: 44 40% 97%;      /* #faf8f3 off-white cards */
+  --tp-surface-2: 44 30% 94%;    /* #f4f1ea slightly deeper */
+  --tp-surface-3: 44 20% 90%;    /* #ebe7de deepest card */
+  --tp-hairline: 30 10% 78% / 0.8;
+  --tp-hairline-strong: 30 10% 60% / 0.5;
+  --tp-text: 0 0% 10%;           /* #1a1a1a near-black */
+  --tp-text-muted: 0 0% 22%;     /* #383838 dark grey */
+  --tp-text-dim: 0 0% 35%;       /* #595959 medium-dark grey */
+  --tp-gold: 36 72% 38%;         /* #a8720f darker gold — readable on light bg */
+  --tp-gold-soft: 36 60% 28%;    /* even darker for text uses */
+  --tp-gold-glow: 36 72% 38% / 0.14;
   --tp-success: 152 56% 50%;
   --tp-warning: 32 92% 60%;
   --tp-danger: 0 72% 58%;
@@ -488,13 +488,21 @@ All colors MUST be HSL.
   font-weight: 600;
 }
 
+/* Page header text sits directly on the background image — always white */
+.tp-fade-up > header h1,
+.tp-fade-up > header p {
+  color: hsl(0 0% 100%) !important;
+}
+
 /* Subtle ambient gold gradient on the body of the portal */
 .team-portal-bg {
   position: relative;
-  background:
-    radial-gradient(1200px 600px at 100% -10%, hsl(var(--tp-gold-glow)) 0%, transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, hsl(var(--tp-gold) / 0.08) 0%, transparent 60%),
-    hsl(var(--tp-bg));
+  background-image:
+    linear-gradient(to bottom right, rgba(10,8,4,0.48) 0%, rgba(10,8,4,0.38) 100%),
+    url('/bakery-workspace-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 /* Surfaces */
@@ -515,17 +523,14 @@ All colors MUST be HSL.
   background: linear-gradient(180deg, hsl(var(--tp-surface)) 0%, hsl(var(--tp-surface-2)) 100%);
   border: 1px solid hsl(var(--tp-hairline));
   border-radius: 14px;
-  box-shadow:
-    0 1px 0 hsl(0 0% 100% / 0.03) inset,
-    0 12px 28px -16px hsl(0 0% 0% / 0.6);
+  box-shadow: 0 2px 12px -4px hsl(0 0% 0% / 0.12);
   transition: transform 180ms ease-out, border-color 180ms ease-out, box-shadow 180ms ease-out;
 }
 .tp-card:hover {
   transform: translateY(-2px);
   border-color: hsl(var(--tp-hairline-strong));
   box-shadow:
-    0 1px 0 hsl(0 0% 100% / 0.04) inset,
-    0 18px 36px -18px hsl(0 0% 0% / 0.7),
+    0 6px 20px -6px hsl(0 0% 0% / 0.16),
     0 0 0 1px hsl(var(--tp-gold-glow));
 }
 
@@ -581,13 +586,13 @@ All colors MUST be HSL.
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 13px;
-  color: hsl(var(--tp-text-muted));
+  color: hsl(44 20% 72%);
   transition: color 160ms, background 160ms;
 }
-.tp-nav-item:hover { color: hsl(var(--tp-text)); background: hsl(0 0% 100% / 0.03); }
+.tp-nav-item:hover { color: hsl(44 38% 93%); background: hsl(0 0% 100% / 0.05); }
 .tp-nav-item.active {
-  color: hsl(var(--tp-gold-soft));
-  background: hsl(var(--tp-gold) / 0.08);
+  color: hsl(43 78% 75%);
+  background: hsl(43 56% 54% / 0.12);
 }
 .tp-nav-item.active::before {
   content: '';
@@ -603,7 +608,7 @@ All colors MUST be HSL.
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: hsl(var(--tp-text-dim));
+  color: hsl(44 12% 50%);
 }
 
 /* Buttons */
@@ -614,17 +619,17 @@ All colors MUST be HSL.
   font-size: 13px; font-weight: 500;
   border: 1px solid hsl(var(--tp-hairline-strong));
   color: hsl(var(--tp-text));
-  background: hsl(0 0% 100% / 0.02);
+  background: hsl(var(--tp-surface));
   transition: all 160ms;
 }
-.tp-btn:hover { background: hsl(0 0% 100% / 0.05); border-color: hsl(var(--tp-gold) / 0.4); }
+.tp-btn:hover { background: hsl(var(--tp-surface-2)); border-color: hsl(var(--tp-gold) / 0.5); }
 .tp-btn-primary {
   background: linear-gradient(180deg, hsl(var(--tp-gold)) 0%, hsl(43 56% 46%) 100%);
-  color: hsl(0 0% 8%);
+  color: hsl(0 0% 100%);
   border-color: hsl(var(--tp-gold-soft) / 0.4);
   font-weight: 600;
 }
-.tp-btn-primary:hover { filter: brightness(1.06); }
+.tp-btn-primary:hover { background: linear-gradient(180deg, hsl(25 40% 28%) 0%, hsl(25 40% 22%) 100%); border-color: hsl(25 40% 28%); }
 
 /* Inputs */
 .tp-input {

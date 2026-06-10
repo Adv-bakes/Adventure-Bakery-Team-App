@@ -28,12 +28,21 @@ const TeamAuth = () => {
       .maybeSingle();
 
     const role = data?.role || "user";
-    if (role === "admin") navigate("/team/dashboard");
-    else if (role === "staff") navigate("/team/operations-hub");
-    else {
+    if (role !== "admin" && role !== "owner" && role !== "staff") {
       toast.error("You don't have access to the Team Portal. Please use the Brand Portal login.");
       await supabase.auth.signOut();
+      return;
     }
+
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    if (redirect && redirect.startsWith("/team")) {
+      navigate(redirect);
+      return;
+    }
+
+    if (role === "admin" || role === "owner") navigate("/team/dashboard");
+    else navigate("/team/operations-hub");
   };
 
   useEffect(() => {

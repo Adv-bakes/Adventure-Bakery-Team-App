@@ -62,6 +62,9 @@ import OpsInventory from "./pages/ops/Inventory";
 import OpsBatchTracker from "./pages/ops/BatchTracker";
 import OpsScoutBot from "./pages/ops/ScoutBot";
 import OpsVariance from "./pages/ops/VarianceReport";
+import OrderBoard from "./pages/ops/OrderBoard";
+import OrderDetail from "./pages/ops/OrderDetail";
+import MeasuringStation from "./pages/ops/station/Measuring";
 
 // Sales (Phase 1)
 import SalesDashboard from "./pages/sales/SalesDashboard";
@@ -78,11 +81,15 @@ import PssIntake from "./pages/public/PssIntake";
 
 // Other section skeletons (Phase 0)
 import {
-  OpsPipeline, OpsOrders, OpsSchedule,
-  ComplianceSops, ComplianceTraceability, ComplianceCertifications,
-  HrDirectory, HrTrainings, HrTraceability,
+  OpsPipeline, OpsSchedule, OpsFloorExecution, OpsInsights,
+  ComplianceTraceability, ComplianceCertifications,
+  HrDirectory,
   InternalEmail, InternalFinance,
 } from "./pages/sections";
+import SopsLibrary from "./pages/team/compliance/SopsLibrary";
+import TrainingSops from "./pages/team/hr/TrainingSops";
+import TrainingCompliance from "./pages/team/hr/TrainingCompliance";
+import TrainingModuleDetail from "./pages/team/hr/TrainingModuleDetail";
 
 const queryClient = new QueryClient();
 
@@ -392,17 +399,57 @@ const App = () => (
             </ProtectedRoute>
           } />
 
+          {/* Order Board (Phase 1) */}
+          <Route path="/team/ops/orders" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><OrderBoard /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/ops/orders/:orderId" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><OrderDetail /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          {/* Station cards — full screen, no TeamLayout sidebar */}
+          <Route path="/team/ops/orders/:orderId/station/measuring" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <MeasuringStation />
+            </ProtectedRoute>
+          } />
+
+          {/* SOPs Library */}
+          <Route path="/team/compliance/sops" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><SopsLibrary /></TeamLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Training & SOPs / Training Compliance */}
+          <Route path="/team/hr/trainings" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><TrainingSops /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/hr/trainings/:moduleId" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><TrainingModuleDetail /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/hr/traceability" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><TrainingCompliance /></TeamLayout>
+            </ProtectedRoute>
+          } />
+
           {/* ========== OTHER SECTION SKELETONS (Phase 0) ========== */}
           {[
             ["/team/ops/pipeline", OpsPipeline],
-            ["/team/ops/orders", OpsOrders],
             ["/team/ops/schedule", OpsSchedule],
-            ["/team/compliance/sops", ComplianceSops],
+            ["/team/ops/floor", OpsFloorExecution],
+            ["/team/ops/insights", OpsInsights],
             ["/team/compliance/traceability", ComplianceTraceability],
             ["/team/compliance/certifications", ComplianceCertifications],
             ["/team/hr/directory", HrDirectory],
-            ["/team/hr/trainings", HrTrainings],
-            ["/team/hr/traceability", HrTraceability],
             ["/team/internal/email", InternalEmail],
           ].map(([path, Comp]: any) => (
             <Route key={path} path={path} element={

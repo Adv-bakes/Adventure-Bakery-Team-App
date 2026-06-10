@@ -16,10 +16,9 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = (session: any) => {
       setAuthed(!!session);
       if (session) {
-        // Check access_granted for client users
         supabase
           .from("profiles")
           .select("access_granted")
@@ -28,8 +27,18 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
           .then(({ data }) => {
             setAccessGranted(data?.access_granted ?? false);
           });
+      } else {
+        setAccessGranted(false);
       }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => checkSession(session));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      checkSession(session);
     });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -39,14 +48,15 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
     if (!authed) {
       // Determine which login page based on the current path
       const isTeamRoute = window.location.pathname.startsWith("/team");
-      window.location.replace(isTeamRoute ? "/team" : "/brand");
+      const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.replace(`${isTeamRoute ? "/team" : "/brand"}?redirect=${redirect}`);
       return;
     }
 
     if (!role || !allowedRoles.includes(role)) {
       const fallback = redirectTo || (
-        role === "admin" ? "/team/dashboard" :
-        role === "staff" ? "/team/dashboard" :
+        role === "owner" || role === "admin" ? "/team/dashboard" :
+        role === "staff" ? "/team/operations-hub" :
         "/brand-portal"
       );
       window.location.replace(fallback);

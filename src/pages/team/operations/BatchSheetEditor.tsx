@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PssPreviewDrawer } from "@/components/sales/PssPreviewDrawer";
@@ -28,6 +28,7 @@ interface Ingredient {
   vendor_notes?: string | null;
   vendor_source?: string | null;
   preblend?: string | null;
+  step?: number | null;
 }
 
 interface MixStep {
@@ -51,6 +52,9 @@ const SHIPPER_TYPES = ["Corrugated RSC", "Telescoping", "Tray pack", "Other"];
 const BatchSheetEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const paramLeadId = searchParams.get("leadId");
+  const paramConceptId = searchParams.get("conceptId");
   const [sheet, setSheet] = useState<any>(null);
   const [ings, setIngs] = useState<Ingredient[]>([]);
   const [methodText, setMethodText] = useState<string>("");
@@ -60,6 +64,8 @@ const BatchSheetEditor = () => {
   const [bakeInternal, setBakeInternal] = useState<string>("");
   const [bakeInternalUnit, setBakeInternalUnit] = useState<string>("°F");
   const [editablePkg, setEditablePkg] = useState<any>({});
+  const [unitWeight, setUnitWeight] = useState<string>("");
+  const [unitWeightUnit, setUnitWeightUnit] = useState<string>("g");
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -68,6 +74,8 @@ const BatchSheetEditor = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [pssOpen, setPssOpen] = useState(false);
+  const [resolvedLeadId, setResolvedLeadId] = useState<string | null>(null);
+  const [resolvedPrfId, setResolvedPrfId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await (supabase as any)
@@ -93,6 +101,8 @@ const BatchSheetEditor = () => {
     setBakeMin(d.process?.bake?.time_minutes != null ? String(d.process.bake.time_minutes) : "");
     setBakeInternal(d.process?.bake?.internal_temp_target != null ? String(d.process.bake.internal_temp_target) : "");
     setBakeInternalUnit(d.process?.bake?.internal_temp_unit || "°F");
+    setUnitWeight(d.product?.target_unit_weight_raw != null ? String(d.product.target_unit_weight_raw) : "");
+    setUnitWeightUnit(d.product?.weight_unit || "g");
     // Strip the product-name-as-vessel bug
     const productName = (d.header?.product_name || "").toString().trim().toLowerCase();
     const rawVessel = (d.packaging?.primary?.vessel || "").toString().trim();
@@ -104,6 +114,27 @@ const BatchSheetEditor = () => {
       palletizing: { ...(d.packaging?.palletizing || {}) },
     });
     setDirty(false);
+
+    // Resolve lead_id — use stored value or fall back to pss_submissions
+    let leadId = data.lead_id ?? null;
+    if (!leadId && data.pss_document_id) {
+      const { data: pss } = await (supabase as any)
+        .from("pss_submissions").select("lead_id").eq("id", data.pss_document_id).maybeSingle();
+      leadId = pss?.lead_id ?? null;
+    }
+    setResolvedLeadId(leadId);
+
+    // Resolve the prf UUID — needed to build the "View product" URL
+    // batch_sheets.concept_id (bigint) matches prf_submissions.concept_id
+    if (data.concept_id) {
+      const { data: prf } = await (supabase as any)
+        .from("prf_submissions")
+        .select("id")
+        .eq("concept_id", data.concept_id)
+        .maybeSingle();
+      if (prf?.id) setResolvedPrfId(prf.id);
+    }
+
     if (data.pss_document_id) {
       const { data: versions } = await (supabase as any)
         .from("batch_sheets")
@@ -171,7 +202,7 @@ const BatchSheetEditor = () => {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dropIdx, setDropIdx] = useState<number | null>(null);
 
-  const save = async () => {
+  const save = async (mode: "correction" | "new_version" | "auto" = "auto") => {
     if (!sheet || isSuperseded) return;
     setSaving(true);
     const pre_bake_steps = mixSteps.map((s) => ({
@@ -226,29 +257,34 @@ const BatchSheetEditor = () => {
       recipe: { ...sheet.data_json?.recipe, ingredients: ings },
       process: newProcess,
       packaging: persistedPkg,
+      product: {
+        ...(sheet.data_json?.product || {}),
+        target_unit_weight_raw: unitWeight !== "" ? Number(unitWeight) : null,
+        weight_unit: unitWeightUnit,
+      },
     };
 
-    // Draft-stage edits update in place. Once the sheet is finalized/approved,
-    // edits create a new version via revise-batch-sheet.
     const isDraftStage = !sheet.status || sheet.status === "draft";
+    const saveInPlace = isDraftStage || mode === "correction";
 
-    if (isDraftStage) {
+    if (saveInPlace) {
       const { error: updErr } = await (supabase as any)
         .from("batch_sheets")
         .update({
           data_json: dataJson,
           last_edited_by: (await (supabase as any).auth.getUser()).data?.user?.id ?? null,
-          source_change: "staff_edit",
+          source_change: mode === "correction" ? "correction" : "staff_edit",
           updated_at: new Date().toISOString(),
         })
         .eq("id", sheet.id);
       setSaving(false);
       if (updErr) { toast.error(updErr.message); return; }
-      toast.success("Saved");
+      toast.success(mode === "correction" ? "Correction saved" : "Saved");
       setSheet((prev: any) => ({ ...prev, data_json: dataJson, updated_at: new Date().toISOString() }));
       setDirty(false);
-      // Reconcile blanks back to PSS in the background — non-blocking.
-      (supabase as any).functions.invoke("reconcile-pss-batch", { body: { batch_sheet_id: sheet.id } }).catch(() => {});
+      if (mode !== "correction") {
+        (supabase as any).functions.invoke("reconcile-pss-batch", { body: { batch_sheet_id: sheet.id } }).catch(() => {});
+      }
       return;
     }
 
@@ -325,9 +361,18 @@ const BatchSheetEditor = () => {
       description={`${header.company_name || ""}${header.company_name ? " · " : ""}Last changed ${new Date(sheet.updated_at).toLocaleString()}${sheet.source_change ? ` · ${sheet.source_change.replace(/_/g, " ")}` : ""}`}
       actions={
         <div className="flex items-center gap-2 flex-wrap">
-          <Link to="/team/operations/batch-sheets" className="tp-btn">
-            <ArrowLeft className="w-3.5 h-3.5" /> All sheets
-          </Link>
+          {(() => {
+            const leadId = paramLeadId || resolvedLeadId;
+            const prfId = paramConceptId || resolvedPrfId;
+            if (leadId && prfId) {
+              return (
+                <Link to={`/team/sales/clients/${leadId}/products/${prfId}`} className="tp-btn">
+                  View product
+                </Link>
+              );
+            }
+            return null;
+          })()}
           {sheet.pss_document_id && (
             <button className="tp-btn" onClick={() => setPssOpen(true)} title="Open the source PSS in a side drawer">
               <FileText className="w-3.5 h-3.5" /> View PSS
@@ -357,14 +402,37 @@ const BatchSheetEditor = () => {
                     Unsaved changes
                   </span>
                 )}
-                <button
-                  className={`tp-btn ${dirty ? "tp-btn-primary" : ""}`}
-                  onClick={save}
-                  disabled={saving || !dirty || isSuperseded}
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  {saving ? "Saving…" : isDraftStage ? "Save" : "Save as new version"}
-                </button>
+                {isDraftStage ? (
+                  <button
+                    className={`tp-btn ${dirty ? "tp-btn-primary" : ""}`}
+                    onClick={() => save("auto")}
+                    disabled={saving || !dirty || isSuperseded}
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="tp-btn"
+                      onClick={() => save("correction")}
+                      disabled={saving || !dirty || isSuperseded}
+                      title="Fix a typo or fill in a blank — no version bump"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      {saving ? "Saving…" : "Save correction"}
+                    </button>
+                    <button
+                      className={`tp-btn ${dirty ? "tp-btn-primary" : ""}`}
+                      onClick={() => save("new_version")}
+                      disabled={saving || !dirty || isSuperseded}
+                      title="Formula or spec change — archives current version"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      {saving ? "Saving…" : "Save as new version"}
+                    </button>
+                  </>
+                )}
                 {isDraftStage && !isSuperseded && (
                   <button
                     className="tp-btn"
@@ -399,7 +467,7 @@ const BatchSheetEditor = () => {
       )}
 
       {showHistory && (
-        <section className="mb-6 border border-[hsl(var(--tp-hairline))] rounded-lg overflow-hidden">
+        <section className="mb-6 tp-surface border border-[hsl(var(--tp-hairline))] rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-[hsl(var(--tp-surface-2))] text-xs uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
@@ -431,7 +499,30 @@ const BatchSheetEditor = () => {
 
       {/* Summary — no meaningless "Total batch weight" */}
       <section className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <SummaryCard label="Unit weight (raw)" value={`${product.target_unit_weight_raw ?? "—"} ${product.weight_unit ?? ""}`.trim()} />
+        <div className="tp-surface border border-[hsl(var(--tp-hairline))] rounded-lg p-3">
+          <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Unit weight (raw)</p>
+          <div className="flex items-center gap-2">
+            <input
+              className="tp-input w-24 text-right tabular-nums"
+              type="number"
+              step="0.01"
+              value={unitWeight}
+              onChange={e => { setUnitWeight(e.target.value); setDirty(true); }}
+              disabled={isSuperseded}
+              placeholder="0"
+            />
+            <select
+              className="tp-input"
+              value={unitWeightUnit}
+              onChange={e => { setUnitWeightUnit(e.target.value); setDirty(true); }}
+              disabled={isSuperseded}
+            >
+              <option value="g">g</option>
+              <option value="oz">oz</option>
+              <option value="lbs">lbs</option>
+            </select>
+          </div>
+        </div>
         <SummaryCard label="Formula totals" value={`${totalPct.toFixed(2)}%`} warn={pctDrift} />
         <SummaryCard label="Status" value={sheet.status} />
       </section>
@@ -454,18 +545,18 @@ const BatchSheetEditor = () => {
       {/* Recipe — per-unit formula calculator */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold">Formula (per unit)</h3>
+          <h3 className="font-semibold text-white">Formula (per unit)</h3>
           <button className="tp-btn" onClick={addIng} disabled={isSuperseded}><Plus className="w-3.5 h-3.5" /> Add ingredient</button>
         </div>
-        <div className="border border-[hsl(var(--tp-hairline))] rounded-lg overflow-x-auto">
+        <div className="tp-surface border border-[hsl(var(--tp-hairline))] rounded-lg overflow-x-auto">
           <table className="w-full text-sm" style={{ minWidth: 960 }}>
             <thead className="bg-[hsl(var(--tp-surface-2))] text-xs uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
                 <th className="px-2 py-2 text-left w-10">#</th>
+                <th className="px-2 py-2 text-center w-12">Step</th>
                 <th className="px-2 py-2 text-left min-w-[220px]">Ingredient</th>
                 <th className="px-2 py-2 text-right min-w-[110px]">% Formula</th>
                 <th className="px-2 py-2 text-right min-w-[130px]">Grams / unit</th>
-                <th className="px-2 py-2 text-left min-w-[110px]">Preblend</th>
                 <th className="px-2 py-2 text-left min-w-[180px]">Vendor</th>
                 <th className="px-2 py-2 text-left min-w-[180px]">Notes</th>
                 <th className="px-2 py-2 w-10"></th>
@@ -475,9 +566,19 @@ const BatchSheetEditor = () => {
               {ings.map((r, i) => {
                 const hasAlt = !!(r.vendor_2 || r.vendor_3);
                 return (
-                  <tr key={i} className="border-t border-[hsl(var(--tp-hairline))] align-top">
-                    <td className="px-2 py-2 text-[hsl(var(--tp-text-dim))]">{i + 1}</td>
-                    <td className="px-2 py-1">
+                  <tr key={i} className="border-t border-[hsl(var(--tp-hairline))] align-middle">
+                    <td className="px-2 py-1 text-[hsl(var(--tp-text-dim))]">{i + 1}</td>
+                    <td className="px-2 py-0.5">
+                      <input
+                        className="tp-input w-12 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        type="number" min="1"
+                        value={r.step ?? ""}
+                        onChange={(e) => updateIng(i, { step: e.target.value === "" ? null : Number(e.target.value) })}
+                        placeholder="—"
+                        disabled={isSuperseded}
+                      />
+                    </td>
+                    <td className="px-2 py-0.5">
                       <input className="tp-input w-full" value={r.name ?? ""} onChange={(e) => updateIng(i, { name: e.target.value })} placeholder="Ingredient name" />
                     </td>
                     <td className="px-2 py-1">
@@ -530,7 +631,7 @@ const BatchSheetEditor = () => {
                 );
               })}
               <tr className="border-t border-[hsl(var(--tp-hairline-strong))] bg-[hsl(var(--tp-surface-2))] font-medium">
-                <td colSpan={2} className="px-2 py-2 text-right text-[hsl(var(--tp-text-dim))]">Totals</td>
+                <td colSpan={3} className="px-2 py-2 text-right text-[hsl(var(--tp-text-dim))]">Totals</td>
                 <td className={`px-2 py-2 text-right tabular-nums ${pctDrift ? "text-amber-500" : "text-[hsl(var(--tp-text))]"}`}>{totalPct.toFixed(2)}%</td>
                 <td className="px-2 py-2 text-right tabular-nums text-[hsl(var(--tp-text))]">{totalGrams.toFixed(2)} g</td>
                 <td colSpan={4}></td>
@@ -538,18 +639,23 @@ const BatchSheetEditor = () => {
             </tbody>
           </table>
         </div>
-        <p className="text-[11px] text-[hsl(var(--tp-text-dim))] mt-2">
-          Percentages auto-recompute from grams when you edit a weight. Order-quantity scaling happens on the production batch screen — not here.
+        <p className="text-[11px] text-white/70 mt-2">
+          Percentages auto-recompute from grams. Assign a Step number to each ingredient so the measuring station can group them by processing step.
         </p>
+        {ings.some(r => r.name && !r.step) && (
+          <p className="text-[11px] text-amber-400 mt-1">
+            ⚠ {ings.filter(r => r.name && !r.step).length} ingredient(s) have no step assigned — they will appear ungrouped at the measuring station.
+          </p>
+        )}
       </section>
 
       {/* Processing Specifications — step list only, mirrors PSS Section 9 */}
-      <section className="mb-8 border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
+      <section className="mb-8 tp-surface border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Processing specifications (proprietary)</h3>
           <button className="tp-btn" onClick={addMix} disabled={isSuperseded}><Plus className="w-3.5 h-3.5" /> Add step</button>
         </div>
-        <div className="border border-[hsl(var(--tp-hairline))] rounded-lg overflow-x-auto">
+        <div className="tp-surface border border-[hsl(var(--tp-hairline))] rounded-lg overflow-x-auto">
           <table className="w-full text-sm" style={{ minWidth: 960 }}>
             <thead className="bg-[hsl(var(--tp-surface-2))] text-xs uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">
               <tr>
@@ -576,10 +682,10 @@ const BatchSheetEditor = () => {
                   onDrop={(e) => { e.preventDefault(); if (dragIdx !== null) moveMix(dragIdx, i); setDragIdx(null); setDropIdx(null); }}
                   onDragEnd={() => { setDragIdx(null); setDropIdx(null); }}
                 >
-                  <td className="px-1 py-2 text-[hsl(var(--tp-text-dim))] cursor-grab active:cursor-grabbing select-none" title="Drag to reorder">
+                  <td className="px-1 py-1 text-[hsl(var(--tp-text-dim))] cursor-grab active:cursor-grabbing select-none" title="Drag to reorder">
                     <GripVertical className="w-3.5 h-3.5" />
                   </td>
-                  <td className="px-2 py-2 text-[hsl(var(--tp-text-dim))]">{s.step}</td>
+                  <td className="px-2 py-1 text-[hsl(var(--tp-text-dim))]">{s.step}</td>
                   <td className="px-2 py-1">
                     <select className="tp-input w-full" value={s.station ?? ""} onChange={(e) => updateMix(i, { station: e.target.value })}>
                       <option value="">—</option>
@@ -621,7 +727,7 @@ const BatchSheetEditor = () => {
       </section>
 
       {/* Packaging (editable, 3-tier) */}
-      <section className="mb-8 border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
+      <section className="mb-8 tp-surface border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
         <h3 className="font-semibold mb-3">Packaging</h3>
 
         <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold-soft))] mb-2">Primary vessel</p>
@@ -668,15 +774,6 @@ const BatchSheetEditor = () => {
       </section>
 
 
-      {(d.services_to_offer?.length || 0) > 0 && (
-        <section className="mt-6 border border-[hsl(var(--tp-hairline))] rounded-lg p-4">
-          <h3 className="font-semibold mb-2">Services to offer</h3>
-          <ul className="list-disc ml-5 text-sm space-y-1">
-            {d.services_to_offer.map((s: string, i: number) => <li key={i}>{s}</li>)}
-          </ul>
-        </section>
-      )}
-
       <PssPreviewDrawer
         pssDocumentId={pssOpen && sheet?.pss_document_id ? sheet.pss_document_id : null}
         onClose={() => setPssOpen(false)}
@@ -687,7 +784,7 @@ const BatchSheetEditor = () => {
 };
 
 const SummaryCard = ({ label, value, warn }: { label: string; value: string; warn?: boolean }) => (
-  <div className={`border rounded-lg p-3 ${warn ? "border-amber-500/40 bg-amber-500/10" : "border-[hsl(var(--tp-hairline))]"}`}>
+  <div className={`border rounded-lg p-3 ${warn ? "border-amber-500/40 bg-amber-500/10" : "tp-surface border-[hsl(var(--tp-hairline))]"}`}>
     <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">{label}</p>
     <p className={`text-sm font-medium mt-1 ${warn ? "text-amber-500" : ""}`}>{value}</p>
   </div>

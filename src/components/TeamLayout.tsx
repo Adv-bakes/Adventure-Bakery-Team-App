@@ -3,10 +3,10 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Home, Users, FileText, Kanban, Package, Boxes, Bot, TrendingUp,
+  Home, Users, FileText, Kanban, Boxes, TrendingUp, Factory, BarChart2,
   ClipboardCheck, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
   ListTodo, Inbox, DollarSign, Database, Settings, User as UserIcon,
-  LogOut, PanelLeftClose, PanelLeft, Calendar, ListChecks, Archive,
+  LogOut, PanelLeftClose, PanelLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
@@ -20,20 +20,18 @@ interface NavSection { title: string; items: NavItem[]; }
 
 const navSections: NavSection[] = [
   { title: "Home", items: [{ path: "/team/dashboard", icon: Home, label: "Dashboard" }] },
+  { title: "Relationships", items: [
+    { path: "/team/sales/clients", icon: Users, label: "Clients" },
+  ]},
   { title: "Sales", items: [
-    { path: "/team/sales/dashboard", icon: Home, label: "Dashboard" },
-    { path: "/team/sales/inbox", icon: FileText, label: "Documents Inbox" },
-    { path: "/team/sales/archive", icon: Archive, label: "Archive" },
+    { path: "/team/sales/dashboard", icon: BarChart2, label: "Dashboard" },
+    { path: "/team/sales/templates", icon: FileText, label: "Templates" },
   ]},
   { title: "Operations", items: [
-    { path: "/team/ops/pipeline", icon: Kanban, label: "Pipeline" },
-    { path: "/team/ops/orders", icon: Package, label: "Orders" },
-    { path: "/team/ops/schedule", icon: Calendar, label: "Schedule" },
-    { path: "/team/ops/batches", icon: ListChecks, label: "Batch Tracker" },
-    { path: "/team/operations/batch-sheets", icon: FileText, label: "Batch Sheets" },
-    { path: "/team/ops/inventory", icon: Boxes, label: "Inventory" },
-    { path: "/team/ops/scout-bot", icon: Bot, label: "Scout Bot" },
-    { path: "/team/ops/variance", icon: TrendingUp, label: "Variance" },
+    { path: "/team/ops/orders", icon: Kanban, label: "Order Board" },
+    { path: "/team/ops/inventory", icon: Boxes, label: "Inventory & Sourcing" },
+    { path: "/team/ops/floor", icon: Factory, label: "Floor Execution" },
+    { path: "/team/ops/insights", icon: TrendingUp, label: "Insights" },
   ]},
   { title: "Compliance", items: [
     { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library" },
@@ -43,7 +41,7 @@ const navSections: NavSection[] = [
   { title: "HR", items: [
     { path: "/team/hr/directory", icon: UserSquare2, label: "Team Directory" },
     { path: "/team/hr/trainings", icon: GraduationCap, label: "Training & SOPs" },
-    { path: "/team/hr/traceability", icon: ListTodo, label: "Traceability" },
+    { path: "/team/hr/traceability", icon: ListTodo, label: "Training Compliance" },
   ]},
   { title: "Internal", items: [
     { path: "/team/internal/email", icon: Inbox, label: "Email Inbox" },
@@ -106,8 +104,8 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
           <img src={logo} alt="AB" className="w-7 h-7 shrink-0 rounded-md" />
           {!collapsed && (
             <div className="leading-tight">
-              <p className="font-display text-[13px] font-semibold text-[hsl(var(--tp-text))]">Adventure Bakery</p>
-              <p className="text-[10px] uppercase tracking-[0.14em] text-[hsl(var(--tp-text-dim))]">Team Portal</p>
+              <p className="font-display text-[15px] font-bold text-white">Adventure Bakery</p>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[hsl(44_30%_65%)]">Team Portal</p>
             </div>
           )}
         </div>
@@ -123,7 +121,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
                   const Icon = item.icon;
                   const active = location.pathname === item.path ||
                     (item.path !== "/team/dashboard" && location.pathname.startsWith(item.path));
-                  const showBadge = item.path === "/team/sales/inbox" && inboxCount > 0;
+                  const showBadge = item.path === "/team/sales/dashboard" && inboxCount > 0;
                   return (
                     <Link
                       key={item.path}
