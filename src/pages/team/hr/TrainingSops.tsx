@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { RefreshCw, CheckCircle2, Clock, AlertTriangle, Settings, Copy, Plus, Trash2, Upload, ImagePlus } from "lucide-react";
+import { RefreshCw, CheckCircle2, Clock, AlertTriangle, Settings, Copy, Plus, Trash2, Upload, ImagePlus, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS, DEPARTMENTS,
@@ -20,7 +20,8 @@ import {
   AssignmentStatus, getAssignmentStatus,
   fetchTrainingModules, fetchTrainingAssignments,
   updateModuleRequirements, fetchQuizQuestions, saveQuizQuestions, updateModuleQuizConfig,
-  parseQuizCsv, uploadTrainingSlide, updateModuleContent,
+  parseQuizCsv, uploadTrainingSlide, updateModuleContent, getTrainingSlideUrl,
+  computeSlideDuration,
 } from "@/lib/training";
 
 type EditableQuestion = Omit<QuizQuestion, "id" | "sop_id">;
@@ -61,6 +62,9 @@ export default function TrainingSops() {
   const [loadingQuiz, setLoadingQuiz] = useState(false);
   const [csvText, setCsvText] = useState("");
   const [uploadingSlides, setUploadingSlides] = useState(false);
+  const [narrations, setNarrations] = useState<string[]>([]);
+  const [slideThumbUrls, setSlideThumbUrls] = useState<string[]>([]);
+  const [savingNarrations, setSavingNarrations] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -107,7 +111,49 @@ export default function TrainingSops() {
       .then(qs => setQuizQuestions(qs.length > 0 ? qs.map(({ id, sop_id, ...rest }) => rest) : []))
       .catch((e: any) => toast.error(e.message ?? "Failed to load quiz questions"))
       .finally(() => setLoadingQuiz(false));
-  }, [selected, isAdmin]);
+  }, [selected?.id, isAdmin]);
+
+  // Sync narration drafts and slide thumbnails with the selected module's content
+  useEffect(() => {
+    const slides: string[] = Array.isArray(selected?.content?.slides) ? selected.content.slides : [];
+    const saved: string[] = Array.isArray(selected?.content?.narrations) ? selected.content.narrations : [];
+    setNarrations(slides.map((_, i) => saved[i] ?? ""));
+    if (slides.length === 0) {
+      setSlideThumbUrls([]);
+      return;
+    }
+    let cancelled = false;
+    Promise.all(slides.map(path => getTrainingSlideUrl(path)))
+      .then(urls => { if (!cancelled) setSlideThumbUrls(urls); })
+      .catch(() => { if (!cancelled) setSlideThumbUrls([]); });
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.content?.slides]);
+
+  const saveNarrations = async () => {
+    if (!selected) return;
+    setSavingNarrations(true);
+    try {
+      // Recompute the dwell time only for slides whose narration text changed,
+      // preserving any manually set durations on untouched slides
+      const prevNarrations: string[] = Array.isArray(selected.content?.narrations) ? selected.content.narrations : [];
+      const prevDurations: number[] = Array.isArray(selected.content?.slideDurations) ? selected.content.slideDurations : [];
+      const slideDurations = narrations.map((n, i) =>
+        n === (prevNarrations[i] ?? "") && prevDurations[i] != null
+          ? prevDurations[i]
+          : computeSlideDuration(n),
+      );
+      const content = { ...(selected.content ?? {}), narrations, slideDurations };
+      await updateModuleContent(selected.id, content);
+      const updated = { ...selected, content };
+      setModules(prev => prev.map(m => m.id === selected.id ? updated : m));
+      setSelected(updated);
+      toast.success("Narrations saved");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to save narrations");
+    } finally {
+      setSavingNarrations(false);
+    }
+  };
 
   const addQuestion = () => {
     setQuizQuestions(prev => [...prev, blankQuestion(prev.length + 1)]);
@@ -512,9 +558,44 @@ export default function TrainingSops() {
                 <div className="space-y-2 border-t pt-4" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
                   <Label className="block">Module Content (Slides)</Label>
                   {Array.isArray(selected.content?.slides) && selected.content.slides.length > 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      {selected.content.slides.length} slide image{selected.content.slides.length !== 1 ? "s" : ""} uploaded.
-                    </p>
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        {selected.content.slides.length} slide image{selected.content.slides.length !== 1 ? "s" : ""} uploaded.
+                        Add narration text below — employees can have it read aloud on each slide.
+                      </p>
+                      {(selected.content.slides as string[]).map((_, idx) => (
+                        <div key={idx} className="flex gap-2 items-start rounded-md border p-2" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
+                          {slideThumbUrls[idx] ? (
+                            <img
+                              src={slideThumbUrls[idx]}
+                              alt={`Slide ${idx + 1}`}
+                              className="w-16 rounded border border-black/10 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-16 h-10 rounded bg-black/5 shrink-0" />
+                          )}
+                          <div className="flex-1 space-y-1">
+                            <Label className="font-normal text-xs">Slide {idx + 1} narration</Label>
+                            <Textarea
+                              placeholder="Text to read aloud for this slide (leave blank for no audio)"
+                              value={narrations[idx] ?? ""}
+                              onChange={e => setNarrations(prev => prev.map((n, i) => i === idx ? e.target.value : n))}
+                              className="text-xs h-16"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={saveNarrations}
+                        disabled={savingNarrations}
+                        className="bg-[#C89B3C] hover:bg-[#B8892C]"
+                      >
+                        <Volume2 className="w-3.5 h-3.5 mr-1" />
+                        {savingNarrations ? "Saving..." : "Save Narrations"}
+                      </Button>
+                    </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">No slide images uploaded yet.</p>
                   )}

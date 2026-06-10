@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Download, FileUp, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { SopImportDialog } from "@/components/ops/SopImportDialog";
+import { SlideContentEditor } from "@/components/team/SlideContentEditor";
 
 type SopDocument = {
   id: string;
@@ -344,9 +345,23 @@ export default function SopsLibrary() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Content</Label>
-                <pre className="mt-1 whitespace-pre-wrap rounded-md border border-white/10 bg-black/20 p-3 text-xs">
-                  {selected.content ? JSON.stringify(selected.content, null, 2) : "—"}
-                </pre>
+                {Array.isArray(selected.content?.slides) && selected.content.slides.length > 0 && isAdmin ? (
+                  <div className="mt-1">
+                    <SlideContentEditor
+                      sopId={selected.id}
+                      content={selected.content}
+                      onContentChange={(content) => {
+                        const updated = { ...selected, content };
+                        setSelected(updated);
+                        setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <pre className="mt-1 whitespace-pre-wrap rounded-md border border-white/10 bg-black/20 p-3 text-xs">
+                    {selected.content ? JSON.stringify(selected.content, null, 2) : "—"}
+                  </pre>
+                )}
               </div>
               {selected.file_url && (
                 <a href={selected.file_url} target="_blank" rel="noreferrer">

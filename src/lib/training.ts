@@ -356,6 +356,29 @@ export async function uploadTrainingSlide(sopId: string, file: File, slideIndex:
   return path;
 }
 
+// Minimum viewing time (seconds) for a slide, based on its narration length.
+// No narration → 20s default; otherwise medium reading speed ≈ 180 wpm with an 8s floor.
+export function computeSlideDuration(narration: string | null | undefined): number {
+  const words = (narration ?? "").trim().split(/\s+/).filter(Boolean).length;
+  if (words === 0) return 20;
+  return Math.max(8, Math.ceil(words / 3));
+}
+
+// Replaces an existing slide image in place (same storage path, so content.slides stays unchanged).
+export async function replaceTrainingSlide(path: string, file: File): Promise<void> {
+  const { error } = await supabase.storage
+    .from("training-content")
+    .upload(path, file, { upsert: true });
+  if (error) throw error;
+}
+
+export async function deleteTrainingSlide(path: string): Promise<void> {
+  const { error } = await supabase.storage
+    .from("training-content")
+    .remove([path]);
+  if (error) throw error;
+}
+
 export async function getTrainingSlideUrl(path: string): Promise<string> {
   const { data, error } = await supabase.storage
     .from("training-content")

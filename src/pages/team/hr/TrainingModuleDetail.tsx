@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckCircle2, XCircle, Lightbulb, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Lightbulb, Clock, Lock, Volume2, Square } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   TRAINING_CATEGORY_LABELS,
@@ -12,7 +13,7 @@ import {
   getAssignmentStatus,
   fetchModuleById, fetchAssignment, fetchQuizQuestions,
   scoreQuiz, submitQuizResult, markAssignmentComplete,
-  getTrainingSlideUrl,
+  getTrainingSlideUrl, computeSlideDuration,
 } from "@/lib/training";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
@@ -26,6 +27,12 @@ export default function TrainingModuleDetail() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [slideUrls, setSlideUrls] = useState<string[]>([]);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [maxVisitedIndex, setMaxVisitedIndex] = useState(0);
+  const [speaking, setSpeaking] = useState(false);
+  // Dwell-time gate: highest slide index whose minimum viewing time has elapsed
+  const [highestUnlocked, setHighestUnlocked] = useState(-1);
+  const [remaining, setRemaining] = useState(0);
 
   const [quizStarted, setQuizStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -55,6 +62,10 @@ export default function TrainingModuleDetail() {
       } else {
         setSlideUrls([]);
       }
+      setSlideIndex(0);
+      setMaxVisitedIndex(0);
+      setHighestUnlocked(-1);
+      setRemaining(0);
       if (user && mod) {
         const a = await fetchAssignment(user.id, mod.id);
         setAssignment(a);
@@ -68,9 +79,89 @@ export default function TrainingModuleDetail() {
 
   useEffect(() => { load(); }, [moduleId]);
 
+  const ttsSupported = typeof window !== "undefined" && "speechSynthesis" in window;
+  const narrations: string[] = Array.isArray(module?.content?.narrations) ? module.content.narrations : [];
+  const currentNarration = (narrations[slideIndex] ?? "").trim();
+
+  // Once Listen is clicked, narration keeps auto-playing on each new slide until Stop is clicked
+  const autoPlayRef = useRef(false);
+
+  const stopSpeech = () => {
+    if (ttsSupported) window.speechSynthesis.cancel();
+    setSpeaking(false);
+  };
+
+  const handleStop = () => {
+    autoPlayRef.current = false;
+    stopSpeech();
+  };
+
+  const speakSlide = () => {
+    if (!ttsSupported || !currentNarration) return;
+    autoPlayRef.current = true;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(currentNarration);
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // On slide change: cancel the current narration, then auto-play the new slide's
+  // narration if Listen mode is still armed. Cancel everything on unmount.
+  useEffect(() => {
+    stopSpeech();
+    if (!autoPlayRef.current) return;
+    const text = (narrations[slideIndex] ?? "").trim();
+    if (!ttsSupported || !text) return;
+    // Small delay — speaking immediately after cancel() is unreliable in some browsers
+    const timer = setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+      setSpeaking(true);
+      window.speechSynthesis.speak(utterance);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [slideIndex]);
+  useEffect(() => () => { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }, []);
+
   const status = getAssignmentStatus(assignment ?? undefined);
 
+  // Minimum dwell time per slide — enforced only while actively taking the training,
+  // and only on a slide's first visit. Admin editing and completed-module review are exempt.
+  const gateActive = !!assignment && status !== "completed";
+  const slideDurations: number[] = Array.isArray(module?.content?.slideDurations) ? module.content.slideDurations : [];
+
+  useEffect(() => {
+    if (!gateActive || !module || slideIndex <= highestUnlocked) {
+      setRemaining(0);
+      return;
+    }
+    const secs = slideDurations[slideIndex] ?? computeSlideDuration(narrations[slideIndex]);
+    if (secs <= 0) {
+      setHighestUnlocked(prev => Math.max(prev, slideIndex));
+      setRemaining(0);
+      return;
+    }
+    setRemaining(secs);
+    const interval = setInterval(() => {
+      setRemaining(r => {
+        if (r <= 1) {
+          clearInterval(interval);
+          setHighestUnlocked(prev => Math.max(prev, slideIndex));
+          return 0;
+        }
+        return r - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [slideIndex, gateActive, module?.id]);
+
+  const slideLocked = gateActive && slideIndex > highestUnlocked && remaining > 0;
+
   const startQuiz = () => {
+    handleStop();
     setCurrentIndex(0);
     setSelected(null);
     setRevealed(false);
@@ -147,6 +238,21 @@ export default function TrainingModuleDetail() {
   }
 
   const currentQuestion = questions[currentIndex];
+  const totalSlides = slideUrls.length;
+  const onLastSlide = totalSlides > 0 && slideIndex === totalSlides - 1;
+  const viewedAll = totalSlides === 0 || maxVisitedIndex >= totalSlides - 1;
+
+  const nextSlide = () => {
+    const next = Math.min(slideIndex + 1, totalSlides - 1);
+    setSlideIndex(next);
+    setMaxVisitedIndex(prev => Math.max(prev, next));
+  };
+
+  const prevSlide = () => setSlideIndex(i => Math.max(i - 1, 0));
+
+  const jumpToSlide = (idx: number) => {
+    if (idx <= maxVisitedIndex) setSlideIndex(idx);
+  };
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -198,14 +304,90 @@ export default function TrainingModuleDetail() {
           <h3 className="font-semibold text-[#2A1F0E] mb-2">Module Content</h3>
           {slideUrls.length > 0 ? (
             <div className="space-y-3">
-              {slideUrls.map((url, idx) => (
-                <img
-                  key={idx}
-                  src={url}
-                  alt={`Slide ${idx + 1}`}
-                  className="w-full rounded-md border border-black/10"
-                />
-              ))}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-[#2A1F0E]/60">
+                    Slide {slideIndex + 1} of {totalSlides} · {Math.round(((slideIndex + 1) / totalSlides) * 100)}%
+                  </span>
+                  {ttsSupported && currentNarration && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={speaking ? handleStop : speakSlide}
+                      className="h-7 text-[#9A6F1E] border-[#C89B3C]/40 hover:bg-[#C89B3C]/10"
+                    >
+                      {speaking ? (
+                        <><Square className="w-3.5 h-3.5 mr-1 animate-pulse" />Stop</>
+                      ) : (
+                        <><Volume2 className="w-3.5 h-3.5 mr-1" />Listen</>
+                      )}
+                    </Button>
+                  )}
+                </div>
+                {!viewedAll && (
+                  <span className="text-xs text-[#2A1F0E]/40 flex items-center gap-1">
+                    <Lock className="w-3 h-3" />Quiz unlocks on last slide
+                  </span>
+                )}
+              </div>
+              <Progress
+                value={((slideIndex + 1) / totalSlides) * 100}
+                className="h-1.5 bg-[#2A1F0E]/10 [&>div]:bg-[#C89B3C]"
+              />
+              <img
+                src={slideUrls[slideIndex]}
+                alt={`Slide ${slideIndex + 1}`}
+                className="w-full rounded-md border border-black/10"
+              />
+              <div className="flex justify-center gap-1.5">
+                {slideUrls.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => jumpToSlide(idx)}
+                    disabled={idx > maxVisitedIndex}
+                    title={`Slide ${idx + 1}`}
+                    className={`rounded-full transition-all ${
+                      idx === slideIndex
+                        ? "w-3 h-3 bg-[#C89B3C]"
+                        : idx <= maxVisitedIndex
+                          ? "w-2 h-2 bg-[#C89B3C]/50 hover:bg-[#C89B3C]/80 cursor-pointer"
+                          : "w-2 h-2 bg-[#2A1F0E]/15 cursor-default"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={prevSlide} disabled={slideIndex === 0}>
+                  <ArrowLeft className="w-4 h-4 mr-1" />Back
+                </Button>
+                {!onLastSlide ? (
+                  <Button onClick={nextSlide} disabled={slideLocked} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+                    {slideLocked ? `Next (${remaining}s)` : "Next"}<ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                ) : assignment && status !== "completed" ? (
+                  questions.length > 0 ? (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[#2A1F0E]/50 text-right">
+                        {questions.length} question{questions.length !== 1 ? "s" : ""} ·
+                        {" "}{module.is_critical ? "100% required" : `${module.passing_score_pct}% to pass`}
+                      </span>
+                      <Button onClick={startQuiz} disabled={slideLocked} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+                        {assignment.quiz_attempts > 0 ? "Retake Quiz" : "Begin Quiz"}
+                        {slideLocked ? ` (${remaining}s)` : ""}
+                        <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button onClick={handleMarkComplete} disabled={submitting || slideLocked} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+                      Mark Complete & Sign{slideLocked ? ` (${remaining}s)` : ""}
+                    </Button>
+                  )
+                ) : (
+                  <span className="text-sm text-[#2A1F0E]/50 self-center">End of slides</span>
+                )}
+              </div>
             </div>
           ) : module.content ? (
             <pre className="whitespace-pre-wrap rounded-md border border-black/10 bg-black/5 p-3 text-xs text-[#2A1F0E]">
@@ -217,8 +399,8 @@ export default function TrainingModuleDetail() {
         </Card>
       )}
 
-      {/* Quiz entry / fallback */}
-      {assignment && !quizStarted && status !== "completed" && (
+      {/* Quiz entry / fallback (modules without slides — slide modules launch the quiz from the viewer footer) */}
+      {assignment && !quizStarted && status !== "completed" && totalSlides === 0 && (
         <Card className="p-4 border" style={cardStyle}>
           {questions.length > 0 ? (
             <>
