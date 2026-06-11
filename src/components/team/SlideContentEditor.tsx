@@ -7,7 +7,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, ArrowRight, ImagePlus, Trash2, Mic, MicOff, Sparkles, Wand2, Volume2, Square, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, ImagePlus, Trash2, Mic, MicOff, Sparkles, Wand2, Volume2, Square, Clock, Presentation } from "lucide-react";
+import { PptxImportDialog } from "@/components/team/PptxImportDialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -41,6 +42,7 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
   const [saving, setSaving] = useState(false);
   const [replacing, setReplacing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pptxOpen, setPptxOpen] = useState(false);
   const [listening, setListening] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -262,8 +264,34 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
     }
   };
 
+  const importDialog = (
+    <PptxImportDialog
+      open={pptxOpen}
+      onOpenChange={setPptxOpen}
+      existingModule={{ id: sopId, content }}
+      onImported={async () => {
+        const { data } = await (supabase as any)
+          .from("sop_documents")
+          .select("content")
+          .eq("id", sopId)
+          .single();
+        if (data?.content) onContentChange(data.content);
+        setIndex(0);
+        setUrlVersion(v => v + 1);
+      }}
+    />
+  );
+
   if (total === 0) {
-    return <p className="text-xs text-muted-foreground">No slide images uploaded yet.</p>;
+    return (
+      <div className="space-y-2">
+        <p className="text-xs text-muted-foreground">No slide content yet for this module.</p>
+        <Button type="button" variant="outline" size="sm" onClick={() => setPptxOpen(true)}>
+          <Presentation className="w-3.5 h-3.5 mr-1" />Import from PowerPoint
+        </Button>
+        {importDialog}
+      </div>
+    );
   }
 
   return (
@@ -333,7 +361,14 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
         </Button>
         <Button
           type="button" variant="outline" size="sm"
-          className="ml-auto text-[#9A6F1E] border-[#C89B3C]/40 hover:bg-[#C89B3C]/10"
+          className="ml-auto"
+          onClick={() => setPptxOpen(true)}
+        >
+          <Presentation className="w-3.5 h-3.5 mr-1" />Replace from PowerPoint
+        </Button>
+        <Button
+          type="button" variant="outline" size="sm"
+          className="text-[#9A6F1E] border-[#C89B3C]/40 hover:bg-[#C89B3C]/10"
           onClick={generateAll}
           disabled={!!bulkProgress}
         >
@@ -405,6 +440,8 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
           )}
         </div>
       </div>
+
+      {importDialog}
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

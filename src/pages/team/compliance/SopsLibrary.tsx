@@ -12,10 +12,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Download, FileUp, ShieldCheck } from "lucide-react";
+import { Plus, Download, FileUp, ShieldCheck, Presentation } from "lucide-react";
 import { toast } from "sonner";
 import { SopImportDialog } from "@/components/ops/SopImportDialog";
 import { SlideContentEditor } from "@/components/team/SlideContentEditor";
+import { PptxImportDialog } from "@/components/team/PptxImportDialog";
 
 type SopDocument = {
   id: string;
@@ -86,6 +87,7 @@ export default function SopsLibrary() {
   const [editDoc, setEditDoc] = useState<Partial<SopDocument> | null>(null);
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [pptxImportOpen, setPptxImportOpen] = useState(false);
 
   const load = async () => {
     const { data, error } = await (supabase as any)
@@ -211,6 +213,9 @@ export default function SopsLibrary() {
             <Button variant="outline" onClick={() => setImportOpen(true)}>
               <FileUp className="w-4 h-4 mr-1" />Import from Word
             </Button>
+            <Button variant="outline" onClick={() => setPptxImportOpen(true)}>
+              <Presentation className="w-4 h-4 mr-1" />Import from PowerPoint
+            </Button>
             <Button onClick={openNew} className="bg-[#C89B3C] hover:bg-[#B8892C]">
               <Plus className="w-4 h-4 mr-1" />Add SOP
             </Button>
@@ -320,7 +325,7 @@ export default function SopsLibrary() {
 
       {/* Detail drawer */}
       <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent side="right" className="w-full sm:max-w-xl lg:max-w-3xl xl:max-w-5xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{selected?.title}</SheetTitle>
           </SheetHeader>
@@ -345,7 +350,7 @@ export default function SopsLibrary() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Content</Label>
-                {Array.isArray(selected.content?.slides) && selected.content.slides.length > 0 && isAdmin ? (
+                {isAdmin ? (
                   <div className="mt-1">
                     <SlideContentEditor
                       sopId={selected.id}
@@ -426,6 +431,7 @@ export default function SopsLibrary() {
       </Dialog>
 
       <SopImportDialog open={importOpen} onOpenChange={setImportOpen} onImported={load} />
+      <PptxImportDialog open={pptxImportOpen} onOpenChange={setPptxImportOpen} onImported={load} />
     </div>
   );
 }
