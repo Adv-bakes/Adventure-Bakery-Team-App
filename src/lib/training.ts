@@ -44,6 +44,7 @@ export type TrainingAssignment = {
   quiz_score: number | null;
   quiz_passed_at: string | null;
   quiz_attempts: number;
+  progress: { slideIndex: number; maxVisitedIndex: number; highestUnlocked: number; updatedAt: string } | null;
 };
 
 export type QuizQuestion = {
@@ -128,8 +129,21 @@ export async function markAssignmentComplete(assignment: TrainingAssignment): Pr
       signed: true,
       signed_at: completedAt,
       expires_at: expiresAt,
+      progress: null,
     })
     .eq("id", assignment.id);
+  if (error) throw error;
+}
+
+// Persists mid-training position so the employee can resume later (null clears it).
+export async function saveAssignmentProgress(
+  assignmentId: string,
+  progress: { slideIndex: number; maxVisitedIndex: number; highestUnlocked: number; updatedAt: string } | null,
+): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("training_assignments")
+    .update({ progress })
+    .eq("id", assignmentId);
   if (error) throw error;
 }
 
@@ -213,8 +227,22 @@ export function scoreQuiz(questions: QuizQuestion[], answers: number[], passingS
   return { scorePct, passed: scorePct >= threshold };
 }
 
-export async function submitQuizResult(assignment: TrainingAssignment, result: QuizResult, recurrenceMonths: number | null): Promise<void> {
+// `complete=false` records the score/pass without completing the assignment —
+// used when the module requires an acknowledgment step after passing.
+export async function submitQuizResult(assignment: TrainingAssignment, result: QuizResult, recurrenceMonths: number | null, complete = true): Promise<void> {
   const now = new Date().toISOString();
+  if (result.passed && !complete) {
+    const { error } = await (supabase as any)
+      .from("training_assignments")
+      .update({
+        quiz_score: result.scorePct,
+        quiz_passed_at: now,
+        quiz_attempts: assignment.quiz_attempts + 1,
+      })
+      .eq("id", assignment.id);
+    if (error) throw error;
+    return;
+  }
   if (result.passed) {
     const expiresAt = computeExpiry(now, recurrenceMonths);
     const { error } = await (supabase as any)
@@ -227,6 +255,7 @@ export async function submitQuizResult(assignment: TrainingAssignment, result: Q
         quiz_score: result.scorePct,
         quiz_passed_at: now,
         quiz_attempts: assignment.quiz_attempts + 1,
+        progress: null,
       })
       .eq("id", assignment.id);
     if (error) throw error;

@@ -16,6 +16,7 @@ import { Plus, Download, FileUp, ShieldCheck, Presentation } from "lucide-react"
 import { toast } from "sonner";
 import { SopImportDialog } from "@/components/ops/SopImportDialog";
 import { SlideContentEditor } from "@/components/team/SlideContentEditor";
+import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
 
 type SopDocument = {
@@ -368,6 +369,19 @@ export default function SopsLibrary() {
                   </pre>
                 )}
               </div>
+              {isAdmin && (
+                <QuizEditor
+                  key={selected.id}
+                  sopId={selected.id}
+                  title={selected.title}
+                  content={selected.content}
+                  onContentChange={(content) => {
+                    const updated = { ...selected, content };
+                    setSelected(updated);
+                    setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+                  }}
+                />
+              )}
               {selected.file_url && (
                 <a href={selected.file_url} target="_blank" rel="noreferrer">
                   <Button variant="outline" size="sm"><Download className="w-3.5 h-3.5 mr-1" />Download File</Button>

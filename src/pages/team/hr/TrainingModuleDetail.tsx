@@ -6,13 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Lightbulb, Clock, Lock, Volume2, Square } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
   TRAINING_CATEGORY_LABELS,
   TrainingModule, TrainingAssignment, QuizQuestion,
   getAssignmentStatus,
   fetchModuleById, fetchAssignment, fetchQuizQuestions,
-  scoreQuiz, submitQuizResult, markAssignmentComplete,
+  scoreQuiz, submitQuizResult, markAssignmentComplete, saveAssignmentProgress,
   getTrainingSlideUrl, computeSlideDuration,
 } from "@/lib/training";
 
@@ -42,6 +44,7 @@ export default function TrainingModuleDetail() {
   const [answers, setAnswers] = useState<number[]>([]);
   const [finalResult, setFinalResult] = useState<{ scorePct: number; passed: boolean } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [ackChecked, setAckChecked] = useState(false);
 
   const load = async () => {
     if (!moduleId) return;
@@ -69,6 +72,16 @@ export default function TrainingModuleDetail() {
       if (user && mod) {
         const a = await fetchAssignment(user.id, mod.id);
         setAssignment(a);
+        // Resume where the employee left off (clamped in case slides changed since)
+        const slideCount = Array.isArray(mod.content?.slides) ? mod.content.slides.length : 0;
+        const p = a?.progress;
+        if (p && !a.completed_at && slideCount > 0) {
+          const resumeIndex = Math.min(Math.max(p.slideIndex ?? 0, 0), slideCount - 1);
+          setSlideIndex(resumeIndex);
+          setMaxVisitedIndex(Math.min(Math.max(p.maxVisitedIndex ?? resumeIndex, resumeIndex), slideCount - 1));
+          setHighestUnlocked(Math.min(p.highestUnlocked ?? -1, slideCount - 1));
+          if (resumeIndex > 0) toast.info(`Resumed at slide ${resumeIndex + 1} of ${slideCount}`);
+        }
       }
     } catch (e: any) {
       toast.error(e.message ?? "Failed to load training module");
@@ -160,6 +173,33 @@ export default function TrainingModuleDetail() {
 
   const slideLocked = gateActive && slideIndex > highestUnlocked && remaining > 0;
 
+  // Auto-save progress on every slide transition / gate unlock so the employee
+  // can leave and resume later. Fire-and-forget; skips redundant writes.
+  const lastSavedProgressRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!gateActive || !assignment || loading || slideUrls.length === 0) return;
+    const progress = {
+      slideIndex,
+      maxVisitedIndex,
+      highestUnlocked,
+      updatedAt: new Date().toISOString(),
+    };
+    const signature = `${slideIndex}:${maxVisitedIndex}:${highestUnlocked}`;
+    if (lastSavedProgressRef.current === null) {
+      // First run after load/restore — record the baseline without writing
+      lastSavedProgressRef.current = signature;
+      return;
+    }
+    if (lastSavedProgressRef.current === signature) return;
+    lastSavedProgressRef.current = signature;
+    saveAssignmentProgress(assignment.id, progress).catch(() => {});
+  }, [slideIndex, maxVisitedIndex, highestUnlocked, gateActive, assignment?.id, loading, slideUrls.length]);
+
+  // Optional "agree to comply" acknowledgment required before completion
+  const ackRequired = !!module?.content?.acknowledgment?.required;
+  const ackText = module?.content?.acknowledgment?.text
+    || "I have read and understand this training and agree to comply with its procedures.";
+
   const startQuiz = () => {
     handleStop();
     setCurrentIndex(0);
@@ -168,6 +208,7 @@ export default function TrainingModuleDetail() {
     setShowHint(false);
     setAnswers([]);
     setFinalResult(null);
+    setAckChecked(false);
     setQuizStarted(true);
   };
 
@@ -199,7 +240,9 @@ export default function TrainingModuleDetail() {
     const result = scoreQuiz(questions, nextAnswers, module.passing_score_pct, module.is_critical);
     setSubmitting(true);
     try {
-      await submitQuizResult(assignment, result, assignment.recurrence_months);
+      // When an acknowledgment is required, record the score but defer completion
+      // until the employee agrees on the result card.
+      await submitQuizResult(assignment, result, assignment.recurrence_months, !ackRequired);
       setFinalResult(result);
       await load();
     } catch (e: any) {
@@ -380,9 +423,28 @@ export default function TrainingModuleDetail() {
                       </Button>
                     </div>
                   ) : (
-                    <Button onClick={handleMarkComplete} disabled={submitting || slideLocked} className="bg-[#C89B3C] hover:bg-[#B8892C]">
-                      Mark Complete & Sign{slideLocked ? ` (${remaining}s)` : ""}
-                    </Button>
+                    <div className="flex flex-col items-end gap-2">
+                      {ackRequired && (
+                        <div className="flex items-start gap-2 max-w-md">
+                          <Checkbox
+                            id="ack-comply-footer"
+                            checked={ackChecked}
+                            onCheckedChange={c => setAckChecked(!!c)}
+                            className="mt-0.5"
+                          />
+                          <Label htmlFor="ack-comply-footer" className="cursor-pointer font-normal text-xs text-[#2A1F0E]/80 leading-snug">
+                            {ackText}
+                          </Label>
+                        </div>
+                      )}
+                      <Button
+                        onClick={handleMarkComplete}
+                        disabled={submitting || slideLocked || (ackRequired && !ackChecked)}
+                        className="bg-[#C89B3C] hover:bg-[#B8892C]"
+                      >
+                        Mark Complete & Sign{slideLocked ? ` (${remaining}s)` : ""}
+                      </Button>
+                    </div>
                   )
                 ) : (
                   <span className="text-sm text-[#2A1F0E]/50 self-center">End of slides</span>
@@ -420,7 +482,20 @@ export default function TrainingModuleDetail() {
               <p className="text-sm text-[#2A1F0E]/60 mb-3">
                 Review the content above. Once you've reviewed it, mark this training complete & sign.
               </p>
-              <Button onClick={handleMarkComplete} disabled={submitting} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+              {ackRequired && (
+                <div className="flex items-start gap-2 mb-3 max-w-md">
+                  <Checkbox
+                    id="ack-comply-fallback"
+                    checked={ackChecked}
+                    onCheckedChange={c => setAckChecked(!!c)}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="ack-comply-fallback" className="cursor-pointer font-normal text-xs text-[#2A1F0E]/80 leading-snug">
+                    {ackText}
+                  </Label>
+                </div>
+              )}
+              <Button onClick={handleMarkComplete} disabled={submitting || (ackRequired && !ackChecked)} className="bg-[#C89B3C] hover:bg-[#B8892C]">
                 Mark Complete & Sign
               </Button>
             </>
@@ -514,10 +589,34 @@ export default function TrainingModuleDetail() {
             Score: {finalResult.scorePct}% · {module.is_critical ? "100% required (critical module)" : `${module.passing_score_pct}% required`}
           </p>
           {finalResult.passed ? (
-            <p className="text-sm text-[#2A1F0E]/70">
-              Training marked complete and signed.
-              {assignment?.expires_at && ` Renewal due ${assignment.expires_at}.`}
-            </p>
+            ackRequired && status !== "completed" ? (
+              <div className="space-y-3 rounded-md border p-4" style={{ borderColor: "rgba(200,155,60,0.35)", background: "rgba(200,155,60,0.06)" }}>
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="ack-comply"
+                    checked={ackChecked}
+                    onCheckedChange={c => setAckChecked(!!c)}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="ack-comply" className="cursor-pointer font-normal text-sm text-[#2A1F0E] leading-snug">
+                    {ackText}
+                  </Label>
+                </div>
+                <Button
+                  onClick={handleMarkComplete}
+                  disabled={!ackChecked || submitting}
+                  className="bg-[#C89B3C] hover:bg-[#B8892C]"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1" />
+                  {submitting ? "Saving…" : "Agree & Complete Module"}
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-[#2A1F0E]/70">
+                Training marked complete and signed.
+                {assignment?.expires_at && ` Renewal due ${assignment.expires_at}.`}
+              </p>
+            )
           ) : (
             <Button onClick={startQuiz} className="bg-[#C89B3C] hover:bg-[#B8892C]">Retry Quiz</Button>
           )}

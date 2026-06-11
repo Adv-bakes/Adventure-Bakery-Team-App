@@ -165,6 +165,76 @@ All are public (anon) Supabase credentials — safe on the client.
 
 **CSV import:** Admins can paste NotebookLLM-exported CSV into the settings drawer; `parseQuizCsv()` in `training.ts` handles the parse.
 
+**`sop_documents.content` JSON shape:**
+```json
+{
+  "slides": ["moduleId/slide-01.png", ...],
+  "narrations": ["narration text per slide", ...],
+  "slideDurations": [17, 20, ...]
+}
+```
+All three are parallel arrays indexed by slide position.
+
+---
+
+## Training Viewer (Employee-facing) — `TrainingModuleDetail.tsx`
+
+- **One slide at a time** with Back / Next navigation
+- **Progress bar** (gold), percentage counter, and dot strip showing current position
+- **Dwell time gating:** Next button disabled with countdown on first visit to each slide. Duration = `computeSlideDuration(narration)` — ceil(words/3) seconds, min 8s, default 20s when no narration. Revisiting an already-unlocked slide skips the gate.
+- **Audio narration (TTS):** "Listen" button on each slide reads narration via browser `speechSynthesis`. Once started, auto-advances narration to each subsequent slide until "Stop" is clicked.
+- **Begin Quiz / Mark Complete** shown in the footer of the last slide (not a separate card).
+
+---
+
+## Training Admin — `SlideContentEditor.tsx`
+
+Component in `src/components/team/` embedded inside the SOPs Library drawer for admin users.
+
+- Single-slide view with thumbnail, narration textarea, and duration (seconds) override
+- **Replace Image** — upserts a new PNG for the current slide position
+- **Delete Slide** — removes the PNG from storage, splices all three content arrays
+- **Mic dictation** — `SpeechRecognition` API, appends to narration field
+- **AI Cleanup** (Sparkles icon) — invokes `cleanup-narration` edge function on narration text
+- **AI from Image** (Wand icon) — invokes `generate-narration` edge function with a signed URL of the current slide; populates narration
+- **Generate All** — iterates slides with empty narrations, bulk-generates via `generate-narration`, saves in one write
+- **Listen / Stop** — TTS preview of the narration for the current slide
+- **Import from PowerPoint** — opens `PptxImportDialog` in replace mode (visible both in full-slide state and empty-state "no slides yet")
+
+---
+
+## PowerPoint Import — `PptxImportDialog.tsx`
+
+Component in `src/components/team/`. Two modes:
+- **New module** (from SOPs Library header): creates a draft `sop_documents` row first
+- **Replace** (from SlideContentEditor): deletes old slide images, then rebuilds
+
+Pipeline steps shown in a live progress list:
+1. Create module / remove existing slides
+2. Upload `.pptx` to `training-content/{moduleId}/source.pptx`
+3. Invoke `convert-pptx` edge function → CloudConvert (pptx → PNGs)
+4. Invoke `generate-narration` per slide (continues past per-slide failures)
+5. Compute `slideDurations` via `computeSlideDuration()`
+6. Optionally invoke `generate-quiz` → save via `saveQuizQuestions()`
+7. Persist content via `updateModuleContent()`
+
+Quiz count: `clamp(ceil(slides.length / 2), 5, 15)`.
+
+---
+
+## Supabase Edge Functions
+
+| Function | Purpose |
+|----------|---------|
+| `convert-pptx` | Accepts `{sopId, sourcePath}`; uses CloudConvert API to convert .pptx → per-slide PNGs; uploads to `training-content`; returns `{slides[]}` |
+| `generate-narration` | Accepts `{imageUrl}`; sends signed PNG URL to Gemini 2.5 Flash vision; returns `{text}` — 2–4 sentence trainer narration |
+| `generate-quiz` | Accepts `{title, narrations[], count}`; returns `{questions[]}` — MCQ with 4 options, hint, rationale |
+| `cleanup-narration` | Accepts `{text}`; returns `{text}` — grammar/style cleanup via Gemini |
+
+**Required secrets (set via Supabase dashboard → Settings → Edge Functions):**
+- `LOVABLE_API_KEY` — Lovable AI gateway key (pre-provisioned)
+- `CLOUDCONVERT_API_KEY` — CloudConvert API key for pptx→png conversion
+
 ---
 
 ## lib/ Utilities Reference
@@ -172,7 +242,7 @@ All are public (anon) Supabase credentials — safe on the client.
 | File | Key exports |
 |------|-------------|
 | `utils.ts` | `cn()` — class merging |
-| `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus` |
+| `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration` |
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
 | `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP data from a .docx upload |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |

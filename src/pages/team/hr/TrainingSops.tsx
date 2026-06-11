@@ -340,6 +340,14 @@ export default function TrainingSops() {
                       const status = getAssignmentStatus(assignment);
                       const cfg = STATUS_CONFIG[status];
                       const Icon = cfg.icon;
+                      // Mid-training position saved by the module viewer
+                      const slideCount = Array.isArray(m.content?.slides) ? m.content.slides.length : 0;
+                      const progress = status === "in_progress" && slideCount > 0 && assignment?.progress
+                        ? {
+                            slide: Math.min((assignment.progress.maxVisitedIndex ?? 0) + 1, slideCount),
+                            pct: Math.min(100, Math.round(((assignment.progress.maxVisitedIndex ?? 0) + 1) / slideCount * 100)),
+                          }
+                        : null;
                       return (
                         <TableRow
                           key={m.id}
@@ -355,6 +363,11 @@ export default function TrainingSops() {
                             <Badge className={`${cfg.className} gap-1`}>
                               <Icon className="w-3 h-3" />{cfg.label}
                             </Badge>
+                            {progress && (
+                              <p className="text-xs text-[#2A1F0E]/50 mt-1">
+                                Slide {progress.slide} of {slideCount} · {progress.pct}%
+                              </p>
+                            )}
                           </TableCell>
                           <TableCell className="text-xs text-[#2A1F0E]/60">
                             {m.is_annual_refresher ? "Annual" : "—"}
