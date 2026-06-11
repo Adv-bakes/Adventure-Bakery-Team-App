@@ -18,6 +18,15 @@ import { SopImportDialog } from "@/components/ops/SopImportDialog";
 import { SlideContentEditor } from "@/components/team/SlideContentEditor";
 import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
+import { TRAINING_CATEGORY_LABELS } from "@/lib/training";
+
+// Map a SOPs Library category name back to its HR training category number
+// (e.g. "Core Onboarding" → 1) so modules created here also appear in the
+// right section of Training & SOPs. Unknown categories default to 1.
+function trainingCategoryForLabel(label: string): number {
+  const entry = Object.entries(TRAINING_CATEGORY_LABELS).find(([, l]) => l === label);
+  return entry ? Number(entry[0]) : 1;
+}
 
 type SopDocument = {
   id: string;
@@ -75,6 +84,54 @@ function sqfSectionLabel(section: string): string {
 
 type ViewMode = "category" | "sqf";
 
+// Dropdown of existing categories with an escape hatch to type a brand-new one.
+// null means uncategorized.
+function CategorySelect({ value, categories, onChange }: {
+  value: string | null | undefined;
+  categories: string[];
+  onChange: (v: string | null) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const options = useMemo(() => {
+    const set = new Set(categories);
+    if (value) set.add(value);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [categories, value]);
+
+  if (adding) {
+    return (
+      <div className="flex gap-2">
+        <Input
+          autoFocus
+          placeholder="New category name"
+          value={value ?? ""}
+          onChange={e => onChange(e.target.value || null)}
+        />
+        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setAdding(false)}>
+          Pick existing
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <Select
+      value={value ?? "__none__"}
+      onValueChange={v => {
+        if (v === "__new__") { onChange(null); setAdding(true); }
+        else if (v === "__none__") onChange(null);
+        else onChange(v);
+      }}
+    >
+      <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none__">Uncategorized</SelectItem>
+        {options.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+        <SelectItem value="__new__">Add New Category…</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
 export default function SopsLibrary() {
   const { role } = useUserRole();
   const isAdmin = role === "admin" || role === "owner";
@@ -89,6 +146,11 @@ export default function SopsLibrary() {
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [pptxImportOpen, setPptxImportOpen] = useState(false);
+  // Category targeted by a per-group "Add Module" button; null = dialog closed
+  const [importCategory, setImportCategory] = useState<string | null>(null);
+  // Editable copy of the selected doc's metadata shown in the detail drawer
+  const [detail, setDetail] = useState<Partial<SopDocument>>({});
+  const [savingDetail, setSavingDetail] = useState(false);
 
   const load = async () => {
     const { data, error } = await (supabase as any)
@@ -138,7 +200,55 @@ export default function SopsLibrary() {
     return Array.from(map.entries()).sort(([a], [b]) => Number(a) - Number(b));
   }, [filtered]);
 
+  // Distinct category names already in use, for the category dropdowns
+  const existingCategories = useMemo(
+    () => Array.from(new Set(docs.map(d => d.category).filter(Boolean))) as string[],
+    [docs],
+  );
+
   const openNew = () => setEditDoc({ type: "sop", status: "draft", sqf_required: false });
+
+  // Keep the drawer's editable fields in sync with the selected doc
+  useEffect(() => {
+    if (!selected) return;
+    setDetail({
+      title: selected.title,
+      sop_number: selected.sop_number,
+      revision: selected.revision,
+      effective_date: selected.effective_date,
+      sqf_reference: selected.sqf_reference,
+      approved_by: selected.approved_by,
+      category: selected.category,
+      type: selected.type,
+      status: selected.status,
+      sqf_required: selected.sqf_required,
+    });
+  }, [selected?.id]);
+
+  const saveDetail = async () => {
+    if (!selected) return;
+    if (!detail.title?.trim()) return toast.error("Title required");
+    setSavingDetail(true);
+    const payload = {
+      title: detail.title.trim(),
+      sop_number: detail.sop_number || null,
+      revision: detail.revision || null,
+      effective_date: detail.effective_date || null,
+      sqf_reference: detail.sqf_reference || null,
+      approved_by: detail.approved_by || null,
+      category: detail.category || null,
+      type: detail.type ?? selected.type,
+      status: detail.status ?? selected.status,
+      sqf_required: detail.sqf_required ?? false,
+    };
+    const { error } = await (supabase as any).from("sop_documents").update(payload).eq("id", selected.id);
+    setSavingDetail(false);
+    if (error) return toast.error(error.message);
+    const updated = { ...selected, ...payload } as SopDocument;
+    setSelected(updated);
+    setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+    toast.success("Details saved");
+  };
 
   const saveDoc = async () => {
     if (!editDoc?.title) return toast.error("Title required");
@@ -298,21 +408,31 @@ export default function SopsLibrary() {
                 className="rounded-lg border overflow-hidden"
                 style={{ borderColor: "rgba(200,155,60,0.25)", background: "#FFFFFF" }}
               >
-                <AccordionTrigger
-                  className="px-4 py-3 hover:no-underline hover:bg-[#C89B3C]/5 [&[data-state=open]]:bg-[#C89B3C]/5"
-                >
-                  <div className="flex items-center gap-3 text-[#2A1F0E]">
-                    <span className="font-semibold">{label}</span>
-                    <Badge variant="outline" className="text-[#2A1F0E]/60 border-[#2A1F0E]/20">
-                      {items.length} doc{items.length !== 1 ? "s" : ""}
-                    </Badge>
-                    {required > 0 && (
-                      <Badge className="bg-[#C89B3C]/15 text-[#9A6F1E] border-[#C89B3C]/30 gap-1">
-                        <ShieldCheck className="w-3 h-3" />{required} SQF required
+                <div className="flex items-center hover:bg-[#C89B3C]/5">
+                  <AccordionTrigger className="flex-1 px-4 py-3 hover:no-underline">
+                    <div className="flex items-center gap-3 text-[#2A1F0E]">
+                      <span className="font-semibold">{label}</span>
+                      <Badge variant="outline" className="text-[#2A1F0E]/60 border-[#2A1F0E]/20">
+                        {items.length} doc{items.length !== 1 ? "s" : ""}
                       </Badge>
-                    )}
-                  </div>
-                </AccordionTrigger>
+                      {required > 0 && (
+                        <Badge className="bg-[#C89B3C]/15 text-[#9A6F1E] border-[#C89B3C]/30 gap-1">
+                          <ShieldCheck className="w-3 h-3" />{required} SQF required
+                        </Badge>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  {isAdmin && viewMode === "category" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mr-3 shrink-0 border-[#C89B3C]/40 text-[#2A1F0E]"
+                      onClick={() => setImportCategory(groupKey)}
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />Add Module
+                    </Button>
+                  )}
+                </div>
                 <AccordionContent className="px-0 pb-0">
                   <div className="text-[#2A1F0E]">
                     <DocTable items={items} />
@@ -342,13 +462,65 @@ export default function SopsLibrary() {
                   </Badge>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs text-muted-foreground">SOP #</Label><p>{selected.sop_number ?? "—"}</p></div>
-                <div><Label className="text-xs text-muted-foreground">Revision</Label><p>{selected.revision ?? "—"}</p></div>
-                <div><Label className="text-xs text-muted-foreground">Effective Date</Label><p>{selected.effective_date ?? "—"}</p></div>
-                <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><p>{selected.sqf_reference ?? "—"}</p></div>
-                <div><Label className="text-xs text-muted-foreground">Approved By</Label><p>{selected.approved_by ?? "—"}</p></div>
-              </div>
+              {isAdmin ? (
+                <div className="space-y-3">
+                  <div><Label className="text-xs text-muted-foreground">Title *</Label><Input value={detail.title ?? ""} onChange={e => setDetail({ ...detail, title: e.target.value })} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label className="text-xs text-muted-foreground">SOP #</Label><Input value={detail.sop_number ?? ""} onChange={e => setDetail({ ...detail, sop_number: e.target.value })} /></div>
+                    <div><Label className="text-xs text-muted-foreground">Revision</Label><Input value={detail.revision ?? ""} onChange={e => setDetail({ ...detail, revision: e.target.value })} /></div>
+                    <div><Label className="text-xs text-muted-foreground">Effective Date</Label><Input type="date" value={detail.effective_date ?? ""} onChange={e => setDetail({ ...detail, effective_date: e.target.value })} /></div>
+                    <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><Input value={detail.sqf_reference ?? ""} onChange={e => setDetail({ ...detail, sqf_reference: e.target.value })} /></div>
+                    <div><Label className="text-xs text-muted-foreground">Approved By</Label><Input value={detail.approved_by ?? ""} onChange={e => setDetail({ ...detail, approved_by: e.target.value })} /></div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Category</Label>
+                      <CategorySelect
+                        value={detail.category}
+                        categories={existingCategories}
+                        onChange={category => setDetail({ ...detail, category })}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Type</Label>
+                      <Select value={detail.type ?? "sop"} onValueChange={v => setDetail({ ...detail, type: v as SopDocument["type"] })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{TYPES.map(t => <SelectItem key={t} value={t}>{TYPE_LABELS[t]}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Status</Label>
+                      <Select value={detail.status ?? "draft"} onValueChange={v => setDetail({ ...detail, status: v as SopDocument["status"] })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="detail_sqf_required"
+                        checked={detail.sqf_required ?? false}
+                        onCheckedChange={v => setDetail({ ...detail, sqf_required: !!v })}
+                      />
+                      <Label htmlFor="detail_sqf_required" className="cursor-pointer">Required for SQF audit</Label>
+                    </div>
+                    <Button onClick={saveDetail} disabled={savingDetail} size="sm" className="bg-[#C89B3C] hover:bg-[#B8892C]">
+                      {savingDetail ? "Saving…" : "Save Details"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs text-muted-foreground">SOP #</Label><p>{selected.sop_number ?? "—"}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">Revision</Label><p>{selected.revision ?? "—"}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">Effective Date</Label><p>{selected.effective_date ?? "—"}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><p>{selected.sqf_reference ?? "—"}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">Approved By</Label><p>{selected.approved_by ?? "—"}</p></div>
+                </div>
+              )}
               <div>
                 <Label className="text-xs text-muted-foreground">Content</Label>
                 {isAdmin ? (
@@ -423,7 +595,14 @@ export default function SopsLibrary() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Category</Label><Input value={editDoc?.category ?? ""} onChange={e => setEditDoc({ ...editDoc!, category: e.target.value })} /></div>
+              <div>
+                <Label>Category</Label>
+                <CategorySelect
+                  value={editDoc?.category}
+                  categories={existingCategories}
+                  onChange={category => setEditDoc({ ...editDoc!, category })}
+                />
+              </div>
               <div><Label>Effective Date</Label><Input type="date" value={editDoc?.effective_date ?? ""} onChange={e => setEditDoc({ ...editDoc!, effective_date: e.target.value })} /></div>
             </div>
             <div><Label>SQF Reference</Label><Input value={editDoc?.sqf_reference ?? ""} onChange={e => setEditDoc({ ...editDoc!, sqf_reference: e.target.value })} /></div>
@@ -446,6 +625,15 @@ export default function SopsLibrary() {
 
       <SopImportDialog open={importOpen} onOpenChange={setImportOpen} onImported={load} />
       <PptxImportDialog open={pptxImportOpen} onOpenChange={setPptxImportOpen} onImported={load} />
+      <PptxImportDialog
+        open={importCategory !== null}
+        onOpenChange={(o) => { if (!o) setImportCategory(null); }}
+        onImported={load}
+        defaults={importCategory !== null ? {
+          category: importCategory === "Uncategorized" ? null : importCategory,
+          training_category: trainingCategoryForLabel(importCategory),
+        } : undefined}
+      />
     </div>
   );
 }

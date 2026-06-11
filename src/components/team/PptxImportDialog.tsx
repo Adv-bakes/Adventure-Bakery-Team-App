@@ -11,7 +11,7 @@ import { FileUp, Loader2, CheckCircle2, Presentation } from "lucide-react";
 import { toast } from "sonner";
 import {
   getTrainingSlideUrl, deleteTrainingSlide, updateModuleContent,
-  computeSlideDuration, saveQuizQuestions,
+  computeSlideDuration, saveQuizQuestions, TRAINING_CATEGORY_LABELS,
 } from "@/lib/training";
 
 interface PptxImportDialogProps {
@@ -20,11 +20,13 @@ interface PptxImportDialogProps {
   onImported: (moduleId: string) => void;
   /** When set, the import replaces this module's content instead of creating a new module */
   existingModule?: { id: string; content: any };
+  /** Defaults applied when creating a new module (ignored in replace mode) */
+  defaults?: { training_category?: number; category?: string | null };
 }
 
 type Step = { label: string; state: "pending" | "active" | "done" };
 
-export function PptxImportDialog({ open, onOpenChange, onImported, existingModule }: PptxImportDialogProps) {
+export function PptxImportDialog({ open, onOpenChange, onImported, existingModule, defaults }: PptxImportDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [generateQuiz, setGenerateQuiz] = useState(true);
@@ -85,7 +87,8 @@ export function PptxImportDialog({ open, onOpenChange, onImported, existingModul
             title: title.trim(),
             type: "sop",
             status: "draft",
-            training_category: 1,
+            training_category: defaults?.training_category ?? 1,
+            category: defaults?.category ?? null,
             passing_score_pct: 80,
           })
           .select("id")
@@ -184,6 +187,9 @@ export function PptxImportDialog({ open, onOpenChange, onImported, existingModul
             Converts each slide to an image, writes AI narration with viewing times
             {generateQuiz ? ", and drafts a quiz" : ""}.
             {isReplace ? " Existing slides and narrations will be replaced." : ""}
+            {!isReplace && (defaults?.category || defaults?.training_category != null)
+              ? ` The module is created under "${defaults.category ?? TRAINING_CATEGORY_LABELS[defaults.training_category!] ?? ""}".`
+              : ""}
           </DialogDescription>
         </DialogHeader>
 
