@@ -138,8 +138,8 @@ All are public (anon) Supabase credentials — safe on the client.
 |-------|---------|
 | `profiles` | User profiles — `full_name`, `department`, `job_title`, `access_granted` |
 | `user_roles` | Role assignments — `user_id`, `role` (owner/admin/staff/user) |
-| `sop_documents` | Training modules & SOPs — `training_category`, `module_number`, `content` (JSON), `passing_score_pct`, `is_critical`, `required_departments`, `status` |
-| `training_assignments` | Employee ↔ module assignments — `completed_at`, `quiz_score`, `quiz_attempts`, `expires_at`, `recurrence_months` |
+| `sop_documents` | Training modules & SOPs — `training_category` (int 1–4, HR portal), `category` (text, SOPs Library grouping; names mirror the training category labels), `module_number`, `content` (JSON), `passing_score_pct`, `is_critical`, `required_departments`, `status` |
+| `training_assignments` | Employee ↔ module assignments — `completed_at`, `quiz_score`, `quiz_attempts`, `expires_at`, `recurrence_months`, `signed`/`signed_at` (acknowledgment), `progress` (JSON save/resume state, cleared on completion) |
 | `quiz_questions` | Per-module quiz — `options` (array), `correct_option_index`, `hint`, `rationale` |
 | `prf_submissions` | Product Request Forms — `concept_id`, `lead_id`, `product_name` |
 | `batch_sheets` | Production batches — `data_json`, `version`, `status`, `superseded_at` |
@@ -170,10 +170,13 @@ All are public (anon) Supabase credentials — safe on the client.
 {
   "slides": ["moduleId/slide-01.png", ...],
   "narrations": ["narration text per slide", ...],
-  "slideDurations": [17, 20, ...]
+  "slideDurations": [17, 20, ...],
+  "acknowledgment": { "required": true, "text": "I have read and understand..." }
 }
 ```
-All three are parallel arrays indexed by slide position.
+The first three are parallel arrays indexed by slide position. `acknowledgment` is optional; when `required`, the employee must check an "agree to comply" box before the module can be completed (recorded on the assignment as `signed`/`signed_at`).
+
+**Save/resume:** `training_assignments.progress` JSON (`{ slideIndex, maxVisitedIndex, highestUnlocked, updatedAt }`) is auto-saved by the viewer on every slide transition (`saveAssignmentProgress()` in `training.ts`), restored on load (clamped to current slide count), and set to null on completion. In-progress rows in `TrainingSops.tsx` show "Slide N of M · X%".
 
 ---
 
@@ -184,6 +187,8 @@ All three are parallel arrays indexed by slide position.
 - **Dwell time gating:** Next button disabled with countdown on first visit to each slide. Duration = `computeSlideDuration(narration)` — ceil(words/3) seconds, min 8s, default 20s when no narration. Revisiting an already-unlocked slide skips the gate.
 - **Audio narration (TTS):** "Listen" button on each slide reads narration via browser `speechSynthesis`. Once started, auto-advances narration to each subsequent slide until "Stop" is clicked.
 - **Begin Quiz / Mark Complete** shown in the footer of the last slide (not a separate card).
+- **Acknowledgment gating:** when `content.acknowledgment.required`, the "agree to comply" checkbox gates both Mark Complete and the post-quiz-pass completion (quiz result is saved score-only via `submitQuizResult(..., complete=false)` until the box is checked).
+- **Resume:** restores `assignment.progress` on load with a "Resumed at slide N of M" toast; previously unlocked slides skip the dwell gate.
 
 ---
 
@@ -203,10 +208,26 @@ Component in `src/components/team/` embedded inside the SOPs Library drawer for 
 
 ---
 
+## Quiz Editor — `QuizEditor.tsx`
+
+Component in `src/components/team/`, rendered below the Content section in the SOPs Library detail drawer (admin only). Per-question cards with text, options (correct-answer radio, min 2), labeled Hint and Rationale inputs, and up/down reorder buttons (display honors `question_number` order). "Regenerate with AI" invokes `generate-quiz` (confirm dialog if questions exist; hidden when no narrations). Bottom row: gold "Save Quiz" + "Add Question". Also hosts the module's acknowledgment config (require checkbox + custom text, default `DEFAULT_ACKNOWLEDGMENT_TEXT`), saved into `content.acknowledgment` alongside the quiz.
+
+---
+
+## SOPs Library — `SopsLibrary.tsx`
+
+`/team/compliance/sops`. Groups documents by `category` (text) or by SQF section. Admin features:
+- **Per-category "Add Module"** button on each category accordion header (category view only) — opens `PptxImportDialog` targeted at that category. Button is a *sibling* of `AccordionTrigger` (Radix renders the trigger as a `<button>`; nesting would break it).
+- **Editable detail drawer:** title, SOP #, revision, effective date, SQF reference, approved by, category, type, status, SQF-required — saved via "Save Details" (updates `sop_documents`, re-files the doc into the right group).
+- **`CategorySelect`** (defined in this file): dropdown of existing categories + "Uncategorized" + "Add New Category…" (swaps to a text input). Used in the detail drawer and the Add SOP dialog — category is never free text.
+- Detail drawer also embeds `SlideContentEditor` and `QuizEditor`.
+
+---
+
 ## PowerPoint Import — `PptxImportDialog.tsx`
 
 Component in `src/components/team/`. Two modes:
-- **New module** (from SOPs Library header): creates a draft `sop_documents` row first
+- **New module** (SOPs Library header button, or the per-category "Add Module" button on each category accordion group): creates a draft `sop_documents` row first. Optional `defaults` prop (`{ training_category?, category? }`) sets where the module lands — the per-category buttons pass the group's category string plus the matching training category number; without defaults it falls back to training_category 1 / category null.
 - **Replace** (from SlideContentEditor): deletes old slide images, then rebuilds
 
 Pipeline steps shown in a live progress list:
@@ -242,7 +263,7 @@ Quiz count: `clamp(ceil(slides.length / 2), 5, 15)`.
 | File | Key exports |
 |------|-------------|
 | `utils.ts` | `cn()` — class merging |
-| `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration` |
+| `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult` (4th arg `complete=false` saves score only, deferring completion to acknowledgment), `saveAssignmentProgress`, `markAssignmentComplete`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration` |
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
 | `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP data from a .docx upload |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
