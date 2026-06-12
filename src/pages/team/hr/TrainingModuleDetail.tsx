@@ -15,7 +15,7 @@ import {
   getAssignmentStatus,
   fetchModuleById, fetchAssignment, fetchQuizQuestions,
   scoreQuiz, submitQuizResult, markAssignmentComplete, saveAssignmentProgress,
-  getTrainingSlideUrl, computeSlideDuration,
+  getTrainingSlideUrl, computeSlideDuration, getTrainingAudioUrl,
 } from "@/lib/training";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
@@ -94,13 +94,26 @@ export default function TrainingModuleDetail() {
 
   const ttsSupported = typeof window !== "undefined" && "speechSynthesis" in window;
   const narrations: string[] = Array.isArray(module?.content?.narrations) ? module.content.narrations : [];
+  const audioPaths: (string | null)[] = Array.isArray(module?.content?.audio) ? module.content.audio : [];
   const currentNarration = (narrations[slideIndex] ?? "").trim();
 
+  // Listen prefers the CEO's pre-generated ElevenLabs voice (cached MP3 per slide); if a slide
+  // has no cached audio or playback fails, it falls back to the browser's speech synthesis.
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Cache resolved signed URLs per slide so we don't re-sign on every play.
+  const audioUrlCache = useRef<Map<number, string | null>>(new Map());
   // Once Listen is clicked, narration keeps auto-playing on each new slide until Stop is clicked
   const autoPlayRef = useRef(false);
+  // Mirrors slideIndex so async audio resolution can detect a stale (superseded) play.
+  const slideIndexRef = useRef(slideIndex);
 
   const stopSpeech = () => {
     if (ttsSupported) window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+    }
     setSpeaking(false);
   };
 
@@ -109,35 +122,77 @@ export default function TrainingModuleDetail() {
     stopSpeech();
   };
 
-  const speakSlide = () => {
-    if (!ttsSupported || !currentNarration) return;
-    autoPlayRef.current = true;
+  // Resolve (and cache) the signed URL for a slide's cached narration MP3, or null if none.
+  const resolveAudioUrl = async (index: number): Promise<string | null> => {
+    if (audioUrlCache.current.has(index)) return audioUrlCache.current.get(index) ?? null;
+    const path = audioPaths[index];
+    if (!path) { audioUrlCache.current.set(index, null); return null; }
+    try {
+      const url = await getTrainingAudioUrl(path);
+      audioUrlCache.current.set(index, url);
+      return url;
+    } catch {
+      audioUrlCache.current.set(index, null);
+      return null;
+    }
+  };
+
+  const speakWithBrowserTts = (text: string) => {
+    if (!ttsSupported || !text) { setSpeaking(false); return; }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(currentNarration);
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => setSpeaking(false);
     setSpeaking(true);
     window.speechSynthesis.speak(utterance);
   };
 
-  // On slide change: cancel the current narration, then auto-play the new slide's
-  // narration if Listen mode is still armed. Cancel everything on unmount.
+  // Plays a slide's narration: cached company voice if available, else browser TTS.
+  const playNarration = async (index: number) => {
+    const text = (narrations[index] ?? "").trim();
+    if (!text) { setSpeaking(false); return; }
+    if (!audioRef.current && typeof Audio !== "undefined") audioRef.current = new Audio();
+    setSpeaking(true);
+    const url = await resolveAudioUrl(index);
+    // A newer play/stop may have superseded this one (slide changed or user hit Stop).
+    if (index !== slideIndexRef.current || !autoPlayRef.current) return;
+    if (url && audioRef.current) {
+      const audio = audioRef.current;
+      // Fall back to the robot voice if the MP3 can't be played — but only once
+      // (onerror and the play() rejection can both fire for the same failure).
+      let fellBack = false;
+      const fallback = () => { if (!fellBack) { fellBack = true; speakWithBrowserTts(text); } };
+      audio.src = url;
+      audio.onended = () => setSpeaking(false);
+      audio.onerror = fallback;
+      audio.play().catch(fallback);
+    } else {
+      speakWithBrowserTts(text);
+    }
+  };
+
+  const speakSlide = () => {
+    if (!currentNarration) return;
+    autoPlayRef.current = true;
+    stopSpeech();
+    autoPlayRef.current = true;
+    void playNarration(slideIndex);
+  };
+
+  useEffect(() => { slideIndexRef.current = slideIndex; }, [slideIndex]);
+
+  // On slide change: stop current narration, then auto-play the new slide if Listen is armed.
   useEffect(() => {
     stopSpeech();
     if (!autoPlayRef.current) return;
-    const text = (narrations[slideIndex] ?? "").trim();
-    if (!ttsSupported || !text) return;
-    // Small delay — speaking immediately after cancel() is unreliable in some browsers
-    const timer = setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onend = () => setSpeaking(false);
-      utterance.onerror = () => setSpeaking(false);
-      setSpeaking(true);
-      window.speechSynthesis.speak(utterance);
-    }, 150);
+    if (!(narrations[slideIndex] ?? "").trim()) return;
+    const timer = setTimeout(() => { void playNarration(slideIndex); }, 100);
     return () => clearTimeout(timer);
   }, [slideIndex]);
-  useEffect(() => () => { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }, []);
+  useEffect(() => () => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    audioRef.current?.pause();
+  }, []);
 
   const status = getAssignmentStatus(assignment ?? undefined);
   // Preview mode: viewing a module you aren't assigned (e.g. an admin checking it).
@@ -369,7 +424,7 @@ export default function TrainingModuleDetail() {
                   <span className="text-xs text-[#2A1F0E]/60">
                     Slide {slideIndex + 1} of {totalSlides} · {Math.round(((slideIndex + 1) / totalSlides) * 100)}%
                   </span>
-                  {ttsSupported && currentNarration && (
+                  {currentNarration && (
                     <Button
                       type="button"
                       variant="outline"

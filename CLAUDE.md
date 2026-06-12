@@ -171,10 +171,11 @@ All are public (anon) Supabase credentials — safe on the client.
   "slides": ["moduleId/slide-01.png", ...],
   "narrations": ["narration text per slide", ...],
   "slideDurations": [17, 20, ...],
+  "audio": ["moduleId/audio/slide-01.mp3", null, ...],
   "acknowledgment": { "required": true, "text": "I have read and understand..." }
 }
 ```
-The first three are parallel arrays indexed by slide position. `acknowledgment` is optional; when `required`, the employee must check an "agree to comply" box before the module can be completed (recorded on the assignment as `signed`/`signed_at`).
+The first four are parallel arrays indexed by slide position (`audio` holds a storage path to the pre-generated voice MP3, or `null` for slides without one). `acknowledgment` is optional; when `required`, the employee must check an "agree to comply" box before the module can be completed (recorded on the assignment as `signed`/`signed_at`).
 
 **Save/resume:** `training_assignments.progress` JSON (`{ slideIndex, maxVisitedIndex, highestUnlocked, updatedAt }`) is auto-saved by the viewer on every slide transition (`saveAssignmentProgress()` in `training.ts`), restored on load (clamped to current slide count), and set to null on completion. In-progress rows in `TrainingSops.tsx` show "Slide N of M · X%".
 
@@ -185,7 +186,7 @@ The first three are parallel arrays indexed by slide position. `acknowledgment` 
 - **One slide at a time** with Back / Next navigation
 - **Progress bar** (gold), percentage counter, and dot strip showing current position
 - **Dwell time gating:** Next button disabled with countdown on first visit to each slide. Duration = `computeSlideDuration(narration)` — ceil(words/3) seconds, min 8s, default 20s when no narration. Revisiting an already-unlocked slide skips the gate.
-- **Audio narration (TTS):** "Listen" button on each slide reads narration via browser `speechSynthesis`. Once started, auto-advances narration to each subsequent slide until "Stop" is clicked.
+- **Audio narration (company voice + TTS fallback):** the "Listen" button plays the pre-generated **ElevenLabs voice** (cached MP3 per slide, `content.audio[]`) via an `HTMLAudioElement`. If a slide has no cached audio or the MP3 fails to load, it **falls back to browser `speechSynthesis`** so Listen always works. Once started, auto-advances to each subsequent slide until "Stop" is clicked. (See "ElevenLabs voice narration" below.)
 - **Begin Quiz / Mark Complete** shown in the footer of the last slide (not a separate card).
 - **Acknowledgment gating:** when `content.acknowledgment.required`, the "agree to comply" checkbox gates both Mark Complete and the post-quiz-pass completion (quiz result is saved score-only via `submitQuizResult(..., complete=false)` until the box is checked).
 - **Resume:** restores `assignment.progress` on load with a "Resumed at slide N of M" toast; previously unlocked slides skip the dwell gate.
@@ -205,7 +206,8 @@ Component in `src/components/team/` embedded inside the SOPs Library drawer for 
 - **AI Cleanup** (Sparkles icon) — invokes `cleanup-narration` edge function on narration text
 - **AI from Image** (Wand icon) — invokes `generate-narration` edge function with a signed URL of the current slide; populates narration
 - **Generate All** — iterates slides with empty narrations, bulk-generates via `generate-narration`, saves in one write
-- **Listen / Stop** — TTS preview of the narration for the current slide
+- **Generate Voice Audio** — renders every narrated slide in the **ElevenLabs company voice** and caches the MP3s (`generateModuleAudio()` in `training.ts`); re-runnable to refresh after narration edits
+- **Listen / Stop** — preview of the current slide's narration: plays the cached ElevenLabs MP3 when the draft matches what was voiced, else browser TTS (so edited-but-not-yet-revoiced text is still previewable)
 - **Import from PowerPoint** — opens `PptxImportDialog` in replace mode (visible both in full-slide state and empty-state "no slides yet")
 
 ---
@@ -271,10 +273,20 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `generate-narration` | Accepts `{imageUrl}`; sends signed PNG URL to Gemini 2.5 Flash vision; returns `{text}` — 2–4 sentence trainer narration |
 | `generate-quiz` | Accepts `{title, narrations[], count}`; returns `{questions[]}` — MCQ with 4 options, hint, rationale |
 | `cleanup-narration` | Accepts `{text}`; returns `{text}` — grammar/style cleanup via Gemini |
+| `tts-elevenlabs` | Accepts `{text, voiceId?, lang?}`; calls ElevenLabs (`eleven_multilingual_v2`) and returns the MP3 bytes. **Returns `Content-Type: application/octet-stream`** (not `audio/mpeg`) so `supabase.functions.invoke` hands back a real `Blob` — any other type makes invoke run `response.text()` and corrupt the binary. Multilingual model auto-detects language, so one voice covers EN + ES. |
 
 **Required secrets (set via Supabase dashboard → Settings → Edge Functions):**
 - `LOVABLE_API_KEY` — Lovable AI gateway key (pre-provisioned)
 - `CLOUDCONVERT_API_KEY` — CloudConvert API key for pptx→png conversion
+- `ELEVENLABS_API_KEY` — ElevenLabs key (Text-to-Speech permission only); `ELEVENLABS_VOICE_ID` — the company's cloned voice ID (default when a request omits `voiceId`)
+
+### ElevenLabs voice narration
+
+The training "Listen" feature plays narration in the company's cloned ElevenLabs voice instead of the browser's robotic TTS.
+
+- **Generate once, cache forever.** Admin clicks **Generate Voice Audio** in the slide editor → `generateModuleAudio()` (`training.ts`) loops narrated slides, invokes `tts-elevenlabs`, uploads each MP3 to `training-content/<sopId>/audio/slide-NN.mp3`, and writes the paths into `content.audio[]`. Billed per character at generation; playback is a static file (no per-play cost/latency). Re-run after editing narration to refresh.
+- **Playback** (viewer `TrainingModuleDetail.tsx` + editor preview): resolve the slide's `content.audio[]` path to a signed URL (`getTrainingAudioUrl()`), play via `HTMLAudioElement`. **Always falls back to `speechSynthesis`** when there's no cached audio or the MP3 errors. The fallback is guarded by a one-shot `fellBack` flag because `audio.onerror` and the `play()` rejection can both fire for one failure — without the guard you get two TTS utterances and a desynced `speaking` state (Stop stops responding).
+- The key stays server-side in the edge function; the browser only ever sees MP3 bytes / signed URLs.
 
 ---
 
@@ -283,7 +295,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | File | Key exports |
 |------|-------------|
 | `utils.ts` | `cn()` — class merging |
-| `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult` (4th arg `complete=false` saves score only, deferring completion to acknowledgment), `saveAssignmentProgress`, `markAssignmentComplete`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration` |
+| `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult` (4th arg `complete=false` saves score only, deferring completion to acknowledgment), `saveAssignmentProgress`, `markAssignmentComplete`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration`, `generateModuleAudio` (renders+caches ElevenLabs voice MP3s into `content.audio[]`), `getTrainingAudioUrl`, `audioPathFor` |
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
 | `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP data from a .docx upload |
 | `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |

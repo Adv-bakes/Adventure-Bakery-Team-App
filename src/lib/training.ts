@@ -385,6 +385,74 @@ export async function uploadTrainingSlide(sopId: string, file: File, slideIndex:
   return path;
 }
 
+// Storage path for a slide's pre-generated ElevenLabs narration MP3.
+export function audioPathFor(sopId: string, slideIndex: number): string {
+  return `${sopId}/audio/slide-${String(slideIndex + 1).padStart(2, "0")}.mp3`;
+}
+
+// Signed URL for a cached narration MP3 (same bucket as slide images).
+export async function getTrainingAudioUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from("training-content")
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+// Pre-generates the CEO's ElevenLabs voice for every slide that has narration, caches each
+// MP3 in the training-content bucket, and writes the storage paths into content.audio[]
+// (parallel to narrations[]). Slides with empty narration get a null audio entry. Re-runnable
+// (upsert) so it can be regenerated after narration edits. `onProgress` reports done/total.
+export async function generateModuleAudio(
+  sopId: string,
+  narrations: string[],
+  lang: "en" | "es",
+  content: any,
+  onProgress?: (done: number, total: number) => void,
+): Promise<{ failed: number; generated: number; audio: (string | null)[] }> {
+  const targets = narrations
+    .map((n, i) => ({ n: (n ?? "").trim(), i }))
+    .filter(({ n }) => n.length > 0);
+
+  const audio: (string | null)[] = Array.isArray(content?.audio)
+    ? [...content.audio]
+    : new Array(narrations.length).fill(null);
+  audio.length = narrations.length;
+
+  let failed = 0;
+  let done = 0;
+  onProgress?.(0, targets.length);
+  for (const { n, i } of targets) {
+    try {
+      const { data, error } = await supabase.functions.invoke("tts-elevenlabs", {
+        body: { text: n, lang },
+      });
+      if (error || !data) throw error ?? new Error("No audio returned");
+      // invoke returns a Blob for non-JSON responses (audio/mpeg).
+      const blob = data instanceof Blob ? data : new Blob([data as any], { type: "audio/mpeg" });
+      const path = audioPathFor(sopId, i);
+      const { error: upErr } = await supabase.storage
+        .from("training-content")
+        .upload(path, blob, { upsert: true, contentType: "audio/mpeg" });
+      if (upErr) throw upErr;
+      audio[i] = path;
+    } catch {
+      failed++;
+      audio[i] = audio[i] ?? null;
+    }
+    done++;
+    onProgress?.(done, targets.length);
+  }
+
+  // Clear audio entries for slides whose narration is now empty.
+  for (let i = 0; i < narrations.length; i++) {
+    if (!(narrations[i] ?? "").trim()) audio[i] = null;
+  }
+
+  await updateModuleContent(sopId, { ...(content ?? {}), audio });
+  return { failed, generated: targets.length - failed, audio };
+}
+
 // Minimum viewing time (seconds) for a slide, based on its narration length.
 // No narration → 20s default; otherwise medium reading speed ≈ 180 wpm with an 8s floor.
 export function computeSlideDuration(narration: string | null | undefined): number {

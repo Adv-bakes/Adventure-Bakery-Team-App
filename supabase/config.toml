@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.finalize-pss-submission]
 verify_jwt = false
+
+[functions.tts-elevenlabs]
+verify_jwt = true

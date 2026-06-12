@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   getTrainingSlideUrl, replaceTrainingSlide, deleteTrainingSlide, updateModuleContent,
-  computeSlideDuration,
+  computeSlideDuration, generateModuleAudio, getTrainingAudioUrl,
 } from "@/lib/training";
 
 interface SlideContentEditorProps {
@@ -47,8 +47,10 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
   const [cleaning, setCleaning] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [audioProgress, setAudioProgress] = useState<{ done: number; total: number } | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const total = slides.length;
   const clampedIndex = Math.min(index, Math.max(total - 1, 0));
@@ -72,6 +74,7 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
   useEffect(() => () => {
     recognitionRef.current?.stop?.();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    audioRef.current?.pause();
   }, []);
   useEffect(() => { stopListening(); stopSpeech(); }, [clampedIndex]);
 
@@ -79,17 +82,50 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
 
   const stopSpeech = () => {
     if (ttsSupported) window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+    }
     setSpeaking(false);
   };
 
-  const speakNarration = () => {
-    if (!ttsSupported || !narration.trim()) return;
+  const speakWithBrowserTts = () => {
+    if (!ttsSupported || !narration.trim()) { setSpeaking(false); return; }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(narration);
     utterance.onend = () => setSpeaking(false);
     utterance.onerror = () => setSpeaking(false);
     setSpeaking(true);
     window.speechSynthesis.speak(utterance);
+  };
+
+  // Preview Listen: play the cached ElevenLabs voice for this slide when the draft matches
+  // what was voiced (so edits aren't misrepresented); otherwise fall back to browser TTS.
+  const savedAudio: (string | null)[] = Array.isArray(content?.audio) ? content.audio : [];
+  const speakNarration = async () => {
+    if (!narration.trim()) return;
+    setSpeaking(true);
+    const unchanged = narration === (savedNarrations[clampedIndex] ?? "");
+    const path = unchanged ? savedAudio[clampedIndex] : null;
+    if (path) {
+      let fellBack = false;
+      const fallback = () => { if (!fellBack) { fellBack = true; speakWithBrowserTts(); } };
+      try {
+        const url = await getTrainingAudioUrl(path);
+        if (!audioRef.current && typeof Audio !== "undefined") audioRef.current = new Audio();
+        const audio = audioRef.current!;
+        audio.src = url;
+        audio.onended = () => setSpeaking(false);
+        audio.onerror = fallback;
+        await audio.play();
+        return;
+      } catch {
+        fallback();
+        return;
+      }
+    }
+    speakWithBrowserTts();
   };
 
   const persist = async (next: any) => {
@@ -246,6 +282,40 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
     }
   };
 
+  // Renders the CEO's ElevenLabs voice for every narrated slide and caches the MP3s.
+  // Uses the latest saved narrations plus the current unsaved draft so nothing is missed.
+  const generateAudio = async () => {
+    const narrations = slides.map((_, i) => (i === clampedIndex ? narration : savedNarrations[i] ?? ""));
+    const narratedCount = narrations.filter(n => n.trim()).length;
+    if (narratedCount === 0) {
+      toast.info("No narration to voice — add narration first");
+      return;
+    }
+    const lang: "en" | "es" = content?.lang === "es" ? "es" : "en";
+    setAudioProgress({ done: 0, total: narratedCount });
+    try {
+      // Persist narrations first so content.audio[] lines up with what's saved.
+      const slideDurations = slides.map((_, i) =>
+        i === clampedIndex
+          ? (durationTouched ? Math.max(0, Math.round(duration)) : computeSlideDuration(narration))
+          : savedDurations[i] ?? computeSlideDuration(narrations[i]),
+      );
+      const baseContent = { ...(content ?? {}), narrations, slideDurations };
+      await persist(baseContent);
+      const { failed, generated, audio } = await generateModuleAudio(
+        sopId, narrations, lang, baseContent,
+        (done, total) => setAudioProgress({ done, total }),
+      );
+      onContentChange({ ...baseContent, audio });
+      if (failed > 0) toast.warning(`Voiced ${generated} slide${generated !== 1 ? "s" : ""} — ${failed} failed`);
+      else toast.success(`Generated voice audio for ${generated} slide${generated !== 1 ? "s" : ""}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Voice generation failed");
+    } finally {
+      setAudioProgress(null);
+    }
+  };
+
   const cleanupWithAi = async () => {
     if (!narration.trim()) return;
     setCleaning(true);
@@ -374,6 +444,16 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
         >
           <Wand2 className={`w-3.5 h-3.5 mr-1 ${bulkProgress ? "animate-pulse" : ""}`} />
           {bulkProgress ? `Generating ${bulkProgress.done}/${bulkProgress.total}…` : "Generate All"}
+        </Button>
+        <Button
+          type="button" variant="outline" size="sm"
+          className="text-[#9A6F1E] border-[#C89B3C]/40 hover:bg-[#C89B3C]/10"
+          onClick={generateAudio}
+          disabled={!!audioProgress}
+          title="Render every narrated slide in the company voice (ElevenLabs) and cache it for playback"
+        >
+          <Volume2 className={`w-3.5 h-3.5 mr-1 ${audioProgress ? "animate-pulse" : ""}`} />
+          {audioProgress ? `Voicing ${audioProgress.done}/${audioProgress.total}…` : "Generate Voice Audio"}
         </Button>
       </div>
 
