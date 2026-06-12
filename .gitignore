@@ -28,3 +28,6 @@ dist-ssr
 
 # Supabase CLI local state
 supabase/.temp
+
+# Claude Design / external deck drop folder
+training-decks/incoming/

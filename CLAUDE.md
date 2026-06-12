@@ -241,6 +241,8 @@ Pipeline steps shown in a live progress list:
 
 Quiz count: `clamp(ceil(slides.length / 2), 5, 15)`.
 
+Hand-authored content wins over AI: speaker notes in the .pptx become the narration (`src/lib/pptxNotes.ts`), and an optional quiz CSV (parsed by `parseQuizCsv`) replaces AI quiz generation. SQF training decks are produced by the parameterized generator in `training-decks/` — authoring rules, quiz CSV format, content policy (no customer/product names), and the visual-layout catalog live in `DECK_FORMAT_CONTRACT.md`.
+
 ---
 
 ## Supabase Edge Functions

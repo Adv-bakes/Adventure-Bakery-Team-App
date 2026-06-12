@@ -140,10 +140,13 @@ export default function TrainingModuleDetail() {
   useEffect(() => () => { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }, []);
 
   const status = getAssignmentStatus(assignment ?? undefined);
+  // Preview mode: viewing a module you aren't assigned (e.g. an admin checking it).
+  // Gating and the quiz still run so the experience can be tested; results aren't recorded.
+  const preview = !assignment;
 
-  // Minimum dwell time per slide — enforced only while actively taking the training,
-  // and only on a slide's first visit. Admin editing and completed-module review are exempt.
-  const gateActive = !!assignment && status !== "completed";
+  // Minimum dwell time per slide — enforced while taking (or previewing) the training,
+  // and only on a slide's first visit. Completed-module review is exempt.
+  const gateActive = status !== "completed";
   const slideDurations: number[] = Array.isArray(module?.content?.slideDurations) ? module.content.slideDurations : [];
 
   useEffect(() => {
@@ -169,7 +172,10 @@ export default function TrainingModuleDetail() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [slideIndex, gateActive, module?.id]);
+    // `loading` re-arms the gate once the module has finished loading — load() resets
+    // `remaining` to 0 mid-flight (and runs twice under StrictMode), so without this the
+    // first slide can settle ungated.
+  }, [slideIndex, gateActive, module?.id, loading]);
 
   const slideLocked = gateActive && slideIndex > highestUnlocked && remaining > 0;
 
@@ -236,8 +242,13 @@ export default function TrainingModuleDetail() {
     }
 
     // Last question — score and submit
-    if (!assignment || !module) return;
+    if (!module) return;
     const result = scoreQuiz(questions, nextAnswers, module.passing_score_pct, module.is_critical);
+    // Preview (no assignment): score locally, don't write anything.
+    if (!assignment) {
+      setFinalResult(result);
+      return;
+    }
     setSubmitting(true);
     try {
       // When an acknowledgment is required, record the score but defer completion
@@ -253,7 +264,10 @@ export default function TrainingModuleDetail() {
   };
 
   const handleMarkComplete = async () => {
-    if (!assignment) return;
+    if (!assignment) {
+      toast.info("Preview mode — completion isn't recorded for unassigned modules.");
+      return;
+    }
     setSubmitting(true);
     try {
       await markAssignmentComplete(assignment);
@@ -298,7 +312,7 @@ export default function TrainingModuleDetail() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-6xl">
       <div>
         <Link to="/team/hr/trainings" className="inline-flex items-center gap-1 text-sm mb-2" style={{ color: "rgba(245,241,230,0.6)" }}>
           <ArrowLeft className="w-3.5 h-3.5" />Back to Training & SOPs
@@ -319,9 +333,12 @@ export default function TrainingModuleDetail() {
         </div>
       </div>
 
-      {!assignment && (
+      {preview && (
         <Card className="p-4 border" style={cardStyle}>
-          <p className="text-sm text-[#2A1F0E]/60">No assignment found for your account for this module.</p>
+          <p className="text-sm text-[#2A1F0E]/60">
+            <span className="font-medium text-[#2A1F0E]/80">Preview mode</span> — this module isn't assigned to your account,
+            so you can review the content and try the quiz, but your results won't be recorded.
+          </p>
         </Card>
       )}
 
@@ -409,7 +426,7 @@ export default function TrainingModuleDetail() {
                   <Button onClick={nextSlide} disabled={slideLocked} className="bg-[#C89B3C] hover:bg-[#B8892C]">
                     {slideLocked ? `Next (${remaining}s)` : "Next"}<ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
-                ) : assignment && status !== "completed" ? (
+                ) : status !== "completed" ? (
                   questions.length > 0 ? (
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-[#2A1F0E]/50 text-right">
@@ -417,7 +434,7 @@ export default function TrainingModuleDetail() {
                         {" "}{module.is_critical ? "100% required" : `${module.passing_score_pct}% to pass`}
                       </span>
                       <Button onClick={startQuiz} disabled={slideLocked} className="bg-[#C89B3C] hover:bg-[#B8892C]">
-                        {assignment.quiz_attempts > 0 ? "Retake Quiz" : "Begin Quiz"}
+                        {(assignment?.quiz_attempts ?? 0) > 0 ? "Retake Quiz" : "Begin Quiz"}
                         {slideLocked ? ` (${remaining}s)` : ""}
                         <ArrowRight className="w-4 h-4 ml-1" />
                       </Button>
@@ -463,7 +480,7 @@ export default function TrainingModuleDetail() {
 
       {/* Quiz entry / fallback (modules without slides — slide modules launch the quiz from the viewer footer) */}
       {assignment && !quizStarted && status !== "completed" && totalSlides === 0 && (
-        <Card className="p-4 border" style={cardStyle}>
+        <Card className="p-4 border max-w-3xl" style={cardStyle}>
           {questions.length > 0 ? (
             <>
               <h3 className="font-semibold text-[#2A1F0E] mb-1">Quiz</h3>
@@ -505,7 +522,7 @@ export default function TrainingModuleDetail() {
 
       {/* Quiz in progress */}
       {quizStarted && !finalResult && currentQuestion && (
-        <Card className="p-5 border" style={cardStyle}>
+        <Card className="p-5 border max-w-3xl" style={cardStyle}>
           <p className="text-xs text-[#2A1F0E]/50 mb-2">
             Question {currentIndex + 1} of {questions.length}
           </p>
@@ -580,7 +597,7 @@ export default function TrainingModuleDetail() {
 
       {/* Quiz result */}
       {finalResult && (
-        <Card className="p-5 border" style={cardStyle}>
+        <Card className="p-5 border max-w-3xl" style={cardStyle}>
           <div className={`flex items-center gap-2 mb-2 ${finalResult.passed ? "text-green-700" : "text-red-700"}`}>
             {finalResult.passed ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
             <h3 className="font-semibold text-lg">{finalResult.passed ? "Passed!" : "Not Passed"}</h3>
@@ -589,7 +606,12 @@ export default function TrainingModuleDetail() {
             Score: {finalResult.scorePct}% · {module.is_critical ? "100% required (critical module)" : `${module.passing_score_pct}% required`}
           </p>
           {finalResult.passed ? (
-            ackRequired && status !== "completed" ? (
+            preview ? (
+              <p className="text-sm text-[#2A1F0E]/70">
+                Preview only — the quiz was scored locally and nothing was recorded.
+                Assign this module to an employee for their results to be saved.
+              </p>
+            ) : ackRequired && status !== "completed" ? (
               <div className="space-y-3 rounded-md border p-4" style={{ borderColor: "rgba(200,155,60,0.35)", background: "rgba(200,155,60,0.06)" }}>
                 <div className="flex items-start gap-2">
                   <Checkbox
