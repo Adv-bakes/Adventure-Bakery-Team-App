@@ -189,6 +189,8 @@ The first three are parallel arrays indexed by slide position. `acknowledgment` 
 - **Begin Quiz / Mark Complete** shown in the footer of the last slide (not a separate card).
 - **Acknowledgment gating:** when `content.acknowledgment.required`, the "agree to comply" checkbox gates both Mark Complete and the post-quiz-pass completion (quiz result is saved score-only via `submitQuizResult(..., complete=false)` until the box is checked).
 - **Resume:** restores `assignment.progress` on load with a "Resumed at slide N of M" toast; previously unlocked slides skip the dwell gate.
+- **Preview mode** (no `training_assignments` row — e.g. an admin previewing a module): the dwell gate and quiz still run so the experience can be tested, but the quiz is scored locally and nothing is written to the DB. A "Preview mode" banner is shown. Gating keys on `status !== "completed"` rather than requiring an assignment; the dwell-gate effect also depends on `loading` so the first slide re-arms after `load()` settles (it resets `remaining` and runs twice under StrictMode).
+- **Layout:** content column is `max-w-6xl` so slides scale up on large screens; quiz/result cards stay `max-w-3xl` for readability.
 
 ---
 
@@ -230,18 +232,34 @@ Component in `src/components/team/`. Two modes:
 - **New module** (SOPs Library header button, or the per-category "Add Module" button on each category accordion group): creates a draft `sop_documents` row first. Optional `defaults` prop (`{ training_category?, category? }`) sets where the module lands — the per-category buttons pass the group's category string plus the matching training category number; without defaults it falls back to training_category 1 / category null.
 - **Replace** (from SlideContentEditor): deletes old slide images, then rebuilds
 
+There's also an **optional quiz CSV** file input. When chosen, the CSV is parsed up front with `parseQuizCsv` and imported verbatim, replacing AI quiz generation.
+
 Pipeline steps shown in a live progress list:
-1. Create module / remove existing slides
-2. Upload `.pptx` to `training-content/{moduleId}/source.pptx`
-3. Invoke `convert-pptx` edge function → CloudConvert (pptx → PNGs)
-4. Invoke `generate-narration` per slide (continues past per-slide failures)
-5. Compute `slideDurations` via `computeSlideDuration()`
-6. Optionally invoke `generate-quiz` → save via `saveQuizQuestions()`
+1. Read quiz CSV (if provided) + extract speaker notes via `extractSpeakerNotes()` (`src/lib/pptxNotes.ts`) — both done before any writes so a bad file aborts cleanly
+2. Create module / remove existing slides
+3. Upload `.pptx` to `training-content/{moduleId}/source.pptx`
+4. Invoke `convert-pptx` edge function → CloudConvert (pptx → PNGs)
+5. Narration: a slide's speaker notes win; `generate-narration` only fills slides whose notes are empty
+6. Compute `slideDurations` via `computeSlideDuration()`
 7. Persist content via `updateModuleContent()`
+8. Quiz: authored CSV via `saveQuizQuestions()`, else (when no CSV) AI `generate-quiz`
 
-Quiz count: `clamp(ceil(slides.length / 2), 5, 15)`.
+AI quiz count (no CSV): `clamp(ceil(slides.length / 2), 5, 15)`.
 
-Hand-authored content wins over AI: speaker notes in the .pptx become the narration (`src/lib/pptxNotes.ts`), and an optional quiz CSV (parsed by `parseQuizCsv`) replaces AI quiz generation. SQF training decks are produced by the parameterized generator in `training-decks/` — authoring rules, quiz CSV format, content policy (no customer/product names), and the visual-layout catalog live in `DECK_FORMAT_CONTRACT.md`.
+**Hand-authored content wins over AI**, so SQF decks are produced by the generator in `training-decks/` (below) and import deterministically. Authoring rules, quiz CSV format, content policy (no customer/product names), and the visual-layout catalog live in `DECK_FORMAT_CONTRACT.md`.
+
+---
+
+## Training Deck Generator — `training-decks/`
+
+Node tooling (not part of the Vite app) that produces the SQF training decks the importer consumes. Outputs go to `training-decks/dist/` and external/design exports to `training-decks/incoming/` — both gitignored; only sources are tracked. DevDeps: `pptxgenjs`, `@resvg/resvg-js`, `jszip`.
+
+- **`generate.mjs`** — `node training-decks/generate.mjs <content.json>` builds `<name>.pptx` + `<name>.quiz.csv` from a structured content JSON. 16:9, warm-bakery palette/fonts; diagrams as native shapes; flat illustrations drawn as SVG in **`assets.mjs`** and rasterized to PNG by resvg. Enforces the content policy (fails on customer/retailer/product brand names), warns on missing quiz hints, and round-trip-verifies that speaker notes survive.
+- **`inject-notes.mjs`** — `node training-decks/inject-notes.mjs <deck.pptx> <content.json>` stamps the JSON's narration into a deck's speaker notes (creating the notes parts/master if absent; `--strip` removes them). Makes **externally designed decks** (e.g. Claude Design exports) importer-compatible; maps narration to slides by position and round-trip-verifies.
+- **`translate-deck.mjs`** — `node training-decks/translate-deck.mjs <en-deck.pptx> <strings.json> -o <es-deck.pptx>` swaps visible slide text in place from an EN→target map (`--extract` dumps a skeleton). Produces the **Spanish deck from the approved EN design** (no second design session); fails on any unmatched paragraph.
+- **`content/module-NN.{en,es}.json`** — per-module structured content (slides: title/lead/visual/notes; quiz: question/options/correct/hint/rationale). **`CLAUDE_DESIGN_BRIEF.md`** is the brief pasted into a Claude Design session.
+
+Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboarding. See `DECK_FORMAT_CONTRACT.md` for the full authoring + external-deck + ES workflow.
 
 ---
 
@@ -268,4 +286,5 @@ Hand-authored content wins over AI: speaker notes in the .pptx become the narrat
 | `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult` (4th arg `complete=false` saves score only, deferring completion to acknowledgment), `saveAssignmentProgress`, `markAssignmentComplete`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration` |
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
 | `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP data from a .docx upload |
+| `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
