@@ -27,9 +27,14 @@ The generator fails the build if a forbidden name appears anywhere in the conten
 | Instead of | Write |
 |---|---|
 | Publix | "a major grocery retailer" / "our retail customer" |
-| Bahama Rum Cakes | "our rum cakes" |
-| Marini Brothers Bahama Burgers | "our plant-based burgers" |
-| Botta Biscotti | "our biscotti" |
+| Bahama Rum Cakes | "the rum cakes we make" |
+| Marini Brothers Bahama Burgers | "the plant-based burgers we make" |
+| Botta Biscotti | "the biscotti we make" |
+
+**Product possessive:** we are a contract manufacturer, so never call a client's product "our [product]" —
+clients may object to the implied ownership. Use **"the [product] we make"** (ES: "los/las [producto]
+que fabricamos"). Reserve "our" for things we genuinely own: "our plant", "our food safety program",
+"our bakery". Refer to the product lines generically ("rum cakes", "biscotti", "plant-based burgers").
 
 Generic scheme/regulator names (GFSI, BRCGS, FSSC 22000, FDA, OSHA) are fine. Keep the
 vocabulary consistent across all modules so quizzes and narration reinforce the same phrases.

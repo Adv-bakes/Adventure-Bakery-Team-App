@@ -31,3 +31,5 @@ supabase/.temp
 
 # Claude Design / external deck drop folder
 training-decks/incoming/
+# Local QA render output (PDFs + slide PNGs)
+training-decks/qa/

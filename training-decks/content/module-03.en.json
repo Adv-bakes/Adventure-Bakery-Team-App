@@ -1,0 +1,259 @@
+{
+  "module": 3,
+  "language": "en",
+  "moduleLabel": "Module 3",
+  "title": "Allergens Part 1: Know the Risk",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 3 — Allergens Part 1: Know the Risk",
+      "subtitle": "SQF Food Safety Training",
+      "photo": "PHOTO: allergen-labeled ingredients",
+      "photoCaption": "ALLERGEN CONTROL · KNOW THE RISK",
+      "notes": "Welcome to Module 3. This is the start of the heart of our food safety program — allergen control. In Part 1 we build the awareness: what a food allergen is, the nine that matter most, which of them are in the products we make, and why one of those products carries a claim that makes our plant different from any ordinary bakery. Get this foundation right and Part 2, where we cover how we protect against allergens, will make complete sense."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explain what a food allergen is and why even a trace can be dangerous",
+          "Name the top 9 allergens regulators require us to control",
+          "Map which allergens are in each of our product lines",
+          "Describe the free-from claim that makes our plant different"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here is what you will walk away with. Four things: what a food allergen actually is and why even a trace amount can hurt someone, the nine allergens that regulators require every food plant to control, which of those allergens live in each of the product lines we make, and the free-from claim on one of those products that makes our plant different from a normal bakery. Part 1 is about knowing the risk; Part 2 will cover how we control it."
+    },
+    {
+      "title": "What is a food allergen?",
+      "lead": "A protein the body mistakes for a threat — and overreacts.",
+      "kicker": "THE BASICS",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "A normal food protein enters the body",
+          "An allergic person's immune system treats it as an attacker",
+          "A reaction starts in minutes to hours",
+          "It can turn life-threatening — anaphylaxis"
+        ],
+        "highlight": 3
+      },
+      "notes": "A food allergen is just a protein found in a normal food — like the protein in milk, egg, or wheat. For most people it's harmless. But in someone with an allergy, the immune system wrongly treats that protein as a dangerous attacker and overreacts. A reaction can begin within minutes to a few hours, and at its worst it becomes anaphylaxis — a sudden, whole-body reaction that can close the airway and kill. That is why we take allergens so seriously."
+    },
+    {
+      "title": "Allergy is not the same as intolerance",
+      "lead": "We control for the one that can kill.",
+      "kicker": "THE BASICS",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Food allergy — immune system",
+          "items": [
+            "Triggered by a tiny trace amount",
+            "Reaction can be sudden and severe",
+            "Can be fatal — this is what we protect against"
+          ],
+          "color": "amber"
+        },
+        "right": {
+          "header": "Intolerance — digestion",
+          "items": [
+            "Usually needs a larger amount",
+            "Uncomfortable, but not life-threatening",
+            "Not the hazard our controls target"
+          ],
+          "color": "green"
+        },
+        "chip": "Treat every allergen as if a life depends on it"
+      },
+      "notes": "People sometimes mix up allergy and intolerance, but they are very different. A food allergy is an immune reaction: a tiny trace can set it off, it can come on fast and severe, and it can be fatal. That is the hazard our entire allergen program is built to protect against. An intolerance, like trouble digesting lactose, usually takes a larger amount, is uncomfortable rather than dangerous, and is not what our controls target. When we say allergen, we mean the serious one — treat every allergen as if a life depends on it, because it can."
+    },
+    {
+      "title": "The Top 9 Allergens",
+      "lead": "These nine cause the large majority of serious reactions.",
+      "kicker": "KNOW THE 9",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "The four already in our plant",
+          "items": [
+            "Wheat",
+            "Egg",
+            "Milk",
+            "Soy"
+          ],
+          "color": "amber"
+        },
+        "right": {
+          "header": "The other five to recognize",
+          "items": [
+            "Peanuts",
+            "Tree nuts",
+            "Fish",
+            "Shellfish",
+            "Sesame — the 9th, added in 2023"
+          ],
+          "color": "green"
+        },
+        "chip": "Learn all nine by name"
+      },
+      "notes": "Regulators name nine major allergens that cause the large majority of serious reactions, and every food plant must control them. Four of them already live in our plant: wheat, egg, milk, and soy. The other five to recognize are peanuts, tree nuts, fish, shellfish, and sesame — and note that sesame was added as the ninth required allergen in 2023, so it's newer and easy to overlook. Learn all nine by name: milk, egg, fish, shellfish, tree nuts, peanuts, wheat, soy, and sesame."
+    },
+    {
+      "title": "Allergens in the products we make",
+      "lead": "Know what's running on the line before you touch it.",
+      "kicker": "OUR PRODUCTS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "The rum cakes we make — contain wheat, egg, and milk",
+          "The biscotti we make — contain wheat and egg, and may contain tree nuts",
+          "The plant-based burgers we make — pea-protein based, and labeled free of the top 9 allergens"
+        ]
+      },
+      "notes": "Here is the allergen map of what we actually make. The rum cakes we make contain wheat, egg, and milk. The biscotti we make contain wheat and egg and may contain tree nuts. And the plant-based burgers we make are pea-protein based and are labeled free of all top nine allergens. Before you work a line, you need to know which of these is running, because the same building makes both allergen-containing products and a product whose whole selling point is that it has none."
+    },
+    {
+      "title": "The claim that makes us different",
+      "kicker": "THE CLAIM",
+      "lead": "Labeled free of all 9 — made beside them.",
+      "photo": "PHOTO: plant-based product on the production line",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Labeled free of all top 9 allergens — the promise on the package.",
+          "Yet made in the same building, on shared lines and rotating staff.",
+          "One trace makes the claim false — and can seriously hurt someone."
+        ],
+        "chip": "Protecting the claim is everyone's job"
+      },
+      "notes": "This is what sets our plant apart from an ordinary bakery. The plant-based burger we make is labeled free of all top nine allergens — that is the promise printed on the package and the reason customers trust it. But here's the challenge: it's made in the same building that runs wheat, egg, milk, and tree-nut products, on shared equipment and rotating staff. If even a trace of those allergens reaches the burger, the claim becomes false and a consumer who trusted that label can be seriously hurt. Protecting that claim is not one person's job — it's everyone's."
+    },
+    {
+      "title": "What an allergen mistake costs",
+      "lead": "It doesn't stop at one package.",
+      "kicker": "WHY IT MATTERS",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "An allergen gets into a product that shouldn't have it",
+          "A label no longer tells the truth",
+          "A customer reacts — possibly severely",
+          "Recall, lost trust, and a failed audit follow"
+        ],
+        "highlight": 2
+      },
+      "notes": "An allergen mistake never stops at one package. It starts when an allergen gets into a product that isn't supposed to contain it. Now the label is wrong — it no longer tells the truth about what's inside. A customer who relies on that label can have a reaction, possibly a severe one. And from there it cascades: a product recall, lost trust from our customers, and a failed audit. Undeclared allergens are one of the most common reasons food gets recalled. One slip on the floor can undo everything."
+    },
+    {
+      "title": "What cross-contact looks like",
+      "lead": "Allergens move in ways you can't always see.",
+      "kicker": "CROSS-CONTACT",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Shared equipment or utensils not fully cleaned between products",
+          "Airborne flour or powder settling onto a free-from line",
+          "Hands, gloves, or sleeves carrying residue from another area",
+          "Reworking or mixing leftovers into the wrong batch"
+        ]
+      },
+      "notes": "Cross-contact is how an allergen ends up somewhere it shouldn't, and it often happens invisibly. It can come from shared equipment or utensils that weren't fully cleaned between products. It can be airborne — flour or powder drifting and settling onto a free-from line. It can ride in on hands, gloves, or sleeves carrying residue from another area. And it can come from rework — mixing leftover product into the wrong batch. You don't need a big spill; a trace is enough. Part 2 covers exactly how we prevent each of these — for now, learn to spot them."
+    },
+    {
+      "title": "Your role in knowing the risk",
+      "lead": "Awareness is the first control.",
+      "kicker": "YOUR ROLE",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Know which products and allergens run on your line each shift",
+          "Read the label and never assume a product is allergen-free",
+          "Treat the free-from burger line as the highest-care job in the plant",
+          "Report any spill, mix-up, or uncertainty before product moves"
+        ]
+      },
+      "notes": "Before we ever get to procedures, awareness itself is a control. Know which products and allergens are running on your line each shift. Read the label and never just assume a product is allergen-free — confirm it. Treat the free-from burger line as the highest-care job in the building, because it is. And if you see a spill, a mix-up, or you're simply not sure, stop and report it before the product moves. Speaking up early is always cheaper than a recall."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "An allergen is a protein that can trigger a severe, even fatal reaction from a trace",
+          "Know the top 9 — four of them already run in our plant",
+          "The burger we make is labeled free of all 9, made beside allergen products",
+          "Knowing the risk and reporting it is everyone's first job"
+        ],
+        "next": "Next: Allergens Part 2 — Protecting the Claim"
+      },
+      "notes": "Let's recap Part 1. An allergen is an ordinary food protein that, in an allergic person, can trigger a sudden and even fatal reaction from just a trace. There are nine major allergens to know, and four of them — wheat, egg, milk, and soy — already run in our plant. The plant-based burger we make is labeled free of all nine even though it's made right beside allergen-containing products, which is why protecting that claim is everyone's job. Knowing the risk and reporting anything that looks wrong is your first responsibility. Up next, Part 2: how we actually protect the claim on the floor. Great work."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "What is a food allergen?",
+      "options": ["A germ that causes food poisoning", "A protein the immune system wrongly treats as a threat", "Any ingredient that tastes strong", "A chemical cleaner used on equipment"],
+      "correct": 1,
+      "hint": "It's about the immune system overreacting to a normal food.",
+      "rationale": "An allergen is a normal food protein that an allergic person's immune system mistakes for a threat, triggering a reaction that can be severe."
+    },
+    {
+      "question": "How much of an allergen can trigger a serious allergic reaction?",
+      "options": ["Only a large serving", "About half a product", "Even a tiny trace amount", "It never happens from food contact"],
+      "correct": 2,
+      "hint": "Think about why we worry about invisible residue.",
+      "rationale": "Even a trace amount can trigger a reaction — which is why cross-contact and residue matter so much."
+    },
+    {
+      "question": "Which best describes the difference between an allergy and an intolerance?",
+      "options": ["They are the same thing", "An allergy is an immune reaction that can be fatal; an intolerance is a digestive issue that usually isn't", "An intolerance is more dangerous than an allergy", "Only intolerances are regulated"],
+      "correct": 1,
+      "hint": "One involves the immune system and can be life-threatening.",
+      "rationale": "An allergy is an immune reaction that can be sudden and fatal from a trace; an intolerance is a digestive issue, uncomfortable but not life-threatening. Our controls target allergies."
+    },
+    {
+      "question": "How many major allergens do regulators require food plants to control?",
+      "options": ["3", "5", "9", "20"],
+      "correct": 2,
+      "hint": "Sesame became the most recent addition in 2023.",
+      "rationale": "There are 9 major allergens: milk, egg, fish, shellfish, tree nuts, peanuts, wheat, soy, and sesame (added 2023)."
+    },
+    {
+      "question": "Which allergens are already present in the products we make?",
+      "options": ["None — we are allergen-free", "Wheat, egg, and milk (and tree nuts in some products)", "Only peanuts", "Only sesame"],
+      "correct": 1,
+      "hint": "Think about the rum cakes and biscotti.",
+      "rationale": "The rum cakes we make contain wheat, egg, and milk; the biscotti we make contain wheat and egg and may contain tree nuts. Soy is also present in the plant."
+    },
+    {
+      "question": "What makes the plant-based burger we make different and high-risk?",
+      "options": ["It is the most expensive product", "It is labeled free of the top 9 allergens but is made in a building that runs allergen products", "It contains every allergen", "It is made in a separate dedicated facility with no other products"],
+      "correct": 1,
+      "hint": "The risk is the claim plus the shared building.",
+      "rationale": "The burger is labeled free of all top 9 allergens yet is produced in the same building, on shared equipment and rotating staff, as wheat/egg/milk/tree-nut products — so any cross-contact makes the claim false."
+    },
+    {
+      "question": "Which of these is an example of allergen cross-contact?",
+      "options": ["Wearing a hairnet", "Airborne flour settling onto a free-from line, or shared utensils not fully cleaned", "Reading the product label", "Washing your hands before a break"],
+      "correct": 1,
+      "hint": "It's how an allergen reaches a product that shouldn't have it.",
+      "rationale": "Cross-contact includes airborne powder, un-cleaned shared equipment/utensils, residue on hands or gloves, and mixing rework into the wrong batch."
+    },
+    {
+      "question": "You're not sure whether the line was fully cleaned before the free-from burger run. What should you do?",
+      "options": ["Start the run; it's probably fine", "Stop and report it before product moves", "Wipe it quickly and say nothing", "Switch products to use it up"],
+      "correct": 1,
+      "hint": "Awareness and speaking up early is the first control.",
+      "rationale": "If you're unsure, stop and report before product moves. Speaking up early is always cheaper and safer than a recall caused by undeclared allergens."
+    }
+  ]
+}

@@ -113,7 +113,11 @@ function renderTitle(slide, s, total) {
   slide.addShape("rect", { x: 1.17, y: 3.13, w: 0.09, h: 0.09, fill: { color: C.amberLt } });
   slide.addText(MODLABEL, { x: 1.45, y: 3.04, w: 3, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: C.amberLt, charSpacing: 2, margin: 0 });
   slide.addText("ADVENTURE BAKERY", { x: 3.6, y: 3.04, w: 5, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: C.mutedLt, charSpacing: 2, margin: 0 });
-  slide.addText(s.titleMain ?? "Personal Hygiene & GMPs", { x: 1.17, y: 3.6, w: 9.2, h: 2.5, fontFace: SANS, fontSize: 81, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 0.95 });
+  // Title font scales down for longer titles (notably Spanish) so it stays within ~2 lines
+  // and never overruns into the subtitle/intro below. Override with s.titleSize if needed.
+  const titleText = s.titleMain ?? "Personal Hygiene & GMPs";
+  const titleSize = s.titleSize ?? (titleText.length <= 32 ? 81 : titleText.length <= 40 ? 64 : 52);
+  slide.addText(titleText, { x: 1.17, y: 3.6, w: 9.2, h: 2.5, fontFace: SANS, fontSize: titleSize, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 0.95 });
   slide.addShape("rect", { x: 1.17, y: 6.62, w: 0.56, h: 0.04, fill: { color: C.amber } });
   slide.addText(s.subtitle ?? "SQF Food Safety Training", { x: 1.92, y: 6.42, w: 7, h: 0.47, fontFace: SANS, fontSize: 27, bold: true, color: C.amberLt, margin: 0 });
   slide.addText(s.intro ?? "", { x: 1.17, y: 7.2, w: 8.5, h: 1.6, fontFace: SANS, fontSize: 24, color: C.body, margin: 0, valign: "top", lineSpacingMultiple: 1.1 });
@@ -172,13 +176,19 @@ function renderBadge(slide, s, num, total) {
 function renderPhotoHero(slide, s, num, total) {
   bg(slide, true);
   const headline = s.lead ?? s.title;
+  const body = s.visual?.body;
   if (s.photoFile) {
     // Full-bleed background photo + left-weighted gradient scrim, text overlaid on the left.
     slide.addImage({ path: s.photoFile, x: 0, y: 0, w: 20, h: 11.25, sizing: { type: "cover", w: 20, h: 11.25 } });
     if (existsSync(SCRIM)) slide.addImage({ path: SCRIM, x: 0, y: 0, w: 20, h: 11.25 });
-    kicker(slide, true, s.kicker, num, 3.86);
-    slide.addText(headline, { x: 1.17, y: 4.43, w: 8.6, h: 2.3, fontFace: SERIF, fontSize: 46.5, bold: true, italic: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
-    if (s.visual.chip) chip(slide, 1.17, 6.95, s.visual.chip);
+    // With a body block the headline shrinks and lifts to make room; otherwise it sits centered.
+    kicker(slide, true, s.kicker, num, body ? 2.9 : 3.86);
+    slide.addText(headline, { x: 1.17, y: body ? 3.45 : 4.43, w: 8.6, h: body ? 1.7 : 2.3, fontFace: SERIF, fontSize: body ? 40 : 46.5, bold: true, italic: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
+    if (body) {
+      const lines = body.map((t) => ({ text: t, options: { bullet: { code: "2022" }, breakLine: true } }));
+      slide.addText(lines, { x: 1.17, y: 5.35, w: 7.8, h: 2.7, fontFace: SANS, fontSize: 18, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.1, paraSpaceAfter: 9 });
+    }
+    if (s.visual.chip) chip(slide, 1.17, body ? 8.35 : 6.95, s.visual.chip);
     footer(slide, true, num, total);
     return;
   }
@@ -289,12 +299,17 @@ function main() {
   const KICK = KICKERS_BY_LANG[LANG];
 
   // Optional images dir: files named "*slide<N>*.(jpg|jpeg|png|webp)" attach to slide N (1-based).
+  // A file carrying a "module<M>" token only attaches when M matches this deck's module number,
+  // so a shared incoming/ folder holding several modules' photos never cross-attaches.
   const imagesDir = process.argv[3];
+  const thisModule = content.module ?? 1;
   if (imagesDir && existsSync(imagesDir)) {
     for (const f of readdirSync(imagesDir)) {
       if (!/\.(jpe?g|png|webp)$/i.test(f)) continue;
       const m = f.match(/slide0*(\d+)/i);
       if (!m) continue;
+      const mod = f.match(/module0*(\d+)/i);
+      if (mod && parseInt(mod[1], 10) !== thisModule) continue; // belongs to another module
       const idx = parseInt(m[1], 10) - 1;
       if (slides[idx]) {
         slides[idx].photoFile = path.resolve(imagesDir, f);
