@@ -1,0 +1,258 @@
+{
+  "module": 4,
+  "language": "es",
+  "moduleLabel": "Módulo 4",
+  "title": "Alérgenos Parte 2: Proteger la Declaración",
+  "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 4 — Alérgenos Parte 2: Proteger la Declaración",
+      "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+      "photo": "FOTO: utensilios codificados por color / línea limpia lista para el cambio",
+      "photoCaption": "CONTROL DE ALÉRGENOS · PROTEGER LA DECLARACIÓN",
+      "intro": "La Parte 1 cubrió qué son los alérgenos y por qué importa nuestra declaración libre de alérgenos. La Parte 2 es el cómo: programación, segregación, limpieza validada, control de etiquetas y reproceso — los controles diarios que mantienen un alérgeno fuera de un producto que debe estar libre de él.",
+      "notes": "Bienvenido al Módulo 4. En la Parte 1 aprendimos qué son los alérgenos, cuáles están presentes en nuestra planta, y por qué la declaración libre de alérgenos en la hamburguesa de origen vegetal que fabricamos es tan importante. Ahora llegamos al cómo. Este módulo trata de los controles que protegen esa declaración en cada turno: cómo programamos las corridas, cómo mantenemos separados los utensilios y las zonas, cómo limpiamos y verificamos entre productos, cómo controlamos las etiquetas y cómo manejamos el reproceso. Estos son los hábitos que mantienen un alérgeno fuera de un producto que se supone debe estar libre de él."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "kicker": "PREPÁRATE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Ejecutar la programación en el orden correcto para proteger los productos libres de alérgenos",
+          "Usar utensilios dedicados y codificados por color, y mantener las zonas separadas",
+          "Limpiar y verificar un cambio para que no quede ningún alérgeno",
+          "Controlar etiquetas y reproceso para que el empaque siempre diga la verdad"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que podrás hacer al terminar. Ejecutar la programación de producción en el orden correcto para que los productos libres de alérgenos queden protegidos. Usar utensilios dedicados y codificados por color, y mantener separadas las zonas con y sin alérgenos. Limpiar y luego verificar un cambio para que no quede residuo de alérgeno. Y controlar las etiquetas y el reproceso para que el empaque siempre diga la verdad sobre lo que contiene. Estos son los cuatro pilares que recorreremos."
+    },
+    {
+      "title": "Cuatro pilares de protección",
+      "lead": "Capas que se respaldan entre sí — ningún paso funciona solo.",
+      "kicker": "LA ESTRATEGIA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Secuenciar — programar las corridas de libre de alérgenos a mayor carga alergénica",
+          "Segregar — utensilios dedicados y codificados por color, y zonas separadas",
+          "Limpiar y verificar — cambio validado, y luego comprobarlo",
+          "Etiquetas y reproceso — etiqueta correcta, producto correcto, solo igual con igual"
+        ]
+      },
+      "notes": "Protegemos la declaración con cuatro pilares que se respaldan entre sí — ningún paso funciona solo. Primero, secuenciar: programamos las corridas desde los productos libres de alérgenos hacia los de mayor carga alergénica. Segundo, segregar: utensilios dedicados y codificados por color, y zonas separadas. Tercero, limpiar y verificar: una limpieza de cambio validada, y luego comprobamos que funcionó. Y cuarto, etiquetas y reproceso: la etiqueta correcta en el producto correcto, y el reproceso siempre va solo igual con igual. Veremos cada uno por separado."
+    },
+    {
+      "title": "Secuenciar la programación",
+      "lead": "De limpio a sucio: primero libre de alérgenos, los alérgenos después.",
+      "kicker": "PROGRAMACIÓN",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Productos libres de alérgenos primero, en una línea verificada limpia",
+          "Luego productos con menos alérgenos",
+          "Luego productos con más alérgenos",
+          "Limpieza de cambio completa antes de volver a libre de alérgenos"
+        ],
+        "highlight": 0
+      },
+      "notes": "El orden en que corremos los productos es en sí mismo un control. Corremos primero los productos libres de alérgenos, en una línea que se ha verificado limpia. Luego pasamos a los productos con menos alérgenos, y después a los de más alérgenos — yendo de limpio hacia sucio a lo largo del día. Nunca corremos un producto libre de alérgenos después de un producto con alérgenos sin una limpieza de cambio completa de por medio. Programar así significa que las hamburguesas libres de alérgenos se fabrican cuando el riesgo de arrastre es más bajo."
+    },
+    {
+      "title": "Segregar y codificar por color",
+      "lead": "Evita que los utensilios con y sin alérgenos se mezclen alguna vez.",
+      "kicker": "SEGREGAR",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Dedicado y codificado por color",
+          "items": [
+            "Utensilios, herramientas y recipientes asignados por color a una zona",
+            "Almacenamiento dedicado — nunca compartas cucharones ni recipientes",
+            "Delantales y guantes se cambian al cruzar de zona"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Nunca hagas esto",
+          "items": [
+            "Tomar el utensilio más cercano sin importar el color",
+            "Llevar un utensilio con alérgeno a la zona libre de alérgenos",
+            "Apoyar producto sobre una superficie compartida sin limpiar"
+          ],
+          "color": "amber"
+        },
+        "chip": "Color correcto, zona correcta — siempre"
+      },
+      "notes": "La codificación por color es la forma en que evitamos que los utensilios con y sin alérgenos se mezclen alguna vez. Los utensilios, herramientas y recipientes se asignan por color a una zona de producto, y tienen almacenamiento dedicado — nunca compartimos cucharones ni recipientes entre zonas. Cuando cruzas de una zona a otra, cambia tu delantal y tus guantes. Lo que nunca hacemos: tomar el utensilio más cercano sin importar el color, llevar un utensilio con alérgeno a la zona libre de alérgenos, o apoyar producto sobre una superficie compartida sin limpiar. Color correcto, zona correcta, siempre."
+    },
+    {
+      "title": "Limpiar bien el cambio",
+      "lead": "Una limpieza húmeda validada elimina la proteína del alérgeno — no solo las migas.",
+      "kicker": "LIMPIAR",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Retirar todo el producto y limpiar en seco los residuos",
+          "Lavar con detergente — descomponer proteína y aceites",
+          "Enjuagar a fondo",
+          "Sanitizar",
+          "Inspeccionar antes de liberar"
+        ],
+        "highlight": 1
+      },
+      "notes": "Quitar las migas no basta — las proteínas de los alérgenos se adhieren a las superficies, así que un cambio necesita una limpieza húmeda validada completa. Primero retira todo el producto y limpia en seco los residuos sueltos. Luego lava con detergente para descomponer la proteína y los aceites — este es el paso que de verdad elimina el alérgeno. Enjuaga a fondo, sanitiza, y luego inspecciona antes de liberar la línea. Un paño seco esparce el alérgeno; solo una limpieza húmeda adecuada lo elimina."
+    },
+    {
+      "title": "Comprueba que está limpio",
+      "lead": "No suponemos — verificamos y lo registramos.",
+      "kicker": "VERIFICAR",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Inspección visual — sin residuo, película ni suciedad en ningún lugar",
+          "Hisopos específicos de alérgeno en superficies de contacto con alimentos",
+          "Hisopos ATP para confirmar la eficacia general de la limpieza",
+          "Resultados registrados y la línea aprobada antes de correr"
+        ]
+      },
+      "notes": "Después de limpiar, no suponemos simplemente que funcionó — lo verificamos y lo anotamos. Empieza con una inspección visual: sin residuo, película ni suciedad en ningún lugar, incluyendo los puntos difíciles de alcanzar. Usa hisopos específicos de alérgeno en las superficies de contacto con alimentos para confirmar que la proteína desapareció. Los hisopos ATP comprueban la eficacia general de la limpieza. Y cada resultado se registra y la línea se aprueba antes de correr un producto libre de alérgenos. Si una prueba falla, volvemos a limpiar y a probar — sin atajos."
+    },
+    {
+      "title": "Controlar la etiqueta",
+      "kicker": "ETIQUETAS",
+      "visual": {
+        "type": "stopSign",
+        "label": "ETIQUETAS",
+        "lines": [
+          "Etiqueta correcta en el producto correcto — confirma en cada cambio.",
+          "Concilia el conteo de etiquetas; destruye las obsoletas o mal impresas.",
+          "Una etiqueta de alérgeno errónea o ausente es un retiro — revisa antes de correr."
+        ]
+      },
+      "notes": "La etiqueta es la última promesa que el producto le hace al consumidor, así que la controlamos con rigor. Confirma que la etiqueta correcta esté en el producto correcto en cada cambio — nunca supongas que el rollo cargado es el adecuado. Concilia el conteo de etiquetas al final de una corrida, y destruye las etiquetas obsoletas o mal impresas para que no terminen en el producto equivocado. Una declaración de alérgenos errónea o ausente es una de las causas más comunes de un retiro de producto. Siempre revisa la etiqueta antes de correr."
+    },
+    {
+      "title": "Reproceso: solo igual con igual",
+      "lead": "El producto sobrante puede llevar alérgenos al lote equivocado.",
+      "kicker": "REPROCESO",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Permitido",
+          "items": [
+            "Reprocesar solo de vuelta al mismo producto del que provino",
+            "Claramente etiquetado, rastreado y dentro de su límite de tiempo",
+            "Aprobado por tu supervisor"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Nunca",
+          "items": [
+            "Agregar reproceso con alérgeno a un lote libre de alérgenos",
+            "Usar producto sobrante sin etiqueta o desconocido",
+            "\"Aprovecharlo\" para evitar el desperdicio"
+          ],
+          "color": "amber"
+        },
+        "chip": "Si dudas, es desperdicio — no reproceso"
+      },
+      "notes": "El reproceso es producto sobrante que se agrega de nuevo a un lote nuevo, y es una forma clásica en que los alérgenos terminan donde no deben. La regla es estricta: el reproceso solo va de vuelta al mismo producto exacto del que provino, debe estar claramente etiquetado, rastreado y dentro de su límite de tiempo, y necesita la aprobación del supervisor. Lo que nunca debes hacer: agregar reproceso con alérgeno a un lote libre de alérgenos, usar producto sobrante sin etiqueta o desconocido, o \"aprovecharlo\" solo para evitar el desperdicio. Si dudas, es desperdicio, no reproceso."
+    },
+    {
+      "title": "Proteger la declaración es tarea de todos",
+      "kicker": "TAREA DE TODOS",
+      "lead": "Cada turno, cada línea, cada persona.",
+      "photo": "FOTO: trabajador haciendo una limpieza de cambio / revisando una etiqueta en la línea",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Los controles solo funcionan si cada turno los cumple.",
+          "Habla y detén la línea si algo se ve mal.",
+          "Nunca tendrás problemas por proteger la declaración."
+        ],
+        "chip": "¿Ves algo raro? Detente y repórtalo."
+      },
+      "notes": "Todos estos controles — secuenciar, segregar, limpiar, verificar, etiquetas, reproceso — solo funcionan cuando cada persona en cada turno realmente los cumple. La defensa más fuerte es un equipo que pone atención. Si algo se ve mal — un utensilio en el lugar equivocado, una etiqueta que no coincide, un paso de limpieza omitido — habla y detén la línea. Nunca tendrás problemas por proteger la declaración. Detectar un problema a tiempo siempre es más barato y más seguro que un retiro de producto."
+    },
+    {
+      "title": "Resumen",
+      "kicker": "RESUMEN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Secuencia: libre de alérgenos primero, alérgenos después, limpieza de por medio",
+          "Usa utensilios dedicados y codificados por color; mantén zonas y almacenamiento separados",
+          "La limpieza húmeda validada elimina la proteína del alérgeno — luego verifica y regístralo",
+          "Etiqueta correcta, producto correcto; reproceso solo igual con igual"
+        ],
+        "next": "Sigue: HACCP y tus Puntos Críticos de Control"
+      },
+      "notes": "Repasemos cómo protegemos la declaración. Secuenciamos la programación para correr primero los libres de alérgenos y los alérgenos después, con una limpieza completa de por medio. Usamos utensilios dedicados y codificados por color y mantenemos separados las zonas y el almacenamiento. Una limpieza húmeda validada elimina la proteína del alérgeno, no solo las migas — y luego la verificamos con hisopos y registramos el resultado. Y controlamos la etiqueta y el reproceso para que el empaque siempre diga la verdad, con el reproceso yendo solo igual con igual. Proteger la declaración es tarea de todos, en cada turno. A continuación, pasamos a HACCP y los puntos críticos de control en tu línea. Excelente trabajo al terminar la Parte 2."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Por qué corremos primero los productos libres de alérgenos en la programación?",
+      "options": ["Porque se venden mejor", "Para fabricar el producto libre de alérgenos cuando el riesgo de arrastre de alérgenos es más bajo", "No importa en qué orden corramos los productos", "Para usar primero los ingredientes más viejos"],
+      "correct": 1,
+      "hint": "Piensa de limpio a sucio a lo largo del día.",
+      "rationale": "Correr primero los productos libres de alérgenos — en una línea verificada limpia, antes de cualquier producto con alérgenos — significa que se fabrican cuando el riesgo de arrastre es más bajo."
+    },
+    {
+      "question": "¿Cuál es el propósito de los utensilios codificados por color?",
+      "options": ["Verse organizados para los auditores", "Evitar que los utensilios con y sin alérgenos se mezclen entre zonas", "Hacer juego con los uniformes del equipo", "Solo rastrear quién los usó"],
+      "correct": 1,
+      "hint": "Se trata de evitar que las zonas se contaminen entre sí.",
+      "rationale": "La codificación por color asigna utensilios a una zona de producto para que los utensilios con y sin alérgenos nunca se mezclen; tienen almacenamiento dedicado y nunca se comparten entre zonas."
+    },
+    {
+      "question": "¿Por qué no basta con quitar las migas en un cambio por alérgenos?",
+      "options": ["Sí basta si la superficie se ve limpia", "Las proteínas de los alérgenos se adhieren a las superficies y necesitan una limpieza húmeda con detergente para eliminarse", "Las migas son el único riesgo de alérgeno", "Limpiar con paño es más rápido, así que se prefiere"],
+      "correct": 1,
+      "hint": "El paso del lavado con detergente es el que más importa.",
+      "rationale": "Las proteínas de los alérgenos se adhieren a las superficies; solo una limpieza húmeda validada (limpieza en seco, lavado con detergente, enjuague, sanitizado, inspección) las elimina de verdad. Un paño seco puede esparcir el alérgeno."
+    },
+    {
+      "question": "Después de limpiar una línea para una corrida libre de alérgenos, ¿qué hacemos antes de correrla?",
+      "options": ["Empezar de inmediato para ahorrar tiempo", "Verificar con inspección visual e hisopos de alérgeno/ATP, luego registrar y aprobar", "Solo darle un vistazo rápido", "Preguntarle al turno anterior si está bien"],
+      "correct": 1,
+      "hint": "No suponemos — lo comprobamos y lo anotamos.",
+      "rationale": "Verificamos la limpieza con una inspección visual más hisopos específicos de alérgeno y ATP, registramos los resultados y aprobamos la línea antes de correr. Una prueba fallida significa volver a limpiar y volver a probar."
+    },
+    {
+      "question": "Estás por iniciar una corrida libre de alérgenos y notas que el rollo de etiquetas cargado podría ser de otro producto. ¿Qué debes hacer?",
+      "options": ["Correrla; las etiquetas seguramente están bien", "Detenerte y confirmar la etiqueta correcta antes de correr", "Cambiarlo en silencio y no decir nada", "Correr algunas y revisar después"],
+      "correct": 1,
+      "hint": "Una etiqueta de alérgeno equivocada es un retiro.",
+      "rationale": "Confirma que la etiqueta correcta esté en el producto correcto en cada cambio. Una declaración de alérgenos errónea o ausente es una causa principal de retiros — revisa antes de correr."
+    },
+    {
+      "question": "¿Cuál reproceso es aceptable?",
+      "options": ["Sobrante con alérgeno agregado a un lote libre de alérgenos", "Producto sobrante sin etiqueta, para evitar el desperdicio", "Reprocesar producto de vuelta al mismo producto del que provino, etiquetado, rastreado y aprobado", "Cualquier sobrante, siempre que se use rápido"],
+      "correct": 2,
+      "hint": "Igual con igual, con controles.",
+      "rationale": "El reproceso solo puede volver al mismo producto exacto del que provino, claramente etiquetado, rastreado, dentro de los límites de tiempo y aprobado por el supervisor. Nunca agregues reproceso con alérgeno a un lote libre de alérgenos."
+    },
+    {
+      "question": "Verdadero o falso: Para evitar el desperdicio, está bien agregar un poco de producto sobrante con alérgeno a un lote libre de alérgenos si nadie se da cuenta.",
+      "options": ["Verdadero", "Falso"],
+      "correct": 1,
+      "hint": "La declaración libre de alérgenos no sobrevive a ningún alérgeno.",
+      "rationale": "Falso. Agregar cualquier reproceso con alérgeno a un lote libre de alérgenos hace que la declaración sea falsa y puede dañar gravemente a un consumidor. Si dudas, es desperdicio, no reproceso."
+    },
+    {
+      "question": "¿Quién es responsable de proteger la declaración libre de alérgenos?",
+      "options": ["Solo el departamento de calidad", "Solo los supervisores", "Todos en cada turno", "Solo el equipo de limpieza"],
+      "correct": 2,
+      "hint": "Los controles solo funcionan si todos los cumplen.",
+      "rationale": "Los controles solo funcionan cuando cada persona en cada turno los cumple y habla. Cualquiera puede detener la línea, y nunca tendrás problemas por proteger la declaración."
+    }
+  ]
+}

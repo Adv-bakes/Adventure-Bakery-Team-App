@@ -192,10 +192,14 @@ function renderPhotoHero(slide, s, num, total) {
     footer(slide, true, num, total);
     return;
   }
-  // No photo yet: clear left-text / right-placeholder layout.
-  kicker(slide, true, s.kicker, num);
-  slide.addText(headline, { x: 1.17, y: 4.2, w: 8.3, h: 2.6, fontFace: SERIF, fontSize: 46.5, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
-  if (s.visual.chip) chip(slide, 1.17, 7.1, s.visual.chip);
+  // No photo yet: clear left-text / right-placeholder layout (body mirrors the full-bleed branch).
+  kicker(slide, true, s.kicker, num, body ? 2.9 : undefined);
+  slide.addText(headline, { x: 1.17, y: body ? 3.45 : 4.2, w: 8.3, h: body ? 1.7 : 2.6, fontFace: SERIF, fontSize: body ? 40 : 46.5, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
+  if (body) {
+    const lines = body.map((t) => ({ text: t, options: { bullet: { code: "2022" }, breakLine: true } }));
+    slide.addText(lines, { x: 1.17, y: 5.35, w: 7.8, h: 2.7, fontFace: SANS, fontSize: 18, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.1, paraSpaceAfter: 9 });
+  }
+  if (s.visual.chip) chip(slide, 1.17, body ? 8.35 : 7.1, s.visual.chip);
   photoBox(slide, 10.1, 2.2, 8.73, 6.9, s.photo ?? "PHOTO: team in hairnets on the floor", null, true);
   footer(slide, true, num, total);
 }
@@ -267,7 +271,9 @@ function renderStop(slide, s, num, total) {
   kicker(slide, true, s.kicker, num);
   const v = s.visual;
   slide.addShape("rect", { x: 3.0, y: 4.4, w: 3.12, h: 3.12, fill: { color: C.amber } });
-  slide.addText(v.label ?? "STOP", { x: 2.96, y: 4.4, w: 3.22, h: 3.12, fontFace: SANS, fontSize: 42, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
+  const lab = v.label ?? "STOP";
+  const labSize = v.labelSize ?? (lab.length <= 6 ? 42 : lab.length <= 8 ? 33 : 27);
+  slide.addText(lab, { x: 2.96, y: 4.4, w: 3.22, h: 3.12, fontFace: SANS, fontSize: labSize, bold: true, color: "FFFFFF", align: "center", valign: "middle", margin: 0 });
   slide.addText(s.title, { x: 8.4, y: 3.7, w: 10.2, h: 1.1, fontFace: SANS, fontSize: 43.5, bold: true, color: C.cream, margin: 0, valign: "top" });
   const body = v.lines.slice(0, -1).join("  ");
   slide.addText(body, { x: 8.4, y: 4.95, w: 9.8, h: 1.9, fontFace: SANS, fontSize: 24, color: C.bodyLt, margin: 0, valign: "top", lineSpacingMultiple: 1.1 });
@@ -329,7 +335,7 @@ function main() {
     if (s.kind === "title") {
       s.titleMain = content.title;
       s.subtitle = content.subtitle;
-      s.intro = (content.slides[0].notes || "").split(".").slice(0, 2).join(".") + ".";
+      s.intro = s.intro ?? (content.slides[0].notes || "").split(".").slice(0, 2).join(".") + ".";
       renderTitle(slide, s, total);
       return;
     }
