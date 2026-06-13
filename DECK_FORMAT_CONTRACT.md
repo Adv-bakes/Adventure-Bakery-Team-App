@@ -126,6 +126,14 @@ Hand-authored quiz ships as a **sidecar CSV** (`<deck-name>.quiz.csv`) selected 
 
 ## Authoring workflow (Modules 2–12, EN + ES)
 
+**Slide count is content-driven, not fixed.** Size each module to teach its material well — use as
+many slides as it needs (fewer or more; Module 1 happened to be 12). The content JSON is the
+canonical slide list. The only hard rule: the **design deck's slide count and order must match the
+content JSON's narration list**, because `inject-notes.mjs` maps narration to slides by position and
+aborts on a mismatch. So pick the count when authoring content, then lock that count in the module's
+Claude Design brief. If a designer proposes a better breakdown, update the content JSON to match
+before injecting notes.
+
 1. Write a content JSON in `training-decks/content/` (schema = `module-01.en.json`: `slides[]` with
    `title` + `lead` + `visual` (see table above; or fallback `intro`/`bullets`/`body`) + `notes`,
    optional `kind:"title"`, `accent:"green"`; `quiz[]` with `question`, `options[]`, 0-based `correct`,

@@ -11,8 +11,11 @@ bakery** preparing for SQF (Safe Quality Food) certification. Tone: warm, confid
 people-first — but the setting is a food **plant**, not a shop.
 
 ## Hard constraints (do not break these)
-1. **Exactly 12 slides, in the order below.** Our import tooling maps narration to slides by
-   position — do not add, remove, or reorder slides.
+1. **Keep the slide list below as the structure — these slides, in this order.** The count fits
+   this module's material (it varies module to module; it is *not* a fixed "always 12"). Our import
+   tooling maps narration to slides by position, so once we've agreed on this structure, don't add,
+   remove, or reorder slides. If the material is better taught with a different breakdown, say so —
+   we'll update the source content to match before importing.
 2. Slides are converted to **960×540 PNG images** for an in-app viewer. Everything must stay
    legible at that size: body text ≥ ~16 pt equivalent, high contrast, no fine hairline detail
    that disappears at 96 DPI.

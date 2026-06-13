@@ -12,8 +12,11 @@ the setting is a food **plant**, not a shop. This module is practical and hands-
 everyday hygiene habits the floor must live by.
 
 ## Hard constraints (do not break these)
-1. **Exactly 12 slides, in the order below.** Our import tooling maps narration to slides by
-   position — do not add, remove, or reorder slides.
+1. **Keep the slide list below as the structure — these slides, in this order.** The count is
+   chosen to fit this module's material (it varies module to module; it is *not* a fixed "always
+   12"). Our import tooling maps narration to slides by position, so once we've agreed on this
+   structure, don't add, remove, or reorder slides. If you think the material is better taught with
+   a different slide breakdown, say so — we'll update the source content to match before importing.
 2. Slides are converted to **960×540 PNG images** for an in-app viewer. Everything must stay
    legible at that size: body text ≥ ~16 pt equivalent, high contrast, no fine hairline detail.
 3. **Fonts:** stick to widely available fonts (the conversion server substitutes exotic ones).
