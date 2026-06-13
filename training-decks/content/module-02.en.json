@@ -1,0 +1,251 @@
+{
+  "module": 2,
+  "language": "en",
+  "moduleLabel": "Module 2",
+  "title": "Personal Hygiene & GMPs",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 2 — Personal Hygiene & GMPs",
+      "subtitle": "SQF Food Safety Training",
+      "notes": "Welcome to Module 2. In Module 1 we covered why we're getting SQF certified and the part everyone plays. Now we get practical. This module is about personal hygiene and good manufacturing practices — the everyday habits that keep our food safe. These are the basics an auditor expects to see on the floor, every shift."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explain what GMPs are and why they protect our food",
+          "Wash and sanitize your hands the right way, at the right times",
+          "Follow our attire, jewelry, nail, and illness rules",
+          "Move between zones without spreading contamination"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here's what you'll walk away with. Four things: what good manufacturing practices are and why they matter, how and when to wash your hands properly, the rules for attire, jewelry, nails, and reporting illness, and how to move around the plant without carrying contamination from one area to another."
+    },
+    {
+      "title": "What are GMPs?",
+      "lead": "The everyday rules that keep our food safe.",
+      "art": "ribbonMedal",
+      "visual": {
+        "type": "badge",
+        "letters": ["G", "M", "P"],
+        "words": ["Good", "Manufacturing", "Practices"],
+        "caption": "Basic conditions and habits an auditor expects to see on the floor, every single shift."
+      },
+      "notes": "GMP stands for Good Manufacturing Practices. These are the basic rules and conditions that keep food safe while we make it — how we keep ourselves clean, how we dress, how we handle illness, and how we move through the plant. They're not extra paperwork; they're the foundation everything else is built on, and an auditor will look for them every shift."
+    },
+    {
+      "title": "Why hygiene comes first",
+      "lead": "You are part of the process.",
+      "visual": {
+        "type": "workers",
+        "chip": "Clean people make safe food"
+      },
+      "notes": "Here's the simple truth: people are the biggest source of contamination in a food plant. We naturally carry microbes on our hands, hair, skin, and clothing. Because we handle food directly, our personal hygiene is the first line of defense. Get this right and you stop most problems before they ever reach the product. That's why hygiene comes first."
+    },
+    {
+      "title": "When to wash your hands",
+      "lead": "Wash at every one of these moments — no exceptions.",
+      "art": "clipboardMagnifier",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Before starting work and after every break",
+          "After using the restroom",
+          "After handling trash, cleaning, or touching your face or hair",
+          "Whenever you switch tasks or change zones"
+        ]
+      },
+      "notes": "Knowing how to wash matters less if you skip the moments that count. Wash before you start and after every break. Always wash after using the restroom. Wash after handling trash, after cleaning, or after touching your face or hair. And wash whenever you switch tasks or move into a new zone. When in doubt, wash — it only takes a moment."
+    },
+    {
+      "title": "How to wash — every time",
+      "lead": "The single most important habit in the plant.",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Wet with warm water",
+          "Soap & scrub 20 seconds — backs, between fingers, nails",
+          "Rinse clean",
+          "Dry with a paper towel",
+          "Sanitize"
+        ],
+        "highlight": 1
+      },
+      "notes": "Now the how. Wet your hands with warm water, then soap up and scrub for a full twenty seconds — that's about humming the happy birthday song twice. Don't forget the backs of your hands, between your fingers, and under your nails. Rinse clean, dry with a paper towel, and finish with sanitizer. Twenty seconds of scrubbing is what actually does the work."
+    },
+    {
+      "title": "Dress for the job",
+      "lead": "Attire keeps you — and the product — protected.",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Hair fully covered — hairnet, and a beard net if needed",
+          "Clean company uniform or smock; change it when soiled",
+          "Apron and sleeve covers where required",
+          "Street clothing covered; no loose threads or buttons"
+        ]
+      },
+      "notes": "How we dress protects the food. Hair must be fully covered with a hairnet, and a beard net if you have facial hair, so nothing falls into the product. Wear a clean company uniform or smock and change it when it gets soiled. Put on an apron and sleeve covers where they're required. Keep street clothing covered, and watch for loose threads or buttons that could come off."
+    },
+    {
+      "title": "Jewelry, nails & personal items",
+      "lead": "If it can fall off or hide dirt, it stays out.",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Leave out of production",
+          "items": [
+            "Rings, watches, bracelets, earrings",
+            "False nails, nail polish",
+            "Phones and loose personal items"
+          ],
+          "color": "amber"
+        },
+        "right": {
+          "header": "Keep covered & controlled",
+          "items": [
+            "Cuts covered with a blue metal-detectable bandage",
+            "Wear a glove over a covered cut",
+            "Only items allowed by policy"
+          ],
+          "color": "green"
+        },
+        "chip": "When in doubt, leave it out"
+      },
+      "notes": "Anything that can fall off or trap dirt has to stay out of production. That means no rings, watches, bracelets, or earrings, no false nails or nail polish, and no phones or loose personal items on the line. If you have a cut, cover it with a blue, metal-detectable bandage and wear a glove over it. The only items you keep are the ones our policy specifically allows. When in doubt, leave it out."
+    },
+    {
+      "title": "Report when you're sick",
+      "accent": "green",
+      "visual": {
+        "type": "stopSign",
+        "label": "REPORT",
+        "lines": [
+          "Vomiting, diarrhea, fever, jaundice, or an infected cut or sore?",
+          "Tell your supervisor before you start — you may be reassigned or sent home.",
+          "You will never be in trouble for reporting — it keeps our food and your teammates safe."
+        ]
+      },
+      "notes": "This one protects everyone. If you have vomiting, diarrhea, a fever, jaundice, or an infected cut or sore, you must tell your supervisor before you start work. You might be reassigned away from open product or sent home — and that's okay. You will never be in trouble for reporting that you're sick. Coming in and staying quiet is what puts our food and your teammates at risk."
+    },
+    {
+      "title": "Footwear & foot-bath sanitation",
+      "lead": "Keep what's on the floor from reaching the food.",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Wear the dedicated plant footwear or boots provided",
+          "Step through the foot-bath or sanitizing station when entering",
+          "Keep boots clean; never wear outside shoes on the line",
+          "Report a foot-bath that looks empty or dirty"
+        ]
+      },
+      "notes": "Floors collect everything we track in, so we keep that separate from the food. Wear the dedicated plant footwear or boots we provide — never your outside shoes on the line. When you enter, step through the foot-bath or sanitizing station so you're not carrying contamination in on your soles. Keep your boots clean, and if a foot-bath looks empty or dirty, report it so it gets refreshed."
+    },
+    {
+      "title": "Move the right way between zones",
+      "lead": "Don't carry contamination from one area to another.",
+      "art": "truck",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Higher-care zones",
+          "items": [
+            "Dedicated tools and gowning",
+            "Enter clean — wash and sanitize first"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "General production & warehouse",
+          "items": [
+            "Different stage, different tools",
+            "Don't backtrack into clean areas"
+          ],
+          "color": "amber"
+        },
+        "chip": "Follow the flow — clean to dirty, never back"
+      },
+      "notes": "Our plant is laid out so product moves in one direction, from cleaner areas toward shipping. Higher-care zones have their own tools and gowning, and you enter them clean — washed and sanitized. General production and the warehouse are a different stage with different tools. The rule is simple: follow the flow from clean to dirty, and don't backtrack into clean areas carrying something from a dirtier one."
+    },
+    {
+      "title": "Summary",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "GMPs are the everyday habits that keep our food safe",
+          "Wash hands the right way, at every key moment",
+          "Correct attire, no jewelry or polish, report illness",
+          "Move clean-to-dirty and never carry contamination between zones"
+        ],
+        "next": "Next: Allergens — Know the Risk"
+      },
+      "notes": "Let's recap. Good manufacturing practices are the everyday habits that keep our food safe. Wash your hands the right way at every key moment. Wear the correct attire, leave jewelry and polish out, and always report illness. And move through the plant clean-to-dirty so you never carry contamination between zones. Up next we get to the heart of our program — allergens, and why they make our bakery different. Nice work finishing Module 2."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "What does GMP stand for?",
+      "options": ["General Maintenance Protocol", "Good Manufacturing Practices", "Guided Material Processing", "Grocery Market Permit"],
+      "correct": 1,
+      "hint": "It's about how we make the product, done well.",
+      "rationale": "GMP = Good Manufacturing Practices — the basic habits and conditions that keep food safe."
+    },
+    {
+      "question": "How long should you scrub with soap when washing your hands?",
+      "options": ["About 2 seconds", "Until they look wet", "At least 20 seconds", "Only after the restroom"],
+      "correct": 2,
+      "hint": "About two rounds of the happy birthday song.",
+      "rationale": "A full 20 seconds of scrubbing — including backs, between fingers, and nails — is what actually removes microbes."
+    },
+    {
+      "question": "Which of these is a time you MUST wash your hands?",
+      "options": ["Only at the start of the day", "After the restroom, after breaks, after handling trash, and when changing zones", "Only if your hands look dirty", "Only the burger team needs to wash"],
+      "correct": 1,
+      "hint": "It's more than one moment — think every transition.",
+      "rationale": "Wash at every key moment: before starting, after breaks, after the restroom, after trash/cleaning/touching your face, and when switching tasks or zones."
+    },
+    {
+      "question": "You're about to start your shift. Which is acceptable in production?",
+      "options": ["A wedding ring and a watch", "Painted or false nails", "A plain face with hair fully covered by a hairnet", "A phone in your apron pocket"],
+      "correct": 2,
+      "hint": "If it can fall off or hide dirt, it stays out.",
+      "rationale": "Hair must be fully covered; jewelry, false/painted nails, and loose personal items like phones are not allowed on the line."
+    },
+    {
+      "question": "True or false: A little nail polish is fine as long as it isn't chipped.",
+      "options": ["True", "False"],
+      "correct": 1,
+      "hint": "Polish can chip and flake into product without warning.",
+      "rationale": "Nail polish and false nails are not permitted — they can flake or detach and become a foreign-material or contamination hazard."
+    },
+    {
+      "question": "You wake up with vomiting and diarrhea but you're scheduled to work the line. What should you do?",
+      "options": ["Come in and just be careful", "Tell your supervisor before starting; you may be reassigned or sent home", "Take medicine and say nothing", "Wait to see if it gets worse during your shift"],
+      "correct": 1,
+      "hint": "Reporting protects the food and your teammates — and you won't be penalized.",
+      "rationale": "Vomiting, diarrhea, fever, jaundice, or infected sores must be reported before starting. You may be reassigned or sent home, and you're never in trouble for reporting."
+    },
+    {
+      "question": "You get a small cut on your hand during the shift. What's required?",
+      "options": ["Keep working; it's minor", "Cover it with any tissue and continue", "Cover it with a blue metal-detectable bandage, wear a glove, and report it", "Only wash it off"],
+      "correct": 2,
+      "hint": "We use a specific bandage color for a reason.",
+      "rationale": "Cuts must be covered with a blue, metal-detectable bandage and a glove, and reported — so a lost bandage can be detected and the wound can't contaminate product."
+    },
+    {
+      "question": "Why do we use dedicated footwear, foot-baths, and one-directional traffic between zones?",
+      "options": ["To keep the floors shiny for auditors", "So we don't carry contamination or allergens from one area into a cleaner one", "Because it's faster", "Only to control who clocks in"],
+      "correct": 1,
+      "hint": "Think about what your boots and your path could carry with them.",
+      "rationale": "Footwear control, foot-baths, and clean-to-dirty flow stop us from tracking contamination and allergens from general areas into higher-care zones."
+    }
+  ]
+}
