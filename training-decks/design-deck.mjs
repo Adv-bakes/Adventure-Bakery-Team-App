@@ -8,7 +8,7 @@
 // Design tokens reverse-engineered from training-decks/incoming/SQF_Module_1.pptx.
 
 import PptxGenJS from "pptxgenjs";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -67,9 +67,14 @@ function head(slide, dark, label, num, title, lead) {
   return 3.2;
 }
 
-function photoBox(slide, x, y, w, h, label, caption, dark) {
-  slide.addShape("rect", { x, y, w, h, fill: { color: dark ? "6E5C58" : C.tan }, line: { color: dark ? C.mutedLt : C.amber, width: 1.25, dashType: "dash" } });
-  slide.addText(`▣  ${label}`, { x: x + 0.3, y: y + h / 2 - 0.4, w: w - 0.6, h: 0.8, fontFace: SANS, fontSize: 18, italic: true, color: dark ? C.cream : C.muted, align: "center", valign: "middle", margin: 0 });
+// Renders a real image (cropped to fill the box) when imgPath is given, else a labeled placeholder.
+function photoBox(slide, x, y, w, h, label, caption, dark, imgPath) {
+  if (imgPath) {
+    slide.addImage({ path: imgPath, x, y, w, h, sizing: { type: "cover", w, h } });
+  } else {
+    slide.addShape("rect", { x, y, w, h, fill: { color: dark ? "6E5C58" : C.tan }, line: { color: dark ? C.mutedLt : C.amber, width: 1.25, dashType: "dash" } });
+    slide.addText(`▣  ${label}`, { x: x + 0.3, y: y + h / 2 - 0.4, w: w - 0.6, h: 0.8, fontFace: SANS, fontSize: 18, italic: true, color: dark ? C.cream : C.muted, align: "center", valign: "middle", margin: 0 });
+  }
   if (caption) {
     slide.addText(caption.toUpperCase(), { x, y: y + h + 0.04, w, h: 0.22, fontFace: SANS, fontSize: 11.2, bold: true, color: dark ? C.mutedLt : C.muted, charSpacing: 1, margin: 0 });
   }
@@ -96,7 +101,7 @@ function renderTitle(slide, s, total) {
   slide.addShape("rect", { x: 1.17, y: 6.62, w: 0.56, h: 0.04, fill: { color: C.amber } });
   slide.addText(s.subtitle ?? "SQF Food Safety Training", { x: 1.92, y: 6.42, w: 7, h: 0.47, fontFace: SANS, fontSize: 27, bold: true, color: C.amberLt, margin: 0 });
   slide.addText(s.intro ?? "", { x: 1.17, y: 7.2, w: 8.5, h: 1.6, fontFace: SANS, fontSize: 24, color: C.body, margin: 0, valign: "top", lineSpacingMultiple: 1.1 });
-  photoBox(slide, 10.76, 2.81, 8.07, 5.42, s.photo ?? "PHOTO: hand-wash station", s.photoCaption ?? "GMP · PERSONAL HYGIENE", true);
+  photoBox(slide, 10.76, 2.81, 8.07, 5.42, s.photo ?? "PHOTO: hand-wash station", s.photoFile ? null : (s.photoCaption ?? "GMP · PERSONAL HYGIENE"), true, s.photoFile);
   footer(slide, true, 1, total);
 }
 
@@ -104,6 +109,21 @@ function renderCards(slide, s, num, total) {
   bg(slide, false);
   head(slide, false, s.kicker, num, s.title, s.lead);
   const items = s.visual.items;
+  if (s.photoFile) {
+    // Photo-right / cards-left single column.
+    const cardW = 10.6, cardH = 1.3, x = 1.17;
+    const startY = 4.4, gap = 1.45;
+    items.forEach((it, i) => {
+      const y = startY + i * gap;
+      slide.addShape("rect", { x, y, w: cardW, h: cardH, fill: { color: C.tan } });
+      slide.addText(String(i + 1), { x: x + 0.34, y: y + 0.2, w: 0.6, h: 0.9, fontFace: SERIF, fontSize: 40, bold: true, color: C.amber, margin: 0, valign: "top" });
+      slide.addText(it, { x: x + 1.0, y: y + 0.15, w: cardW - 1.35, h: cardH - 0.3, fontFace: SANS, fontSize: 21, bold: true, color: C.ink, margin: 0, valign: "middle", lineSpacingMultiple: 1.0 });
+    });
+    const bottom = startY + (items.length - 1) * gap + cardH;
+    photoBox(slide, 12.1, startY, 6.73, bottom - startY, "", null, false, s.photoFile);
+    footer(slide, false, num, total);
+    return;
+  }
   const colX = [1.17, 10.14], cardW = 8.7, cardH = 1.55;
   const rowY = items.length <= 2 ? [5.6] : [5.0, 6.85];
   items.forEach((it, i) => {
@@ -139,7 +159,7 @@ function renderPhotoHero(slide, s, num, total) {
   kicker(slide, true, s.kicker, num);
   slide.addText(s.title, { x: 1.17, y: 4.2, w: 8.3, h: 2.6, fontFace: SERIF, fontSize: 46.5, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
   if (s.visual.chip) chip(slide, 1.17, 7.1, s.visual.chip);
-  photoBox(slide, 10.1, 2.2, 8.73, 6.9, s.photo ?? "PHOTO: team in hairnets on the floor", s.photoCaption ?? null, true);
+  photoBox(slide, 10.1, 2.2, 8.73, 6.9, s.photo ?? "PHOTO: team in hairnets on the floor", s.photoCaption ?? null, true, s.photoFile);
   footer(slide, true, num, total);
 }
 
@@ -239,6 +259,21 @@ function main() {
   const content = JSON.parse(readFileSync(jsonPath, "utf8"));
   const slides = content.slides;
   const total = slides.length;
+
+  // Optional images dir: files named "*slide<N>*.(jpg|jpeg|png|webp)" attach to slide N (1-based).
+  const imagesDir = process.argv[3];
+  if (imagesDir && existsSync(imagesDir)) {
+    for (const f of readdirSync(imagesDir)) {
+      if (!/\.(jpe?g|png|webp)$/i.test(f)) continue;
+      const m = f.match(/slide0*(\d+)/i);
+      if (!m) continue;
+      const idx = parseInt(m[1], 10) - 1;
+      if (slides[idx]) {
+        slides[idx].photoFile = path.resolve(imagesDir, f);
+        console.log(`  slide ${idx + 1} ← ${f}`);
+      }
+    }
+  }
 
   const pptx = new PptxGenJS();
   pptx.defineLayout({ name: "M1", width: 20, height: 11.25 });
