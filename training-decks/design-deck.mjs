@@ -47,13 +47,15 @@ function footer(slide, dark, num, total) {
   slide.addText(`${String(num).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, { x: 17.12, y: 10.56, w: 1.71, h: 0.26, fontFace: SANS, fontSize: 13.5, bold: true, color: muted, align: "right", margin: 0 });
 }
 
-function kicker(slide, dark, label, num) {
+function kicker(slide, dark, label, num, y = 1.0) {
   const accent = dark ? C.amberLt : C.amberDk;
   const lab = dark ? C.body : C.muted;
-  slide.addShape("rect", { x: 1.17, y: 1.13, w: 0.09, h: 0.09, fill: { color: accent } });
-  slide.addText(String(num).padStart(2, "0"), { x: 1.45, y: 1.0, w: 0.5, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: accent, charSpacing: 1, margin: 0 });
-  slide.addText(label.toUpperCase(), { x: 2.0, y: 1.0, w: 8, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: lab, charSpacing: 2, margin: 0 });
+  slide.addShape("rect", { x: 1.17, y: y + 0.13, w: 0.09, h: 0.09, fill: { color: accent } });
+  slide.addText(String(num).padStart(2, "0"), { x: 1.45, y, w: 0.5, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: accent, charSpacing: 1, margin: 0 });
+  slide.addText(label.toUpperCase(), { x: 2.0, y, w: 8, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: lab, charSpacing: 2, margin: 0 });
 }
+
+const SCRIM = path.join(__dirname, "assets", "hero-scrim.png");
 
 // Standard content-slide head: kicker + title + optional lead. Returns y below the lead.
 function head(slide, dark, label, num, title, lead) {
@@ -154,12 +156,23 @@ function renderBadge(slide, s, num, total) {
 }
 
 function renderPhotoHero(slide, s, num, total) {
-  // Editorial left-text / right-photo layout (clear photo placeholder, reads well even empty).
   bg(slide, true);
+  const headline = s.lead ?? s.title;
+  if (s.photoFile) {
+    // Full-bleed background photo + left-weighted gradient scrim, text overlaid on the left.
+    slide.addImage({ path: s.photoFile, x: 0, y: 0, w: 20, h: 11.25, sizing: { type: "cover", w: 20, h: 11.25 } });
+    if (existsSync(SCRIM)) slide.addImage({ path: SCRIM, x: 0, y: 0, w: 20, h: 11.25 });
+    kicker(slide, true, s.kicker, num, 3.86);
+    slide.addText(headline, { x: 1.17, y: 4.43, w: 8.6, h: 2.3, fontFace: SERIF, fontSize: 46.5, bold: true, italic: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
+    if (s.visual.chip) chip(slide, 1.17, 6.95, s.visual.chip);
+    footer(slide, true, num, total);
+    return;
+  }
+  // No photo yet: clear left-text / right-placeholder layout.
   kicker(slide, true, s.kicker, num);
-  slide.addText(s.title, { x: 1.17, y: 4.2, w: 8.3, h: 2.6, fontFace: SERIF, fontSize: 46.5, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
+  slide.addText(headline, { x: 1.17, y: 4.2, w: 8.3, h: 2.6, fontFace: SERIF, fontSize: 46.5, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
   if (s.visual.chip) chip(slide, 1.17, 7.1, s.visual.chip);
-  photoBox(slide, 10.1, 2.2, 8.73, 6.9, s.photo ?? "PHOTO: team in hairnets on the floor", s.photoCaption ?? null, true, s.photoFile);
+  photoBox(slide, 10.1, 2.2, 8.73, 6.9, s.photo ?? "PHOTO: team in hairnets on the floor", null, true);
   footer(slide, true, num, total);
 }
 
