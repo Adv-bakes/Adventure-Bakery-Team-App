@@ -7,7 +7,8 @@ for the full importer contract and `CLAUDE_DESIGN_BRIEF.md` for the external-des
 
 **Tracked (source of truth — regenerates everything):**
 
-- `generate.mjs` + `assets.mjs` — code generator (`node generate.mjs content/module-NN.xx.json` → `dist/`)
+- `generate.mjs` + `assets.mjs` — flat-illustration code generator (`node generate.mjs content/module-NN.xx.json` → `dist/`)
+- `design-deck.mjs` — renders a deck in the **approved Claude Design Module 1 look** (20×11.25 editorial dark/cream layouts, Helvetica/Georgia, brand palette) straight from a content JSON, with **labeled photo-placeholder boxes** where photography goes (`node design-deck.mjs content/module-NN.xx.json` → `dist/<name>.design.pptx`). Use this to build a series-consistent deck without a Claude Design round-trip; swap the placeholder boxes for real photos later. Quiz CSV still comes from `generate.mjs`.
 - `inject-notes.mjs` — stamps authored narration into any deck's speaker notes
 - `translate-deck.mjs` — produces a Spanish copy of a designed deck (per-paragraph swap)
 - `content/*.json` — per-module slide text, narration, quiz (the editable inputs)
