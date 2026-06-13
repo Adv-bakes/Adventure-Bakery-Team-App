@@ -33,6 +33,20 @@ const C = {
 const SANS = "Helvetica";
 const SERIF = "Georgia";
 
+// ---- localization (chrome strings; slide content comes from the JSON) ----
+const KICKERS_BY_LANG = {
+  en: ["", "", "GET READY", "FOUNDATIONS", "WHY IT MATTERS", "HANDWASHING", "HANDWASHING",
+       "ON THE FLOOR", "ON THE FLOOR", "STAY SAFE", "ON THE FLOOR", "ON THE FLOOR", "RECAP"],
+  es: ["", "", "PREPÁRATE", "FUNDAMENTOS", "POR QUÉ IMPORTA", "LAVADO DE MANOS", "LAVADO DE MANOS",
+       "EN LA PLANTA", "EN LA PLANTA", "MANTENTE SEGURO", "EN LA PLANTA", "EN LA PLANTA", "REPASO"],
+};
+const STEP_WORD = { en: "STEP", es: "PASO" };
+// Set in main() once the content language is known.
+let LANG = "en";
+let STEP = STEP_WORD.en;
+let PROGRAM = "SQF FOOD SAFETY TRAINING";
+let MODLABEL = "MODULE";
+
 // ---- shared helpers ----
 function bg(slide, dark) {
   slide.background = { color: dark ? C.darkBg : C.cream };
@@ -43,7 +57,7 @@ function footer(slide, dark, num, total) {
   const ink = dark ? C.cream : C.ink;
   slide.addShape("rect", { x: 1.17, y: 10.36, w: 17.67, h: 0.012, fill: { color: dark ? C.cream : C.ink } });
   slide.addText("Adventure Bakery", { x: 1.17, y: 10.56, w: 3, h: 0.26, fontFace: SANS, fontSize: 13.5, bold: true, color: ink, margin: 0 });
-  slide.addText("SQF FOOD SAFETY TRAINING", { x: 8, y: 10.57, w: 4, h: 0.22, fontFace: SANS, fontSize: 11.2, color: muted, align: "center", charSpacing: 1, margin: 0 });
+  slide.addText(PROGRAM, { x: 7, y: 10.57, w: 6, h: 0.22, fontFace: SANS, fontSize: 11.2, color: muted, align: "center", charSpacing: 1, margin: 0 });
   slide.addText(`${String(num).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, { x: 17.12, y: 10.56, w: 1.71, h: 0.26, fontFace: SANS, fontSize: 13.5, bold: true, color: muted, align: "right", margin: 0 });
 }
 
@@ -97,7 +111,7 @@ function arrow(slide, x, y) {
 function renderTitle(slide, s, total) {
   bg(slide, true);
   slide.addShape("rect", { x: 1.17, y: 3.13, w: 0.09, h: 0.09, fill: { color: C.amberLt } });
-  slide.addText("MODULE 02", { x: 1.45, y: 3.04, w: 2.2, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: C.amberLt, charSpacing: 2, margin: 0 });
+  slide.addText(MODLABEL, { x: 1.45, y: 3.04, w: 3, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: C.amberLt, charSpacing: 2, margin: 0 });
   slide.addText("ADVENTURE BAKERY", { x: 3.6, y: 3.04, w: 5, h: 0.31, fontFace: SANS, fontSize: 16.5, bold: true, color: C.mutedLt, charSpacing: 2, margin: 0 });
   slide.addText(s.titleMain ?? "Personal Hygiene & GMPs", { x: 1.17, y: 3.6, w: 9.2, h: 2.5, fontFace: SANS, fontSize: 81, bold: true, color: C.cream, margin: 0, valign: "top", lineSpacingMultiple: 0.95 });
   slide.addShape("rect", { x: 1.17, y: 6.62, w: 0.56, h: 0.04, fill: { color: C.amber } });
@@ -208,7 +222,7 @@ function renderFlow(slide, s, num, total) {
     const x = 1.17 + i * (stepW + gap);
     const hot = (s.visual.highlight ?? -1) === i;
     slide.addShape("rect", { x, y, w: stepW, h, fill: { color: hot ? C.amber : "5A4A48" } });
-    slide.addText(`STEP ${i + 1}`, { x: x + 0.24, y: y + 0.3, w: stepW - 0.48, h: 0.3, fontFace: SANS, fontSize: 15, bold: true, color: hot ? "FFFFFF" : C.amberLt, charSpacing: 1, margin: 0 });
+    slide.addText(`${STEP} ${i + 1}`, { x: x + 0.24, y: y + 0.3, w: stepW - 0.48, h: 0.3, fontFace: SANS, fontSize: 15, bold: true, color: hot ? "FFFFFF" : C.amberLt, charSpacing: 1, margin: 0 });
     slide.addText(st, { x: x + 0.24, y: y + 0.72, w: stepW - 0.48, h: h - 1.0, fontFace: SANS, fontSize: 20, bold: true, color: "FFFFFF", margin: 0, valign: "top", lineSpacingMultiple: 1.0 });
     if (i < n - 1) arrow(slide, x + stepW + gap / 2 - 0.13, y + h / 2 - 0.13);
   });
@@ -260,18 +274,19 @@ function renderPlain(slide, s, num, total) {
   footer(slide, false, num, total);
 }
 
-// kicker labels indexed by slide number (1-based); index 0 and 1 unused (1 is the title slide)
-const KICKERS = [
-  "", "", "GET READY", "FOUNDATIONS", "WHY IT MATTERS", "HANDWASHING", "HANDWASHING",
-  "ON THE FLOOR", "ON THE FLOOR", "STAY SAFE", "ON THE FLOOR", "ON THE FLOOR", "RECAP",
-];
-
 function main() {
   const jsonPath = process.argv[2];
   if (!jsonPath) { console.error("usage: node design-deck.mjs <content.json>"); process.exit(1); }
   const content = JSON.parse(readFileSync(jsonPath, "utf8"));
   const slides = content.slides;
   const total = slides.length;
+
+  // Localize chrome from the content's language.
+  LANG = (content.language === "es") ? "es" : "en";
+  STEP = STEP_WORD[LANG];
+  PROGRAM = (content.subtitle ?? "SQF Food Safety Training").toUpperCase();
+  MODLABEL = `${LANG === "es" ? "MÓDULO" : "MODULE"} ${String(content.module ?? 1).padStart(2, "0")}`;
+  const KICK = KICKERS_BY_LANG[LANG];
 
   // Optional images dir: files named "*slide<N>*.(jpg|jpeg|png|webp)" attach to slide N (1-based).
   const imagesDir = process.argv[3];
@@ -294,7 +309,7 @@ function main() {
 
   slides.forEach((s, i) => {
     const num = i + 1;
-    s.kicker = s.kicker ?? KICKERS[num] ?? "";
+    s.kicker = s.kicker ?? KICK[num] ?? "";
     const slide = pptx.addSlide();
     if (s.kind === "title") {
       s.titleMain = content.title;

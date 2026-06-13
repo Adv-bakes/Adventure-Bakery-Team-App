@@ -1,0 +1,251 @@
+{
+  "module": 2,
+  "language": "es",
+  "moduleLabel": "Módulo 2",
+  "title": "Higiene Personal y BPM",
+  "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 2 — Higiene Personal y BPM",
+      "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+      "notes": "Bienvenido al Módulo 2. En el Módulo 1 vimos por qué buscamos la certificación SQF y el papel que juega cada uno. Ahora pasamos a lo práctico. Este módulo trata sobre la higiene personal y las buenas prácticas de manufactura — los hábitos diarios que mantienen seguros nuestros alimentos. Son lo básico que un auditor espera ver en la planta, en cada turno."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explicar qué son las BPM y por qué protegen nuestros alimentos",
+          "Lavarte y desinfectarte las manos de la forma correcta, en los momentos correctos",
+          "Seguir nuestras reglas de vestimenta, joyería, uñas y enfermedad",
+          "Moverte entre zonas sin propagar contaminación"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que te llevarás. Cuatro cosas: qué son las buenas prácticas de manufactura y por qué importan, cómo y cuándo lavarte las manos correctamente, las reglas de vestimenta, joyería, uñas y reporte de enfermedad, y cómo moverte por la planta sin llevar contaminación de un área a otra."
+    },
+    {
+      "title": "¿Qué son las BPM?",
+      "lead": "Las reglas diarias que mantienen seguros nuestros alimentos.",
+      "art": "ribbonMedal",
+      "visual": {
+        "type": "badge",
+        "letters": ["B", "P", "M"],
+        "words": ["Buenas", "Prácticas", "Manufactura"],
+        "caption": "Condiciones y hábitos básicos que un auditor espera ver en la planta, en cada turno."
+      },
+      "notes": "BPM significa Buenas Prácticas de Manufactura. Son las reglas y condiciones básicas que mantienen seguros los alimentos mientras los elaboramos: cómo nos mantenemos limpios, cómo nos vestimos, cómo manejamos la enfermedad y cómo nos movemos por la planta. No son papeleo extra; son la base sobre la que se construye todo lo demás, y un auditor las buscará en cada turno."
+    },
+    {
+      "title": "Por qué la higiene es lo primero",
+      "lead": "Tú eres parte del proceso.",
+      "visual": {
+        "type": "workers",
+        "chip": "Gente limpia hace alimentos seguros"
+      },
+      "notes": "La verdad es simple: las personas somos la mayor fuente de contaminación en una planta de alimentos. Llevamos microbios de forma natural en las manos, el cabello, la piel y la ropa. Como manejamos los alimentos directamente, nuestra higiene personal es la primera línea de defensa. Si haces esto bien, detienes la mayoría de los problemas antes de que lleguen al producto. Por eso la higiene es lo primero."
+    },
+    {
+      "title": "Cuándo lavarte las manos",
+      "lead": "Lávate en cada uno de estos momentos — sin excepciones.",
+      "art": "clipboardMagnifier",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Antes de empezar a trabajar y después de cada descanso",
+          "Después de usar el baño",
+          "Después de manejar basura, limpiar o tocarte la cara o el cabello",
+          "Cada vez que cambies de tarea o de zona"
+        ]
+      },
+      "notes": "Saber cómo lavarte importa menos si te saltas los momentos clave. Lávate antes de empezar y después de cada descanso. Lávate siempre después de usar el baño. Lávate después de manejar basura, después de limpiar o después de tocarte la cara o el cabello. Y lávate cada vez que cambies de tarea o entres a una nueva zona. Ante la duda, lávate — solo toma un momento."
+    },
+    {
+      "title": "Cómo lavarte — cada vez",
+      "lead": "El hábito más importante de la planta.",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Moja con agua tibia",
+          "Enjabona y friega 20 segundos — dorso, entre los dedos, uñas",
+          "Enjuaga bien",
+          "Seca con toalla de papel",
+          "Desinfecta"
+        ],
+        "highlight": 1
+      },
+      "notes": "Ahora el cómo. Moja tus manos con agua tibia, luego enjabona y friega durante veinte segundos completos — es como cantar el feliz cumpleaños dos veces. No olvides el dorso de las manos, entre los dedos y debajo de las uñas. Enjuaga bien, seca con una toalla de papel y termina con desinfectante. Esos veinte segundos de fregado son los que de verdad hacen el trabajo."
+    },
+    {
+      "title": "Vístete para el trabajo",
+      "lead": "La vestimenta te protege a ti — y al producto.",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Cabello totalmente cubierto — redecilla, y cubrebarba si hace falta",
+          "Uniforme o bata limpia de la empresa; cámbiala cuando se ensucie",
+          "Delantal y cubremangas donde se requieran",
+          "Ropa de calle cubierta; sin hilos sueltos ni botones"
+        ]
+      },
+      "notes": "Cómo nos vestimos protege los alimentos. El cabello debe ir totalmente cubierto con una redecilla, y un cubrebarba si tienes vello facial, para que nada caiga al producto. Usa un uniforme o bata limpia de la empresa y cámbialo cuando se ensucie. Ponte delantal y cubremangas donde se requieran. Mantén la ropa de calle cubierta y cuídate de hilos sueltos o botones que puedan desprenderse."
+    },
+    {
+      "title": "Joyería, uñas y objetos personales",
+      "lead": "Si se puede caer o esconder suciedad, se queda fuera.",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Deja fuera de producción",
+          "items": [
+            "Anillos, relojes, pulseras, aretes",
+            "Uñas postizas, esmalte de uñas",
+            "Teléfonos y objetos personales sueltos"
+          ],
+          "color": "amber"
+        },
+        "right": {
+          "header": "Mantén cubierto y controlado",
+          "items": [
+            "Cortes cubiertos con una curita azul detectable por metal",
+            "Usa un guante sobre el corte cubierto",
+            "Solo los objetos permitidos por la política"
+          ],
+          "color": "green"
+        },
+        "chip": "Ante la duda, déjalo fuera"
+      },
+      "notes": "Todo lo que se pueda caer o atrapar suciedad tiene que quedarse fuera de producción. Eso significa nada de anillos, relojes, pulseras ni aretes, nada de uñas postizas ni esmalte, y nada de teléfonos ni objetos personales sueltos en la línea. Si tienes un corte, cúbrelo con una curita azul detectable por metal y ponte un guante encima. Los únicos objetos que conservas son los que nuestra política permite expresamente. Ante la duda, déjalo fuera."
+    },
+    {
+      "title": "Reporta cuando estés enfermo",
+      "accent": "green",
+      "visual": {
+        "type": "stopSign",
+        "label": "REPORTA",
+        "lines": [
+          "¿Vómito, diarrea, fiebre, ictericia o un corte o llaga infectada?",
+          "Avisa a tu supervisor antes de empezar — podrías ser reasignado o enviado a casa.",
+          "Nunca tendrás problemas por reportar — protege nuestros alimentos y a tus compañeros."
+        ]
+      },
+      "notes": "Esta regla nos protege a todos. Si tienes vómito, diarrea, fiebre, ictericia o un corte o llaga infectada, debes avisar a tu supervisor antes de empezar a trabajar. Es posible que te reasignen lejos del producto abierto o que te envíen a casa, y está bien. Nunca tendrás problemas por reportar que estás enfermo. Venir y quedarte callado es lo que pone en riesgo nuestros alimentos y a tus compañeros."
+    },
+    {
+      "title": "Calzado y desinfección en pediluvio",
+      "lead": "Evita que lo del piso llegue a los alimentos.",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Usa el calzado o las botas de planta que se te proporcionan",
+          "Pasa por el pediluvio o la estación de desinfección al entrar",
+          "Mantén las botas limpias; nunca uses zapatos de calle en la línea",
+          "Reporta un pediluvio que se vea vacío o sucio"
+        ]
+      },
+      "notes": "Los pisos recogen todo lo que arrastramos, así que lo mantenemos separado de los alimentos. Usa el calzado o las botas de planta que te damos — nunca tus zapatos de calle en la línea. Al entrar, pasa por el pediluvio o la estación de desinfección para no llevar contaminación en las suelas. Mantén tus botas limpias y, si un pediluvio se ve vacío o sucio, repórtalo para que lo renueven."
+    },
+    {
+      "title": "Muévete bien entre zonas",
+      "lead": "No lleves contaminación de un área a otra.",
+      "art": "truck",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Zonas de mayor cuidado",
+          "items": [
+            "Herramientas y vestimenta dedicadas",
+            "Entra limpio — lávate y desinféctate primero"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Producción general y almacén",
+          "items": [
+            "Otra etapa, otras herramientas",
+            "No regreses hacia las áreas limpias"
+          ],
+          "color": "amber"
+        },
+        "chip": "Sigue el flujo — de limpio a sucio, nunca al revés"
+      },
+      "notes": "Nuestra planta está organizada para que el producto avance en una sola dirección, desde las áreas más limpias hacia el despacho. Las zonas de mayor cuidado tienen sus propias herramientas y vestimenta, y entras a ellas limpio — lavado y desinfectado. La producción general y el almacén son otra etapa, con otras herramientas. La regla es simple: sigue el flujo de limpio a sucio y no regreses a las áreas limpias llevando algo de una más sucia."
+    },
+    {
+      "title": "Resumen",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Las BPM son los hábitos diarios que mantienen seguros nuestros alimentos",
+          "Lávate las manos de la forma correcta, en cada momento clave",
+          "Vestimenta correcta, sin joyería ni esmalte, reporta la enfermedad",
+          "Muévete de limpio a sucio y nunca lleves contaminación entre zonas"
+        ],
+        "next": "Sigue: Alérgenos — Conoce el riesgo"
+      },
+      "notes": "Hagamos un repaso. Las buenas prácticas de manufactura son los hábitos diarios que mantienen seguros nuestros alimentos. Lávate las manos de la forma correcta en cada momento clave. Usa la vestimenta correcta, deja fuera la joyería y el esmalte, y reporta siempre la enfermedad. Y muévete por la planta de limpio a sucio para nunca llevar contaminación entre zonas. A continuación llegamos al corazón de nuestro programa: los alérgenos y por qué hacen diferente a nuestra panadería. Buen trabajo al terminar el Módulo 2."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Qué significan las siglas BPM?",
+      "options": ["Buen Plan de Mantenimiento", "Buenas Prácticas de Manufactura", "Base de Procesamiento de Materiales", "Permiso de Mercado de Barrio"],
+      "correct": 1,
+      "hint": "Se trata de cómo elaboramos el producto, hecho bien.",
+      "rationale": "BPM = Buenas Prácticas de Manufactura — los hábitos y condiciones básicas que mantienen seguros los alimentos."
+    },
+    {
+      "question": "¿Cuánto tiempo debes fregar con jabón al lavarte las manos?",
+      "options": ["Unos 2 segundos", "Hasta que se vean mojadas", "Al menos 20 segundos", "Solo después del baño"],
+      "correct": 2,
+      "hint": "Como dos rondas de la canción de feliz cumpleaños.",
+      "rationale": "Fregar 20 segundos completos — incluyendo dorso, entre los dedos y uñas — es lo que de verdad elimina los microbios."
+    },
+    {
+      "question": "¿Cuál de estos es un momento en que SÍ o SÍ debes lavarte las manos?",
+      "options": ["Solo al inicio del día", "Después del baño, después de descansos, después de manejar basura y al cambiar de zona", "Solo si se ven sucias", "Solo el equipo de hamburguesas necesita lavarse"],
+      "correct": 1,
+      "hint": "Es más de un momento — piensa en cada transición.",
+      "rationale": "Lávate en cada momento clave: antes de empezar, después de descansos, después del baño, después de basura/limpieza/tocarte la cara, y al cambiar de tarea o zona."
+    },
+    {
+      "question": "Estás por iniciar tu turno. ¿Qué es aceptable en producción?",
+      "options": ["Un anillo de boda y un reloj", "Uñas pintadas o postizas", "El rostro despejado con el cabello totalmente cubierto por una redecilla", "Un teléfono en el bolsillo del delantal"],
+      "correct": 2,
+      "hint": "Si se puede caer o esconder suciedad, se queda fuera.",
+      "rationale": "El cabello debe ir totalmente cubierto; la joyería, las uñas postizas o pintadas y los objetos personales sueltos como el teléfono no se permiten en la línea."
+    },
+    {
+      "question": "Verdadero o falso: Un poco de esmalte de uñas está bien mientras no esté descascarado.",
+      "options": ["Verdadero", "Falso"],
+      "correct": 1,
+      "hint": "El esmalte puede descascararse y caer al producto sin aviso.",
+      "rationale": "El esmalte y las uñas postizas no se permiten — pueden descascararse o desprenderse y volverse un peligro de materia extraña o contaminación."
+    },
+    {
+      "question": "Amaneces con vómito y diarrea, pero estás programado para trabajar en la línea. ¿Qué debes hacer?",
+      "options": ["Ir y simplemente tener cuidado", "Avisar a tu supervisor antes de empezar; podrías ser reasignado o enviado a casa", "Tomar medicina y no decir nada", "Esperar a ver si empeora durante el turno"],
+      "correct": 1,
+      "hint": "Reportar protege los alimentos y a tus compañeros — y no te penalizarán.",
+      "rationale": "El vómito, la diarrea, la fiebre, la ictericia o las llagas infectadas deben reportarse antes de empezar. Podrías ser reasignado o enviado a casa, y nunca tendrás problemas por reportar."
+    },
+    {
+      "question": "Te haces un pequeño corte en la mano durante el turno. ¿Qué se requiere?",
+      "options": ["Seguir trabajando; es menor", "Cubrirlo con cualquier pañuelo y continuar", "Cubrirlo con una curita azul detectable por metal, usar un guante y reportarlo", "Solo enjuagarlo"],
+      "correct": 2,
+      "hint": "Usamos un color específico de curita por una razón.",
+      "rationale": "Los cortes deben cubrirse con una curita azul detectable por metal y un guante, y reportarse — para que una curita perdida pueda detectarse y la herida no contamine el producto."
+    },
+    {
+      "question": "¿Por qué usamos calzado dedicado, pediluvios y tránsito en una sola dirección entre zonas?",
+      "options": ["Para tener los pisos brillantes para los auditores", "Para no llevar contaminación ni alérgenos de un área a otra más limpia", "Porque es más rápido", "Solo para controlar quién marca entrada"],
+      "correct": 1,
+      "hint": "Piensa en lo que tus botas y tu recorrido podrían llevar consigo.",
+      "rationale": "El control de calzado, los pediluvios y el flujo de limpio a sucio evitan que arrastremos contaminación y alérgenos de las áreas generales a las zonas de mayor cuidado."
+    }
+  ]
+}
