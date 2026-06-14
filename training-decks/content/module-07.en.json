@@ -1,0 +1,271 @@
+{
+  "module": 7,
+  "language": "en",
+  "moduleLabel": "Module 7",
+  "title": "Cleaning & Sanitation",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 7 — Cleaning & Sanitation",
+      "subtitle": "SQF Food Safety Training",
+      "photo": "PHOTO: sanitation crew cleaning a line / labeled chemical station",
+      "photoCaption": "PREREQUISITE PROGRAMS · SANITATION",
+      "intro": "A clean plant is the foundation every other control sits on. This module covers the difference between cleaning and sanitizing, how to follow an SSOP, chemical safety and storage, the pre-operational inspection, and the master sanitation schedule.",
+      "notes": "Welcome to Module 7. So far we've covered hazards, allergens, HACCP, and foreign material. Cleaning and sanitation is the prerequisite program that all of those depend on — a clean plant is the foundation every other control sits on. In this module you'll learn the real difference between cleaning and sanitizing, how to follow a sanitation standard operating procedure or SSOP, how to handle and store cleaning chemicals safely, what the pre-operational inspection is and why production can't start without it, and how the master sanitation schedule makes sure nothing gets missed. Good sanitation is also how we remove allergen residue between products, so this ties directly back to protecting the free-from claim."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explain the difference between cleaning and sanitizing",
+          "Follow an SSOP and the correct cleaning sequence",
+          "Handle and store cleaning chemicals safely",
+          "Understand pre-op inspection and the master sanitation schedule"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here is what you'll be able to do by the end. Explain the difference between cleaning and sanitizing — they are two separate jobs. Follow a sanitation standard operating procedure and carry out the cleaning steps in the right order. Handle and store cleaning chemicals safely, including never mixing them. And understand the pre-operational inspection that clears a line to run, plus the master sanitation schedule that makes sure every surface gets cleaned on time."
+    },
+    {
+      "title": "Why it matters",
+      "lead": "Sanitation is the base layer under every other control.",
+      "kicker": "WHY IT MATTERS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Removes soil and allergen residue between products",
+          "Controls pathogens that cause foodborne illness",
+          "Denies pests the food and harborage they need",
+          "Protects the free-from claim and keeps records audit-ready"
+        ]
+      },
+      "notes": "Why does sanitation matter so much? First, cleaning is how we physically remove soil and allergen residue between products — it's the step that protects the free-from claim on the plant-based burger we make. Second, sanitizing controls the pathogens that cause foodborne illness, especially on the frozen line. Third, a clean plant denies pests the food and harborage they need to move in. And fourth, every cleaning task is recorded, so good sanitation also keeps us audit-ready. Sanitation isn't separate from food safety — it's the base layer that everything else is built on."
+    },
+    {
+      "title": "Clean vs sanitize",
+      "lead": "Two different jobs — and you must do them in order.",
+      "kicker": "TWO JOBS",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Cleaning",
+          "items": [
+            "Removes visible soil, residue, and allergen protein",
+            "Uses detergent, water, and physical scrubbing",
+            "Must happen first — you can't sanitize a dirty surface"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Sanitizing",
+          "items": [
+            "Reduces microorganisms to a safe level",
+            "Uses an approved sanitizer at the right strength and contact time",
+            "Only works on an already-clean surface"
+          ],
+          "color": "amber"
+        },
+        "chip": "Clean first, then sanitize — every time"
+      },
+      "notes": "Cleaning and sanitizing sound similar but they are two different jobs, and the order matters. Cleaning removes what you can see and what you can't — visible soil, residue, and allergen protein — using detergent, water, and physical scrubbing. Sanitizing is different: it reduces the microorganisms left behind to a safe level, using an approved sanitizer at the right strength and contact time. Here's the key point: sanitizing only works on a surface that's already clean. A sanitizer sprayed onto soil or grease doesn't reach the microbes hiding in it. So we always clean first, then sanitize — every time."
+    },
+    {
+      "title": "The cleaning sequence",
+      "lead": "Do the steps in order — skipping one undoes the rest.",
+      "kicker": "THE SEQUENCE",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Remove debris — dry clean-up first",
+          "Pre-rinse with water",
+          "Wash with detergent — scrub to remove soil and protein",
+          "Rinse, then sanitize at the right concentration and contact time"
+        ],
+        "highlight": 2
+      },
+      "notes": "Effective cleaning follows a set sequence, and skipping a step undoes the ones around it. First, remove debris with a dry clean-up — scrape and sweep before any water, so you're not spreading soil around. Second, pre-rinse with water to carry away loose material. Third, wash with detergent and physically scrub — this is the step that actually removes soil and allergen protein from the surface. Then rinse off the detergent and apply sanitizer at the right concentration and for the full contact time on the label. Each step sets up the next, which is why your SSOP lists them in order."
+    },
+    {
+      "title": "SSOPs: your cleaning instructions",
+      "lead": "The written recipe for cleaning each piece of equipment.",
+      "kicker": "SSOPS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Tells you what to clean and exactly how to do it",
+          "Names the chemical, the dilution, and the contact time",
+          "States who is responsible and how often it's done",
+          "Defines how the clean is verified and recorded"
+        ]
+      },
+      "notes": "An SSOP — a Sanitation Standard Operating Procedure — is the written recipe for cleaning a specific piece of equipment or area. It removes the guesswork. A good SSOP tells you what to clean and exactly how to do it, step by step. It names the chemical to use, the dilution or concentration, and the contact time. It states who is responsible and how often the task is done. And it defines how the clean is verified — visual check, swabs — and recorded. When you follow the SSOP exactly, the result is consistent and provable. If anything is unclear or you can't follow it as written, ask your supervisor rather than improvising."
+    },
+    {
+      "title": "Chemical safety",
+      "lead": "Cleaning chemicals are tools — and hazards.",
+      "kicker": "CHEMICAL SAFETY",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Always",
+          "items": [
+            "Read the label and SDS before using a chemical",
+            "Use the correct dilution and the right PPE",
+            "Keep chemicals in their original, labeled containers"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Never",
+          "items": [
+            "Mix chemicals — some combinations release toxic gas",
+            "Use an unlabeled container or guess what's inside",
+            "Use or store chemicals over exposed product or packaging"
+          ],
+          "color": "amber"
+        },
+        "chip": "In doubt about a chemical? Stop and ask"
+      },
+      "notes": "Cleaning chemicals are powerful tools, but they're also hazards — to you and to the product. Always read the label and the safety data sheet, the SDS, before using a chemical, so you know how to use it and what to do if it contacts skin or eyes. Use the correct dilution — stronger is not better — and wear the right protective equipment. Keep chemicals in their original, labeled containers. What you must never do: mix chemicals, because some combinations, like bleach and ammonia, release toxic gas. Never use an unlabeled container or guess what's inside. And never use or store chemicals over exposed product or packaging. If you're ever unsure about a chemical, stop and ask."
+    },
+    {
+      "title": "Chemical storage",
+      "lead": "Where and how chemicals are kept is a control too.",
+      "kicker": "CHEMICAL STORAGE",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Stored in a dedicated area, away from food, packaging, and ingredients",
+          "Every container clearly labeled with its contents",
+          "Secured and access-controlled — not left out on the floor",
+          "SDS available, and food-grade kept separate from non-food chemicals"
+        ]
+      },
+      "notes": "Where and how we store chemicals is a control in its own right. Chemicals are kept in a dedicated storage area, away from food, packaging, and ingredients, so there's no chance of a spill or splash reaching product. Every container is clearly labeled with its contents — no mystery jugs. Storage is secured and access-controlled, not left out on the production floor where it could be knocked over or get into product. The safety data sheets are kept available for everything on site. And food-grade chemicals are kept separate from non-food chemicals so they can't be confused. Return a chemical to its proper place as soon as you're done with it."
+    },
+    {
+      "title": "Pre-operational inspection",
+      "kicker": "PRE-OP",
+      "visual": {
+        "type": "stopSign",
+        "label": "PRE-OP",
+        "lines": [
+          "Before production starts, the line is inspected and signed off.",
+          "Surfaces are clean and dry, no residue, no chemical, no debris.",
+          "No production runs until the pre-op inspection passes — no exceptions."
+        ]
+      },
+      "notes": "The pre-operational inspection, or pre-op, is the gate between cleaning and production. After a line is cleaned and sanitized, and before any product runs, it's inspected and signed off. The inspector confirms the surfaces are clean and dry, with no residue, no leftover chemical, and no debris anywhere — including the hard-to-reach spots. Only when the line passes pre-op is it released to run. The rule is firm: no production starts until the pre-op inspection passes, no exceptions. If the line fails, it goes back for re-cleaning and is re-inspected. Pre-op is your last chance to catch a cleaning miss before it touches product."
+    },
+    {
+      "title": "The master sanitation schedule",
+      "lead": "Everything gets cleaned — on a schedule, with an owner.",
+      "kicker": "MASTER SCHEDULE",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Lists every area and surface, including hard-to-reach ones",
+          "Sets how often each is cleaned — daily, weekly, monthly",
+          "Assigns an owner so nothing falls through the cracks",
+          "Each completed task is recorded and verified"
+        ]
+      },
+      "notes": "Daily line cleaning handles the obvious surfaces, but some things — overhead structures, drains, walls, the inside of equipment — need cleaning on a longer cycle. That's what the master sanitation schedule is for. It lists every area and surface in the plant, including the hard-to-reach ones that are easy to forget. It sets how often each is cleaned, whether that's daily, weekly, or monthly. It assigns an owner to each task so nothing falls through the cracks. And every completed task is recorded and verified. The master sanitation schedule is how we make sure that over time, the whole plant gets cleaned — not just the easy parts."
+    },
+    {
+      "title": "Sanitation is everyone's job",
+      "kicker": "EVERYONE'S JOB",
+      "lead": "Clean as you go — don't leave it for the next shift.",
+      "photo": "PHOTO: worker cleaning a work surface / wiping down equipment",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Clean as you go and leave your area better than you found it.",
+          "Report spills, broken equipment, or a cleaning step you couldn't finish.",
+          "An auditor may ask: how do you know this line is clean?"
+        ],
+        "chip": "A clean plant is a team habit, not one person's job."
+      },
+      "notes": "The sanitation crew does the deep cleaning, but sanitation is everyone's job. Clean as you go — wipe up spills when they happen, keep your area orderly, and leave it better than you found it rather than leaving a mess for the next shift. If you see a spill you can't handle, a piece of broken equipment, or a cleaning step that couldn't be finished, report it so it gets addressed. Remember auditors interview floor staff, and a common question is simply: how do you know this line is clean? Being able to point to your SSOP, the pre-op sign-off, and the records is the answer. A clean plant is a team habit, not one person's job."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Cleaning removes soil and allergens; sanitizing kills microbes — clean first",
+          "Follow the SSOP and the cleaning sequence exactly",
+          "Handle chemicals safely, never mix, store labeled and separate",
+          "No run without pre-op; the master schedule cleans everything on time"
+        ],
+        "next": "Next: Receiving, Storage & Ingredients"
+      },
+      "notes": "Let's recap. Cleaning and sanitizing are two jobs: cleaning removes soil and allergen residue, sanitizing reduces microbes, and you always clean first. Follow the SSOP and the cleaning sequence exactly — remove debris, pre-rinse, wash with detergent, rinse, and sanitize. Handle chemicals safely: read the label and SDS, use the right dilution and PPE, never mix them, and store them labeled, secured, and away from product. No line runs until the pre-operational inspection passes, and the master sanitation schedule makes sure every surface gets cleaned on time, with an owner and a record. Sanitation is everyone's job. Up next, we move into Receiving, Storage and Ingredients. Well done."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "What is the difference between cleaning and sanitizing?",
+      "options": ["They are the same thing", "Cleaning removes visible soil and residue; sanitizing reduces microorganisms", "Sanitizing comes first, then cleaning", "Cleaning kills bacteria; sanitizing makes things shiny"],
+      "correct": 1,
+      "hint": "One removes soil, the other reduces microbes.",
+      "rationale": "Cleaning physically removes soil, residue, and allergen protein; sanitizing reduces microorganisms to a safe level. They are two separate jobs."
+    },
+    {
+      "question": "Why must you clean a surface before sanitizing it?",
+      "options": ["It's just tradition", "Sanitizer can't reach microbes hidden in soil or grease", "To save sanitizer", "You don't — order doesn't matter"],
+      "correct": 1,
+      "hint": "Sanitizer only works on an already-clean surface.",
+      "rationale": "A sanitizer sprayed onto soil or grease can't reach the microbes hiding in it. Cleaning must remove the soil first so the sanitizer can work."
+    },
+    {
+      "question": "What is the correct cleaning sequence?",
+      "options": ["Sanitize, then wash", "Remove debris, pre-rinse, wash with detergent, rinse, sanitize", "Just spray sanitizer and wipe", "Rinse, sanitize, then scrub"],
+      "correct": 1,
+      "hint": "Dry clean-up comes first; sanitize last.",
+      "rationale": "The sequence is remove debris (dry clean-up), pre-rinse, wash with detergent and scrub, rinse, then sanitize at the right concentration and contact time."
+    },
+    {
+      "question": "What does an SSOP tell you?",
+      "options": ["Only who to call", "What to clean, how, which chemical and dilution, contact time, who, and how it's verified", "Just the chemical name", "The production schedule"],
+      "correct": 1,
+      "hint": "It's the written recipe for cleaning a specific item.",
+      "rationale": "An SSOP specifies what to clean and how, the chemical and dilution, the contact time, who is responsible and how often, and how the clean is verified and recorded."
+    },
+    {
+      "question": "Which is a rule for handling cleaning chemicals?",
+      "options": ["Mix them to save time", "Read the label/SDS, use correct dilution and PPE, never mix chemicals", "Pour into any handy container", "Stronger dilution is always better"],
+      "correct": 1,
+      "hint": "Never mix; read before you use.",
+      "rationale": "Always read the label and SDS, use the correct dilution and the right PPE, keep chemicals in labeled containers, and never mix chemicals — some combinations release toxic gas."
+    },
+    {
+      "question": "How should cleaning chemicals be stored?",
+      "options": ["Anywhere convenient on the floor", "In a dedicated, secured area away from food/packaging, labeled, with SDS available", "Over the production line for easy access", "In unlabeled jugs to save space"],
+      "correct": 1,
+      "hint": "Away from product, labeled, secured.",
+      "rationale": "Chemicals are stored in a dedicated, access-controlled area away from food, packaging, and ingredients, in clearly labeled containers, with SDS available and food-grade kept separate from non-food."
+    },
+    {
+      "question": "A line has been cleaned but the pre-op inspection hasn't passed yet. Can production start?",
+      "options": ["Yes, if you're behind schedule", "No — no production runs until the pre-op inspection passes", "Yes, if the supervisor is busy", "Only on the day shift"],
+      "correct": 1,
+      "hint": "Pre-op is a gate with no exceptions.",
+      "rationale": "No production starts until the pre-operational inspection passes — no exceptions. If the line fails, it's re-cleaned and re-inspected before running."
+    },
+    {
+      "question": "What is the purpose of the master sanitation schedule?",
+      "options": ["To schedule employee breaks", "To make sure every area and surface is cleaned on time, with an owner and a record", "To list the day's production", "To track chemical purchases"],
+      "correct": 1,
+      "hint": "Everything gets cleaned, on a cycle, with an owner.",
+      "rationale": "The master sanitation schedule lists every area and surface (including hard-to-reach ones), sets how often each is cleaned, assigns an owner, and records and verifies each completed task."
+    }
+  ]
+}

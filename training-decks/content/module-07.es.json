@@ -1,0 +1,271 @@
+{
+  "module": 7,
+  "language": "es",
+  "moduleLabel": "Módulo 7",
+  "title": "Limpieza y Saneamiento",
+  "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 7 — Limpieza y Saneamiento",
+      "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+      "photo": "FOTO: cuadrilla de saneamiento limpiando una línea / estación de químicos etiquetada",
+      "photoCaption": "PROGRAMAS PRERREQUISITO · SANEAMIENTO",
+      "intro": "Una planta limpia es la base sobre la que se apoyan todos los demás controles. Este módulo cubre la diferencia entre limpiar y sanitizar, cómo seguir un SSOP, la seguridad y el almacenamiento de químicos, la inspección preoperacional y el calendario maestro de saneamiento.",
+      "notes": "Bienvenido al Módulo 7. Hasta ahora cubrimos peligros, alérgenos, HACCP y material extraño. La limpieza y el saneamiento son el programa prerrequisito del que todos esos dependen — una planta limpia es la base sobre la que se apoyan los demás controles. En este módulo aprenderás la verdadera diferencia entre limpiar y sanitizar, cómo seguir un procedimiento operativo estándar de saneamiento o SSOP, cómo manejar y almacenar los químicos de limpieza de forma segura, qué es la inspección preoperacional y por qué la producción no puede empezar sin ella, y cómo el calendario maestro de saneamiento se asegura de que nada se pase por alto. Un buen saneamiento también es cómo eliminamos el residuo de alérgenos entre productos, así que esto se conecta directamente con proteger la declaración libre de alérgenos."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "kicker": "PREPÁRATE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explicar la diferencia entre limpiar y sanitizar",
+          "Seguir un SSOP y la secuencia correcta de limpieza",
+          "Manejar y almacenar los químicos de limpieza de forma segura",
+          "Entender la inspección preoperacional y el calendario maestro"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que podrás hacer al terminar. Explicar la diferencia entre limpiar y sanitizar — son dos trabajos distintos. Seguir un procedimiento operativo estándar de saneamiento y realizar los pasos de limpieza en el orden correcto. Manejar y almacenar los químicos de limpieza de forma segura, incluyendo nunca mezclarlos. Y entender la inspección preoperacional que autoriza una línea a correr, además del calendario maestro de saneamiento que asegura que cada superficie se limpie a tiempo."
+    },
+    {
+      "title": "Por qué importa",
+      "lead": "El saneamiento es la capa base bajo todos los demás controles.",
+      "kicker": "POR QUÉ IMPORTA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Elimina suciedad y residuo de alérgenos entre productos",
+          "Controla los patógenos que causan enfermedades transmitidas por alimentos",
+          "Niega a las plagas el alimento y el refugio que necesitan",
+          "Protege la declaración libre de alérgenos y mantiene los registros listos para auditoría"
+        ]
+      },
+      "notes": "¿Por qué importa tanto el saneamiento? Primero, la limpieza es cómo eliminamos físicamente la suciedad y el residuo de alérgenos entre productos — es el paso que protege la declaración libre de alérgenos en la hamburguesa de origen vegetal que fabricamos. Segundo, sanitizar controla los patógenos que causan enfermedades transmitidas por alimentos, especialmente en la línea de congelados. Tercero, una planta limpia niega a las plagas el alimento y el refugio que necesitan para instalarse. Y cuarto, cada tarea de limpieza se registra, así que un buen saneamiento también nos mantiene listos para la auditoría. El saneamiento no está separado de la seguridad alimentaria — es la capa base sobre la que se construye todo lo demás."
+    },
+    {
+      "title": "Limpiar vs sanitizar",
+      "lead": "Dos trabajos distintos — y debes hacerlos en orden.",
+      "kicker": "DOS TRABAJOS",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Limpiar",
+          "items": [
+            "Elimina suciedad visible, residuo y proteína de alérgeno",
+            "Usa detergente, agua y restregado físico",
+            "Debe ir primero — no puedes sanitizar una superficie sucia"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Sanitizar",
+          "items": [
+            "Reduce los microorganismos a un nivel seguro",
+            "Usa un sanitizante aprobado a la fuerza y tiempo de contacto correctos",
+            "Solo funciona en una superficie ya limpia"
+          ],
+          "color": "amber"
+        },
+        "chip": "Limpia primero, luego sanitiza — siempre"
+      },
+      "notes": "Limpiar y sanitizar suenan parecido pero son dos trabajos distintos, y el orden importa. Limpiar elimina lo que ves y lo que no — suciedad visible, residuo y proteína de alérgeno — usando detergente, agua y restregado físico. Sanitizar es diferente: reduce los microorganismos que quedan a un nivel seguro, usando un sanitizante aprobado a la fuerza y el tiempo de contacto correctos. Este es el punto clave: sanitizar solo funciona en una superficie que ya está limpia. Un sanitizante rociado sobre suciedad o grasa no alcanza los microbios escondidos en ella. Por eso siempre limpiamos primero y luego sanitizamos — siempre."
+    },
+    {
+      "title": "La secuencia de limpieza",
+      "lead": "Haz los pasos en orden — saltarte uno deshace el resto.",
+      "kicker": "LA SECUENCIA",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Retira los residuos — limpieza en seco primero",
+          "Pre-enjuaga con agua",
+          "Lava con detergente — restriega para quitar suciedad y proteína",
+          "Enjuaga, luego sanitiza a la concentración y tiempo de contacto correctos"
+        ],
+        "highlight": 2
+      },
+      "notes": "Una limpieza eficaz sigue una secuencia fija, y saltarse un paso deshace los que lo rodean. Primero, retira los residuos con una limpieza en seco — raspa y barre antes de usar agua, para no esparcir la suciedad. Segundo, pre-enjuaga con agua para arrastrar el material suelto. Tercero, lava con detergente y restriega físicamente — este es el paso que de verdad elimina la suciedad y la proteína de alérgeno de la superficie. Luego enjuaga el detergente y aplica el sanitizante a la concentración correcta y por todo el tiempo de contacto que indica la etiqueta. Cada paso prepara el siguiente, por eso tu SSOP los enumera en orden."
+    },
+    {
+      "title": "SSOP: tus instrucciones de limpieza",
+      "lead": "La receta escrita para limpiar cada equipo.",
+      "kicker": "SSOP",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Te dice qué limpiar y exactamente cómo hacerlo",
+          "Nombra el químico, la dilución y el tiempo de contacto",
+          "Indica quién es responsable y con qué frecuencia se hace",
+          "Define cómo se verifica y se registra la limpieza"
+        ]
+      },
+      "notes": "Un SSOP — un Procedimiento Operativo Estándar de Saneamiento — es la receta escrita para limpiar un equipo o área específica. Elimina las suposiciones. Un buen SSOP te dice qué limpiar y exactamente cómo hacerlo, paso a paso. Nombra el químico a usar, la dilución o concentración y el tiempo de contacto. Indica quién es responsable y con qué frecuencia se hace la tarea. Y define cómo se verifica la limpieza — revisión visual, hisopos — y cómo se registra. Cuando sigues el SSOP exactamente, el resultado es consistente y demostrable. Si algo no está claro o no puedes seguirlo tal como está escrito, pregunta a tu supervisor en lugar de improvisar."
+    },
+    {
+      "title": "Seguridad química",
+      "lead": "Los químicos de limpieza son herramientas — y peligros.",
+      "kicker": "SEGURIDAD QUÍMICA",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Siempre",
+          "items": [
+            "Lee la etiqueta y la SDS antes de usar un químico",
+            "Usa la dilución correcta y el EPP adecuado",
+            "Mantén los químicos en sus envases originales y etiquetados"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Nunca",
+          "items": [
+            "Mezclar químicos — algunas combinaciones liberan gas tóxico",
+            "Usar un envase sin etiqueta o adivinar qué contiene",
+            "Usar o guardar químicos sobre producto o empaque expuesto"
+          ],
+          "color": "amber"
+        },
+        "chip": "¿Dudas sobre un químico? Detente y pregunta"
+      },
+      "notes": "Los químicos de limpieza son herramientas poderosas, pero también son peligros — para ti y para el producto. Siempre lee la etiqueta y la hoja de datos de seguridad, la SDS, antes de usar un químico, para saber cómo usarlo y qué hacer si toca la piel o los ojos. Usa la dilución correcta — más fuerte no es mejor — y usa el equipo de protección adecuado. Mantén los químicos en sus envases originales y etiquetados. Lo que nunca debes hacer: mezclar químicos, porque algunas combinaciones, como cloro y amoníaco, liberan gas tóxico. Nunca uses un envase sin etiqueta ni adivines qué contiene. Y nunca uses ni guardes químicos sobre producto o empaque expuesto. Si alguna vez tienes dudas sobre un químico, detente y pregunta."
+    },
+    {
+      "title": "Almacenamiento de químicos",
+      "lead": "Dónde y cómo se guardan los químicos también es un control.",
+      "kicker": "ALMACENAMIENTO",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Guardados en un área dedicada, lejos de alimentos, empaque e ingredientes",
+          "Cada envase claramente etiquetado con su contenido",
+          "Asegurados y con acceso controlado — no dejados en el piso",
+          "SDS disponible, y los de grado alimentario separados de los no alimentarios"
+        ]
+      },
+      "notes": "Dónde y cómo guardamos los químicos es un control por derecho propio. Los químicos se guardan en un área de almacenamiento dedicada, lejos de los alimentos, el empaque y los ingredientes, para que no haya posibilidad de que un derrame o salpicadura llegue al producto. Cada envase está claramente etiquetado con su contenido — nada de garrafas misteriosas. El almacenamiento está asegurado y con acceso controlado, no dejado en el piso de producción donde podría volcarse o llegar al producto. Las hojas de datos de seguridad se mantienen disponibles para todo lo que hay en el sitio. Y los químicos de grado alimentario se mantienen separados de los no alimentarios para que no se confundan. Devuelve un químico a su lugar en cuanto termines de usarlo."
+    },
+    {
+      "title": "Inspección preoperacional",
+      "kicker": "PRE-OP",
+      "visual": {
+        "type": "stopSign",
+        "label": "PRE-OP",
+        "lines": [
+          "Antes de que empiece la producción, la línea se inspecciona y se aprueba.",
+          "Las superficies están limpias y secas, sin residuo, sin químico, sin restos.",
+          "Ninguna producción corre hasta que la inspección preoperacional pase — sin excepciones."
+        ]
+      },
+      "notes": "La inspección preoperacional, o pre-op, es la puerta entre la limpieza y la producción. Después de que una línea se limpia y se sanitiza, y antes de que corra cualquier producto, se inspecciona y se aprueba. El inspector confirma que las superficies estén limpias y secas, sin residuo, sin químico sobrante y sin restos en ningún lugar — incluyendo los puntos difíciles de alcanzar. Solo cuando la línea pasa la pre-op se autoriza a correr. La regla es firme: ninguna producción empieza hasta que la inspección preoperacional pase, sin excepciones. Si la línea no pasa, regresa a limpieza y se vuelve a inspeccionar. La pre-op es tu última oportunidad de atrapar una falla de limpieza antes de que toque el producto."
+    },
+    {
+      "title": "El calendario maestro de saneamiento",
+      "lead": "Todo se limpia — según un calendario, con un responsable.",
+      "kicker": "CALENDARIO MAESTRO",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Enumera cada área y superficie, incluidas las de difícil acceso",
+          "Define con qué frecuencia se limpia cada una — diaria, semanal, mensual",
+          "Asigna un responsable para que nada se pase por alto",
+          "Cada tarea completada se registra y se verifica"
+        ]
+      },
+      "notes": "La limpieza diaria de la línea cubre las superficies obvias, pero algunas cosas — estructuras elevadas, drenajes, paredes, el interior del equipo — necesitan limpieza en un ciclo más largo. Para eso es el calendario maestro de saneamiento. Enumera cada área y superficie de la planta, incluidas las de difícil acceso que es fácil olvidar. Define con qué frecuencia se limpia cada una, ya sea diaria, semanal o mensual. Asigna un responsable a cada tarea para que nada se pase por alto. Y cada tarea completada se registra y se verifica. El calendario maestro de saneamiento es cómo nos aseguramos de que, con el tiempo, toda la planta se limpie — no solo las partes fáciles."
+    },
+    {
+      "title": "El saneamiento es tarea de todos",
+      "kicker": "TAREA DE TODOS",
+      "lead": "Limpia sobre la marcha.",
+      "photo": "FOTO: trabajador limpiando una superficie de trabajo / limpiando el equipo",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Limpia sobre la marcha y deja tu área mejor de como la encontraste.",
+          "Reporta derrames, equipo roto o un paso de limpieza que no pudiste terminar.",
+          "Un auditor puede preguntar: ¿cómo sabes que esta línea está limpia?"
+        ],
+        "chip": "Una planta limpia es un hábito de equipo, no tarea de una persona."
+      },
+      "notes": "La cuadrilla de saneamiento hace la limpieza profunda, pero el saneamiento es tarea de todos. Limpia sobre la marcha — recoge los derrames cuando ocurren, mantén tu área ordenada y déjala mejor de como la encontraste en lugar de dejar un desorden para el siguiente turno. Si ves un derrame que no puedes manejar, un equipo roto o un paso de limpieza que no se pudo terminar, repórtalo para que se atienda. Recuerda que los auditores entrevistan al personal del piso, y una pregunta común es simplemente: ¿cómo sabes que esta línea está limpia? Poder señalar tu SSOP, la aprobación de la pre-op y los registros es la respuesta. Una planta limpia es un hábito de equipo, no tarea de una sola persona."
+    },
+    {
+      "title": "Resumen",
+      "kicker": "RESUMEN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Limpiar quita suciedad y alérgenos; sanitizar mata microbios — limpia primero",
+          "Sigue el SSOP y la secuencia de limpieza exactamente",
+          "Maneja los químicos con seguridad, nunca los mezcles, guárdalos etiquetados y separados",
+          "Sin pre-op no se corre; el calendario maestro limpia todo a tiempo"
+        ],
+        "next": "Sigue: Recepción, Almacenamiento e Ingredientes"
+      },
+      "notes": "Repasemos. Limpiar y sanitizar son dos trabajos: limpiar elimina suciedad y residuo de alérgenos, sanitizar reduce los microbios, y siempre limpias primero. Sigue el SSOP y la secuencia de limpieza exactamente — retira residuos, pre-enjuaga, lava con detergente, enjuaga y sanitiza. Maneja los químicos con seguridad: lee la etiqueta y la SDS, usa la dilución y el EPP correctos, nunca los mezcles, y guárdalos etiquetados, asegurados y lejos del producto. Ninguna línea corre hasta que la inspección preoperacional pase, y el calendario maestro de saneamiento asegura que cada superficie se limpie a tiempo, con un responsable y un registro. El saneamiento es tarea de todos. A continuación, pasamos a Recepción, Almacenamiento e Ingredientes. Bien hecho."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Cuál es la diferencia entre limpiar y sanitizar?",
+      "options": ["Son lo mismo", "Limpiar elimina la suciedad y el residuo visible; sanitizar reduce los microorganismos", "Primero se sanitiza y luego se limpia", "Limpiar mata bacterias; sanitizar da brillo"],
+      "correct": 1,
+      "hint": "Uno quita suciedad, el otro reduce microbios.",
+      "rationale": "Limpiar elimina físicamente suciedad, residuo y proteína de alérgeno; sanitizar reduce los microorganismos a un nivel seguro. Son dos trabajos distintos."
+    },
+    {
+      "question": "¿Por qué debes limpiar una superficie antes de sanitizarla?",
+      "options": ["Es solo tradición", "El sanitizante no alcanza los microbios escondidos en la suciedad o grasa", "Para ahorrar sanitizante", "No hace falta — el orden no importa"],
+      "correct": 1,
+      "hint": "El sanitizante solo funciona en una superficie ya limpia.",
+      "rationale": "Un sanitizante rociado sobre suciedad o grasa no alcanza los microbios escondidos en ella. La limpieza debe quitar la suciedad primero para que el sanitizante funcione."
+    },
+    {
+      "question": "¿Cuál es la secuencia correcta de limpieza?",
+      "options": ["Sanitizar, luego lavar", "Retirar residuos, pre-enjuagar, lavar con detergente, enjuagar, sanitizar", "Solo rociar sanitizante y limpiar", "Enjuagar, sanitizar y luego restregar"],
+      "correct": 1,
+      "hint": "La limpieza en seco va primero; sanitizar al final.",
+      "rationale": "La secuencia es retirar residuos (limpieza en seco), pre-enjuagar, lavar con detergente y restregar, enjuagar, y luego sanitizar a la concentración y tiempo de contacto correctos."
+    },
+    {
+      "question": "¿Qué te dice un SSOP?",
+      "options": ["Solo a quién llamar", "Qué limpiar, cómo, qué químico y dilución, tiempo de contacto, quién, y cómo se verifica", "Solo el nombre del químico", "El calendario de producción"],
+      "correct": 1,
+      "hint": "Es la receta escrita para limpiar un equipo específico.",
+      "rationale": "Un SSOP especifica qué limpiar y cómo, el químico y la dilución, el tiempo de contacto, quién es responsable y con qué frecuencia, y cómo se verifica y registra la limpieza."
+    },
+    {
+      "question": "¿Cuál es una regla para manejar los químicos de limpieza?",
+      "options": ["Mezclarlos para ahorrar tiempo", "Leer la etiqueta/SDS, usar la dilución correcta y el EPP, nunca mezclar químicos", "Verterlos en cualquier envase a mano", "Una dilución más fuerte siempre es mejor"],
+      "correct": 1,
+      "hint": "Nunca mezcles; lee antes de usar.",
+      "rationale": "Siempre lee la etiqueta y la SDS, usa la dilución correcta y el EPP adecuado, mantén los químicos en envases etiquetados, y nunca mezcles químicos — algunas combinaciones liberan gas tóxico."
+    },
+    {
+      "question": "¿Cómo se deben almacenar los químicos de limpieza?",
+      "options": ["En cualquier lugar conveniente del piso", "En un área dedicada y asegurada, lejos de alimentos/empaque, etiquetados, con SDS disponible", "Sobre la línea de producción para fácil acceso", "En garrafas sin etiqueta para ahorrar espacio"],
+      "correct": 1,
+      "hint": "Lejos del producto, etiquetados, asegurados.",
+      "rationale": "Los químicos se guardan en un área dedicada y con acceso controlado, lejos de alimentos, empaque e ingredientes, en envases claramente etiquetados, con SDS disponible y los de grado alimentario separados de los no alimentarios."
+    },
+    {
+      "question": "Una línea se limpió pero la inspección preoperacional aún no pasa. ¿Puede empezar la producción?",
+      "options": ["Sí, si vas atrasado", "No — ninguna producción corre hasta que la inspección preoperacional pase", "Sí, si el supervisor está ocupado", "Solo en el turno de día"],
+      "correct": 1,
+      "hint": "La pre-op es una puerta sin excepciones.",
+      "rationale": "Ninguna producción empieza hasta que la inspección preoperacional pase — sin excepciones. Si la línea no pasa, se vuelve a limpiar y a inspeccionar antes de correr."
+    },
+    {
+      "question": "¿Cuál es el propósito del calendario maestro de saneamiento?",
+      "options": ["Programar los descansos del personal", "Asegurar que cada área y superficie se limpie a tiempo, con un responsable y un registro", "Listar la producción del día", "Rastrear las compras de químicos"],
+      "correct": 1,
+      "hint": "Todo se limpia, en un ciclo, con un responsable.",
+      "rationale": "El calendario maestro de saneamiento enumera cada área y superficie (incluidas las de difícil acceso), define con qué frecuencia se limpia cada una, asigna un responsable, y registra y verifica cada tarea completada."
+    }
+  ]
+}
