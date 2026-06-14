@@ -1,0 +1,259 @@
+{
+  "module": 6,
+  "language": "en",
+  "moduleLabel": "Module 6",
+  "title": "Foreign Material Control",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 6 — Foreign Material Control",
+      "subtitle": "SQF Food Safety Training",
+      "photo": "PHOTO: sieve / magnet / inline inspection on the production line",
+      "photoCaption": "PROCESS CONTROL · FOREIGN MATERIAL",
+      "intro": "Foreign material is anything that ends up in product but doesn't belong — metal, glass, hard plastic, wood, a piece of a tool. This module covers where it comes from and the layers we use to keep it out: exclude, capture, detect, and react.",
+      "notes": "Welcome to Module 6. In the last module we covered HACCP and our Critical Control Points, including metal detection. Now we zoom in on the wider job of foreign material control. Foreign material is anything that ends up in the product but doesn't belong — a metal fragment, a sliver of glass, a piece of hard plastic, wood, or part of a tool or piece of equipment. A physical hazard like this can injure a customer and is one of the most common reasons products get recalled. We protect against it with layers: we exclude what we can, capture what gets through, detect what's left, and react correctly when something is found."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Name the main sources of foreign material in our plant",
+          "Describe the layers of defense: exclude, capture, detect, react",
+          "Follow our glass, brittle-plastic, and sharps control rules",
+          "Stop, isolate, and report the moment you find or suspect contamination"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here is what you will be able to do by the end. Name the main places foreign material comes from in our plant. Describe the layers of defense we rely on — exclude, capture, detect, and react. Follow our rules for glass, brittle plastic, and sharp tools like blades and knives. And know exactly what to do — stop, isolate, and report — the moment you find or even suspect foreign material in the product."
+    },
+    {
+      "title": "Why it matters",
+      "lead": "A physical hazard can hurt someone and pull product off shelves.",
+      "kicker": "WHY IT MATTERS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Injury — a customer can be cut, chipped a tooth, or worse",
+          "Recall — foreign material is a leading cause of product recalls",
+          "Trust — one complaint can damage a brand built over years",
+          "It's preventable — almost every case traces back to a missed control"
+        ]
+      },
+      "notes": "Why do we put so much effort into this? First, injury — a hard foreign object can cut someone, chip a tooth, or cause a choking risk, and that's a real person harmed by something we made. Second, recalls — foreign material is one of the leading causes of food product recalls, and a recall is expensive and damaging. Third, trust — a single contamination complaint can damage the reputation of a brand that took years to build. And the most important point: it's almost always preventable. When foreign material reaches a customer, it nearly always traces back to a control that was skipped or a device that wasn't checked."
+    },
+    {
+      "title": "Where it comes from",
+      "lead": "Four sources cover almost everything.",
+      "kicker": "THE SOURCES",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Raw materials — metal, stones, or debris arriving in ingredients",
+          "Equipment & maintenance — worn parts, loose bolts, wire, shavings",
+          "Packaging — staples, plastic, cardboard, strapping",
+          "People — jewelry, pen caps, buttons, fingernails, hair"
+        ]
+      },
+      "notes": "Foreign material comes from four main sources, and knowing them helps you spot risk. First, raw materials — metal fragments, stones, or debris can arrive inside the ingredients we receive. Second, equipment and maintenance — worn or broken parts, loose bolts, bits of wire, and metal shavings from repairs. Third, packaging — staples, hard plastic, cardboard, and strapping that can break off and fall into product. And fourth, people — jewelry, pen caps, buttons, false fingernails, and hair, which is exactly why we have the GMP rules we covered earlier. Most contamination starts in one of these four places."
+    },
+    {
+      "title": "Four layers of defense",
+      "lead": "No single device catches everything — the layers back each other up.",
+      "kicker": "LAYERS OF DEFENSE",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Exclude — keep it out: GMPs, no glass, approved suppliers",
+          "Capture — sieves, filters, and magnets remove it mid-process",
+          "Detect — metal detection and checkweighing near the end",
+          "React — find something? stop, isolate, and report"
+        ],
+        "highlight": 0
+      },
+      "notes": "We control foreign material with four layers that back each other up, because no single step catches everything. The first and most important is exclude — keep it out in the first place, through GMP rules, our no-glass policy, and approved suppliers who control their own material. The second is capture — sieves, filters, and magnets that physically remove material in the middle of the process. The third is detect — the metal detector and checkweigher near the end of the line, which we covered as a CCP. And the fourth is react — when something is found, we stop, isolate the product, and report it. Exclude, capture, detect, react."
+    },
+    {
+      "title": "Capture: sieves, filters & magnets",
+      "lead": "Remove material in-process, before it can reach the end.",
+      "kicker": "CAPTURE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Sieves and filters screen out oversized debris from dry and wet ingredients",
+          "Magnets pull ferrous metal from flowing product",
+          "Inspect and clean them on schedule — a blinded sieve protects nothing",
+          "Record checks; report and investigate anything you find on them"
+        ]
+      },
+      "notes": "The capture layer physically removes foreign material in the middle of the process, before it can reach the end of the line. Sieves and filters screen out oversized debris from both dry and wet ingredients. Magnets pull ferrous metal out of flowing product. But these devices only work if they're maintained: a sieve that's torn or blinded with buildup protects nothing, and a magnet caked in debris stops grabbing. So we inspect and clean them on a set schedule, record those checks, and — this part matters — if you find metal or debris on a magnet or in a sieve, that's not just routine cleaning. Report it and investigate, because it tells you something upstream is shedding material."
+    },
+    {
+      "title": "Detect: metal detection & checkweighing",
+      "lead": "The last automated guard before product ships.",
+      "kicker": "DETECT",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Verify the detector with test pieces at set intervals",
+          "All finished product passes through; the rejector must work",
+          "A reject or failed test means stop and segregate",
+          "Record every check and every reject"
+        ],
+        "highlight": 1
+      },
+      "notes": "The detect layer is the last automated guard before product ships, and we covered it as a Critical Control Point in the HACCP module. The metal detector is verified at set intervals with ferrous, non-ferrous, and stainless-steel test pieces, and we confirm the rejector actually removes a contaminated pack. All finished product passes through. A reject, or a failed verification test, means we stop and segregate the affected product until it's resolved. And every check and every reject is recorded. The checkweigher works alongside it, catching packs that are too heavy or too light — which can also signal something is wrong. Detection is powerful, but remember it's the last layer, not the only one."
+    },
+    {
+      "title": "Glass & brittle plastic",
+      "kicker": "GLASS POLICY",
+      "visual": {
+        "type": "stopSign",
+        "label": "GLASS",
+        "lines": [
+          "No personal glass or hard brittle plastic in production areas.",
+          "Logged on the glass & brittle-plastic register; inspected regularly.",
+          "Breakage means stop, isolate nearby product, clean up, and record it."
+        ]
+      },
+      "notes": "Glass and hard brittle plastic get their own strict policy because when they break they shatter into sharp pieces that are very hard to find. The rule starts with exclusion: no personal glass — no drinking glasses, no glass containers — and no unnecessary brittle plastic in production areas. The glass and brittle plastic that has to be there, like gauges or light covers, is listed on a register and inspected regularly to confirm none is missing or cracked. And if something does break, it's treated as an event: stop work in the area, isolate any product that could have been exposed, clean up thoroughly under supervision, and record what happened. Never just sweep up glass and keep running."
+    },
+    {
+      "title": "Sharps: blade & knife control",
+      "lead": "Every blade is accounted for — before and after the job.",
+      "kicker": "SHARPS",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Always",
+          "items": [
+            "Use only issued, accounted-for blades and box cutters",
+            "Count blades out and back in; report any that break or go missing",
+            "Change and dispose of blades in the proper container"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Never",
+          "items": [
+            "Bring a personal knife or box cutter onto the floor",
+            "Leave a loose blade on a line or work surface",
+            "Keep running if a blade chips or a piece is missing"
+          ],
+          "color": "amber"
+        },
+        "chip": "A missing blade fragment is a stop-the-line event"
+      },
+      "notes": "Blades, knives, and box cutters are a special risk because a chipped blade puts a sharp metal fragment right into the product stream. So sharps are controlled tightly. Always use only issued, accounted-for blades — count them out at the start of a task and back in at the end, and report immediately any blade that breaks or goes missing. Dispose of used blades in the proper sharps container. What you must never do: bring a personal knife or box cutter onto the floor, leave a loose blade on a line or surface, or keep running if a blade chips or a piece can't be found. A missing blade fragment is a stop-the-line event, every time."
+    },
+    {
+      "title": "Tools & maintenance",
+      "lead": "What goes onto the floor must come back off it.",
+      "kicker": "TOOLS",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Account for every tool and part taken onto the line — none left behind",
+          "No temporary fixes with tape, wire, or cardboard near product",
+          "Report loose bolts, worn parts, or missing equipment pieces",
+          "Clean down and inspect the line before it runs again"
+        ]
+      },
+      "notes": "Maintenance and tools are a major source of foreign material, so the rule is simple: what goes onto the floor must come back off it. Account for every tool and every part taken onto a line during a repair — a wrench, a bolt, a washer left behind becomes tomorrow's contamination. We don't do temporary fixes with tape, wire, or cardboard near product; a proper repair is made instead. Report loose bolts, worn or flaking parts, and any equipment piece that's missing, because if a part isn't on the machine, it may be in the product. And after any maintenance, the line is cleaned down and inspected before it runs again."
+    },
+    {
+      "title": "You're the last layer",
+      "kicker": "LAST LAYER",
+      "lead": "Find it or suspect it? Stop and report.",
+      "photo": "PHOTO: worker inspecting product / equipment on the line",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "If you find or suspect foreign material, stop and isolate the product.",
+          "Report it — never just remove the piece and keep running.",
+          "An auditor may ask: what do you do if you find metal in product?"
+        ],
+        "chip": "When in doubt, stop the line and report."
+      },
+      "notes": "Machines do a lot, but you are the last layer of defense, because you can notice the thing a sensor can't. If you find foreign material in product, or even suspect it — a damaged part, a missing blade, debris on a magnet — stop and isolate the affected product so it can't move forward. Then report it. Never just pick the piece out and keep running, because if one piece got in, more may have too, and a report is what triggers an investigation. Remember auditors interview floor staff, and a common question is: what do you do if you find metal or glass in the product? When in doubt, stop the line and report."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Foreign material injures customers and causes recalls — and it's preventable",
+          "Defense in layers: exclude, capture, detect, react",
+          "Strict control of glass, brittle plastic, blades, tools, and parts",
+          "Find or suspect it? Stop, isolate, report — never just keep running"
+        ],
+        "next": "Next: Cleaning & Sanitation"
+      },
+      "notes": "Let's recap. Foreign material — metal, glass, hard plastic, parts of tools — can injure a customer and cause a recall, and it is almost always preventable. We defend in layers: exclude it with GMPs and our policies, capture it with sieves, filters, and magnets, detect it with metal detection and checkweighing, and react when something is found. We keep strict control of glass and brittle plastic, of blades and sharps, and of the tools and parts that go onto the line during maintenance. And whenever you find foreign material or even suspect it, the response is the same: stop, isolate the product, and report. Up next, we move into Cleaning and Sanitation. Nice work."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "What is 'foreign material' in a food plant?",
+      "options": ["Imported ingredients", "Anything in the product that doesn't belong, like metal, glass, or hard plastic", "Any ingredient from another country", "Cleaning chemicals only"],
+      "correct": 1,
+      "hint": "Anything that ends up in product but shouldn't.",
+      "rationale": "Foreign material is any physical object that ends up in product but doesn't belong — metal, glass, brittle plastic, wood, or a piece of a tool or equipment."
+    },
+    {
+      "question": "What are the four layers of defense against foreign material?",
+      "options": ["Wash, rinse, sanitize, dry", "Exclude, capture, detect, react", "Receive, store, ship, record", "Mix, bake, cool, pack"],
+      "correct": 1,
+      "hint": "Keep it out, grab it, find it, respond.",
+      "rationale": "The layers are exclude (keep it out), capture (sieves, filters, magnets), detect (metal detection and checkweighing), and react (stop, isolate, report)."
+    },
+    {
+      "question": "Which is NOT one of the four main sources of foreign material?",
+      "options": ["Raw materials", "Equipment and maintenance", "Weather", "People"],
+      "correct": 2,
+      "hint": "Think about what physically gets into product.",
+      "rationale": "The four main sources are raw materials, equipment and maintenance, packaging, and people. Weather is not a foreign-material source."
+    },
+    {
+      "question": "You find metal debris on an in-line magnet during a routine check. What should you do?",
+      "options": ["Wipe it off and carry on — that's its job", "Clean it, but also report and investigate where the metal came from", "Ignore it unless it's a large piece", "Throw the magnet away"],
+      "correct": 1,
+      "hint": "It's telling you something upstream is shedding metal.",
+      "rationale": "A magnet catching metal is doing its job, but the find must be reported and investigated — it signals something upstream is shedding material that needs to be fixed."
+    },
+    {
+      "question": "What is our policy on glass and brittle plastic in production areas?",
+      "options": ["Allowed if you're careful", "No personal glass/brittle plastic; necessary items are on a register and inspected", "Only allowed on the night shift", "Glass is fine, only plastic is controlled"],
+      "correct": 1,
+      "hint": "Exclude it; register and inspect what must be there.",
+      "rationale": "No personal glass or unnecessary brittle plastic is allowed in production; required items (gauges, light covers) are listed on a register and inspected, and any breakage is a stop-and-clean event."
+    },
+    {
+      "question": "How are blades and box cutters controlled?",
+      "options": ["Bring your own and keep it handy", "Use only issued blades, count them out and in, and report any broken or missing", "Leave them on the line for the next shift", "Only managers can touch them"],
+      "correct": 1,
+      "hint": "Account for every blade, before and after.",
+      "rationale": "Only issued, accounted-for blades are used; they're counted out and back in, disposed of in a sharps container, and any broken or missing blade is reported as a stop-the-line event."
+    },
+    {
+      "question": "A repair was just done on your line. What's the maintenance rule?",
+      "options": ["Run immediately to make up time", "Account for every tool and part, no temporary tape/wire fixes, clean and inspect before running", "Leave tools nearby in case you need them again", "Use cardboard to cover the gap for now"],
+      "correct": 1,
+      "hint": "What goes onto the floor must come back off it.",
+      "rationale": "Every tool and part must be accounted for, no temporary fixes with tape/wire/cardboard near product, and the line is cleaned and inspected before it runs again — a part not on the machine may be in the product."
+    },
+    {
+      "question": "You think you see a small piece of plastic in the product. What do you do?",
+      "options": ["Pick it out and keep the line running", "Stop, isolate the affected product, and report it", "Wait until break to mention it", "Only act if you're certain"],
+      "correct": 1,
+      "hint": "When in doubt, stop and report.",
+      "rationale": "If you find or even suspect foreign material, stop and isolate the affected product and report it — never just remove the piece and keep running, because more may have gotten in and a report triggers an investigation."
+    }
+  ]
+}

@@ -1,0 +1,259 @@
+{
+  "module": 6,
+  "language": "es",
+  "moduleLabel": "Módulo 6",
+  "title": "Control de Material Extraño",
+  "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 6 — Control de Material Extraño",
+      "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+      "photo": "FOTO: tamiz / imán / detector de metales en la línea de producción",
+      "photoCaption": "CONTROL DE PROCESO · MATERIAL EXTRAÑO",
+      "intro": "El material extraño es cualquier cosa que termina en el producto pero no debería estar — metal, vidrio, plástico duro, madera, un pedazo de una herramienta. Este módulo cubre de dónde viene y las capas que usamos para mantenerlo fuera: excluir, capturar, detectar y reaccionar.",
+      "notes": "Bienvenido al Módulo 6. En el módulo anterior cubrimos HACCP y nuestros Puntos Críticos de Control, incluida la detección de metales. Ahora nos enfocamos en la tarea más amplia del control de material extraño. El material extraño es cualquier cosa que termina en el producto pero no debería estar — un fragmento de metal, una astilla de vidrio, un pedazo de plástico duro, madera, o parte de una herramienta o equipo. Un peligro físico así puede lastimar a un cliente y es una de las razones más comunes por las que se retiran productos. Nos protegemos con capas: excluimos lo que podemos, capturamos lo que se cuela, detectamos lo que queda y reaccionamos correctamente cuando se encuentra algo."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "kicker": "PREPÁRATE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Nombrar las principales fuentes de material extraño en nuestra planta",
+          "Describir las capas de defensa: excluir, capturar, detectar, reaccionar",
+          "Seguir nuestras reglas de vidrio, plástico quebradizo y objetos filosos",
+          "Detener, aislar y reportar en el momento en que encuentres o sospeches contaminación"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que podrás hacer al terminar. Nombrar los principales lugares de donde viene el material extraño en nuestra planta. Describir las capas de defensa en las que confiamos — excluir, capturar, detectar y reaccionar. Seguir nuestras reglas para el vidrio, el plástico quebradizo y las herramientas filosas como hojas y cuchillos. Y saber exactamente qué hacer — detener, aislar y reportar — en el momento en que encuentres o incluso sospeches material extraño en el producto."
+    },
+    {
+      "title": "Por qué importa",
+      "lead": "Un peligro físico puede lastimar a alguien y sacar producto del mercado.",
+      "kicker": "POR QUÉ IMPORTA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Lesión — un cliente puede cortarse, romperse un diente o algo peor",
+          "Retiro — el material extraño es una causa principal de retiros de producto",
+          "Confianza — una queja puede dañar una marca construida en años",
+          "Es prevenible — casi todo caso se debe a un control omitido"
+        ]
+      },
+      "notes": "¿Por qué ponemos tanto esfuerzo en esto? Primero, la lesión — un objeto extraño duro puede cortar a alguien, romper un diente o causar un riesgo de asfixia, y esa es una persona real lastimada por algo que fabricamos. Segundo, los retiros — el material extraño es una de las causas principales de retiros de productos alimenticios, y un retiro es costoso y dañino. Tercero, la confianza — una sola queja por contaminación puede dañar la reputación de una marca que tomó años construir. Y el punto más importante: casi siempre es prevenible. Cuando el material extraño llega a un cliente, casi siempre se debe a un control que se omitió o a un dispositivo que no se revisó."
+    },
+    {
+      "title": "De dónde viene",
+      "lead": "Cuatro fuentes cubren casi todo.",
+      "kicker": "LAS FUENTES",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Materias primas — metal, piedras o residuos que llegan en los ingredientes",
+          "Equipo y mantenimiento — piezas desgastadas, pernos sueltos, alambre, virutas",
+          "Empaque — grapas, plástico, cartón, fleje",
+          "Personas — joyería, tapas de bolígrafo, botones, uñas, cabello"
+        ]
+      },
+      "notes": "El material extraño viene de cuatro fuentes principales, y conocerlas te ayuda a detectar el riesgo. Primero, las materias primas — fragmentos de metal, piedras o residuos pueden llegar dentro de los ingredientes que recibimos. Segundo, el equipo y el mantenimiento — piezas desgastadas o rotas, pernos sueltos, trozos de alambre y virutas de metal de las reparaciones. Tercero, el empaque — grapas, plástico duro, cartón y fleje que pueden desprenderse y caer en el producto. Y cuarto, las personas — joyería, tapas de bolígrafo, botones, uñas postizas y cabello, que es exactamente por lo que tenemos las reglas de BPM que cubrimos antes. La mayoría de la contaminación empieza en uno de estos cuatro lugares."
+    },
+    {
+      "title": "Cuatro capas de defensa",
+      "lead": "Ningún dispositivo lo atrapa todo — las capas se respaldan entre sí.",
+      "kicker": "CAPAS DE DEFENSA",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Excluir — mantenerlo fuera: BPM, nada de vidrio, proveedores aprobados",
+          "Capturar — tamices, filtros e imanes lo retiran a mitad del proceso",
+          "Detectar — detección de metales y pesaje de control cerca del final",
+          "Reaccionar — ¿encuentras algo? detén, aísla y reporta"
+        ],
+        "highlight": 0
+      },
+      "notes": "Controlamos el material extraño con cuatro capas que se respaldan entre sí, porque ningún paso lo atrapa todo. La primera y más importante es excluir — mantenerlo fuera desde el principio, mediante las reglas de BPM, nuestra política de nada de vidrio y proveedores aprobados que controlan su propio material. La segunda es capturar — tamices, filtros e imanes que retiran físicamente el material a mitad del proceso. La tercera es detectar — el detector de metales y el pesaje de control cerca del final de la línea, que cubrimos como PCC. Y la cuarta es reaccionar — cuando se encuentra algo, detenemos, aislamos el producto y lo reportamos. Excluir, capturar, detectar, reaccionar."
+    },
+    {
+      "title": "Capturar: tamices, filtros e imanes",
+      "lead": "Retira el material en proceso, antes de que llegue al final.",
+      "kicker": "CAPTURAR",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Tamices y filtros separan residuos grandes de ingredientes secos y húmedos",
+          "Los imanes extraen metal ferroso del producto en movimiento",
+          "Inspecciónalos y límpialos según el programa — un tamiz tapado no protege nada",
+          "Registra las revisiones; reporta e investiga lo que encuentres en ellos"
+        ]
+      },
+      "notes": "La capa de captura retira físicamente el material extraño a mitad del proceso, antes de que pueda llegar al final de la línea. Los tamices y filtros separan los residuos grandes tanto de los ingredientes secos como de los húmedos. Los imanes extraen el metal ferroso del producto en movimiento. Pero estos dispositivos solo funcionan si se mantienen: un tamiz roto o tapado con acumulación no protege nada, y un imán cubierto de residuos deja de atrapar. Por eso los inspeccionamos y limpiamos según un programa fijo, registramos esas revisiones y — esto importa — si encuentras metal o residuos en un imán o en un tamiz, eso no es solo limpieza de rutina. Repórtalo e investiga, porque te dice que algo arriba está soltando material."
+    },
+    {
+      "title": "Detectar: detección de metales y pesaje",
+      "lead": "La última barrera automática antes de que el producto salga.",
+      "kicker": "DETECTAR",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Verifica el detector con piezas de prueba a intervalos establecidos",
+          "Todo el producto terminado pasa; el rechazador debe funcionar",
+          "Un rechazo o prueba fallida significa detener y segregar",
+          "Registra cada verificación y cada rechazo"
+        ],
+        "highlight": 1
+      },
+      "notes": "La capa de detección es la última barrera automática antes de que el producto salga, y la cubrimos como Punto Crítico de Control en el módulo de HACCP. El detector de metales se verifica a intervalos establecidos con piezas de prueba ferrosa, no ferrosa e inoxidable, y confirmamos que el rechazador realmente retira un paquete contaminado. Todo el producto terminado pasa por él. Un rechazo, o una prueba de verificación fallida, significa que detenemos y segregamos el producto afectado hasta resolverlo. Y cada verificación y cada rechazo se registra. El pesaje de control trabaja junto a él, atrapando paquetes demasiado pesados o demasiado ligeros — lo cual también puede indicar que algo anda mal. La detección es poderosa, pero recuerda que es la última capa, no la única."
+    },
+    {
+      "title": "Vidrio y plástico quebradizo",
+      "kicker": "POLÍTICA DE VIDRIO",
+      "visual": {
+        "type": "stopSign",
+        "label": "VIDRIO",
+        "lines": [
+          "Nada de vidrio personal ni plástico quebradizo duro en áreas de producción.",
+          "Registrado en el registro de vidrio y plástico; inspeccionado con regularidad.",
+          "Una rotura significa detener, aislar el producto cercano, limpiar y registrarlo."
+        ]
+      },
+      "notes": "El vidrio y el plástico quebradizo duro tienen su propia política estricta porque cuando se rompen se hacen pedazos afilados que son muy difíciles de encontrar. La regla empieza con la exclusión: nada de vidrio personal — ni vasos ni recipientes de vidrio — y nada de plástico quebradizo innecesario en áreas de producción. El vidrio y el plástico quebradizo que tienen que estar ahí, como manómetros o cubiertas de luces, se listan en un registro y se inspeccionan con regularidad para confirmar que ninguno falte o esté agrietado. Y si algo se rompe, se trata como un evento: detén el trabajo en el área, aísla cualquier producto que pudo haber quedado expuesto, limpia a fondo bajo supervisión y registra lo que pasó. Nunca solo barras el vidrio y sigas corriendo."
+    },
+    {
+      "title": "Filosos: control de hojas y cuchillos",
+      "lead": "Cada hoja está contabilizada — antes y después del trabajo.",
+      "kicker": "FILOSOS",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Siempre",
+          "items": [
+            "Usa solo hojas y cúteres entregados y contabilizados",
+            "Cuenta las hojas al salir y al volver; reporta las que se rompan o falten",
+            "Cambia y desecha las hojas en el contenedor adecuado"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Nunca",
+          "items": [
+            "Llevar un cuchillo o cúter personal al área de producción",
+            "Dejar una hoja suelta en una línea o superficie de trabajo",
+            "Seguir corriendo si una hoja se astilla o falta un pedazo"
+          ],
+          "color": "amber"
+        },
+        "chip": "Un fragmento de hoja faltante es motivo para detener la línea"
+      },
+      "notes": "Las hojas, los cuchillos y los cúteres son un riesgo especial de material extraño porque una hoja astillada o rota pone un fragmento de metal afilado directo en el flujo del producto. Así que los objetos filosos se controlan con rigor. Siempre usa solo hojas entregadas y contabilizadas — cuéntalas al inicio de una tarea y al final, y reporta de inmediato cualquier hoja que se rompa o falte. Cambia y desecha las hojas usadas en el contenedor adecuado. Lo que nunca debes hacer: llevar un cuchillo o cúter personal al área, dejar una hoja suelta en una línea o superficie, o seguir corriendo si una hoja se astilla o no se encuentra un pedazo. Un fragmento de hoja faltante es motivo para detener la línea, siempre."
+    },
+    {
+      "title": "Herramientas y mantenimiento",
+      "lead": "Lo que entra al área debe volver a salir de ella.",
+      "kicker": "HERRAMIENTAS",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Contabiliza cada herramienta y pieza que entra a la línea — nada se queda",
+          "Sin arreglos temporales con cinta, alambre o cartón cerca del producto",
+          "Reporta pernos sueltos, piezas desgastadas o partes de equipo faltantes",
+          "Limpia e inspecciona la línea antes de que vuelva a correr"
+        ]
+      },
+      "notes": "El mantenimiento y las herramientas son una fuente importante de material extraño, así que la regla es simple: lo que entra al área debe volver a salir de ella. Contabiliza cada herramienta y cada pieza que entra a una línea durante una reparación — una llave, un perno, una arandela que se queda se convierte en la contaminación de mañana. No hacemos arreglos temporales con cinta, alambre o cartón cerca del producto; en su lugar se hace una reparación adecuada. Reporta pernos sueltos, piezas desgastadas o descascaradas, y cualquier parte de equipo que falte, porque si una pieza no está en la máquina, puede estar en el producto. Y después de cualquier mantenimiento, la línea se limpia e inspecciona antes de volver a correr."
+    },
+    {
+      "title": "Tú eres la última capa",
+      "kicker": "ÚLTIMA CAPA",
+      "lead": "¿Lo encuentras? Detente y reporta.",
+      "photo": "FOTO: trabajadora inspeccionando producto / equipo en la línea",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Si encuentras o sospechas material extraño, detente y aísla el producto.",
+          "Repórtalo — nunca solo quites el pedazo y sigas corriendo.",
+          "Un auditor puede preguntar: ¿qué haces si encuentras metal en el producto?"
+        ],
+        "chip": "Ante la duda, detén la línea y reporta."
+      },
+      "notes": "Las máquinas y los dispositivos hacen mucho, pero tú eres la última capa de defensa, porque eres quien puede notar lo que un sensor no puede. Si encuentras material extraño en el producto, o incluso lo sospechas — ves una pieza dañada, una hoja faltante, residuos en un imán — detente y aísla el producto afectado para que no pueda avanzar. Luego repórtalo. Nunca solo saques el pedazo y sigas corriendo, porque si entró un pedazo, puede que hayan entrado más, y un reporte es lo que activa una investigación. Recuerda que los auditores entrevistan al personal del piso, y una pregunta común es: ¿qué haces si encuentras metal o vidrio en el producto? Ante la duda, detén la línea y reporta."
+    },
+    {
+      "title": "Resumen",
+      "kicker": "RESUMEN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "El material extraño lesiona clientes y causa retiros — y es prevenible",
+          "Defensa por capas: excluir, capturar, detectar, reaccionar",
+          "Control estricto del vidrio, plástico quebradizo, hojas, herramientas y piezas",
+          "¿Lo encuentras o lo sospechas? Detén, aísla, reporta — nunca solo sigas corriendo"
+        ],
+        "next": "Sigue: Limpieza y Saneamiento"
+      },
+      "notes": "Repasemos. El material extraño — metal, vidrio, plástico duro, partes de herramientas — puede lesionar a un cliente y causar un retiro, y casi siempre es prevenible. Defendemos por capas: lo excluimos con las BPM y nuestras políticas, lo capturamos con tamices, filtros e imanes, lo detectamos con la detección de metales y el pesaje de control, y reaccionamos cuando se encuentra algo. Mantenemos un control estricto del vidrio y el plástico quebradizo, de las hojas y objetos filosos, y de las herramientas y piezas que entran a la línea durante el mantenimiento. Y siempre que encuentres material extraño o incluso lo sospeches, la respuesta es la misma: detén, aísla el producto y reporta. A continuación, pasamos a Limpieza y Saneamiento. Buen trabajo."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Qué es el 'material extraño' en una planta de alimentos?",
+      "options": ["Ingredientes importados", "Cualquier cosa en el producto que no debería estar, como metal, vidrio o plástico duro", "Cualquier ingrediente de otro país", "Solo productos químicos de limpieza"],
+      "correct": 1,
+      "hint": "Cualquier cosa que termina en el producto pero no debería.",
+      "rationale": "El material extraño es cualquier objeto físico que termina en el producto pero no debería estar — metal, vidrio, plástico quebradizo, madera o parte de una herramienta o equipo."
+    },
+    {
+      "question": "¿Cuáles son las cuatro capas de defensa contra el material extraño?",
+      "options": ["Lavar, enjuagar, sanitizar, secar", "Excluir, capturar, detectar, reaccionar", "Recibir, almacenar, enviar, registrar", "Mezclar, hornear, enfriar, empacar"],
+      "correct": 1,
+      "hint": "Mantenerlo fuera, atraparlo, encontrarlo, responder.",
+      "rationale": "Las capas son excluir (mantenerlo fuera), capturar (tamices, filtros, imanes), detectar (detección de metales y pesaje) y reaccionar (detener, aislar, reportar)."
+    },
+    {
+      "question": "¿Cuál NO es una de las cuatro fuentes principales de material extraño?",
+      "options": ["Materias primas", "Equipo y mantenimiento", "El clima", "Personas"],
+      "correct": 2,
+      "hint": "Piensa en qué entra físicamente al producto.",
+      "rationale": "Las cuatro fuentes principales son materias primas, equipo y mantenimiento, empaque y personas. El clima no es una fuente de material extraño."
+    },
+    {
+      "question": "Encuentras residuos de metal en un imán en línea durante una revisión de rutina. ¿Qué debes hacer?",
+      "options": ["Límpialo y sigue — para eso está", "Límpialo, pero también reporta e investiga de dónde vino el metal", "Ignóralo a menos que sea un pedazo grande", "Tira el imán"],
+      "correct": 1,
+      "hint": "Te está diciendo que algo arriba está soltando metal.",
+      "rationale": "Un imán que atrapa metal está haciendo su trabajo, pero el hallazgo debe reportarse e investigarse — indica que algo arriba está soltando material que hay que corregir."
+    },
+    {
+      "question": "¿Cuál es nuestra política sobre el vidrio y el plástico quebradizo en áreas de producción?",
+      "options": ["Permitido si tienes cuidado", "Nada de vidrio/plástico quebradizo personal; lo necesario va en un registro y se inspecciona", "Solo permitido en el turno de noche", "El vidrio está bien, solo se controla el plástico"],
+      "correct": 1,
+      "hint": "Exclúyelo; registra e inspecciona lo que deba estar.",
+      "rationale": "No se permite vidrio personal ni plástico quebradizo innecesario en producción; los artículos requeridos (manómetros, cubiertas de luz) se listan en un registro y se inspeccionan, y cualquier rotura es un evento de detener y limpiar."
+    },
+    {
+      "question": "¿Cómo se controlan las hojas y los cúteres?",
+      "options": ["Trae el tuyo y tenlo a mano", "Usa solo hojas entregadas, cuéntalas al salir y al volver, y reporta las rotas o faltantes", "Déjalos en la línea para el siguiente turno", "Solo los gerentes pueden tocarlos"],
+      "correct": 1,
+      "hint": "Contabiliza cada hoja, antes y después.",
+      "rationale": "Solo se usan hojas entregadas y contabilizadas; se cuentan al salir y al volver, se desechan en un contenedor para objetos filosos, y cualquier hoja rota o faltante se reporta como motivo para detener la línea."
+    },
+    {
+      "question": "Acaban de hacer una reparación en tu línea. ¿Cuál es la regla de mantenimiento?",
+      "options": ["Corre de inmediato para recuperar el tiempo", "Contabiliza cada herramienta y pieza, sin arreglos temporales con cinta/alambre, limpia e inspecciona antes de correr", "Deja las herramientas cerca por si las necesitas otra vez", "Usa cartón para cubrir el hueco por ahora"],
+      "correct": 1,
+      "hint": "Lo que entra al área debe volver a salir.",
+      "rationale": "Cada herramienta y pieza debe contabilizarse, sin arreglos temporales con cinta/alambre/cartón cerca del producto, y la línea se limpia e inspecciona antes de volver a correr — una pieza que no está en la máquina puede estar en el producto."
+    },
+    {
+      "question": "Crees ver un pequeño pedazo de plástico en el producto. ¿Qué haces?",
+      "options": ["Sácalo y mantén la línea corriendo", "Detente, aísla el producto afectado y repórtalo", "Espera hasta el descanso para mencionarlo", "Actúa solo si estás seguro"],
+      "correct": 1,
+      "hint": "Ante la duda, detente y reporta.",
+      "rationale": "Si encuentras o incluso sospechas material extraño, detente y aísla el producto afectado y repórtalo — nunca solo quites el pedazo y sigas corriendo, porque puede que hayan entrado más y un reporte activa una investigación."
+    }
+  ]
+}
