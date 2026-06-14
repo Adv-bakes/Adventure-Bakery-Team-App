@@ -1,0 +1,248 @@
+{
+  "module": 5,
+  "language": "en",
+  "moduleLabel": "Module 5",
+  "title": "HACCP & Your Critical Control Points",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 5 — HACCP & Your Critical Control Points",
+      "subtitle": "SQF Food Safety Training",
+      "titleSize": 52,
+      "photo": "PHOTO: oven control panel / metal detector on the line",
+      "photoCaption": "PROCESS CONTROL · HACCP & CCPs",
+      "intro": "HACCP is how we build food safety into the process instead of inspecting for it at the end. This module covers the hazards we control, what a Critical Control Point is, and the three CCPs on our line — the baking kill step, metal detection, and freezing — plus what to do the moment a limit is missed.",
+      "notes": "Welcome to Module 5. Now we get to the backbone of the whole food safety plan: HACCP — Hazard Analysis and Critical Control Points. HACCP is how we design safety into the process rather than hoping to catch problems at the end. In this module you'll learn the types of hazards we control, what makes a step a Critical Control Point, the three CCPs on our line — the baking kill step, metal detection, and freezing — and exactly what to do the moment a critical limit is missed. One important note: our written food safety plan is still being finalized, so treat the specific limits here as examples and always follow the numbers on your line's official monitoring forms."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explain what HACCP is and why prevention beats inspection",
+          "Name the four hazard types we control: biological, chemical, physical, allergen",
+          "Recognize our Critical Control Points and the limits they hold",
+          "Take the right corrective action the moment a limit is missed"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here is what you'll be able to do by the end. Explain in plain words what HACCP is and why building safety into the process beats inspecting for problems afterward. Name the four types of hazard we control — biological, chemical, physical, and allergen. Recognize the Critical Control Points on our line and the limits each one holds. And take the right corrective action the moment a critical limit is missed, instead of guessing. These four skills are what an auditor expects every employee to have."
+    },
+    {
+      "title": "What is HACCP?",
+      "lead": "A system that prevents hazards instead of catching them later.",
+      "kicker": "THE SYSTEM",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Prevention, not detection — control the hazard while we make the product",
+          "Built on our prerequisites — hygiene, GMPs, allergen and pest control",
+          "Focuses effort where it matters most — the few steps that truly protect safety",
+          "Backed by records — if it isn't written down, it didn't happen"
+        ]
+      },
+      "notes": "HACCP stands for Hazard Analysis and Critical Control Points, and the idea behind it is simple. Instead of making product and then inspecting it to find problems, we identify where a hazard could occur and control it right there, while we're making the product. HACCP sits on top of our prerequisite programs — the hygiene, good manufacturing practices, allergen control, and pest control we've already covered. It focuses our effort on the few steps that truly protect safety, rather than treating everything as equally critical. And it runs on records: in food safety, if it isn't written down, it didn't happen."
+    },
+    {
+      "title": "Four kinds of hazard",
+      "lead": "Every hazard we control falls into one of these.",
+      "kicker": "HAZARDS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Biological — bacteria, mold, pathogens; controlled by the bake and cold chain",
+          "Chemical — cleaning agents, lubricants, allergen residue, rum above its limit",
+          "Physical — metal, glass, hard plastic, or foreign objects in product",
+          "Allergen — an undeclared allergen in a product meant to be free of it"
+        ]
+      },
+      "notes": "Every hazard we manage falls into one of four kinds. Biological hazards are living things — bacteria, mold, and pathogens — and we control them mainly with the baking kill step and the cold chain. Chemical hazards include cleaning agents, machine lubricants, allergen residue, and, for our rum cakes, keeping rum below its finished-product limit. Physical hazards are hard foreign objects — metal, glass, brittle plastic — that could injure someone. And allergen hazards are an undeclared allergen ending up in a product that's supposed to be free of it. HACCP looks at each step of our process and asks: which of these hazards could occur here, and how do we control it?"
+    },
+    {
+      "title": "CCP, critical limit, monitoring",
+      "lead": "The words HACCP uses — and what they mean on the floor.",
+      "kicker": "KEY TERMS",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "CCP — a step that is our last chance to control a hazard",
+          "Critical limit — the measurable line that must be met (a temperature, a time)",
+          "Monitoring — checking the limit and writing the result down",
+          "Deviation — a result outside the limit; triggers corrective action"
+        ],
+        "highlight": 1
+      },
+      "notes": "HACCP uses a few key words, so let's make them concrete. A Critical Control Point, or CCP, is a step that is our last chance to control a hazard — if it isn't controlled here, nothing later will catch it. A critical limit is the measurable line that step must meet: a minimum temperature, a maximum time, a detector setting — a number, not a judgment call. Monitoring is the act of checking that limit and writing the result down. And a deviation is any result that falls outside the limit — when that happens, it triggers corrective action. CCP, critical limit, monitoring, deviation: those four words run the whole system."
+    },
+    {
+      "title": "Our Critical Control Points",
+      "lead": "Three steps where we hold the line on safety.",
+      "kicker": "OUR CCPS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "The baking kill step — heat that destroys pathogens in baked products",
+          "Metal detection — catches metal fragments before product ships",
+          "Freezing & cold chain — holds frozen product safe and controls pathogen growth",
+          "Each CCP has a limit, is monitored every run, and is recorded"
+        ]
+      },
+      "notes": "On our line we hold the line on safety at three Critical Control Points. The baking kill step uses heat to destroy pathogens in our baked products. Metal detection catches metal fragments before any product ships. And freezing, with the cold chain that follows, keeps our frozen product safe by controlling pathogen growth. Each of these has a critical limit, gets monitored every single run, and is recorded. One reminder: our written food safety plan is still being finalized, so the exact CCPs and limits must be reconciled with that plan before the audit — but these three are what it will almost certainly contain."
+    },
+    {
+      "title": "CCP 1 — The baking kill step",
+      "lead": "Heat is what makes baked product safe to eat.",
+      "kicker": "KILL STEP",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Bake to the validated internal temperature for the validated time",
+          "Monitor and record temperature for each batch",
+          "A reading below the limit is a deviation",
+          "Hold the product and call your supervisor — do not ship it"
+        ],
+        "highlight": 0
+      },
+      "notes": "The first CCP is the baking kill step. The heat of the oven is what actually destroys pathogens and makes our baked products safe to eat, so it has to do its job every time. We bake to a validated internal temperature for a validated time — those numbers come from our food safety plan and are proven to kill the target pathogens. We monitor and record the temperature for each batch. If a reading comes in below the limit, that's a deviation: the product is held, not shipped, and you call your supervisor. Never assume an underbaked batch is fine — the kill step either happened or it didn't."
+    },
+    {
+      "title": "CCP 2 — Metal detection",
+      "lead": "The last guard against metal fragments reaching a customer.",
+      "kicker": "METAL DETECTION",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Verify the detector with test pieces — ferrous, non-ferrous, stainless",
+          "Run all finished product through; the rejector must be working",
+          "A failed test or a reject means stop and segregate product",
+          "Record the checks and any rejects"
+        ],
+        "highlight": 2
+      },
+      "notes": "The second CCP is metal detection. The metal detector is the last guard before product reaches a customer, so we have to know it's working. We verify it at set intervals using test pieces — a ferrous standard, a non-ferrous standard, and a stainless-steel standard — and confirm the rejector actually removes a contaminated pack. All finished product runs through the detector. If a verification test fails, or the detector rejects product, we stop, segregate the affected product, and don't release it until the issue is resolved. Every check and every reject is recorded. A metal detector that isn't verified is just decoration."
+    },
+    {
+      "title": "CCP 3 — Freezing & cold chain",
+      "lead": "Cold keeps frozen product safe from the line to the truck.",
+      "kicker": "COLD CHAIN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Freeze to the target core temperature within the validated time",
+          "Hold and ship cold — no breaks in the cold chain",
+          "Monitor and record freezer and storage temperatures",
+          "Stay alert to environmental risks like Listeria on the frozen line"
+        ]
+      },
+      "notes": "The third CCP is freezing and the cold chain that follows it. Our frozen plant-based product depends on cold to control the growth of pathogens, so the cold chain can't be broken from the line to the truck. We freeze to a target core temperature within a validated time, then hold and ship cold. Freezer and storage temperatures are monitored and recorded. And because cold, wet environments are where Listeria likes to live, everyone on the frozen line stays alert to environmental risk — keeping floors and drains clean and reporting standing water. A deviation in temperature is treated like any other: hold the product and escalate."
+    },
+    {
+      "title": "When a limit is missed",
+      "kicker": "WHEN A LIMIT FAILS",
+      "visual": {
+        "type": "stopSign",
+        "label": "STOP",
+        "lines": [
+          "Stop and isolate the affected product — do not let it move.",
+          "Notify your supervisor; only trained staff decide what happens next.",
+          "Fix the cause, record everything, and resume only when it's confirmed safe."
+        ]
+      },
+      "notes": "Every CCP can have an off day, so the most important thing you can know is what to do when a critical limit is missed. The steps are always the same. First, stop and isolate the affected product so it can't move forward or ship. Second, notify your supervisor — corrective action decisions are made by trained staff, not on the floor by guesswork. Third, the cause is fixed, everything is written down — what happened, what product was affected, and what was done — and production resumes only when the line is confirmed safe. A missed limit isn't something to hide or work around; catching it and handling it correctly is exactly what the system is for."
+    },
+    {
+      "title": "You are the monitor",
+      "kicker": "YOU'RE THE MONITOR",
+      "lead": "A plan works only if you do the check.",
+      "photo": "PHOTO: worker checking a gauge / recording a temperature on a log",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Do the check on time, every time — and record the real number.",
+          "Never write down a result you didn't actually measure.",
+          "An auditor may ask: what's your CCP, and what do you do if it fails?"
+        ],
+        "chip": "Know your step. Know your limit. Know your action."
+      },
+      "notes": "A HACCP plan on paper protects no one — it only works when the person standing at the step actually does the check, on time, every time, and records the real number. Never write down a result you didn't measure; a falsified record is worse than no record, because it hides a real risk. Remember that SQF auditors interview floor staff directly. An auditor may walk up and ask you: what is the Critical Control Point at your station, what's the limit, and what do you do if it fails? If you can answer that for your own job, you understand HACCP. Know your step, know your limit, know your action."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "HACCP prevents hazards at the source instead of inspecting at the end",
+          "We control biological, chemical, physical, and allergen hazards",
+          "Our CCPs: the baking kill step, metal detection, and freezing & cold chain",
+          "Miss a limit? Stop, isolate, notify, fix, record — then resume"
+        ],
+        "next": "Next: Foreign Material Control"
+      },
+      "notes": "Let's recap. HACCP prevents hazards at the source instead of inspecting for them at the end. We control four kinds of hazard: biological, chemical, physical, and allergen. Our three Critical Control Points are the baking kill step, metal detection, and freezing with the cold chain — each with a limit that's monitored and recorded every run. And when a limit is missed, the response is always the same: stop, isolate the product, notify your supervisor, fix the cause, record it, and resume only when it's confirmed safe. Remember the limits here are examples until our written plan is final. Up next, we focus in on physical hazards with Foreign Material Control. Well done."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "What is the core idea behind HACCP?",
+      "options": ["Inspect finished product to find problems", "Prevent hazards by controlling them while we make the product", "Test only when a customer complains", "Rely on the metal detector for everything"],
+      "correct": 1,
+      "hint": "Prevention, not detection.",
+      "rationale": "HACCP builds safety into the process by identifying where a hazard could occur and controlling it at that step, rather than inspecting product after the fact."
+    },
+    {
+      "question": "Which of these is NOT one of the four hazard types we control?",
+      "options": ["Biological", "Chemical", "Physical", "Financial"],
+      "correct": 3,
+      "hint": "Think about what could make food unsafe.",
+      "rationale": "The four food-safety hazard types are biological, chemical, physical, and allergen. Financial is not a food-safety hazard."
+    },
+    {
+      "question": "What makes a step a Critical Control Point (CCP)?",
+      "options": ["It is the fastest step on the line", "It is where the supervisor stands", "It is the last chance to control a hazard, with a measurable limit", "It is any step that uses a machine"],
+      "correct": 2,
+      "hint": "Last line of defense, with a number attached.",
+      "rationale": "A CCP is a step that is the last chance to control a hazard and has a measurable critical limit that is monitored and recorded."
+    },
+    {
+      "question": "What is a 'critical limit'?",
+      "options": ["A suggestion that's nice to meet", "The measurable boundary a CCP must meet, like a temperature or time", "The number of products per batch", "How long a shift lasts"],
+      "correct": 1,
+      "hint": "It's a number, not a judgment call.",
+      "rationale": "A critical limit is the measurable line a CCP must meet — a minimum temperature, a maximum time, a detector setting — that separates safe from unsafe."
+    },
+    {
+      "question": "Why is the baking step a Critical Control Point?",
+      "options": ["It makes the product look nice", "The heat destroys pathogens and is what makes baked product safe to eat", "It is the most expensive step", "It controls allergens"],
+      "correct": 1,
+      "hint": "Heat is doing a safety job.",
+      "rationale": "The baking kill step uses heat to destroy pathogens; reaching the validated internal temperature for the validated time is what makes the baked product safe."
+    },
+    {
+      "question": "How do we know the metal detector is actually working?",
+      "options": ["It looks powered on", "We verify it with ferrous, non-ferrous, and stainless test pieces and confirm the rejector works", "We assume it works unless it beeps", "We check it once a year"],
+      "correct": 1,
+      "hint": "Test pieces and the rejector.",
+      "rationale": "We verify the detector at set intervals with ferrous, non-ferrous, and stainless-steel test standards and confirm the rejector removes contaminated product. A failed test means stop and segregate."
+    },
+    {
+      "question": "A temperature reading comes in below the critical limit at your CCP. What do you do?",
+      "options": ["Ship it; one batch won't matter", "Stop, isolate the affected product, notify your supervisor, and record it", "Re-test until you get a passing number", "Fix it yourself and keep running"],
+      "correct": 1,
+      "hint": "Stop, isolate, notify, record.",
+      "rationale": "A deviation triggers corrective action: stop and isolate the product, notify your supervisor (trained staff decide next steps), fix the cause, record everything, and resume only when confirmed safe."
+    },
+    {
+      "question": "An auditor asks you about your station. What should you be able to tell them?",
+      "options": ["Nothing — only managers talk to auditors", "Your Critical Control Point, its limit, and what you do if it fails", "Only your name and shift", "That someone else handles food safety"],
+      "correct": 1,
+      "hint": "Know your step, your limit, your action.",
+      "rationale": "SQF auditors interview floor staff directly. Every employee should be able to state the CCP at their station, its critical limit, and the corrective action if the limit is missed."
+    }
+  ]
+}

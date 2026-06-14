@@ -1,0 +1,248 @@
+{
+  "module": 5,
+  "language": "es",
+  "moduleLabel": "Módulo 5",
+  "title": "HACCP y tus Puntos Críticos de Control",
+  "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 5 — HACCP y tus Puntos Críticos de Control",
+      "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+      "titleSize": 50,
+      "photo": "FOTO: panel de control del horno / detector de metales en la línea",
+      "photoCaption": "CONTROL DE PROCESO · HACCP Y PCC",
+      "intro": "HACCP es cómo integramos la seguridad alimentaria en el proceso en lugar de inspeccionarla al final. Este módulo cubre los peligros que controlamos, qué es un Punto Crítico de Control, y los tres PCC de nuestra línea — el horneado, la detección de metales y la congelación — además de qué hacer en el momento en que se incumple un límite.",
+      "notes": "Bienvenido al Módulo 5. Ahora llegamos a la columna vertebral de todo el plan de seguridad alimentaria: HACCP — Análisis de Peligros y Puntos Críticos de Control. HACCP es cómo diseñamos la seguridad dentro del proceso en lugar de esperar a detectar problemas al final. En este módulo aprenderás los tipos de peligros que controlamos, qué hace que un paso sea un Punto Crítico de Control, los tres PCC de nuestra línea — el horneado, la detección de metales y la congelación — y exactamente qué hacer en el momento en que se incumple un límite crítico. Una nota importante: nuestro plan de seguridad alimentaria escrito aún se está finalizando, así que toma los límites específicos aquí como ejemplos y sigue siempre los números de los formularios oficiales de monitoreo de tu línea."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "kicker": "PREPÁRATE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explicar qué es HACCP y por qué prevenir es mejor que inspeccionar",
+          "Nombrar los cuatro tipos de peligro: biológico, químico, físico, alérgeno",
+          "Reconocer nuestros Puntos Críticos de Control y los límites que sostienen",
+          "Tomar la acción correctiva correcta en el momento en que se incumple un límite"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que podrás hacer al terminar. Explicar en palabras sencillas qué es HACCP y por qué integrar la seguridad en el proceso es mejor que inspeccionar los problemas después. Nombrar los cuatro tipos de peligro que controlamos — biológico, químico, físico y alérgeno. Reconocer los Puntos Críticos de Control de nuestra línea y el límite que sostiene cada uno. Y tomar la acción correctiva correcta en el momento en que se incumple un límite crítico, en lugar de adivinar. Estas cuatro habilidades son las que un auditor espera que tenga cada empleado."
+    },
+    {
+      "title": "¿Qué es HACCP?",
+      "lead": "Un sistema que previene peligros en vez de detectarlos después.",
+      "kicker": "EL SISTEMA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Prevención, no detección — controla el peligro mientras hacemos el producto",
+          "Apoyado en nuestros prerrequisitos — higiene, BPM, control de alérgenos y plagas",
+          "Concentra el esfuerzo donde más importa — los pocos pasos que protegen la seguridad",
+          "Respaldado por registros — si no está escrito, no sucedió"
+        ]
+      },
+      "notes": "HACCP significa Análisis de Peligros y Puntos Críticos de Control, y la idea detrás es sencilla. En lugar de fabricar el producto y luego inspeccionarlo para encontrar problemas, identificamos dónde podría ocurrir un peligro y lo controlamos ahí mismo, mientras hacemos el producto. HACCP se apoya en nuestros programas de prerrequisitos — la higiene, las buenas prácticas de manufactura, el control de alérgenos y el control de plagas que ya cubrimos. Concentra nuestro esfuerzo en los pocos pasos que de verdad protegen la seguridad, en lugar de tratar todo como igualmente crítico. Y funciona con registros: en seguridad alimentaria, si no está escrito, no sucedió."
+    },
+    {
+      "title": "Cuatro tipos de peligro",
+      "lead": "Todo peligro que controlamos cae en uno de estos.",
+      "kicker": "PELIGROS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Biológico — bacterias, moho, patógenos; se controla con el horneado y la cadena de frío",
+          "Químico — productos de limpieza, lubricantes, residuo de alérgeno, ron sobre su límite",
+          "Físico — metal, vidrio, plástico duro u objetos extraños en el producto",
+          "Alérgeno — un alérgeno no declarado en un producto que debe estar libre de él"
+        ]
+      },
+      "notes": "Todo peligro que manejamos cae en uno de cuatro tipos. Los peligros biológicos son seres vivos — bacterias, moho y patógenos — y los controlamos principalmente con el horneado y la cadena de frío. Los peligros químicos incluyen productos de limpieza, lubricantes de máquinas, residuo de alérgenos y, para nuestros pasteles de ron, mantener el ron por debajo de su límite en el producto terminado. Los peligros físicos son objetos extraños duros — metal, vidrio, plástico quebradizo — que podrían lastimar a alguien. Y los peligros de alérgenos son un alérgeno no declarado que termina en un producto que se supone debe estar libre de él. HACCP examina cada paso de nuestro proceso y pregunta: ¿cuál de estos peligros podría ocurrir aquí, y cómo lo controlamos?"
+    },
+    {
+      "title": "PCC, límite crítico, monitoreo",
+      "lead": "Las palabras que usa HACCP — y qué significan en el piso.",
+      "kicker": "TÉRMINOS CLAVE",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "PCC — un paso que es nuestra última oportunidad de controlar un peligro",
+          "Límite crítico — la línea medible que debe cumplirse (una temperatura, un tiempo)",
+          "Monitoreo — revisar el límite y anotar el resultado",
+          "Desviación — un resultado fuera del límite; activa la acción correctiva"
+        ],
+        "highlight": 1
+      },
+      "notes": "HACCP usa unas pocas palabras clave, así que hagámoslas concretas. Un Punto Crítico de Control, o PCC, es un paso que es nuestra última oportunidad de controlar un peligro — si no se controla aquí, nada después lo atrapará. Un límite crítico es la línea medible que ese paso debe cumplir: una temperatura mínima, un tiempo máximo, un ajuste del detector — un número, no una opinión. El monitoreo es el acto de revisar ese límite y anotar el resultado. Y una desviación es cualquier resultado que cae fuera del límite — cuando eso pasa, activa la acción correctiva. PCC, límite crítico, monitoreo, desviación: esas cuatro palabras hacen funcionar todo el sistema."
+    },
+    {
+      "title": "Nuestros Puntos Críticos de Control",
+      "lead": "Tres pasos donde sostenemos la línea de la seguridad.",
+      "kicker": "NUESTROS PCC",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "El horneado — calor que destruye los patógenos en los productos horneados",
+          "Detección de metales — atrapa fragmentos de metal antes de que el producto salga",
+          "Congelación y cadena de frío — mantiene seguro el producto congelado y controla el crecimiento de patógenos",
+          "Cada PCC tiene un límite, se monitorea en cada corrida y se registra"
+        ]
+      },
+      "notes": "En nuestra línea sostenemos la línea de la seguridad en tres Puntos Críticos de Control. El horneado usa el calor para destruir los patógenos en nuestros productos horneados. La detección de metales atrapa fragmentos de metal antes de que cualquier producto salga. Y la congelación, con la cadena de frío que sigue, mantiene seguro nuestro producto congelado controlando el crecimiento de patógenos. Cada uno de estos tiene un límite crítico, se monitorea en cada corrida y se registra. Un recordatorio: nuestro plan de seguridad alimentaria escrito aún se está finalizando, así que los PCC y los límites exactos deben reconciliarse con ese plan antes de la auditoría — pero estos tres son los que casi con seguridad contendrá."
+    },
+    {
+      "title": "PCC 1 — El horneado",
+      "lead": "El calor es lo que hace seguro el producto horneado.",
+      "kicker": "EL HORNEADO",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Hornear a la temperatura interna validada por el tiempo validado",
+          "Monitorear y registrar la temperatura de cada lote",
+          "Una lectura por debajo del límite es una desviación",
+          "Retén el producto y llama a tu supervisor — no lo envíes"
+        ],
+        "highlight": 0
+      },
+      "notes": "El primer PCC es el horneado. El calor del horno es lo que de verdad destruye los patógenos y hace que nuestros productos horneados sean seguros para comer, así que tiene que cumplir su función cada vez. Horneamos a una temperatura interna validada por un tiempo validado — esos números vienen de nuestro plan de seguridad alimentaria y están comprobados para matar los patógenos objetivo. Monitoreamos y registramos la temperatura de cada lote. Si una lectura sale por debajo del límite, eso es una desviación: el producto se retiene, no se envía, y llamas a tu supervisor. Nunca supongas que un lote mal horneado está bien — el horneado o sucedió o no sucedió."
+    },
+    {
+      "title": "PCC 2 — Detección de metales",
+      "lead": "La última barrera antes de que un fragmento de metal llegue al cliente.",
+      "kicker": "DETECCIÓN DE METALES",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Verifica el detector con piezas de prueba — ferrosa, no ferrosa, inoxidable",
+          "Pasa todo el producto terminado; el rechazador debe estar funcionando",
+          "Una prueba fallida o un rechazo significa detener y segregar el producto",
+          "Registra las verificaciones y cualquier rechazo"
+        ],
+        "highlight": 2
+      },
+      "notes": "El segundo PCC es la detección de metales. El detector de metales es la última barrera antes de que el producto llegue a un cliente, así que tenemos que saber que funciona. Lo verificamos a intervalos establecidos usando piezas de prueba — un estándar ferroso, uno no ferroso y uno de acero inoxidable — y confirmamos que el rechazador realmente retira un paquete contaminado. Todo el producto terminado pasa por el detector. Si una prueba de verificación falla, o el detector rechaza producto, nos detenemos, segregamos el producto afectado y no lo liberamos hasta que el problema se resuelva. Cada verificación y cada rechazo se registra. Un detector de metales que no se verifica es solo decoración."
+    },
+    {
+      "title": "PCC 3 — Congelación y cadena de frío",
+      "lead": "El frío mantiene seguro el producto congelado desde la línea hasta el camión.",
+      "kicker": "CADENA DE FRÍO",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Congela a la temperatura central objetivo dentro del tiempo validado",
+          "Mantén y envía en frío — sin cortes en la cadena de frío",
+          "Monitorea y registra las temperaturas del congelador y del almacenamiento",
+          "Mantente atento a riesgos ambientales como Listeria en la línea de congelados"
+        ]
+      },
+      "notes": "El tercer PCC es la congelación y la cadena de frío que la sigue. Nuestro producto congelado de origen vegetal depende del frío para controlar el crecimiento de patógenos, así que la cadena de frío no puede romperse desde la línea hasta el camión. Congelamos a una temperatura central objetivo dentro de un tiempo validado, luego mantenemos y enviamos en frío. Las temperaturas del congelador y del almacenamiento se monitorean y se registran. Y como los ambientes fríos y húmedos son donde le gusta vivir a la Listeria, todos en la línea de congelados se mantienen atentos al riesgo ambiental — manteniendo limpios los pisos y los drenajes y reportando el agua estancada. Una desviación de temperatura se trata como cualquier otra: retén el producto y escala."
+    },
+    {
+      "title": "Cuando se incumple un límite",
+      "kicker": "CUANDO FALLA UN LÍMITE",
+      "visual": {
+        "type": "stopSign",
+        "label": "ALTO",
+        "lines": [
+          "Detente y aísla el producto afectado — no dejes que avance.",
+          "Avisa a tu supervisor; solo personal capacitado decide qué sigue.",
+          "Corrige la causa, registra todo, y reanuda solo cuando se confirme seguro."
+        ]
+      },
+      "notes": "Cada PCC puede tener un mal día, así que lo más importante que puedes saber es qué hacer cuando se incumple un límite crítico. Los pasos siempre son los mismos. Primero, detente y aísla el producto afectado para que no pueda avanzar ni enviarse. Segundo, avisa a tu supervisor — las decisiones de acción correctiva las toma personal capacitado, no se adivinan en el piso. Tercero, se corrige la causa, se anota todo — qué pasó, qué producto se afectó y qué se hizo — y la producción se reanuda solo cuando la línea se confirma segura. Un límite incumplido no es algo que esconder o sortear; detectarlo y manejarlo correctamente es exactamente para lo que sirve el sistema."
+    },
+    {
+      "title": "Tú eres el monitor",
+      "kicker": "TÚ ERES EL MONITOR",
+      "lead": "El plan funciona solo si haces la revisión.",
+      "photo": "FOTO: trabajador revisando un indicador / registrando una temperatura en una bitácora",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Haz la revisión a tiempo, siempre — y registra el número real.",
+          "Nunca anotes un resultado que no mediste de verdad.",
+          "Un auditor puede preguntar: ¿cuál es tu PCC y qué haces si falla?"
+        ],
+        "chip": "Conoce tu paso. Conoce tu límite. Conoce tu acción."
+      },
+      "notes": "Un plan HACCP en papel no protege a nadie — solo funciona cuando la persona parada en el paso de verdad hace la revisión, a tiempo, siempre, y registra el número real. Nunca anotes un resultado que no mediste; un registro falsificado es peor que ningún registro, porque esconde un riesgo real. Recuerda que los auditores de SQF entrevistan directamente al personal del piso. Un auditor puede acercarse y preguntarte: ¿cuál es el Punto Crítico de Control en tu estación, cuál es el límite y qué haces si falla? Si puedes responder eso para tu propio trabajo, entiendes HACCP. Conoce tu paso, conoce tu límite, conoce tu acción."
+    },
+    {
+      "title": "Resumen",
+      "kicker": "RESUMEN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "HACCP previene peligros en su origen en vez de inspeccionar al final",
+          "Controlamos peligros biológicos, químicos, físicos y de alérgenos",
+          "Nuestros PCC: el horneado, la detección de metales y la congelación y cadena de frío",
+          "¿Se incumple un límite? Detén, aísla, avisa, corrige, registra — luego reanuda"
+        ],
+        "next": "Sigue: Control de Material Extraño"
+      },
+      "notes": "Repasemos. HACCP previene peligros en su origen en vez de inspeccionarlos al final, y se apoya en los programas de higiene, BPM y alérgenos que ya cubrimos. Controlamos cuatro tipos de peligro: biológico, químico, físico y de alérgenos. Nuestros tres Puntos Críticos de Control son el horneado, la detección de metales y la congelación con la cadena de frío — cada uno con un límite que se monitorea y se registra en cada corrida. Y cuando se incumple un límite, la respuesta siempre es la misma: detente, aísla el producto, avisa a tu supervisor, corrige la causa, regístralo, y reanuda solo cuando se confirme seguro. Recuerda que los límites aquí son ejemplos hasta que nuestro plan escrito esté final. A continuación, nos enfocamos en los peligros físicos con el Control de Material Extraño. Bien hecho."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Cuál es la idea central detrás de HACCP?",
+      "options": ["Inspeccionar el producto terminado para encontrar problemas", "Prevenir peligros controlándolos mientras hacemos el producto", "Probar solo cuando un cliente se queja", "Confiar en el detector de metales para todo"],
+      "correct": 1,
+      "hint": "Prevención, no detección.",
+      "rationale": "HACCP integra la seguridad en el proceso identificando dónde podría ocurrir un peligro y controlándolo en ese paso, en lugar de inspeccionar el producto después."
+    },
+    {
+      "question": "¿Cuál de estos NO es uno de los cuatro tipos de peligro que controlamos?",
+      "options": ["Biológico", "Químico", "Físico", "Financiero"],
+      "correct": 3,
+      "hint": "Piensa en qué podría hacer que un alimento sea inseguro.",
+      "rationale": "Los cuatro tipos de peligro alimentario son biológico, químico, físico y de alérgenos. Financiero no es un peligro de seguridad alimentaria."
+    },
+    {
+      "question": "¿Qué hace que un paso sea un Punto Crítico de Control (PCC)?",
+      "options": ["Es el paso más rápido de la línea", "Es donde está parado el supervisor", "Es la última oportunidad de controlar un peligro, con un límite medible", "Es cualquier paso que usa una máquina"],
+      "correct": 2,
+      "hint": "Última barrera, con un número asociado.",
+      "rationale": "Un PCC es un paso que es la última oportunidad de controlar un peligro y tiene un límite crítico medible que se monitorea y se registra."
+    },
+    {
+      "question": "¿Qué es un 'límite crítico'?",
+      "options": ["Una sugerencia que está bien cumplir", "La frontera medible que un PCC debe cumplir, como una temperatura o un tiempo", "El número de productos por lote", "Cuánto dura un turno"],
+      "correct": 1,
+      "hint": "Es un número, no una opinión.",
+      "rationale": "Un límite crítico es la línea medible que un PCC debe cumplir — una temperatura mínima, un tiempo máximo, un ajuste del detector — que separa lo seguro de lo inseguro."
+    },
+    {
+      "question": "¿Por qué el horneado es un Punto Crítico de Control?",
+      "options": ["Hace que el producto se vea bien", "El calor destruye los patógenos y es lo que hace seguro el producto horneado", "Es el paso más caro", "Controla los alérgenos"],
+      "correct": 1,
+      "hint": "El calor está haciendo un trabajo de seguridad.",
+      "rationale": "El horneado usa el calor para destruir los patógenos; alcanzar la temperatura interna validada por el tiempo validado es lo que hace seguro el producto horneado."
+    },
+    {
+      "question": "¿Cómo sabemos que el detector de metales realmente funciona?",
+      "options": ["Se ve encendido", "Lo verificamos con piezas de prueba ferrosa, no ferrosa e inoxidable y confirmamos que el rechazador funciona", "Suponemos que funciona a menos que suene", "Lo revisamos una vez al año"],
+      "correct": 1,
+      "hint": "Piezas de prueba y el rechazador.",
+      "rationale": "Verificamos el detector a intervalos establecidos con estándares de prueba ferroso, no ferroso e inoxidable y confirmamos que el rechazador retira el producto contaminado. Una prueba fallida significa detener y segregar."
+    },
+    {
+      "question": "Una lectura de temperatura sale por debajo del límite crítico en tu PCC. ¿Qué haces?",
+      "options": ["Envíalo; un lote no importa", "Detente, aísla el producto afectado, avisa a tu supervisor y regístralo", "Vuelve a probar hasta obtener un número que pase", "Arréglalo tú mismo y sigue corriendo"],
+      "correct": 1,
+      "hint": "Detén, aísla, avisa, registra.",
+      "rationale": "Una desviación activa la acción correctiva: detente y aísla el producto, avisa a tu supervisor (el personal capacitado decide los siguientes pasos), corrige la causa, registra todo, y reanuda solo cuando se confirme seguro."
+    },
+    {
+      "question": "Un auditor te pregunta sobre tu estación. ¿Qué deberías poder decirle?",
+      "options": ["Nada — solo los gerentes hablan con los auditores", "Tu Punto Crítico de Control, su límite y qué haces si falla", "Solo tu nombre y tu turno", "Que otra persona se encarga de la seguridad alimentaria"],
+      "correct": 1,
+      "hint": "Conoce tu paso, tu límite, tu acción.",
+      "rationale": "Los auditores de SQF entrevistan directamente al personal del piso. Cada empleado debería poder decir el PCC de su estación, su límite crítico y la acción correctiva si se incumple el límite."
+    }
+  ]
+}
