@@ -27,7 +27,12 @@
           "Map which allergens are in each of our product lines",
           "Describe the free-from claim that makes our plant different"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Here is what you will walk away with. Four things: what a food allergen actually is and why even a trace amount can hurt someone, the nine allergens that regulators require every food plant to control, which of those allergens live in each of the product lines we make, and the free-from claim on one of those products that makes our plant different from a normal bakery. Part 1 is about knowing the risk; Part 2 will cover how we control it."
     },
@@ -201,56 +206,96 @@
   "quiz": [
     {
       "question": "What is a food allergen?",
-      "options": ["A germ that causes food poisoning", "A protein the immune system wrongly treats as a threat", "Any ingredient that tastes strong", "A chemical cleaner used on equipment"],
-      "correct": 1,
+      "options": [
+        "A germ that causes food poisoning and illness in people",
+        "Any ingredient that simply has a very strong taste",
+        "A chemical cleaning agent used to sanitize equipment",
+        "A protein the immune system wrongly treats as a threat"
+      ],
+      "correct": 3,
       "hint": "It's about the immune system overreacting to a normal food.",
       "rationale": "An allergen is a normal food protein that an allergic person's immune system mistakes for a threat, triggering a reaction that can be severe."
     },
     {
       "question": "How much of an allergen can trigger a serious allergic reaction?",
-      "options": ["Only a large serving", "About half a product", "Even a tiny trace amount", "It never happens from food contact"],
-      "correct": 2,
+      "options": [
+        "Even a tiny trace amount",
+        "Only a large serving",
+        "About half a product",
+        "It never happens from food contact"
+      ],
+      "correct": 0,
       "hint": "Think about why we worry about invisible residue.",
       "rationale": "Even a trace amount can trigger a reaction — which is why cross-contact and residue matter so much."
     },
     {
       "question": "Which best describes the difference between an allergy and an intolerance?",
-      "options": ["They are the same thing", "An allergy is an immune reaction that can be fatal; an intolerance is a digestive issue that usually isn't", "An intolerance is more dangerous than an allergy", "Only intolerances are regulated"],
-      "correct": 1,
+      "options": [
+        "They are essentially the same thing in the body",
+        "An intolerance is actually far more dangerous than a true allergy",
+        "An allergy is an immune reaction that can be fatal; intolerance isn't",
+        "Only food intolerances are regulated by law, not allergies"
+      ],
+      "correct": 2,
       "hint": "One involves the immune system and can be life-threatening.",
       "rationale": "An allergy is an immune reaction that can be sudden and fatal from a trace; an intolerance is a digestive issue, uncomfortable but not life-threatening. Our controls target allergies."
     },
     {
       "question": "How many major allergens do regulators require food plants to control?",
-      "options": ["3", "5", "9", "20"],
-      "correct": 2,
+      "options": [
+        "3",
+        "9",
+        "5",
+        "20"
+      ],
+      "correct": 1,
       "hint": "Sesame became the most recent addition in 2023.",
       "rationale": "There are 9 major allergens: milk, egg, fish, shellfish, tree nuts, peanuts, wheat, soy, and sesame (added 2023)."
     },
     {
       "question": "Which allergens are already present in the products we make?",
-      "options": ["None — we are allergen-free", "Wheat, egg, and milk (and tree nuts in some products)", "Only peanuts", "Only sesame"],
-      "correct": 1,
+      "options": [
+        "None at all — our plant is completely allergen-free",
+        "Only peanuts are present anywhere in the building",
+        "Only sesame is handled anywhere in the plant",
+        "Wheat, egg, and milk, plus tree nuts in some"
+      ],
+      "correct": 3,
       "hint": "Think about the rum cakes and biscotti.",
       "rationale": "The rum cakes we make contain wheat, egg, and milk; the biscotti we make contain wheat and egg and may contain tree nuts. Soy is also present in the plant."
     },
     {
       "question": "What makes the plant-based burger we make different and high-risk?",
-      "options": ["It is the most expensive product", "It is labeled free of the top 9 allergens but is made in a building that runs allergen products", "It contains every allergen", "It is made in a separate dedicated facility with no other products"],
-      "correct": 1,
+      "options": [
+        "It is labeled free of the 9 allergens yet made beside them",
+        "It is by far the most expensive product we make",
+        "It actually contains every single one of the allergens",
+        "It is made in a separate dedicated facility with no other products"
+      ],
+      "correct": 0,
       "hint": "The risk is the claim plus the shared building.",
       "rationale": "The burger is labeled free of all top 9 allergens yet is produced in the same building, on shared equipment and rotating staff, as wheat/egg/milk/tree-nut products — so any cross-contact makes the claim false."
     },
     {
       "question": "Which of these is an example of allergen cross-contact?",
-      "options": ["Wearing a hairnet", "Airborne flour settling onto a free-from line, or shared utensils not fully cleaned", "Reading the product label", "Washing your hands before a break"],
-      "correct": 1,
+      "options": [
+        "Properly wearing your hairnet correctly out on the production floor",
+        "Carefully reading the product label before use",
+        "Airborne flour settling on a free-from line, or shared utensils",
+        "Washing your hands thoroughly before taking a break"
+      ],
+      "correct": 2,
       "hint": "It's how an allergen reaches a product that shouldn't have it.",
       "rationale": "Cross-contact includes airborne powder, un-cleaned shared equipment/utensils, residue on hands or gloves, and mixing rework into the wrong batch."
     },
     {
       "question": "You're not sure whether the line was fully cleaned before the free-from burger run. What should you do?",
-      "options": ["Start the run; it's probably fine", "Stop and report it before product moves", "Wipe it quickly and say nothing", "Switch products to use it up"],
+      "options": [
+        "Start the run; it's probably fine",
+        "Stop and report it before product moves",
+        "Wipe it quickly and say nothing",
+        "Switch products to use it up"
+      ],
       "correct": 1,
       "hint": "Awareness and speaking up early is the first control.",
       "rationale": "If you're unsure, stop and report before product moves. Speaking up early is always cheaper and safer than a recall caused by undeclared allergens."

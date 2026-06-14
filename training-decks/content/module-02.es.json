@@ -24,7 +24,12 @@
           "Seguir nuestras reglas de vestimenta, joyería, uñas y enfermedad",
           "Moverte entre zonas sin propagar contaminación"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Esto es lo que te llevarás. Cuatro cosas: qué son las buenas prácticas de manufactura y por qué importan, cómo y cuándo lavarte las manos correctamente, las reglas de vestimenta, joyería, uñas y reporte de enfermedad, y cómo moverte por la planta sin llevar contaminación de un área a otra."
     },
@@ -34,8 +39,16 @@
       "art": "ribbonMedal",
       "visual": {
         "type": "badge",
-        "letters": ["B", "P", "M"],
-        "words": ["Buenas", "Prácticas", "Manufactura"],
+        "letters": [
+          "B",
+          "P",
+          "M"
+        ],
+        "words": [
+          "Buenas",
+          "Prácticas",
+          "Manufactura"
+        ],
         "caption": "Condiciones y hábitos básicos que un auditor espera ver en la planta, en cada turno."
       },
       "notes": "BPM significa Buenas Prácticas de Manufactura. Son las reglas y condiciones básicas que mantienen seguros los alimentos mientras los elaboramos: cómo nos mantenemos limpios, cómo nos vestimos, cómo manejamos la enfermedad y cómo nos movemos por la planta. No son papeleo extra; son la base sobre la que se construye todo lo demás, y un auditor las buscará en cada turno."
@@ -193,57 +206,95 @@
   "quiz": [
     {
       "question": "¿Qué significan las siglas BPM?",
-      "options": ["Buen Plan de Mantenimiento", "Buenas Prácticas de Manufactura", "Base de Procesamiento de Materiales", "Permiso de Mercado de Barrio"],
-      "correct": 1,
+      "options": [
+        "Buen Plan de Mantenimiento",
+        "Base de Procesamiento de Materiales",
+        "Permiso de Mercado de Barrio",
+        "Buenas Prácticas de Manufactura"
+      ],
+      "correct": 3,
       "hint": "Se trata de cómo elaboramos el producto, hecho bien.",
       "rationale": "BPM = Buenas Prácticas de Manufactura — los hábitos y condiciones básicas que mantienen seguros los alimentos."
     },
     {
       "question": "¿Cuánto tiempo debes fregar con jabón al lavarte las manos?",
-      "options": ["Unos 2 segundos", "Hasta que se vean mojadas", "Al menos 20 segundos", "Solo después del baño"],
-      "correct": 2,
+      "options": [
+        "Al menos 20 segundos",
+        "Unos 2 segundos",
+        "Hasta que se vean mojadas",
+        "Solo después del baño"
+      ],
+      "correct": 0,
       "hint": "Como dos rondas de la canción de feliz cumpleaños.",
       "rationale": "Fregar 20 segundos completos — incluyendo dorso, entre los dedos y uñas — es lo que de verdad elimina los microbios."
     },
     {
       "question": "¿Cuál de estos es un momento en que SÍ o SÍ debes lavarte las manos?",
-      "options": ["Solo al inicio del día", "Después del baño, después de descansos, después de manejar basura y al cambiar de zona", "Solo si se ven sucias", "Solo el equipo de hamburguesas necesita lavarse"],
-      "correct": 1,
+      "options": [
+        "Solo una vez al inicio de la jornada de trabajo",
+        "Solo si tus manos se ven visiblemente sucias",
+        "Después del baño, descansos, manejar basura y al cambiar de zona",
+        "Solo el equipo de hamburguesas necesita lavarse las manos"
+      ],
+      "correct": 2,
       "hint": "Es más de un momento — piensa en cada transición.",
       "rationale": "Lávate en cada momento clave: antes de empezar, después de descansos, después del baño, después de basura/limpieza/tocarte la cara, y al cambiar de tarea o zona."
     },
     {
       "question": "Estás por iniciar tu turno. ¿Qué es aceptable en producción?",
-      "options": ["Un anillo de boda y un reloj", "Uñas pintadas o postizas", "El rostro despejado con el cabello totalmente cubierto por una redecilla", "Un teléfono en el bolsillo del delantal"],
-      "correct": 2,
+      "options": [
+        "Un anillo de boda junto con un reloj de pulsera",
+        "El rostro despejado con el cabello cubierto por una redecilla",
+        "Uñas pintadas de colores o postizas pegadas en el turno",
+        "Un teléfono personal guardado en el bolsillo del delantal"
+      ],
+      "correct": 1,
       "hint": "Si se puede caer o esconder suciedad, se queda fuera.",
       "rationale": "El cabello debe ir totalmente cubierto; la joyería, las uñas postizas o pintadas y los objetos personales sueltos como el teléfono no se permiten en la línea."
     },
     {
       "question": "Verdadero o falso: Un poco de esmalte de uñas está bien mientras no esté descascarado.",
-      "options": ["Verdadero", "Falso"],
+      "options": [
+        "Verdadero",
+        "Falso"
+      ],
       "correct": 1,
       "hint": "El esmalte puede descascararse y caer al producto sin aviso.",
       "rationale": "El esmalte y las uñas postizas no se permiten — pueden descascararse o desprenderse y volverse un peligro de materia extraña o contaminación."
     },
     {
       "question": "Amaneces con vómito y diarrea, pero estás programado para trabajar en la línea. ¿Qué debes hacer?",
-      "options": ["Ir y simplemente tener cuidado", "Avisar a tu supervisor antes de empezar; podrías ser reasignado o enviado a casa", "Tomar medicina y no decir nada", "Esperar a ver si empeora durante el turno"],
-      "correct": 1,
+      "options": [
+        "Ir a trabajar de todos modos y solo tener cuidado",
+        "Tomar algo de medicina, no decir nada y trabajar",
+        "Esperar a ver si empeora durante el turno de trabajo",
+        "Avisar a tu supervisor primero; podrías ser enviado a casa"
+      ],
+      "correct": 3,
       "hint": "Reportar protege los alimentos y a tus compañeros — y no te penalizarán.",
       "rationale": "El vómito, la diarrea, la fiebre, la ictericia o las llagas infectadas deben reportarse antes de empezar. Podrías ser reasignado o enviado a casa, y nunca tendrás problemas por reportar."
     },
     {
       "question": "Te haces un pequeño corte en la mano durante el turno. ¿Qué se requiere?",
-      "options": ["Seguir trabajando; es menor", "Cubrirlo con cualquier pañuelo y continuar", "Cubrirlo con una curita azul detectable por metal, usar un guante y reportarlo", "Solo enjuagarlo"],
-      "correct": 2,
+      "options": [
+        "Cubrirlo con una curita azul detectable, enguantar y reportarlo",
+        "Seguir trabajando porque el corte es realmente menor",
+        "Cubrirlo con cualquier pañuelo que encuentres y seguir trabajando",
+        "Solo enjuagarlo bien con agua y continuar el turno"
+      ],
+      "correct": 0,
       "hint": "Usamos un color específico de curita por una razón.",
       "rationale": "Los cortes deben cubrirse con una curita azul detectable por metal y un guante, y reportarse — para que una curita perdida pueda detectarse y la herida no contamine el producto."
     },
     {
       "question": "¿Por qué usamos calzado dedicado, pediluvios y tránsito en una sola dirección entre zonas?",
-      "options": ["Para tener los pisos brillantes para los auditores", "Para no llevar contaminación ni alérgenos de un área a otra más limpia", "Porque es más rápido", "Solo para controlar quién marca entrada"],
-      "correct": 1,
+      "options": [
+        "Para tener los pisos brillantes y limpios para los auditores",
+        "Porque ese método es simplemente más rápido para todos",
+        "Para no llevar contaminación ni alérgenos a un área más limpia",
+        "Solo para controlar quién marca entrada en cada zona"
+      ],
+      "correct": 2,
       "hint": "Piensa en lo que tus botas y tu recorrido podrían llevar consigo.",
       "rationale": "El control de calzado, los pediluvios y el flujo de limpio a sucio evitan que arrastremos contaminación y alérgenos de las áreas generales a las zonas de mayor cuidado."
     }

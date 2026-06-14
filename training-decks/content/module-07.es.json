@@ -28,7 +28,12 @@
           "Manejar y almacenar los químicos de limpieza de forma segura",
           "Entender la inspección preoperacional y el calendario maestro"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Esto es lo que podrás hacer al terminar. Explicar la diferencia entre limpiar y sanitizar — son dos trabajos distintos. Seguir un procedimiento operativo estándar de saneamiento y realizar los pasos de limpieza en el orden correcto. Manejar y almacenar los químicos de limpieza de forma segura, incluyendo nunca mezclarlos. Y entender la inspección preoperacional que autoriza una línea a correr, además del calendario maestro de saneamiento que asegura que cada superficie se limpie a tiempo."
     },
@@ -213,56 +218,96 @@
   "quiz": [
     {
       "question": "¿Cuál es la diferencia entre limpiar y sanitizar?",
-      "options": ["Son lo mismo", "Limpiar elimina la suciedad y el residuo visible; sanitizar reduce los microorganismos", "Primero se sanitiza y luego se limpia", "Limpiar mata bacterias; sanitizar da brillo"],
-      "correct": 1,
+      "options": [
+        "Son básicamente lo mismo en la práctica diaria",
+        "Sanitizar siempre va primero, y luego se limpia",
+        "Limpiar mata las bacterias; sanitizar solo da brillo",
+        "Limpiar elimina la suciedad visible; sanitizar reduce los microorganismos"
+      ],
+      "correct": 3,
       "hint": "Uno quita suciedad, el otro reduce microbios.",
       "rationale": "Limpiar elimina físicamente suciedad, residuo y proteína de alérgeno; sanitizar reduce los microorganismos a un nivel seguro. Son dos trabajos distintos."
     },
     {
       "question": "¿Por qué debes limpiar una superficie antes de sanitizarla?",
-      "options": ["Es solo tradición", "El sanitizante no alcanza los microbios escondidos en la suciedad o grasa", "Para ahorrar sanitizante", "No hace falta — el orden no importa"],
-      "correct": 1,
+      "options": [
+        "El sanitizante no alcanza los microbios escondidos en la grasa",
+        "Honestamente es solo un viejo hábito y tradición",
+        "Para ahorrar en la cantidad de sanitizante que usamos",
+        "No hace falta — el orden realmente no importa para nada"
+      ],
+      "correct": 0,
       "hint": "El sanitizante solo funciona en una superficie ya limpia.",
       "rationale": "Un sanitizante rociado sobre suciedad o grasa no alcanza los microbios escondidos en ella. La limpieza debe quitar la suciedad primero para que el sanitizante funcione."
     },
     {
       "question": "¿Cuál es la secuencia correcta de limpieza?",
-      "options": ["Sanitizar, luego lavar", "Retirar residuos, pre-enjuagar, lavar con detergente, enjuagar, sanitizar", "Solo rociar sanitizante y limpiar", "Enjuagar, sanitizar y luego restregar"],
-      "correct": 1,
+      "options": [
+        "Primero sanitizar la superficie y luego lavarla",
+        "Simplemente rociar sanitizante y pasar un paño",
+        "Retirar residuos, pre-enjuagar, lavar con detergente, enjuagar y sanitizar",
+        "Enjuagar primero, luego sanitizar y al final restregar"
+      ],
+      "correct": 2,
       "hint": "La limpieza en seco va primero; sanitizar al final.",
       "rationale": "La secuencia es retirar residuos (limpieza en seco), pre-enjuagar, lavar con detergente y restregar, enjuagar, y luego sanitizar a la concentración y tiempo de contacto correctos."
     },
     {
       "question": "¿Qué te dice un SSOP?",
-      "options": ["Solo a quién llamar", "Qué limpiar, cómo, qué químico y dilución, tiempo de contacto, quién, y cómo se verifica", "Solo el nombre del químico", "El calendario de producción"],
+      "options": [
+        "Solo el nombre de la persona a quien debes llamar",
+        "Qué y cómo limpiar, el químico, dilución y contacto",
+        "Solo el nombre de la marca del químico a usar",
+        "El calendario diario de producción de toda la línea"
+      ],
       "correct": 1,
       "hint": "Es la receta escrita para limpiar un equipo específico.",
       "rationale": "Un SSOP especifica qué limpiar y cómo, el químico y la dilución, el tiempo de contacto, quién es responsable y con qué frecuencia, y cómo se verifica y registra la limpieza."
     },
     {
       "question": "¿Cuál es una regla para manejar los químicos de limpieza?",
-      "options": ["Mezclarlos para ahorrar tiempo", "Leer la etiqueta/SDS, usar la dilución correcta y el EPP, nunca mezclar químicos", "Verterlos en cualquier envase a mano", "Una dilución más fuerte siempre es mejor"],
-      "correct": 1,
+      "options": [
+        "Mezclarlos para ahorrarte algo de tiempo en el turno",
+        "Verterlos en cualquier envase que tengas a la mano",
+        "Una dilución más fuerte es básicamente siempre mejor",
+        "Leer la etiqueta/SDS, usar dilución correcta y EPP, nunca mezclar"
+      ],
+      "correct": 3,
       "hint": "Nunca mezcles; lee antes de usar.",
       "rationale": "Siempre lee la etiqueta y la SDS, usa la dilución correcta y el EPP adecuado, mantén los químicos en envases etiquetados, y nunca mezcles químicos — algunas combinaciones liberan gas tóxico."
     },
     {
       "question": "¿Cómo se deben almacenar los químicos de limpieza?",
-      "options": ["En cualquier lugar conveniente del piso", "En un área dedicada y asegurada, lejos de alimentos/empaque, etiquetados, con SDS disponible", "Sobre la línea de producción para fácil acceso", "En garrafas sin etiqueta para ahorrar espacio"],
-      "correct": 1,
+      "options": [
+        "En un área dedicada y asegurada, lejos de alimentos, con SDS",
+        "En cualquier lugar conveniente y a la mano del piso",
+        "Justo sobre la línea de producción para el acceso más fácil",
+        "En garrafas sin etiqueta para ahorrar espacio de almacén"
+      ],
+      "correct": 0,
       "hint": "Lejos del producto, etiquetados, asegurados.",
       "rationale": "Los químicos se guardan en un área dedicada y con acceso controlado, lejos de alimentos, empaque e ingredientes, en envases claramente etiquetados, con SDS disponible y los de grado alimentario separados de los no alimentarios."
     },
     {
       "question": "Una línea se limpió pero la inspección preoperacional aún no pasa. ¿Puede empezar la producción?",
-      "options": ["Sí, si vas atrasado", "No — ninguna producción corre hasta que la inspección preoperacional pase", "Sí, si el supervisor está ocupado", "Solo en el turno de día"],
-      "correct": 1,
+      "options": [
+        "Sí, si resulta que vas atrasado con el calendario",
+        "Sí, mientras el supervisor esté ocupado en ese momento",
+        "No — ninguna producción corre hasta que la pre-op pase",
+        "Solo durante el turno de día normal, nunca de noche"
+      ],
+      "correct": 2,
       "hint": "La pre-op es una puerta sin excepciones.",
       "rationale": "Ninguna producción empieza hasta que la inspección preoperacional pase — sin excepciones. Si la línea no pasa, se vuelve a limpiar y a inspeccionar antes de correr."
     },
     {
       "question": "¿Cuál es el propósito del calendario maestro de saneamiento?",
-      "options": ["Programar los descansos del personal", "Asegurar que cada área y superficie se limpie a tiempo, con un responsable y un registro", "Listar la producción del día", "Rastrear las compras de químicos"],
+      "options": [
+        "Programar y organizar los horarios de descanso del personal",
+        "Asegurar que cada superficie se limpie a tiempo, con responsable",
+        "Listar todas las corridas de producción que se planean para el día",
+        "Rastrear todas las compras de químicos que hacemos"
+      ],
       "correct": 1,
       "hint": "Todo se limpia, en un ciclo, con un responsable.",
       "rationale": "El calendario maestro de saneamiento enumera cada área y superficie (incluidas las de difícil acceso), define con qué frecuencia se limpia cada una, asigna un responsable, y registra y verifica cada tarea completada."

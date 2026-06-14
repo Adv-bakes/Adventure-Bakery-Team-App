@@ -24,7 +24,12 @@
           "Describe food safety culture and your role",
           "Know your authority to stop unsafe product"
         ],
-        "icons": ["iconChat", "iconTruck", "iconPeople", "iconHand"]
+        "icons": [
+          "iconChat",
+          "iconTruck",
+          "iconPeople",
+          "iconHand"
+        ]
       },
       "notes": "Here's what you'll walk away with. Four things: what SQF is and why we chose it, how it connects to a big opportunity for the company, what we mean by food safety culture, and — importantly — the authority every one of you has to stop product that isn't safe."
     },
@@ -34,8 +39,16 @@
       "art": "ribbonMedal",
       "visual": {
         "type": "badge",
-        "letters": ["S", "Q", "F"],
-        "words": ["Safe", "Quality", "Food"],
+        "letters": [
+          "S",
+          "Q",
+          "F"
+        ],
+        "words": [
+          "Safe",
+          "Quality",
+          "Food"
+        ],
         "caption": "An independent auditor verifies we make safe food the same way, every day — and that we can prove it."
       },
       "notes": "SQF stands for Safe Quality Food. It's a food safety standard recognized around the world. The key idea is that an outside expert — an auditor — comes in and checks that we produce safe food consistently, and that we have the records to back it up. It's not a one-time test; it's how we operate."
@@ -46,7 +59,11 @@
       "visual": {
         "type": "hierarchy",
         "top": "GFSI — the standard major retailers trust",
-        "children": ["SQF — ours", "BRCGS", "FSSC 22000"],
+        "children": [
+          "SQF — ours",
+          "BRCGS",
+          "FSSC 22000"
+        ],
         "highlight": 0,
         "caption": "One certification tells every big customer our food is safe — without each auditing us separately."
       },
@@ -58,7 +75,11 @@
       "art": "truck",
       "visual": {
         "type": "flow",
-        "steps": ["SQF certification", "GFSI recognition", "Shelf space with a major grocery retailer"],
+        "steps": [
+          "SQF certification",
+          "GFSI recognition",
+          "Shelf space with a major grocery retailer"
+        ],
         "highlight": 2
       },
       "notes": "Here's why this matters to all of us. We want to get our rum cakes onto the shelves of a major grocery chain. That retailer won't buy from a supplier that isn't certified to a GFSI standard like SQF — it's a requirement, not a preference. So this certification is the doorway to a major customer and real growth for the company."
@@ -87,7 +108,12 @@
       "lead": "Every station is your station — the same standard everywhere.",
       "visual": {
         "type": "cycle",
-        "steps": ["Prep", "Mixing", "Baking", "Packaging"],
+        "steps": [
+          "Prep",
+          "Mixing",
+          "Baking",
+          "Packaging"
+        ],
         "center": "One team, one standard"
       },
       "notes": "Since we all rotate across prep, mixing, baking, and packaging, no one gets to say \"that's not my area\" — every area is your area. The care you take at one station is the same care you bring to the next. That's what makes a rotating team strong: everyone knows the whole process."
@@ -113,15 +139,27 @@
         "type": "split",
         "left": {
           "header": "Our plant-based burgers",
-          "items": ["Made free of the top 9 allergens", "A promise our customers count on"],
+          "items": [
+            "Made free of the top 9 allergens",
+            "A promise our customers count on"
+          ],
           "color": "green",
-          "icons": ["burger"]
+          "icons": [
+            "burger"
+          ]
         },
         "right": {
           "header": "The same building also handles",
-          "items": ["Wheat • Egg • Milk in other products", "Shared equipment and rotating staff"],
+          "items": [
+            "Wheat • Egg • Milk in other products",
+            "Shared equipment and rotating staff"
+          ],
           "color": "amber",
-          "icons": ["wheat", "egg", "milk"]
+          "icons": [
+            "wheat",
+            "egg",
+            "milk"
+          ]
         },
         "chip": "Our shared job: keep them apart"
       },
@@ -159,57 +197,95 @@
   "quiz": [
     {
       "question": "What does SQF stand for?",
-      "options": ["Standard Quality Food", "Safe Quality Food", "Sanitary Quality Facility", "Secure Quality Formula"],
-      "correct": 1,
+      "options": [
+        "Standard Quality Food",
+        "Sanitary Quality Facility",
+        "Secure Quality Formula",
+        "Safe Quality Food"
+      ],
+      "correct": 3,
       "hint": "The S is about safety, not standards.",
       "rationale": "SQF = Safe Quality Food."
     },
     {
       "question": "Why is our bakery pursuing SQF certification?",
-      "options": ["It's legally required to bake anything", "It lets us put our rum cakes on the shelves of a major grocery retailer", "It replaces the need for cleaning", "It's only for export"],
-      "correct": 1,
+      "options": [
+        "It opens the shelves of a major grocery retailer to our rum cakes",
+        "It is legally required before a bakery can produce any food at all",
+        "It replaces the need for daily cleaning and sanitation work",
+        "It applies only to products that we ship overseas for export"
+      ],
+      "correct": 0,
       "hint": "Think about who requires certification before stocking our products.",
       "rationale": "Major retailers require a GFSI-recognized certification; SQF opens that door."
     },
     {
       "question": "SQF is recognized under which broader system that major retailers trust?",
-      "options": ["FDA-only registration", "GFSI", "OSHA", "The rum import license"],
-      "correct": 1,
+      "options": [
+        "FDA-only registration",
+        "OSHA",
+        "GFSI",
+        "The rum import license"
+      ],
+      "correct": 2,
       "hint": "The global initiative the big grocery chains trust.",
       "rationale": "GFSI benchmarks SQF; it's the bar major retailers require."
     },
     {
       "question": "Our retail customer says they may inspect the facility without advance notice. What's the right mindset?",
-      "options": ["Only clean up the day before a scheduled audit", "Do things the right way every day so we're always ready", "Hide the frozen line during visits", "Refuse the visitors entry"],
+      "options": [
+        "Only clean things up the day before a scheduled audit visit",
+        "Do things the right way every day so we are always ready",
+        "Hide the frozen line whenever inspectors come during a visit",
+        "Refuse to let the unannounced visitors into the facility"
+      ],
       "correct": 1,
       "hint": "If any day could be audit day, how do you operate?",
       "rationale": "The customer reserves the right to audit, sometimes unannounced — daily readiness is the only safe posture."
     },
     {
       "question": "\"Food safety culture\" is best described as:",
-      "options": ["A poster in the break room", "Doing the right thing even when no one is watching, owned by everyone", "The quality manager's sole responsibility", "A once-a-year event"],
-      "correct": 1,
+      "options": [
+        "A motivational poster hanging on the wall of the break room",
+        "The sole responsibility of the quality manager and no one else",
+        "A single training event that happens just once a year",
+        "Doing the right thing when no one is watching, owned by all"
+      ],
+      "correct": 3,
       "hint": "It's about what everyone does when nobody's watching.",
       "rationale": "Culture is everyday shared ownership, not one person or one event."
     },
     {
       "question": "You're rotating on packaging and notice cakes going into boxes with the wrong product label. What should you do?",
-      "options": ["Keep going; labels aren't your station's problem", "Wait until break to mention it", "Stop the product and report it immediately", "Fix it quietly and tell no one"],
-      "correct": 2,
+      "options": [
+        "Stop the product and report it immediately",
+        "Keep going; labels aren't your station's problem",
+        "Wait until break to mention it",
+        "Fix it quietly and tell no one"
+      ],
+      "correct": 0,
       "hint": "Wrong labels can hide allergens — and every employee has stop authority.",
       "rationale": "A wrong label can trigger a recall; every employee has authority to stop and report. Reporting also creates the record."
     },
     {
       "question": "True or false: If you raise a food safety concern that turns out to be a false alarm, you can get in trouble.",
-      "options": ["True", "False"],
+      "options": [
+        "True",
+        "False"
+      ],
       "correct": 1,
       "hint": "Remember the promise from the 'stop the line' slide.",
       "rationale": "Employees are never penalized for raising concerns; speaking up is always the right call."
     },
     {
       "question": "Our plant-based burgers are made free of the top 9 allergens, but the building also handles wheat, egg, and milk. Why does this matter to you on a rotating team?",
-      "options": ["It doesn't; only the burger team needs to care", "Because cross-contact anywhere can break the allergen-free promise, and we all work every area", "Because allergens only matter in shipping", "Because the rum cancels out allergens"],
-      "correct": 1,
+      "options": [
+        "It does not matter; only the burger team really needs to care",
+        "Because allergens only matter in the shipping and receiving area",
+        "Because cross-contact anywhere can break the allergen-free promise we share",
+        "Because the rum in the cakes cancels out any allergen risk"
+      ],
+      "correct": 2,
       "hint": "Who touches every station on a rotating team?",
       "rationale": "On rotating staff, everyone influences the allergen-free claim; protecting it is a shared, facility-wide job."
     }

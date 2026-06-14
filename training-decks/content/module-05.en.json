@@ -29,7 +29,12 @@
           "Recognize our Critical Control Points and the limits they hold",
           "Take the right corrective action the moment a limit is missed"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Here is what you'll be able to do by the end. Explain in plain words what HACCP is and why building safety into the process beats inspecting for problems afterward. Name the four types of hazard we control — biological, chemical, physical, and allergen. Recognize the Critical Control Points on our line and the limits each one holds. And take the right corrective action the moment a critical limit is missed, instead of guessing. These four skills are what an auditor expects every employee to have."
     },
@@ -190,56 +195,96 @@
   "quiz": [
     {
       "question": "What is the core idea behind HACCP?",
-      "options": ["Inspect finished product to find problems", "Prevent hazards by controlling them while we make the product", "Test only when a customer complains", "Rely on the metal detector for everything"],
-      "correct": 1,
+      "options": [
+        "Inspect the finished product afterward to find any problems",
+        "Test the product only when a customer complains",
+        "Rely on the metal detector to catch everything",
+        "Prevent hazards by controlling them while we make product"
+      ],
+      "correct": 3,
       "hint": "Prevention, not detection.",
       "rationale": "HACCP builds safety into the process by identifying where a hazard could occur and controlling it at that step, rather than inspecting product after the fact."
     },
     {
       "question": "Which of these is NOT one of the four hazard types we control?",
-      "options": ["Biological", "Chemical", "Physical", "Financial"],
-      "correct": 3,
+      "options": [
+        "Financial",
+        "Biological",
+        "Chemical",
+        "Physical"
+      ],
+      "correct": 0,
       "hint": "Think about what could make food unsafe.",
       "rationale": "The four food-safety hazard types are biological, chemical, physical, and allergen. Financial is not a food-safety hazard."
     },
     {
       "question": "What makes a step a Critical Control Point (CCP)?",
-      "options": ["It is the fastest step on the line", "It is where the supervisor stands", "It is the last chance to control a hazard, with a measurable limit", "It is any step that uses a machine"],
+      "options": [
+        "It is simply the fastest step on the whole line",
+        "It is the place where the supervisor usually stands",
+        "It is the last chance to control a hazard, with a limit",
+        "It is any step at all that happens to use a machine"
+      ],
       "correct": 2,
       "hint": "Last line of defense, with a number attached.",
       "rationale": "A CCP is a step that is the last chance to control a hazard and has a measurable critical limit that is monitored and recorded."
     },
     {
       "question": "What is a 'critical limit'?",
-      "options": ["A suggestion that's nice to meet", "The measurable boundary a CCP must meet, like a temperature or time", "The number of products per batch", "How long a shift lasts"],
+      "options": [
+        "A loose suggestion that is simply nice to meet when possible",
+        "The measurable boundary a CCP must meet, like temperature or time",
+        "The total number of products made in each batch",
+        "How long a single production shift will actually last on the floor"
+      ],
       "correct": 1,
       "hint": "It's a number, not a judgment call.",
       "rationale": "A critical limit is the measurable line a CCP must meet — a minimum temperature, a maximum time, a detector setting — that separates safe from unsafe."
     },
     {
       "question": "Why is the baking step a Critical Control Point?",
-      "options": ["It makes the product look nice", "The heat destroys pathogens and is what makes baked product safe to eat", "It is the most expensive step", "It controls allergens"],
-      "correct": 1,
+      "options": [
+        "It mainly makes the finished product look nicer",
+        "It is by far the most expensive step we run",
+        "It is the step that controls allergen cross-contact",
+        "The heat destroys pathogens and makes baked product safe"
+      ],
+      "correct": 3,
       "hint": "Heat is doing a safety job.",
       "rationale": "The baking kill step uses heat to destroy pathogens; reaching the validated internal temperature for the validated time is what makes the baked product safe."
     },
     {
       "question": "How do we know the metal detector is actually working?",
-      "options": ["It looks powered on", "We verify it with ferrous, non-ferrous, and stainless test pieces and confirm the rejector works", "We assume it works unless it beeps", "We check it once a year"],
-      "correct": 1,
+      "options": [
+        "We verify it with ferrous, non-ferrous, and stainless test pieces",
+        "It simply looks like it is powered on and running",
+        "We assume it works fine unless it happens to beep",
+        "We check it just once a year during the audit"
+      ],
+      "correct": 0,
       "hint": "Test pieces and the rejector.",
       "rationale": "We verify the detector at set intervals with ferrous, non-ferrous, and stainless-steel test standards and confirm the rejector removes contaminated product. A failed test means stop and segregate."
     },
     {
       "question": "A temperature reading comes in below the critical limit at your CCP. What do you do?",
-      "options": ["Ship it; one batch won't matter", "Stop, isolate the affected product, notify your supervisor, and record it", "Re-test until you get a passing number", "Fix it yourself and keep running"],
-      "correct": 1,
+      "options": [
+        "Ship it anyway since one batch will not matter",
+        "Re-test the line until you finally get a passing number",
+        "Stop, isolate the product, notify your supervisor, and record it",
+        "Fix the problem yourself and just keep running"
+      ],
+      "correct": 2,
       "hint": "Stop, isolate, notify, record.",
       "rationale": "A deviation triggers corrective action: stop and isolate the product, notify your supervisor (trained staff decide next steps), fix the cause, record everything, and resume only when confirmed safe."
     },
     {
       "question": "An auditor asks you about your station. What should you be able to tell them?",
-      "options": ["Nothing — only managers talk to auditors", "Your Critical Control Point, its limit, and what you do if it fails", "Only your name and shift", "That someone else handles food safety"],
+      "options": [
+        "Nothing at all — only the managers should talk to auditors",
+        "Your CCP, its limit, and what to do if it fails",
+        "Only your name and which shift you work",
+        "That somebody else is the one who handles food safety"
+      ],
       "correct": 1,
       "hint": "Know your step, your limit, your action.",
       "rationale": "SQF auditors interview floor staff directly. Every employee should be able to state the CCP at their station, its critical limit, and the corrective action if the limit is missed."

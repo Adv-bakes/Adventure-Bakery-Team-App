@@ -1,0 +1,299 @@
+{
+  "module": 8,
+  "language": "en",
+  "moduleLabel": "Module 8",
+  "title": "Receiving, Storage & Ingredients",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 8 — Receiving, Storage & Ingredients",
+      "subtitle": "SQF Food Safety Training",
+      "titleSize": 56,
+      "photo": "PHOTO: receiving dock / pallet racking in dry storage",
+      "photoCaption": "PREREQUISITE PROGRAMS · RECEIVING",
+      "intro": "Food safety starts at the receiving dock. This module covers buying from approved suppliers, inspecting deliveries, tracking lots for traceability, rotating stock with FIFO, storing ingredients correctly, and the special controls for rum.",
+      "notes": "Welcome to Module 8. Everything we make begins with what comes through the receiving dock, so food safety really starts there. A problem we accept at receiving — the wrong ingredient, a contaminated load, a missing allergen on a spec — travels straight into everything we produce. In this module you'll learn why we only buy from approved suppliers, how to inspect a delivery, how lot tracking gives us traceability for a recall, how FIFO keeps stock fresh, the rules for storing ingredients safely, and the special receiving, storage, and usage controls for rum, which is a controlled ingredient. A note: these controls must be reconciled with our written program before the audit."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explain why we only accept from approved suppliers",
+          "Inspect a delivery and know when to reject it",
+          "Use lot tracking and FIFO to support traceability",
+          "Store ingredients safely and handle rum under control"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here is what you'll be able to do by the end. Explain why we only accept ingredients and materials from approved suppliers. Inspect a delivery at the dock and know exactly when to reject it. Use lot tracking and first-in-first-out stock rotation to support traceability and freshness. And store ingredients safely, including handling rum under its special controls. These are the habits that keep a problem from ever entering the plant."
+    },
+    {
+      "title": "Why it matters",
+      "lead": "What you accept at the dock ends up in the product.",
+      "kicker": "WHY IT MATTERS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "A problem accepted at receiving flows into everything we make",
+          "Lot records make a fast, targeted recall possible",
+          "Good rotation prevents spoilage and out-of-date stock",
+          "Controlled ingredients like rum need extra security"
+        ]
+      },
+      "notes": "Why put so much care into receiving and storage? First, what you accept at the dock ends up in the product — a problem that gets past receiving flows into everything we make. Second, the lot records we create at receiving are what make a fast, targeted recall possible if something ever goes wrong. Third, good stock rotation prevents spoilage and stops out-of-date ingredients from being used. And fourth, some ingredients — like rum — are controlled and need extra security and tracking. Receiving and storage are where we keep problems out before they can ever reach production."
+    },
+    {
+      "title": "Approved suppliers only",
+      "lead": "We buy only from suppliers we've vetted.",
+      "kicker": "APPROVED SUPPLIERS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Suppliers are vetted for food safety before we buy from them",
+          "Ingredients arrive with the right specs and certificates",
+          "Each delivery is checked against what was approved and ordered",
+          "Non-approved or undocumented deliveries are not accepted"
+        ]
+      },
+      "notes": "We only buy ingredients and packaging from approved suppliers — suppliers we've vetted to confirm they meet our food safety and documentation requirements. This matters because we're trusting them to control hazards before the material ever reaches us, including allergen information that protects the free-from claim. Approved ingredients arrive with the right specifications and certificates, like a certificate of analysis. Each delivery is checked against what was actually approved and ordered. And a delivery from a supplier that isn't approved, or that arrives without its documentation, is not accepted onto the floor. If something doesn't match, it's held and escalated, never just waved through."
+    },
+    {
+      "title": "Receiving inspection",
+      "lead": "Every delivery is checked before it's accepted.",
+      "kicker": "RECEIVING",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Check the vehicle and temperature for cold or frozen loads",
+          "Verify the documents — spec, certificate, allergen info",
+          "Inspect product and packaging for damage, pests, or tampering",
+          "Accept and record, or reject and report"
+        ],
+        "highlight": 3
+      },
+      "notes": "Every delivery gets an inspection before it's accepted. Start with the vehicle: is it clean, and for cold or frozen loads, is the temperature where it should be? Next, verify the documents — the specification, the certificate of analysis, and the allergen information all match what we approved and ordered. Then inspect the product and packaging itself for damage, signs of pests, or any tampering. Finally, either accept the load and record it, or reject it and report the problem. A receiving inspection only protects us if a failed check actually stops the delivery — when in doubt, hold it and ask."
+    },
+    {
+      "title": "Lot tracking & traceability",
+      "lead": "If we can't trace it, we can't recall it.",
+      "kicker": "TRACEABILITY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Record the lot or batch code of everything received",
+          "Know one step back — your supplier — and one step forward",
+          "Label and date ingredients so a lot is never a mystery",
+          "Good records turn a huge recall into a small, targeted one"
+        ]
+      },
+      "notes": "Traceability is our ability to follow an ingredient through the plant, and it starts at receiving. We record the lot or batch code of everything we receive. The principle is one-up, one-back: we can trace one step back to the supplier and lot it came from, and one step forward to the products it went into. We label and date ingredients so a lot is never a mystery later. Why it matters: if there's ever a problem with an ingredient, good lot records turn what could be a huge, plant-wide recall into a small, targeted one — pulling only the affected lots. Without records, we'd have to recall everything."
+    },
+    {
+      "title": "Rotate stock: FIFO",
+      "lead": "First in, first out — oldest stock used first.",
+      "kicker": "STOCK ROTATION",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Do",
+          "items": [
+            "Use the oldest, or first-to-expire, stock before newer stock",
+            "Date and label everything when it's received",
+            "Place new stock behind older stock on the shelf"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Don't",
+          "items": [
+            "Grab whatever is closest or easiest to reach",
+            "Use stock past its expiry or use-by date",
+            "Leave received product undated or unlabeled"
+          ],
+          "color": "amber"
+        },
+        "chip": "Oldest first — fresh product, no waste"
+      },
+      "notes": "FIFO stands for first in, first out, and the related idea is FEFO — first expired, first out. In practice it means we use the oldest stock, or the stock closest to its expiry date, before any newer stock. To make that possible, we date and label everything when it's received, and we place new stock behind the older stock on the shelf so the older product gets reached first. What we don't do: grab whatever is closest or easiest, use anything past its expiry or use-by date, or leave received product undated and unlabeled. Good rotation means fresh product and no waste from expired stock."
+    },
+    {
+      "title": "Storage rules",
+      "lead": "How we store protects what we'll make.",
+      "kicker": "STORAGE",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Keep product off the floor and away from walls",
+          "Segregate allergens; store free-from product above allergen-containing",
+          "Never store cleaning chemicals with or above ingredients",
+          "Hold cold and frozen items at the right temperature"
+        ]
+      },
+      "notes": "How we store ingredients protects everything we'll make from them. Keep product up off the floor and away from walls — that allows cleaning and inspection and keeps pests from nesting. Segregate allergens, and when stacking, store free-from product above allergen-containing product so nothing can drip or spill down onto it. Never store cleaning chemicals with ingredients or on a shelf above them. And hold cold and frozen items at the right temperature, with no gaps in the cold chain. Storage isn't just keeping things tidy — every one of these rules is preventing a specific way that product can become unsafe."
+    },
+    {
+      "title": "Rum: a controlled ingredient",
+      "kicker": "CONTROLLED INGREDIENT",
+      "visual": {
+        "type": "stopSign",
+        "label": "RUM",
+        "lines": [
+          "Received, stored, and used under secured, logged control.",
+          "Kept below the finished-product limit in every batch.",
+          "Usage is reconciled — what's used must match what's recorded."
+        ]
+      },
+      "notes": "Rum is a controlled ingredient, so it gets handled differently from a standard ingredient. It's received, stored, and used under secured control — kept in a designated, access-controlled place, not left out, because it's both a regulated ingredient and one people might misuse. Its use is logged. It must be kept below the finished-product limit in every batch that contains it, which is a quality and regulatory requirement. And usage is reconciled: the amount used has to match what's recorded against what was received, so nothing is unaccounted for. The exact limit and procedures come from our written program, and this is one of the areas that must be reconciled with that program before the audit."
+    },
+    {
+      "title": "Cold chain at receiving",
+      "lead": "Cold and frozen loads are checked the moment they arrive.",
+      "kicker": "COLD CHAIN",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Check and record temperature before accepting a cold load",
+          "Reject or hold a delivery that arrives temperature-abused",
+          "Move accepted cold and frozen stock into storage right away",
+          "A broken cold chain can't be fixed by re-chilling later"
+        ]
+      },
+      "notes": "Cold and frozen ingredients are checked the moment they arrive, because temperature is a safety control for them. Check and record the temperature before accepting a refrigerated or frozen load. If a delivery arrives temperature-abused — too warm, or showing signs of having thawed and refrozen — reject or hold it; don't accept it just because it's already here. Move accepted cold and frozen stock into proper storage right away, so it doesn't sit and warm up on the dock. And remember the key point: a broken cold chain can't be undone by re-chilling the product later. Once cold-temperature product has warmed up, the safety risk is already there."
+    },
+    {
+      "title": "It starts at the dock",
+      "kicker": "AT THE DOCK",
+      "lead": "You're the first line of defense.",
+      "photo": "PHOTO: worker checking a delivery / scanning a pallet at receiving",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Inspect before you accept — a rejection now prevents a recall later.",
+          "Record the lot and temperature; an unrecorded receipt can't be traced.",
+          "An auditor may ask: how do you know this ingredient is safe to use?"
+        ],
+        "chip": "When a delivery looks wrong, hold it and report."
+      },
+      "notes": "The person at the receiving dock is the plant's first line of defense, because you decide what's allowed in. Inspect before you accept — a rejection at the dock now prevents a recall later, and it's always cheaper and safer to turn a bad load away than to pull product from customers. Record the lot and the temperature; a receipt that isn't recorded can't be traced, which breaks our recall ability. Remember auditors interview floor staff, and a common question is: how do you know this ingredient is safe to use? Your answer is the approved-supplier check, the receiving inspection, and the records. When a delivery looks wrong, hold it and report it."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Buy only from approved suppliers; inspect every delivery",
+          "Record lots for traceability; rotate stock with FIFO",
+          "Store off the floor, segregate allergens, keep the cold chain",
+          "Handle rum under secured, logged, reconciled control"
+        ],
+        "next": "Next: Frozen Product Handling"
+      },
+      "notes": "Let's recap. We buy only from approved suppliers and inspect every delivery against its documents before accepting it. We record the lot code of everything received so we have traceability, and we rotate stock first-in-first-out so the oldest is used first. We store product off the floor and away from walls, segregate allergens with free-from product stored above allergen-containing, and keep cold and frozen items in an unbroken cold chain. And we handle rum as a controlled ingredient — secured, logged, kept below its limit, and reconciled. Remember these controls must be reconciled with our written program before the audit. Up next, Frozen Product Handling. Nice work."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Why do we say food safety \"starts at the receiving dock\"?",
+      "options": [
+        "Because the dock is the cleanest, most controlled area of the plant",
+        "Because trucks are always inspected by the supplier before they leave",
+        "Because the loading dock is where finished product gets shipped out",
+        "Because a problem accepted at receiving travels into everything we make"
+      ],
+      "correct": 3,
+      "hint": "Think about where ingredients first enter the plant.",
+      "rationale": "What we accept at the dock ends up in the product. A problem that gets past receiving flows into everything we make, so receiving is the first place we keep hazards out."
+    },
+    {
+      "question": "What does it mean for a supplier to be \"approved\"?",
+      "options": [
+        "A supplier vetted to meet our food-safety and documentation requirements",
+        "Any supplier that can deliver the ingredient at the lowest current price",
+        "A supplier the purchasing team happens to have ordered from before",
+        "Whichever supplier has the ingredient in stock that particular week"
+      ],
+      "correct": 0,
+      "hint": "It's about vetting, not price or convenience.",
+      "rationale": "An approved supplier has been vetted to meet our food-safety and documentation requirements, since we rely on them to control hazards and provide accurate allergen information before material reaches us."
+    },
+    {
+      "question": "A delivery arrives with no certificate of analysis or spec paperwork. What should you do?",
+      "options": [
+        "Accept it now and ask the supplier to email the documents later",
+        "Unload it into storage and flag the missing paperwork at month-end",
+        "Hold the delivery and don't accept it until the documents are verified",
+        "Accept the load but store it apart from the other received ingredients"
+      ],
+      "correct": 2,
+      "hint": "Documentation is part of accepting a delivery.",
+      "rationale": "A delivery without its required documentation is not accepted onto the floor. Hold it and escalate until the documents are verified against what was approved and ordered."
+    },
+    {
+      "question": "What is the purpose of lot tracking and one-up/one-back records?",
+      "options": [
+        "To find which supplier offered the best price on each ingredient lot",
+        "To trace an ingredient forward and back so a recall can be targeted",
+        "To count how many lots each employee receives during a typical shift",
+        "To decide which lots to use first based only on their arrival order"
+      ],
+      "correct": 1,
+      "hint": "Think about what makes a recall small instead of huge.",
+      "rationale": "Lot records let us trace one step back to the supplier and one step forward to the products a lot went into, turning a potential plant-wide recall into a small, targeted one."
+    },
+    {
+      "question": "What does FIFO / FEFO mean in practice?",
+      "options": [
+        "Store the newest stock in front so it's the easiest to reach first",
+        "Use whichever lot is nearest the door regardless of its date code",
+        "Keep every lot until inspection, then release them all at one time",
+        "Use the oldest or first-to-expire stock before any newer stock"
+      ],
+      "correct": 3,
+      "hint": "First in or first to expire goes out first.",
+      "rationale": "FIFO/FEFO means using the oldest stock, or the stock closest to expiry, before newer stock — which is why we date everything and shelve new stock behind older stock."
+    },
+    {
+      "question": "Which of these is a correct ingredient storage rule?",
+      "options": [
+        "Keep product off the floor and away from walls, with allergens segregated",
+        "Stack ingredients right on the floor as long as the floor looks clean",
+        "Store cleaning chemicals beside the ingredients so they're easy to grab",
+        "Place allergen-containing stock above free-from product to save shelf space"
+      ],
+      "correct": 0,
+      "hint": "Off the floor, allergens kept apart and below free-from.",
+      "rationale": "Store product off the floor and away from walls, segregate allergens (free-from above allergen-containing), and never store chemicals with or above ingredients."
+    },
+    {
+      "question": "How is rum handled as a controlled ingredient?",
+      "options": [
+        "Stored out on the open floor like any other ingredient we receive",
+        "Used freely in any batch since the finished limit is hard to exceed",
+        "Received, stored, and used under secured, logged, reconciled control",
+        "Counted once a year and otherwise left to each operator to manage"
+      ],
+      "correct": 2,
+      "hint": "Secured, logged, kept below its limit, reconciled.",
+      "rationale": "Rum is received, stored, and used under secured, logged control, kept below the finished-product limit, and reconciled so usage matches what was received. Exact limits come from the written program."
+    },
+    {
+      "question": "A frozen delivery arrives above its required temperature. What's the right action?",
+      "options": [
+        "Accept it and move it straight to the freezer to bring it back down",
+        "Reject or hold the load and record the temperature deviation found",
+        "Accept it if only part of the pallet feels warmer than the rest does",
+        "Store it now and ask the next shift to re-check the temperature later"
+      ],
+      "correct": 1,
+      "hint": "A broken cold chain can't be fixed by re-chilling.",
+      "rationale": "A temperature-abused frozen load is rejected or held and the deviation recorded. Re-chilling can't undo a broken cold chain — once the product warmed, the safety risk is already there."
+    }
+  ]
+}

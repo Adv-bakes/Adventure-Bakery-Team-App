@@ -28,7 +28,12 @@
           "Seguir nuestras reglas de vidrio, plástico quebradizo y objetos filosos",
           "Detener, aislar y reportar en el momento en que encuentres o sospeches contaminación"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Esto es lo que podrás hacer al terminar. Nombrar los principales lugares de donde viene el material extraño en nuestra planta. Describir las capas de defensa en las que confiamos — excluir, capturar, detectar y reaccionar. Seguir nuestras reglas para el vidrio, el plástico quebradizo y las herramientas filosas como hojas y cuchillos. Y saber exactamente qué hacer — detener, aislar y reportar — en el momento en que encuentres o incluso sospeches material extraño en el producto."
     },
@@ -201,56 +206,96 @@
   "quiz": [
     {
       "question": "¿Qué es el 'material extraño' en una planta de alimentos?",
-      "options": ["Ingredientes importados", "Cualquier cosa en el producto que no debería estar, como metal, vidrio o plástico duro", "Cualquier ingrediente de otro país", "Solo productos químicos de limpieza"],
-      "correct": 1,
+      "options": [
+        "Ingredientes que hemos importado de proveedores en el extranjero",
+        "Cualquier ingrediente que venga de otro país allá en el extranjero",
+        "Solo los químicos de limpieza que usamos en la planta",
+        "Algo en el producto que no debería estar, como metal o vidrio"
+      ],
+      "correct": 3,
       "hint": "Cualquier cosa que termina en el producto pero no debería.",
       "rationale": "El material extraño es cualquier objeto físico que termina en el producto pero no debería estar — metal, vidrio, plástico quebradizo, madera o parte de una herramienta o equipo."
     },
     {
       "question": "¿Cuáles son las cuatro capas de defensa contra el material extraño?",
-      "options": ["Lavar, enjuagar, sanitizar, secar", "Excluir, capturar, detectar, reaccionar", "Recibir, almacenar, enviar, registrar", "Mezclar, hornear, enfriar, empacar"],
-      "correct": 1,
+      "options": [
+        "Excluir, capturar, detectar, reaccionar",
+        "Lavar, enjuagar, sanitizar, secar",
+        "Recibir, almacenar, enviar, registrar",
+        "Mezclar, hornear, enfriar, empacar"
+      ],
+      "correct": 0,
       "hint": "Mantenerlo fuera, atraparlo, encontrarlo, responder.",
       "rationale": "Las capas son excluir (mantenerlo fuera), capturar (tamices, filtros, imanes), detectar (detección de metales y pesaje) y reaccionar (detener, aislar, reportar)."
     },
     {
       "question": "¿Cuál NO es una de las cuatro fuentes principales de material extraño?",
-      "options": ["Materias primas", "Equipo y mantenimiento", "El clima", "Personas"],
+      "options": [
+        "Materias primas",
+        "Equipo y mantenimiento",
+        "El clima",
+        "Personas"
+      ],
       "correct": 2,
       "hint": "Piensa en qué entra físicamente al producto.",
       "rationale": "Las cuatro fuentes principales son materias primas, equipo y mantenimiento, empaque y personas. El clima no es una fuente de material extraño."
     },
     {
       "question": "Encuentras residuos de metal en un imán en línea durante una revisión de rutina. ¿Qué debes hacer?",
-      "options": ["Límpialo y sigue — para eso está", "Límpialo, pero también reporta e investiga de dónde vino el metal", "Ignóralo a menos que sea un pedazo grande", "Tira el imán"],
+      "options": [
+        "Límpialo y sigue, ya que para eso está puesto ahí",
+        "Límpialo, pero también reporta e investiga de dónde vino",
+        "Ignóralo por completo a menos que sea un pedazo grande",
+        "Saca el imán y simplemente tíralo a la basura"
+      ],
       "correct": 1,
       "hint": "Te está diciendo que algo arriba está soltando metal.",
       "rationale": "Un imán que atrapa metal está haciendo su trabajo, pero el hallazgo debe reportarse e investigarse — indica que algo arriba está soltando material que hay que corregir."
     },
     {
       "question": "¿Cuál es nuestra política sobre el vidrio y el plástico quebradizo en áreas de producción?",
-      "options": ["Permitido si tienes cuidado", "Nada de vidrio/plástico quebradizo personal; lo necesario va en un registro y se inspecciona", "Solo permitido en el turno de noche", "El vidrio está bien, solo se controla el plástico"],
-      "correct": 1,
+      "options": [
+        "Está permitido siempre que tengas cuidado con ello",
+        "Solo está permitido durante el turno de noche",
+        "El vidrio está bien; solo se controla el plástico quebradizo",
+        "Nada de vidrio/plástico personal; lo necesario se registra e inspecciona"
+      ],
+      "correct": 3,
       "hint": "Exclúyelo; registra e inspecciona lo que deba estar.",
       "rationale": "No se permite vidrio personal ni plástico quebradizo innecesario en producción; los artículos requeridos (manómetros, cubiertas de luz) se listan en un registro y se inspeccionan, y cualquier rotura es un evento de detener y limpiar."
     },
     {
       "question": "¿Cómo se controlan las hojas y los cúteres?",
-      "options": ["Trae el tuyo y tenlo a mano", "Usa solo hojas entregadas, cuéntalas al salir y al volver, y reporta las rotas o faltantes", "Déjalos en la línea para el siguiente turno", "Solo los gerentes pueden tocarlos"],
-      "correct": 1,
+      "options": [
+        "Usa solo hojas entregadas, cuéntalas al salir y volver, reporta faltantes",
+        "Trae tu propia hoja y solo tenla a la mano cerca",
+        "Déjalas en la línea para que las use el siguiente turno",
+        "Solo los gerentes tienen permiso de tocar las hojas"
+      ],
+      "correct": 0,
       "hint": "Contabiliza cada hoja, antes y después.",
       "rationale": "Solo se usan hojas entregadas y contabilizadas; se cuentan al salir y al volver, se desechan en un contenedor para objetos filosos, y cualquier hoja rota o faltante se reporta como motivo para detener la línea."
     },
     {
       "question": "Acaban de hacer una reparación en tu línea. ¿Cuál es la regla de mantenimiento?",
-      "options": ["Corre de inmediato para recuperar el tiempo", "Contabiliza cada herramienta y pieza, sin arreglos temporales con cinta/alambre, limpia e inspecciona antes de correr", "Deja las herramientas cerca por si las necesitas otra vez", "Usa cartón para cubrir el hueco por ahora"],
-      "correct": 1,
+      "options": [
+        "Corre la línea de inmediato para recuperar el tiempo perdido",
+        "Deja las herramientas cerca por si las necesitas otra vez",
+        "Contabiliza cada herramienta y pieza, sin arreglos temporales, inspecciona antes",
+        "Usa algo de cartón para cubrir el hueco por ahora"
+      ],
+      "correct": 2,
       "hint": "Lo que entra al área debe volver a salir.",
       "rationale": "Cada herramienta y pieza debe contabilizarse, sin arreglos temporales con cinta/alambre/cartón cerca del producto, y la línea se limpia e inspecciona antes de volver a correr — una pieza que no está en la máquina puede estar en el producto."
     },
     {
       "question": "Crees ver un pequeño pedazo de plástico en el producto. ¿Qué haces?",
-      "options": ["Sácalo y mantén la línea corriendo", "Detente, aísla el producto afectado y repórtalo", "Espera hasta el descanso para mencionarlo", "Actúa solo si estás seguro"],
+      "options": [
+        "Sácalo y mantén la línea corriendo",
+        "Detente, aísla el producto afectado y repórtalo",
+        "Espera hasta el descanso para mencionarlo",
+        "Actúa solo si estás seguro"
+      ],
       "correct": 1,
       "hint": "Ante la duda, detente y reporta.",
       "rationale": "Si encuentras o incluso sospechas material extraño, detente y aísla el producto afectado y repórtalo — nunca solo quites el pedazo y sigas corriendo, porque puede que hayan entrado más y un reporte activa una investigación."

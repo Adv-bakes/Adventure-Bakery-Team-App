@@ -27,7 +27,12 @@
           "Mapear qué alérgenos hay en cada una de nuestras líneas",
           "Describir la declaración libre de alérgenos que distingue a la planta"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Esto es lo que te llevarás. Cuatro cosas: qué es realmente un alérgeno alimentario y por qué hasta una cantidad mínima puede dañar a alguien, los nueve alérgenos que los reguladores exigen controlar en toda planta de alimentos, cuáles de ellos viven en cada una de las líneas de producto que fabricamos, y la declaración libre de alérgenos en uno de esos productos que hace que nuestra planta sea distinta de una panadería normal. La Parte 1 trata de conocer el riesgo; la Parte 2 cubrirá cómo lo controlamos."
     },
@@ -201,56 +206,96 @@
   "quiz": [
     {
       "question": "¿Qué es un alérgeno alimentario?",
-      "options": ["Un germen que causa intoxicación alimentaria", "Una proteína que el sistema inmune trata por error como una amenaza", "Cualquier ingrediente de sabor fuerte", "Un químico de limpieza usado en el equipo"],
-      "correct": 1,
+      "options": [
+        "Un germen que causa intoxicación alimentaria y enfermedad",
+        "Cualquier ingrediente que simplemente tiene un sabor muy fuerte",
+        "Un agente químico de limpieza usado para sanitizar el equipo",
+        "Una proteína que el sistema inmune trata por error como amenaza"
+      ],
+      "correct": 3,
       "hint": "Tiene que ver con el sistema inmune reaccionando en exceso a un alimento normal.",
       "rationale": "Un alérgeno es una proteína normal de un alimento que el sistema inmune de una persona alérgica confunde con una amenaza, desencadenando una reacción que puede ser grave."
     },
     {
       "question": "¿Cuánta cantidad de un alérgeno puede desencadenar una reacción alérgica grave?",
-      "options": ["Solo una porción grande", "Cerca de medio producto", "Hasta una cantidad mínima (una traza)", "Nunca ocurre por contacto con alimentos"],
-      "correct": 2,
+      "options": [
+        "Hasta una cantidad mínima (una traza)",
+        "Solo una porción grande",
+        "Cerca de medio producto",
+        "Nunca ocurre por contacto con alimentos"
+      ],
+      "correct": 0,
       "hint": "Piensa en por qué nos preocupa el residuo invisible.",
       "rationale": "Hasta una traza puede desencadenar una reacción, por eso el contacto cruzado y el residuo importan tanto."
     },
     {
       "question": "¿Cuál describe mejor la diferencia entre alergia e intolerancia?",
-      "options": ["Son lo mismo", "Una alergia es una reacción inmune que puede ser mortal; una intolerancia es un problema digestivo que normalmente no lo es", "Una intolerancia es más peligrosa que una alergia", "Solo las intolerancias están reguladas"],
-      "correct": 1,
+      "options": [
+        "Son esencialmente lo mismo en lo que respecta al cuerpo",
+        "Una intolerancia es en realidad más peligrosa que una alergia",
+        "Una alergia puede ser mortal; una intolerancia es solo digestiva",
+        "Solo las intolerancias están reguladas por ley, no las alergias"
+      ],
+      "correct": 2,
       "hint": "Una involucra al sistema inmune y puede poner en peligro la vida.",
       "rationale": "Una alergia es una reacción inmune que puede ser repentina y mortal desde una traza; una intolerancia es un problema digestivo, incómodo pero no mortal. Nuestros controles atacan las alergias."
     },
     {
       "question": "¿Cuántos alérgenos principales exigen los reguladores controlar en las plantas de alimentos?",
-      "options": ["3", "5", "9", "20"],
-      "correct": 2,
+      "options": [
+        "3",
+        "9",
+        "5",
+        "20"
+      ],
+      "correct": 1,
       "hint": "El sésamo fue la incorporación más reciente, en 2023.",
       "rationale": "Hay 9 alérgenos principales: leche, huevo, pescado, mariscos, frutos secos, cacahuate, trigo, soya y sésamo (añadido en 2023)."
     },
     {
       "question": "¿Qué alérgenos ya están presentes en los productos que fabricamos?",
-      "options": ["Ninguno — somos libres de alérgenos", "Trigo, huevo y leche (y frutos secos en algunos productos)", "Solo cacahuate", "Solo sésamo"],
-      "correct": 1,
+      "options": [
+        "Ninguno — nuestra planta es completamente libre de alérgenos",
+        "Solo hay cacahuate presente en todo el edificio",
+        "Solo se maneja sésamo en toda la planta",
+        "Trigo, huevo y leche, y frutos secos en algunos"
+      ],
+      "correct": 3,
       "hint": "Piensa en los pasteles de ron y los biscotti.",
       "rationale": "Los pasteles de ron que fabricamos contienen trigo, huevo y leche; los biscotti que fabricamos contienen trigo y huevo y pueden contener frutos secos. La soya también está presente en la planta."
     },
     {
       "question": "¿Qué hace que la hamburguesa vegetal que fabricamos sea diferente y de alto riesgo?",
-      "options": ["Es el producto más caro", "Está etiquetada libre de los 9 alérgenos principales pero se fabrica en un edificio que corre productos con alérgenos", "Contiene todos los alérgenos", "Se fabrica en una instalación separada y dedicada, sin otros productos"],
-      "correct": 1,
+      "options": [
+        "Etiquetada libre de los 9 alérgenos, pero hecha junto a ellos",
+        "Es por mucho el producto más caro que fabricamos",
+        "En realidad contiene todos y cada uno de los alérgenos",
+        "Se fabrica en una instalación separada y dedicada, sin otros productos"
+      ],
+      "correct": 0,
       "hint": "El riesgo es la declaración más el edificio compartido.",
       "rationale": "La hamburguesa está etiquetada libre de los 9 alérgenos principales, pero se produce en el mismo edificio, con equipo compartido y personal rotativo, que los productos con trigo, huevo, leche y frutos secos, así que cualquier contacto cruzado vuelve falsa la declaración."
     },
     {
       "question": "¿Cuál de estos es un ejemplo de contacto cruzado de alérgenos?",
-      "options": ["Usar una redecilla para el cabello", "Harina en el aire que cae sobre una línea libre, o utensilios compartidos no limpiados por completo", "Leer la etiqueta del producto", "Lavarte las manos antes de un descanso"],
-      "correct": 1,
+      "options": [
+        "Usar correctamente una redecilla en el área de producción",
+        "Leer con cuidado la etiqueta del producto antes de usar",
+        "Harina en el aire cayendo en una línea libre, o utensilios",
+        "Lavarte bien las manos antes de tomar un descanso"
+      ],
+      "correct": 2,
       "hint": "Es cómo un alérgeno llega a un producto que no debería tenerlo.",
       "rationale": "El contacto cruzado incluye polvo en el aire, equipo o utensilios compartidos sin limpiar, residuo en manos o guantes, y mezclar reproceso en el lote equivocado."
     },
     {
       "question": "No estás seguro de si la línea se limpió por completo antes de correr la hamburguesa libre. ¿Qué debes hacer?",
-      "options": ["Iniciar la corrida; probablemente esté bien", "Detente y repórtalo antes de que el producto avance", "Límpiala rápido y no digas nada", "Cambia de producto para usarla"],
+      "options": [
+        "Iniciar la corrida de inmediato; probablemente todo esté bien",
+        "Detente y repórtalo antes de que el producto avance",
+        "Límpiala rápido, no digas nada y sigue trabajando",
+        "Cambia de producto para usarla por completo"
+      ],
       "correct": 1,
       "hint": "La conciencia y hablar a tiempo es el primer control.",
       "rationale": "Si no estás seguro, detente y repórtalo antes de que el producto avance. Hablar a tiempo siempre es más barato y seguro que un retiro causado por alérgenos no declarados."

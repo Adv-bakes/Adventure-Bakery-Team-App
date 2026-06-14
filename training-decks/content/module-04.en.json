@@ -28,7 +28,12 @@
           "Clean and verify a changeover so no allergen is left behind",
           "Control labels and rework so the package always tells the truth"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Here is what you will be able to do by the end. Run the production schedule in the right order so free-from products are protected. Use dedicated, color-coded tools and keep allergen and non-allergen zones separate. Clean and then verify a changeover so no allergen residue is left behind. And control labels and rework so the package always tells the truth about what's inside. These are the four pillars we'll walk through."
     },
@@ -200,56 +205,94 @@
   "quiz": [
     {
       "question": "Why do we run free-from products first in the schedule?",
-      "options": ["Because they sell better", "To make the free-from product when the risk of allergen carryover is lowest", "It doesn't matter what order we run products", "To use up the oldest ingredients first"],
-      "correct": 1,
+      "options": [
+        "Because the free-from products simply sell better",
+        "It does not really matter what order we run products",
+        "To use up our oldest ingredients in storage first",
+        "To make the free-from product when carryover risk is lowest"
+      ],
+      "correct": 3,
       "hint": "Think clean-to-dirty across the day.",
       "rationale": "Running free-from products first — on a verified-clean line, before any allergen products — means they're made when the risk of carryover is lowest."
     },
     {
       "question": "What is the purpose of color-coded tools and utensils?",
-      "options": ["To look organized for auditors", "To keep allergen and free-from tools from ever mixing between zones", "To match the team uniforms", "Only to track who used them"],
-      "correct": 1,
+      "options": [
+        "To keep allergen and free-from tools from ever mixing",
+        "To look neat and organized for visiting auditors",
+        "To match the colors of the team uniforms",
+        "Only to track which worker used each tool"
+      ],
+      "correct": 0,
       "hint": "It's about keeping zones from cross-contaminating each other.",
       "rationale": "Color-coding assigns tools to a product zone so allergen and free-from utensils never mix; tools have dedicated storage and are never shared across zones."
     },
     {
       "question": "Why isn't wiping off crumbs enough for an allergen changeover?",
-      "options": ["It is enough if the surface looks clean", "Allergen proteins cling to surfaces and need a detergent wet-clean to remove", "Crumbs are the only allergen risk", "Wiping is faster, so it's preferred"],
-      "correct": 1,
+      "options": [
+        "It is enough as long as the surface looks clean",
+        "Crumbs are really the only allergen risk that matters",
+        "Allergen proteins cling to surfaces and need a detergent wet-clean",
+        "Wiping is faster, so it is generally preferred over washing"
+      ],
+      "correct": 2,
       "hint": "The detergent-wash step is the one that matters most.",
       "rationale": "Allergen proteins cling to surfaces; only a validated wet-clean (dry-clean, detergent wash, rinse, sanitize, inspect) actually removes them. A dry wipe can spread allergen around."
     },
     {
       "question": "After cleaning a line for a free-from run, what do we do before running it?",
-      "options": ["Start immediately to save time", "Verify with visual inspection and allergen/ATP swabs, then record and sign off", "Just give it a quick look", "Ask the previous shift if it's fine"],
+      "options": [
+        "Start the run immediately to save some time",
+        "Verify with visual inspection and allergen/ATP swabs, then record it",
+        "Just give the line a quick visual look over",
+        "Ask the previous shift whether the line is fine"
+      ],
       "correct": 1,
       "hint": "We don't assume — we prove it and write it down.",
       "rationale": "We verify cleaning with a visual inspection plus allergen-specific and ATP swabs, record the results, and sign off the line before it runs. A failed test means re-clean and re-test."
     },
     {
       "question": "You're about to start a free-from run and notice the loaded label reel might be for a different product. What should you do?",
-      "options": ["Run it; the labels are probably fine", "Stop and confirm the correct label before running", "Swap it quietly and say nothing", "Run a few and check later"],
-      "correct": 1,
+      "options": [
+        "Just run it; the loaded labels are probably fine",
+        "Swap the reel quietly and say nothing to anyone",
+        "Run a few packs and check the label later",
+        "Stop and confirm the correct label before running"
+      ],
+      "correct": 3,
       "hint": "A wrong allergen label is a recall.",
       "rationale": "Confirm the right label is on the right product at every changeover. A wrong or missing allergen statement is a leading cause of recalls — check before you run."
     },
     {
       "question": "Which rework is acceptable?",
-      "options": ["Allergen-containing leftover added to a free-from batch", "Unlabeled leftover product, to avoid waste", "Reworking product back into the same product it came from, labeled, tracked, and approved", "Any leftover, as long as it's used quickly"],
-      "correct": 2,
+      "options": [
+        "Reworking product back into the same product, labeled and approved",
+        "Allergen-containing leftover added straight into a free-from batch",
+        "Unlabeled leftover product, used quickly to avoid any waste",
+        "Any leftover at all, as long as it is used quickly"
+      ],
+      "correct": 0,
       "hint": "Like-into-like, with controls.",
       "rationale": "Rework may only go back into the exact same product it came from, clearly labeled, tracked, within time limits, and supervisor-approved. Never add allergen rework to a free-from batch."
     },
     {
       "question": "True or false: To avoid waste, it's okay to add a little leftover allergen-containing product into a free-from batch if no one will notice.",
-      "options": ["True", "False"],
+      "options": [
+        "True",
+        "False"
+      ],
       "correct": 1,
       "hint": "The free-from claim can't survive any allergen.",
       "rationale": "False. Adding any allergen-containing rework to a free-from batch makes the claim false and can seriously harm a consumer. When in doubt, it's waste, not rework."
     },
     {
       "question": "Who is responsible for protecting the free-from claim?",
-      "options": ["Only the QA department", "Only supervisors", "Everyone on every shift", "Only the cleaning crew"],
+      "options": [
+        "Only the QA department",
+        "Only supervisors",
+        "Everyone on every shift",
+        "Only the cleaning crew"
+      ],
       "correct": 2,
       "hint": "Controls only work if everyone follows them.",
       "rationale": "The controls only work when every person on every shift follows them and speaks up. Anyone can stop the line, and you're never in trouble for protecting the claim."

@@ -28,7 +28,12 @@
           "Handle and store cleaning chemicals safely",
           "Understand pre-op inspection and the master sanitation schedule"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Here is what you'll be able to do by the end. Explain the difference between cleaning and sanitizing — they are two separate jobs. Follow a sanitation standard operating procedure and carry out the cleaning steps in the right order. Handle and store cleaning chemicals safely, including never mixing them. And understand the pre-operational inspection that clears a line to run, plus the master sanitation schedule that makes sure every surface gets cleaned on time."
     },
@@ -213,56 +218,96 @@
   "quiz": [
     {
       "question": "What is the difference between cleaning and sanitizing?",
-      "options": ["They are the same thing", "Cleaning removes visible soil and residue; sanitizing reduces microorganisms", "Sanitizing comes first, then cleaning", "Cleaning kills bacteria; sanitizing makes things shiny"],
-      "correct": 1,
+      "options": [
+        "They are basically the same thing in practice",
+        "Sanitizing always comes first, and then cleaning",
+        "Cleaning kills the bacteria; sanitizing just makes things shiny",
+        "Cleaning removes visible soil; sanitizing reduces microorganisms"
+      ],
+      "correct": 3,
       "hint": "One removes soil, the other reduces microbes.",
       "rationale": "Cleaning physically removes soil, residue, and allergen protein; sanitizing reduces microorganisms to a safe level. They are two separate jobs."
     },
     {
       "question": "Why must you clean a surface before sanitizing it?",
-      "options": ["It's just tradition", "Sanitizer can't reach microbes hidden in soil or grease", "To save sanitizer", "You don't — order doesn't matter"],
-      "correct": 1,
+      "options": [
+        "Sanitizer cannot reach microbes hidden in soil or grease",
+        "It is honestly just an old habit and tradition",
+        "To save on the amount of sanitizer we use",
+        "You don't need to — the order does not matter"
+      ],
+      "correct": 0,
       "hint": "Sanitizer only works on an already-clean surface.",
       "rationale": "A sanitizer sprayed onto soil or grease can't reach the microbes hiding in it. Cleaning must remove the soil first so the sanitizer can work."
     },
     {
       "question": "What is the correct cleaning sequence?",
-      "options": ["Sanitize, then wash", "Remove debris, pre-rinse, wash with detergent, rinse, sanitize", "Just spray sanitizer and wipe", "Rinse, sanitize, then scrub"],
-      "correct": 1,
+      "options": [
+        "Just sanitize the surface first, then wash it",
+        "Simply spray on sanitizer and wipe it down",
+        "Remove debris, pre-rinse, wash with detergent, rinse, then sanitize",
+        "Rinse first, then sanitize, and finally scrub it"
+      ],
+      "correct": 2,
       "hint": "Dry clean-up comes first; sanitize last.",
       "rationale": "The sequence is remove debris (dry clean-up), pre-rinse, wash with detergent and scrub, rinse, then sanitize at the right concentration and contact time."
     },
     {
       "question": "What does an SSOP tell you?",
-      "options": ["Only who to call", "What to clean, how, which chemical and dilution, contact time, who, and how it's verified", "Just the chemical name", "The production schedule"],
+      "options": [
+        "Only the name of the person you should call",
+        "What to clean, how, the chemical and dilution, and who",
+        "Just the brand name of the chemical you should use",
+        "The full daily production schedule for the whole bakery line"
+      ],
       "correct": 1,
       "hint": "It's the written recipe for cleaning a specific item.",
       "rationale": "An SSOP specifies what to clean and how, the chemical and dilution, the contact time, who is responsible and how often, and how the clean is verified and recorded."
     },
     {
       "question": "Which is a rule for handling cleaning chemicals?",
-      "options": ["Mix them to save time", "Read the label/SDS, use correct dilution and PPE, never mix chemicals", "Pour into any handy container", "Stronger dilution is always better"],
-      "correct": 1,
+      "options": [
+        "Mix them together to save the team some time",
+        "Pour them into any container that is handy",
+        "A stronger dilution is basically always better",
+        "Read the label/SDS, use correct dilution and PPE, never mix"
+      ],
+      "correct": 3,
       "hint": "Never mix; read before you use.",
       "rationale": "Always read the label and SDS, use the correct dilution and the right PPE, keep chemicals in labeled containers, and never mix chemicals — some combinations release toxic gas."
     },
     {
       "question": "How should cleaning chemicals be stored?",
-      "options": ["Anywhere convenient on the floor", "In a dedicated, secured area away from food/packaging, labeled, with SDS available", "Over the production line for easy access", "In unlabeled jugs to save space"],
-      "correct": 1,
+      "options": [
+        "In a dedicated, secured area away from food, labeled, with SDS",
+        "Anywhere that is convenient and handy out on the floor",
+        "Right over the production line for the easiest access",
+        "In unlabeled jugs to save some storage space"
+      ],
+      "correct": 0,
       "hint": "Away from product, labeled, secured.",
       "rationale": "Chemicals are stored in a dedicated, access-controlled area away from food, packaging, and ingredients, in clearly labeled containers, with SDS available and food-grade kept separate from non-food."
     },
     {
       "question": "A line has been cleaned but the pre-op inspection hasn't passed yet. Can production start?",
-      "options": ["Yes, if you're behind schedule", "No — no production runs until the pre-op inspection passes", "Yes, if the supervisor is busy", "Only on the day shift"],
-      "correct": 1,
+      "options": [
+        "Yes, if you happen to be behind on schedule",
+        "Yes, as long as the supervisor is currently busy",
+        "No — no production runs until the pre-op inspection passes",
+        "Only during the regular day shift, never at night"
+      ],
+      "correct": 2,
       "hint": "Pre-op is a gate with no exceptions.",
       "rationale": "No production starts until the pre-operational inspection passes — no exceptions. If the line fails, it's re-cleaned and re-inspected before running."
     },
     {
       "question": "What is the purpose of the master sanitation schedule?",
-      "options": ["To schedule employee breaks", "To make sure every area and surface is cleaned on time, with an owner and a record", "To list the day's production", "To track chemical purchases"],
+      "options": [
+        "To schedule and organize all the employee break times",
+        "To ensure every surface is cleaned on time, with an owner",
+        "To list out every one of the day's planned production runs",
+        "To track all of the chemical purchases we make"
+      ],
       "correct": 1,
       "hint": "Everything gets cleaned, on a cycle, with an owner.",
       "rationale": "The master sanitation schedule lists every area and surface (including hard-to-reach ones), sets how often each is cleaned, assigns an owner, and records and verifies each completed task."

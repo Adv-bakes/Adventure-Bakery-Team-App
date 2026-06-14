@@ -24,7 +24,12 @@
           "Describir la cultura de seguridad alimentaria y tu papel",
           "Conocer tu autoridad para detener producto inseguro"
         ],
-        "icons": ["iconChat", "iconTruck", "iconPeople", "iconHand"]
+        "icons": [
+          "iconChat",
+          "iconTruck",
+          "iconPeople",
+          "iconHand"
+        ]
       },
       "notes": "Esto es lo que te vas a llevar. Cuatro cosas: qué es SQF y por qué lo elegimos, cómo se conecta con una gran oportunidad para la empresa, qué entendemos por cultura de seguridad alimentaria y — muy importante — la autoridad que cada uno de ustedes tiene para detener producto que no sea seguro."
     },
@@ -34,8 +39,16 @@
       "art": "ribbonMedal",
       "visual": {
         "type": "badge",
-        "letters": ["S", "Q", "F"],
-        "words": ["Seguro", "Calidad", "Alimento"],
+        "letters": [
+          "S",
+          "Q",
+          "F"
+        ],
+        "words": [
+          "Seguro",
+          "Calidad",
+          "Alimento"
+        ],
         "caption": "Un auditor independiente verifica que producimos alimentos seguros de la misma manera, todos los días — y que podemos demostrarlo."
       },
       "notes": "SQF significa Safe Quality Food: alimentos seguros y de calidad. Es una norma de seguridad alimentaria reconocida en todo el mundo. La idea clave es que un experto externo — un auditor — viene y comprueba que producimos alimentos seguros de manera constante, y que tenemos los registros para respaldarlo. No es un examen de una sola vez; es nuestra forma de operar."
@@ -46,7 +59,11 @@
       "visual": {
         "type": "hierarchy",
         "top": "GFSI — el estándar en que confían los grandes minoristas",
-        "children": ["SQF — la nuestra", "BRCGS", "FSSC 22000"],
+        "children": [
+          "SQF — la nuestra",
+          "BRCGS",
+          "FSSC 22000"
+        ],
         "highlight": 0,
         "caption": "Una sola certificación le dice a cada gran cliente que nuestros alimentos son seguros — sin que cada uno nos audite por separado."
       },
@@ -58,7 +75,11 @@
       "art": "truck",
       "visual": {
         "type": "flow",
-        "steps": ["Certificación SQF", "Reconocimiento GFSI", "Espacio en los estantes de un gran supermercado"],
+        "steps": [
+          "Certificación SQF",
+          "Reconocimiento GFSI",
+          "Espacio en los estantes de un gran supermercado"
+        ],
         "highlight": 2
       },
       "notes": "Aquí está el porqué nos importa a todos. Queremos llevar nuestros pasteles de ron a los estantes de una gran cadena de supermercados. Ese minorista no le compra a un proveedor que no esté certificado bajo un estándar GFSI como SQF — es un requisito, no una preferencia. Así que esta certificación es la puerta hacia un cliente importante y un crecimiento real para la empresa."
@@ -69,7 +90,13 @@
       "art": "clipboardMagnifier",
       "visual": {
         "type": "weekStrip",
-        "days": ["Lun", "Mar", "Mié", "Jue", "Vie"],
+        "days": [
+          "Lun",
+          "Mar",
+          "Mié",
+          "Jue",
+          "Vie"
+        ],
         "caption": "Listos todos los días — no solo el día de la auditoría."
       },
       "notes": "Algo importante: no solo nos preparamos para el auditor de SQF. Nuestro cliente minorista puede enviar a su propia gente a inspeccionar nuestra planta, y esa visita puede ser sin previo aviso. Exactamente por eso hacemos las cosas bien todos los días — para que cuando alguien entre, estemos listos."
@@ -88,7 +115,12 @@
       "lead": "Cada estación es tu estación — el mismo estándar en todas.",
       "visual": {
         "type": "cycle",
-        "steps": ["Preparación", "Mezclado", "Horneado", "Empaque"],
+        "steps": [
+          "Preparación",
+          "Mezclado",
+          "Horneado",
+          "Empaque"
+        ],
         "center": "Un equipo, un estándar"
       },
       "notes": "Como todos rotamos entre preparación, mezclado, horneado y empaque, nadie puede decir \"esa no es mi área\" — cada área es tu área. El cuidado que pones en una estación es el mismo que llevas a la siguiente. Eso es lo que hace fuerte a un equipo rotativo: todos conocen el proceso completo."
@@ -114,15 +146,27 @@
         "type": "split",
         "left": {
           "header": "Nuestras hamburguesas a base de plantas",
-          "items": ["Elaboradas libres de los 9 alérgenos principales", "Una promesa con la que nuestros clientes cuentan"],
+          "items": [
+            "Elaboradas libres de los 9 alérgenos principales",
+            "Una promesa con la que nuestros clientes cuentan"
+          ],
           "color": "green",
-          "icons": ["burger"]
+          "icons": [
+            "burger"
+          ]
         },
         "right": {
           "header": "El mismo edificio también maneja",
-          "items": ["Trigo • Huevo • Leche en otros productos", "Equipos compartidos y personal rotativo"],
+          "items": [
+            "Trigo • Huevo • Leche en otros productos",
+            "Equipos compartidos y personal rotativo"
+          ],
           "color": "amber",
-          "icons": ["wheat", "egg", "milk"]
+          "icons": [
+            "wheat",
+            "egg",
+            "milk"
+          ]
         },
         "chip": "Nuestra tarea compartida: mantenerlos separados"
       },
@@ -160,57 +204,95 @@
   "quiz": [
     {
       "question": "¿Qué significa SQF (por sus siglas en inglés)?",
-      "options": ["Standard Quality Food — alimentos de calidad estándar", "Safe Quality Food — alimentos seguros y de calidad", "Sanitary Quality Facility — instalación sanitaria de calidad", "Secure Quality Formula — fórmula segura de calidad"],
-      "correct": 1,
+      "options": [
+        "Standard Quality Food — alimentos de calidad estándar",
+        "Sanitary Quality Facility — instalación sanitaria de calidad",
+        "Secure Quality Formula — fórmula segura de calidad",
+        "Safe Quality Food — alimentos seguros y de calidad"
+      ],
+      "correct": 3,
       "hint": "La S es de seguridad, no de estándar.",
       "rationale": "SQF = Safe Quality Food: alimentos seguros y de calidad."
     },
     {
       "question": "¿Por qué nuestra panificadora busca la certificación SQF?",
-      "options": ["Es un requisito legal para hornear cualquier cosa", "Nos permite poner nuestros pasteles de ron en los estantes de un gran supermercado", "Reemplaza la necesidad de limpiar", "Es solo para exportación"],
-      "correct": 1,
+      "options": [
+        "Abre los estantes de un gran supermercado a nuestros pasteles de ron",
+        "Es un requisito legal antes de que una panificadora pueda producir alimentos",
+        "Reemplaza la necesidad del trabajo diario de limpieza y saneamiento",
+        "Aplica solo a los productos que enviamos al extranjero para exportación"
+      ],
+      "correct": 0,
       "hint": "Piensa en quién exige certificación antes de vender nuestros productos.",
       "rationale": "Los grandes minoristas exigen una certificación reconocida por GFSI; SQF abre esa puerta."
     },
     {
       "question": "¿Bajo qué sistema más amplio, en el que confían los grandes minoristas, está reconocida SQF?",
-      "options": ["Registro exclusivo de la FDA", "GFSI", "OSHA", "La licencia de importación de ron"],
-      "correct": 1,
+      "options": [
+        "Registro exclusivo de la FDA",
+        "OSHA",
+        "GFSI",
+        "La licencia de importación de ron"
+      ],
+      "correct": 2,
       "hint": "La iniciativa global en la que confían las grandes cadenas de supermercados.",
       "rationale": "GFSI avala a SQF; es el estándar que exigen los grandes minoristas."
     },
     {
       "question": "Nuestro cliente minorista dice que puede inspeccionar la planta sin previo aviso. ¿Cuál es la mentalidad correcta?",
-      "options": ["Limpiar solo el día antes de una auditoría programada", "Hacer las cosas bien todos los días para estar siempre listos", "Esconder la línea de congelados durante las visitas", "Negarles la entrada a los visitantes"],
+      "options": [
+        "Limpiar solo el día antes de una auditoría programada y anunciada",
+        "Hacer las cosas bien todos los días para estar siempre listos",
+        "Esconder la línea de congelados cada vez que vengan inspectores",
+        "Negarles la entrada a los visitantes que llegan sin previo aviso"
+      ],
       "correct": 1,
       "hint": "Si cualquier día puede ser día de auditoría, ¿cómo trabajas?",
       "rationale": "El cliente se reserva el derecho de auditar, a veces sin aviso — la preparación diaria es la única postura segura."
     },
     {
       "question": "La \"cultura de seguridad alimentaria\" se describe mejor como:",
-      "options": ["Un cartel en la sala de descanso", "Hacer lo correcto incluso cuando nadie está mirando, responsabilidad de todos", "Responsabilidad exclusiva del gerente de calidad", "Un evento que ocurre una vez al año"],
-      "correct": 1,
+      "options": [
+        "Un cartel motivacional colgado en la pared de la sala de descanso",
+        "Responsabilidad exclusiva del gerente de calidad y de nadie más",
+        "Un solo evento de capacitación que ocurre una vez al año",
+        "Hacer lo correcto cuando nadie está mirando, responsabilidad de todos"
+      ],
+      "correct": 3,
       "hint": "Se trata de lo que todos hacen cuando nadie está mirando.",
       "rationale": "La cultura es responsabilidad compartida de todos los días, no de una persona ni de un evento."
     },
     {
       "question": "Estás rotando en empaque y notas que los pasteles van en cajas con la etiqueta de producto equivocada. ¿Qué debes hacer?",
-      "options": ["Seguir trabajando; las etiquetas no son problema de tu estación", "Esperar al descanso para mencionarlo", "Detener el producto y reportarlo de inmediato", "Corregirlo en silencio y no decirle a nadie"],
-      "correct": 2,
+      "options": [
+        "Detener el producto y reportarlo de inmediato",
+        "Seguir trabajando; las etiquetas no son problema de tu estación",
+        "Esperar al descanso para mencionarlo",
+        "Corregirlo en silencio y no decirle a nadie"
+      ],
+      "correct": 0,
       "hint": "Una etiqueta equivocada puede ocultar alérgenos — y todo empleado tiene autoridad para detener.",
       "rationale": "Una etiqueta equivocada puede provocar un retiro del mercado; todo empleado tiene autoridad para detener y reportar. Reportar también crea el registro."
     },
     {
       "question": "Verdadero o falso: si reportas una preocupación de seguridad alimentaria que resulta ser una falsa alarma, puedes meterte en problemas.",
-      "options": ["Verdadero", "Falso"],
+      "options": [
+        "Verdadero",
+        "Falso"
+      ],
       "correct": 1,
       "hint": "Recuerda la promesa de la diapositiva \"detener la línea\".",
       "rationale": "Nunca se sanciona a los empleados por reportar preocupaciones; hablar siempre es la decisión correcta."
     },
     {
       "question": "Nuestras hamburguesas a base de plantas se elaboran libres de los 9 alérgenos principales, pero el edificio también maneja trigo, huevo y leche. ¿Por qué te importa esto en un equipo rotativo?",
-      "options": ["No importa; solo el equipo de hamburguesas debe preocuparse", "Porque el contacto cruzado en cualquier lugar puede romper la promesa libre de alérgenos, y todos trabajamos en todas las áreas", "Porque los alérgenos solo importan en el área de envíos", "Porque el ron neutraliza los alérgenos"],
-      "correct": 1,
+      "options": [
+        "No importa; en realidad solo el equipo de hamburguesas debe preocuparse",
+        "Porque los alérgenos solo importan en el área de envíos y recepción",
+        "Porque el contacto cruzado en cualquier lugar rompe la promesa libre de alérgenos",
+        "Porque el ron de los pasteles neutraliza cualquier riesgo de alérgeno"
+      ],
+      "correct": 2,
       "hint": "¿Quién pasa por todas las estaciones en un equipo rotativo?",
       "rationale": "Con personal rotativo, todos influyen en la promesa libre de alérgenos; protegerla es una tarea compartida de toda la planta."
     }

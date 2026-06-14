@@ -28,7 +28,12 @@
           "Limpiar y verificar un cambio para que no quede ningún alérgeno",
           "Controlar etiquetas y reproceso para que el empaque siempre diga la verdad"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Esto es lo que podrás hacer al terminar. Ejecutar la programación de producción en el orden correcto para que los productos libres de alérgenos queden protegidos. Usar utensilios dedicados y codificados por color, y mantener separadas las zonas con y sin alérgenos. Limpiar y luego verificar un cambio para que no quede residuo de alérgeno. Y controlar las etiquetas y el reproceso para que el empaque siempre diga la verdad sobre lo que contiene. Estos son los cuatro pilares que recorreremos."
     },
@@ -200,56 +205,94 @@
   "quiz": [
     {
       "question": "¿Por qué corremos primero los productos libres de alérgenos en la programación?",
-      "options": ["Porque se venden mejor", "Para fabricar el producto libre de alérgenos cuando el riesgo de arrastre de alérgenos es más bajo", "No importa en qué orden corramos los productos", "Para usar primero los ingredientes más viejos"],
-      "correct": 1,
+      "options": [
+        "Porque los productos libres de alérgenos simplemente se venden mucho mejor",
+        "No importa realmente en qué orden corramos los productos",
+        "Para usar primero nuestros ingredientes más viejos del almacén",
+        "Para fabricar el producto libre de alérgenos cuando el arrastre es menor"
+      ],
+      "correct": 3,
       "hint": "Piensa de limpio a sucio a lo largo del día.",
       "rationale": "Correr primero los productos libres de alérgenos — en una línea verificada limpia, antes de cualquier producto con alérgenos — significa que se fabrican cuando el riesgo de arrastre es más bajo."
     },
     {
       "question": "¿Cuál es el propósito de los utensilios codificados por color?",
-      "options": ["Verse organizados para los auditores", "Evitar que los utensilios con y sin alérgenos se mezclen entre zonas", "Hacer juego con los uniformes del equipo", "Solo rastrear quién los usó"],
-      "correct": 1,
+      "options": [
+        "Evitar que los utensilios con y sin alérgenos se mezclen",
+        "Verse ordenados y organizados para los auditores que visitan",
+        "Combinar con los colores de los uniformes del equipo",
+        "Solo rastrear qué trabajador usó cada utensilio"
+      ],
+      "correct": 0,
       "hint": "Se trata de evitar que las zonas se contaminen entre sí.",
       "rationale": "La codificación por color asigna utensilios a una zona de producto para que los utensilios con y sin alérgenos nunca se mezclen; tienen almacenamiento dedicado y nunca se comparten entre zonas."
     },
     {
       "question": "¿Por qué no basta con quitar las migas en un cambio por alérgenos?",
-      "options": ["Sí basta si la superficie se ve limpia", "Las proteínas de los alérgenos se adhieren a las superficies y necesitan una limpieza húmeda con detergente para eliminarse", "Las migas son el único riesgo de alérgeno", "Limpiar con paño es más rápido, así que se prefiere"],
-      "correct": 1,
+      "options": [
+        "Basta mientras la superficie se vea limpia a simple vista",
+        "Las migas son realmente el único riesgo de alérgeno",
+        "Las proteínas del alérgeno se adhieren y necesitan limpieza con detergente",
+        "Limpiar con paño es más rápido, así que se prefiere siempre"
+      ],
+      "correct": 2,
       "hint": "El paso del lavado con detergente es el que más importa.",
       "rationale": "Las proteínas de los alérgenos se adhieren a las superficies; solo una limpieza húmeda validada (limpieza en seco, lavado con detergente, enjuague, sanitizado, inspección) las elimina de verdad. Un paño seco puede esparcir el alérgeno."
     },
     {
       "question": "Después de limpiar una línea para una corrida libre de alérgenos, ¿qué hacemos antes de correrla?",
-      "options": ["Empezar de inmediato para ahorrar tiempo", "Verificar con inspección visual e hisopos de alérgeno/ATP, luego registrar y aprobar", "Solo darle un vistazo rápido", "Preguntarle al turno anterior si está bien"],
+      "options": [
+        "Empezar la corrida de inmediato para ahorrar algo de tiempo",
+        "Verificar con inspección visual e hisopos de alérgeno/ATP, luego registrar",
+        "Solo darle a la línea un vistazo visual rápido",
+        "Preguntarle al turno anterior si la línea está bien"
+      ],
       "correct": 1,
       "hint": "No suponemos — lo comprobamos y lo anotamos.",
       "rationale": "Verificamos la limpieza con una inspección visual más hisopos específicos de alérgeno y ATP, registramos los resultados y aprobamos la línea antes de correr. Una prueba fallida significa volver a limpiar y volver a probar."
     },
     {
       "question": "Estás por iniciar una corrida libre de alérgenos y notas que el rollo de etiquetas cargado podría ser de otro producto. ¿Qué debes hacer?",
-      "options": ["Correrla; las etiquetas seguramente están bien", "Detenerte y confirmar la etiqueta correcta antes de correr", "Cambiarlo en silencio y no decir nada", "Correr algunas y revisar después"],
-      "correct": 1,
+      "options": [
+        "Solo correrla; las etiquetas cargadas seguramente están bien",
+        "Cambiar el rollo en silencio y no decir nada",
+        "Correr algunos paquetes y revisar la etiqueta después",
+        "Detenerte y confirmar la etiqueta correcta antes de correr"
+      ],
+      "correct": 3,
       "hint": "Una etiqueta de alérgeno equivocada es un retiro.",
       "rationale": "Confirma que la etiqueta correcta esté en el producto correcto en cada cambio. Una declaración de alérgenos errónea o ausente es una causa principal de retiros — revisa antes de correr."
     },
     {
       "question": "¿Cuál reproceso es aceptable?",
-      "options": ["Sobrante con alérgeno agregado a un lote libre de alérgenos", "Producto sobrante sin etiqueta, para evitar el desperdicio", "Reprocesar producto de vuelta al mismo producto del que provino, etiquetado, rastreado y aprobado", "Cualquier sobrante, siempre que se use rápido"],
-      "correct": 2,
+      "options": [
+        "Reprocesar producto de vuelta al mismo producto, etiquetado y aprobado",
+        "Sobrante con alérgeno agregado directo a un lote libre de alérgenos",
+        "Producto sobrante sin etiqueta, usado rápido para evitar desperdicio",
+        "Cualquier sobrante, siempre que se use con rapidez después"
+      ],
+      "correct": 0,
       "hint": "Igual con igual, con controles.",
       "rationale": "El reproceso solo puede volver al mismo producto exacto del que provino, claramente etiquetado, rastreado, dentro de los límites de tiempo y aprobado por el supervisor. Nunca agregues reproceso con alérgeno a un lote libre de alérgenos."
     },
     {
       "question": "Verdadero o falso: Para evitar el desperdicio, está bien agregar un poco de producto sobrante con alérgeno a un lote libre de alérgenos si nadie se da cuenta.",
-      "options": ["Verdadero", "Falso"],
+      "options": [
+        "Verdadero",
+        "Falso"
+      ],
       "correct": 1,
       "hint": "La declaración libre de alérgenos no sobrevive a ningún alérgeno.",
       "rationale": "Falso. Agregar cualquier reproceso con alérgeno a un lote libre de alérgenos hace que la declaración sea falsa y puede dañar gravemente a un consumidor. Si dudas, es desperdicio, no reproceso."
     },
     {
       "question": "¿Quién es responsable de proteger la declaración libre de alérgenos?",
-      "options": ["Solo el departamento de calidad", "Solo los supervisores", "Todos en cada turno", "Solo el equipo de limpieza"],
+      "options": [
+        "Solo el departamento de calidad",
+        "Solo los supervisores",
+        "Todos en cada turno",
+        "Solo el equipo de limpieza"
+      ],
       "correct": 2,
       "hint": "Los controles solo funcionan si todos los cumplen.",
       "rationale": "Los controles solo funcionan cuando cada persona en cada turno los cumple y habla. Cualquiera puede detener la línea, y nunca tendrás problemas por proteger la declaración."

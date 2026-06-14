@@ -28,7 +28,12 @@
           "Follow our glass, brittle-plastic, and sharps control rules",
           "Stop, isolate, and report the moment you find or suspect contamination"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Here is what you will be able to do by the end. Name the main places foreign material comes from in our plant. Describe the layers of defense we rely on — exclude, capture, detect, and react. Follow our rules for glass, brittle plastic, and sharp tools like blades and knives. And know exactly what to do — stop, isolate, and report — the moment you find or even suspect foreign material in the product."
     },
@@ -201,56 +206,96 @@
   "quiz": [
     {
       "question": "What is 'foreign material' in a food plant?",
-      "options": ["Imported ingredients", "Anything in the product that doesn't belong, like metal, glass, or hard plastic", "Any ingredient from another country", "Cleaning chemicals only"],
-      "correct": 1,
+      "options": [
+        "Ingredients that we have imported from overseas suppliers abroad",
+        "Any ingredient that comes from another country abroad",
+        "Only the cleaning chemicals we use around the whole plant",
+        "Anything that doesn't belong in product, like metal or glass"
+      ],
+      "correct": 3,
       "hint": "Anything that ends up in product but shouldn't.",
       "rationale": "Foreign material is any physical object that ends up in product but doesn't belong — metal, glass, brittle plastic, wood, or a piece of a tool or equipment."
     },
     {
       "question": "What are the four layers of defense against foreign material?",
-      "options": ["Wash, rinse, sanitize, dry", "Exclude, capture, detect, react", "Receive, store, ship, record", "Mix, bake, cool, pack"],
-      "correct": 1,
+      "options": [
+        "Exclude, capture, detect, react",
+        "Wash, rinse, sanitize, dry",
+        "Receive, store, ship, record",
+        "Mix, bake, cool, pack"
+      ],
+      "correct": 0,
       "hint": "Keep it out, grab it, find it, respond.",
       "rationale": "The layers are exclude (keep it out), capture (sieves, filters, magnets), detect (metal detection and checkweighing), and react (stop, isolate, report)."
     },
     {
       "question": "Which is NOT one of the four main sources of foreign material?",
-      "options": ["Raw materials", "Equipment and maintenance", "Weather", "People"],
+      "options": [
+        "Raw materials",
+        "Equipment and maintenance",
+        "Weather",
+        "People"
+      ],
       "correct": 2,
       "hint": "Think about what physically gets into product.",
       "rationale": "The four main sources are raw materials, equipment and maintenance, packaging, and people. Weather is not a foreign-material source."
     },
     {
       "question": "You find metal debris on an in-line magnet during a routine check. What should you do?",
-      "options": ["Wipe it off and carry on — that's its job", "Clean it, but also report and investigate where the metal came from", "Ignore it unless it's a large piece", "Throw the magnet away"],
+      "options": [
+        "Wipe it off and carry on, since that is its job",
+        "Clean it, but also report and investigate where the metal came from",
+        "Ignore it entirely unless it is a fairly large piece",
+        "Take the magnet out and just throw it away"
+      ],
       "correct": 1,
       "hint": "It's telling you something upstream is shedding metal.",
       "rationale": "A magnet catching metal is doing its job, but the find must be reported and investigated — it signals something upstream is shedding material that needs to be fixed."
     },
     {
       "question": "What is our policy on glass and brittle plastic in production areas?",
-      "options": ["Allowed if you're careful", "No personal glass/brittle plastic; necessary items are on a register and inspected", "Only allowed on the night shift", "Glass is fine, only plastic is controlled"],
-      "correct": 1,
+      "options": [
+        "It is allowed as long as you are careful with it",
+        "It is only allowed during the overnight night shift",
+        "Glass is fine; only the brittle plastic is controlled",
+        "No personal glass/brittle plastic; required items are registered and inspected"
+      ],
+      "correct": 3,
       "hint": "Exclude it; register and inspect what must be there.",
       "rationale": "No personal glass or unnecessary brittle plastic is allowed in production; required items (gauges, light covers) are listed on a register and inspected, and any breakage is a stop-and-clean event."
     },
     {
       "question": "How are blades and box cutters controlled?",
-      "options": ["Bring your own and keep it handy", "Use only issued blades, count them out and in, and report any broken or missing", "Leave them on the line for the next shift", "Only managers can touch them"],
-      "correct": 1,
+      "options": [
+        "Use only issued blades, count them out and in, report any missing",
+        "Bring your own blade and just keep it handy nearby",
+        "Leave them on the line for the next shift to use",
+        "Only the managers are allowed to touch any blades"
+      ],
+      "correct": 0,
       "hint": "Account for every blade, before and after.",
       "rationale": "Only issued, accounted-for blades are used; they're counted out and back in, disposed of in a sharps container, and any broken or missing blade is reported as a stop-the-line event."
     },
     {
       "question": "A repair was just done on your line. What's the maintenance rule?",
-      "options": ["Run immediately to make up time", "Account for every tool and part, no temporary tape/wire fixes, clean and inspect before running", "Leave tools nearby in case you need them again", "Use cardboard to cover the gap for now"],
-      "correct": 1,
+      "options": [
+        "Run the whole line immediately to make up for the lost time",
+        "Leave the tools nearby in case you need them again",
+        "Account for every tool and part, no temporary fixes, inspect before running",
+        "Use some cardboard to cover the gap for right now"
+      ],
+      "correct": 2,
       "hint": "What goes onto the floor must come back off it.",
       "rationale": "Every tool and part must be accounted for, no temporary fixes with tape/wire/cardboard near product, and the line is cleaned and inspected before it runs again — a part not on the machine may be in the product."
     },
     {
       "question": "You think you see a small piece of plastic in the product. What do you do?",
-      "options": ["Pick it out and keep the line running", "Stop, isolate the affected product, and report it", "Wait until break to mention it", "Only act if you're certain"],
+      "options": [
+        "Pick it out and keep the line running",
+        "Stop, isolate the affected product, and report it",
+        "Wait until break to mention it",
+        "Only act if you're certain"
+      ],
       "correct": 1,
       "hint": "When in doubt, stop and report.",
       "rationale": "If you find or even suspect foreign material, stop and isolate the affected product and report it — never just remove the piece and keep running, because more may have gotten in and a report triggers an investigation."

@@ -24,7 +24,12 @@
           "Follow our attire, jewelry, nail, and illness rules",
           "Move between zones without spreading contamination"
         ],
-        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+        "icons": [
+          "iconChat",
+          "iconHand",
+          "iconPeople",
+          "iconTruck"
+        ]
       },
       "notes": "Here's what you'll walk away with. Four things: what good manufacturing practices are and why they matter, how and when to wash your hands properly, the rules for attire, jewelry, nails, and reporting illness, and how to move around the plant without carrying contamination from one area to another."
     },
@@ -34,8 +39,16 @@
       "art": "ribbonMedal",
       "visual": {
         "type": "badge",
-        "letters": ["G", "M", "P"],
-        "words": ["Good", "Manufacturing", "Practices"],
+        "letters": [
+          "G",
+          "M",
+          "P"
+        ],
+        "words": [
+          "Good",
+          "Manufacturing",
+          "Practices"
+        ],
         "caption": "Basic conditions and habits an auditor expects to see on the floor, every single shift."
       },
       "notes": "GMP stands for Good Manufacturing Practices. These are the basic rules and conditions that keep food safe while we make it — how we keep ourselves clean, how we dress, how we handle illness, and how we move through the plant. They're not extra paperwork; they're the foundation everything else is built on, and an auditor will look for them every shift."
@@ -193,57 +206,95 @@
   "quiz": [
     {
       "question": "What does GMP stand for?",
-      "options": ["General Maintenance Protocol", "Good Manufacturing Practices", "Guided Material Processing", "Grocery Market Permit"],
-      "correct": 1,
+      "options": [
+        "General Maintenance Protocol",
+        "Guided Material Processing",
+        "Grocery Market Permit",
+        "Good Manufacturing Practices"
+      ],
+      "correct": 3,
       "hint": "It's about how we make the product, done well.",
       "rationale": "GMP = Good Manufacturing Practices — the basic habits and conditions that keep food safe."
     },
     {
       "question": "How long should you scrub with soap when washing your hands?",
-      "options": ["About 2 seconds", "Until they look wet", "At least 20 seconds", "Only after the restroom"],
-      "correct": 2,
+      "options": [
+        "At least 20 seconds",
+        "About 2 seconds",
+        "Until they look wet",
+        "Only after the restroom"
+      ],
+      "correct": 0,
       "hint": "About two rounds of the happy birthday song.",
       "rationale": "A full 20 seconds of scrubbing — including backs, between fingers, and nails — is what actually removes microbes."
     },
     {
       "question": "Which of these is a time you MUST wash your hands?",
-      "options": ["Only at the start of the day", "After the restroom, after breaks, after handling trash, and when changing zones", "Only if your hands look dirty", "Only the burger team needs to wash"],
-      "correct": 1,
+      "options": [
+        "Only once at the very start of the working day",
+        "Only if your hands actually look visibly dirty to you",
+        "After the restroom, breaks, handling trash, and when changing zones",
+        "Only the burger team really needs to wash their hands"
+      ],
+      "correct": 2,
       "hint": "It's more than one moment — think every transition.",
       "rationale": "Wash at every key moment: before starting, after breaks, after the restroom, after trash/cleaning/touching your face, and when switching tasks or zones."
     },
     {
       "question": "You're about to start your shift. Which is acceptable in production?",
-      "options": ["A wedding ring and a watch", "Painted or false nails", "A plain face with hair fully covered by a hairnet", "A phone in your apron pocket"],
-      "correct": 2,
+      "options": [
+        "A wedding ring together with a wristwatch on the line",
+        "A plain face with hair fully covered by a hairnet",
+        "Brightly painted fingernails or glued-on false nails on shift",
+        "A personal phone tucked into your apron pocket on the floor"
+      ],
+      "correct": 1,
       "hint": "If it can fall off or hide dirt, it stays out.",
       "rationale": "Hair must be fully covered; jewelry, false/painted nails, and loose personal items like phones are not allowed on the line."
     },
     {
       "question": "True or false: A little nail polish is fine as long as it isn't chipped.",
-      "options": ["True", "False"],
+      "options": [
+        "True",
+        "False"
+      ],
       "correct": 1,
       "hint": "Polish can chip and flake into product without warning.",
       "rationale": "Nail polish and false nails are not permitted — they can flake or detach and become a foreign-material or contamination hazard."
     },
     {
       "question": "You wake up with vomiting and diarrhea but you're scheduled to work the line. What should you do?",
-      "options": ["Come in and just be careful", "Tell your supervisor before starting; you may be reassigned or sent home", "Take medicine and say nothing", "Wait to see if it gets worse during your shift"],
-      "correct": 1,
+      "options": [
+        "Come in to work anyway and just try to be careful",
+        "Take some medicine, say nothing, and work your shift",
+        "Wait to see if it gets worse during your shift",
+        "Tell your supervisor first; you may be reassigned or sent home"
+      ],
+      "correct": 3,
       "hint": "Reporting protects the food and your teammates — and you won't be penalized.",
       "rationale": "Vomiting, diarrhea, fever, jaundice, or infected sores must be reported before starting. You may be reassigned or sent home, and you're never in trouble for reporting."
     },
     {
       "question": "You get a small cut on your hand during the shift. What's required?",
-      "options": ["Keep working; it's minor", "Cover it with any tissue and continue", "Cover it with a blue metal-detectable bandage, wear a glove, and report it", "Only wash it off"],
-      "correct": 2,
+      "options": [
+        "Cover it with a blue metal-detectable bandage, glove it, and report it",
+        "Keep working since the cut is really quite minor",
+        "Cover it with any clean tissue you can find and keep going",
+        "Just rinse it off under some water and carry on"
+      ],
+      "correct": 0,
       "hint": "We use a specific bandage color for a reason.",
       "rationale": "Cuts must be covered with a blue, metal-detectable bandage and a glove, and reported — so a lost bandage can be detected and the wound can't contaminate product."
     },
     {
       "question": "Why do we use dedicated footwear, foot-baths, and one-directional traffic between zones?",
-      "options": ["To keep the floors shiny for auditors", "So we don't carry contamination or allergens from one area into a cleaner one", "Because it's faster", "Only to control who clocks in"],
-      "correct": 1,
+      "options": [
+        "To keep the floors looking shiny and clean for visiting auditors",
+        "Because that whole approach is simply faster for the team",
+        "So we don't carry contamination or allergens into a cleaner area",
+        "Only to control who clocks in and out of each zone"
+      ],
+      "correct": 2,
       "hint": "Think about what your boots and your path could carry with them.",
       "rationale": "Footwear control, foot-baths, and clean-to-dirty flow stop us from tracking contamination and allergens from general areas into higher-care zones."
     }

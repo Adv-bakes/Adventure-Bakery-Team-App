@@ -1,0 +1,299 @@
+{
+  "module": 8,
+  "language": "es",
+  "moduleLabel": "Módulo 8",
+  "title": "Recepción, Almacenamiento e Ingredientes",
+  "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 8 — Recepción, Almacenamiento e Ingredientes",
+      "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+      "titleSize": 44,
+      "photo": "FOTO: muelle de recepción / racks de tarimas en almacén seco",
+      "photoCaption": "PROGRAMAS PRERREQUISITO · RECEPCIÓN",
+      "intro": "La seguridad alimentaria empieza en el muelle de recepción. Este módulo cubre comprar a proveedores aprobados, inspeccionar entregas, rastrear lotes para la trazabilidad, rotar el inventario con PEPS, almacenar ingredientes correctamente y los controles especiales del ron.",
+      "notes": "Bienvenido al Módulo 8. Todo lo que fabricamos empieza con lo que entra por el muelle de recepción, así que la seguridad alimentaria realmente empieza ahí. Un problema que aceptamos en recepción — el ingrediente equivocado, una carga contaminada, un alérgeno faltante en una ficha — viaja directo a todo lo que producimos. En este módulo aprenderás por qué solo compramos a proveedores aprobados, cómo inspeccionar una entrega, cómo el rastreo de lotes nos da trazabilidad para un retiro, cómo PEPS mantiene fresco el inventario, las reglas para almacenar ingredientes de forma segura, y los controles especiales de recepción, almacenamiento y uso del ron, que es un ingrediente controlado. Una nota: estos controles deben reconciliarse con nuestro programa escrito antes de la auditoría."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "kicker": "PREPÁRATE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explicar por qué solo aceptamos de proveedores aprobados",
+          "Inspeccionar una entrega y saber cuándo rechazarla",
+          "Usar el rastreo de lotes y PEPS para la trazabilidad",
+          "Almacenar ingredientes con seguridad y manejar el ron bajo control"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que podrás hacer al terminar. Explicar por qué solo aceptamos ingredientes y materiales de proveedores aprobados. Inspeccionar una entrega en el muelle y saber exactamente cuándo rechazarla. Usar el rastreo de lotes y la rotación primeras-entradas-primeras-salidas para apoyar la trazabilidad y la frescura. Y almacenar los ingredientes con seguridad, incluyendo manejar el ron bajo sus controles especiales. Estos son los hábitos que evitan que un problema entre a la planta."
+    },
+    {
+      "title": "Por qué importa",
+      "lead": "Lo que aceptas en el muelle termina en el producto.",
+      "kicker": "POR QUÉ IMPORTA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Un problema aceptado en recepción fluye a todo lo que fabricamos",
+          "Los registros de lotes hacen posible un retiro rápido y dirigido",
+          "Una buena rotación evita el deterioro y el inventario vencido",
+          "Ingredientes controlados como el ron necesitan seguridad extra"
+        ]
+      },
+      "notes": "¿Por qué poner tanto cuidado en la recepción y el almacenamiento? Primero, lo que aceptas en el muelle termina en el producto — un problema que pasa la recepción fluye a todo lo que fabricamos. Segundo, los registros de lotes que creamos en recepción son los que hacen posible un retiro rápido y dirigido si algo sale mal. Tercero, una buena rotación de inventario evita el deterioro y que se usen ingredientes vencidos. Y cuarto, algunos ingredientes — como el ron — son controlados y necesitan seguridad y rastreo extra. La recepción y el almacenamiento son donde mantenemos los problemas fuera antes de que lleguen a producción."
+    },
+    {
+      "title": "Solo proveedores aprobados",
+      "lead": "Compramos solo a proveedores que hemos evaluado.",
+      "kicker": "PROVEEDORES APROBADOS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Los proveedores se evalúan por seguridad alimentaria antes de comprarles",
+          "Los ingredientes llegan con las fichas y certificados correctos",
+          "Cada entrega se coteja contra lo aprobado y lo pedido",
+          "No se aceptan entregas no aprobadas o sin documentación"
+        ]
+      },
+      "notes": "Solo compramos ingredientes y empaque a proveedores aprobados — proveedores que hemos evaluado para confirmar que cumplen nuestros requisitos de seguridad alimentaria y documentación. Esto importa porque confiamos en que ellos controlen los peligros antes de que el material llegue a nosotros, incluyendo la información de alérgenos que protege la declaración libre de alérgenos. Los ingredientes aprobados llegan con las especificaciones y certificados correctos, como un certificado de análisis. Cada entrega se coteja contra lo que realmente se aprobó y se pidió. Y una entrega de un proveedor que no está aprobado, o que llega sin su documentación, no se acepta en la planta. Si algo no coincide, se retiene y se escala, nunca se deja pasar."
+    },
+    {
+      "title": "Inspección de recepción",
+      "lead": "Cada entrega se revisa antes de aceptarse.",
+      "kicker": "RECEPCIÓN",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Revisa el vehículo y la temperatura en cargas frías o congeladas",
+          "Verifica los documentos — ficha, certificado, info de alérgenos",
+          "Inspecciona producto y empaque por daño, plagas o manipulación",
+          "Acepta y registra, o rechaza y reporta"
+        ],
+        "highlight": 3
+      },
+      "notes": "Cada entrega recibe una inspección antes de aceptarse. Empieza con el vehículo: ¿está limpio, y en cargas frías o congeladas, está la temperatura donde debería? Luego, verifica los documentos — la especificación, el certificado de análisis y la información de alérgenos coinciden con lo que aprobamos y pedimos. Después inspecciona el producto y el empaque por daño, señales de plagas o cualquier manipulación. Finalmente, acepta la carga y regístrala, o recházala y reporta el problema. Una inspección de recepción solo nos protege si una revisión fallida realmente detiene la entrega — ante la duda, retenla y pregunta."
+    },
+    {
+      "title": "Rastreo de lotes y trazabilidad",
+      "lead": "Si no podemos rastrearlo, no podemos retirarlo.",
+      "kicker": "TRAZABILIDAD",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Registra el código de lote de todo lo recibido",
+          "Conoce un paso atrás — tu proveedor — y un paso adelante",
+          "Etiqueta y fecha los ingredientes para que un lote no sea un misterio",
+          "Buenos registros vuelven un retiro enorme en uno pequeño y dirigido"
+        ]
+      },
+      "notes": "La trazabilidad es nuestra capacidad de seguir un ingrediente por la planta, y empieza en recepción. Registramos el código de lote o de tanda de todo lo que recibimos. El principio es uno arriba, uno abajo: podemos rastrear un paso atrás al proveedor y lote del que vino, y un paso adelante a los productos a los que fue. Etiquetamos y fechamos los ingredientes para que un lote no sea un misterio después. Por qué importa: si alguna vez hay un problema con un ingrediente, los buenos registros de lote vuelven lo que podría ser un retiro enorme de toda la planta en uno pequeño y dirigido — retirando solo los lotes afectados. Sin registros, tendríamos que retirar todo."
+    },
+    {
+      "title": "Rota el inventario: PEPS",
+      "lead": "Primeras entradas, primeras salidas — lo más viejo se usa primero.",
+      "kicker": "ROTACIÓN",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Haz",
+          "items": [
+            "Usa el inventario más viejo, o el que vence primero, antes del nuevo",
+            "Fecha y etiqueta todo cuando se recibe",
+            "Coloca el inventario nuevo detrás del más viejo en el estante"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "No hagas",
+          "items": [
+            "Tomar lo que esté más cerca o más fácil de alcanzar",
+            "Usar inventario pasado de su fecha de caducidad",
+            "Dejar el producto recibido sin fecha ni etiqueta"
+          ],
+          "color": "amber"
+        },
+        "chip": "Lo más viejo primero — producto fresco, sin desperdicio"
+      },
+      "notes": "PEPS significa primeras entradas, primeras salidas, y la idea relacionada es lo primero que vence sale primero. En la práctica significa que usamos el inventario más viejo, o el más cercano a su fecha de caducidad, antes que cualquier inventario nuevo. Para que eso sea posible, fechamos y etiquetamos todo cuando se recibe, y colocamos el inventario nuevo detrás del más viejo en el estante para que se alcance primero el producto más viejo. Lo que no hacemos: tomar lo que esté más cerca o más fácil, usar algo pasado de su fecha de caducidad, o dejar el producto recibido sin fecha ni etiqueta. Una buena rotación significa producto fresco y sin desperdicio por inventario vencido."
+    },
+    {
+      "title": "Reglas de almacenamiento",
+      "lead": "Cómo almacenamos protege lo que vamos a fabricar.",
+      "kicker": "ALMACENAMIENTO",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Mantén el producto separado del piso y de las paredes",
+          "Segrega alérgenos; almacena el libre de alérgenos sobre el que los contiene",
+          "Nunca guardes químicos de limpieza con ni sobre los ingredientes",
+          "Mantén los artículos fríos y congelados a la temperatura correcta"
+        ]
+      },
+      "notes": "Cómo almacenamos los ingredientes protege todo lo que vamos a fabricar con ellos. Mantén el producto separado del piso y de las paredes — eso permite la limpieza y la inspección y evita que las plagas aniden. Segrega los alérgenos, y al apilar, almacena el producto libre de alérgenos sobre el que contiene alérgenos para que nada pueda gotear ni derramarse encima. Nunca guardes químicos de limpieza con los ingredientes ni en un estante sobre ellos. Y mantén los artículos fríos y congelados a la temperatura correcta, sin cortes en la cadena de frío. Almacenar no es solo mantener las cosas ordenadas — cada una de estas reglas previene una forma específica en que el producto puede volverse inseguro."
+    },
+    {
+      "title": "Ron: un ingrediente controlado",
+      "kicker": "INGREDIENTE CONTROLADO",
+      "visual": {
+        "type": "stopSign",
+        "label": "RON",
+        "lines": [
+          "Se recibe, almacena y usa bajo control seguro y registrado.",
+          "Se mantiene bajo el límite del producto terminado en cada tanda.",
+          "El uso se reconcilia — lo usado debe coincidir con lo registrado."
+        ]
+      },
+      "notes": "El ron es un ingrediente controlado, así que se maneja distinto a un ingrediente estándar. Se recibe, almacena y usa bajo control seguro — guardado en un lugar designado y con acceso controlado, no dejado afuera, porque es tanto un ingrediente regulado como uno que la gente podría usar mal. Su uso se registra. Debe mantenerse bajo el límite del producto terminado en cada tanda que lo contenga, lo cual es un requisito de calidad y regulatorio. Y el uso se reconcilia: la cantidad usada tiene que coincidir con lo registrado contra lo que se recibió, para que nada quede sin contabilizar. El límite exacto y los procedimientos vienen de nuestro programa escrito, y esta es una de las áreas que debe reconciliarse con ese programa antes de la auditoría."
+    },
+    {
+      "title": "Cadena de frío en recepción",
+      "lead": "Las cargas frías y congeladas se revisan en cuanto llegan.",
+      "kicker": "CADENA DE FRÍO",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Revisa y registra la temperatura antes de aceptar una carga fría",
+          "Rechaza o retén una entrega que llegue con abuso de temperatura",
+          "Mueve el producto frío y congelado aceptado al almacén de inmediato",
+          "Una cadena de frío rota no se arregla re-enfriando después"
+        ]
+      },
+      "notes": "Los ingredientes fríos y congelados se revisan en cuanto llegan, porque la temperatura es un control de seguridad para ellos. Revisa y registra la temperatura antes de aceptar una carga refrigerada o congelada. Si una entrega llega con abuso de temperatura — demasiado tibia, o con señales de haberse descongelado y vuelto a congelar — recházala o retenla; no la aceptes solo porque ya está aquí. Mueve el producto frío y congelado aceptado a su almacén de inmediato, para que no se quede y se entibie en el muelle. Y recuerda el punto clave: una cadena de frío rota no se puede deshacer re-enfriando el producto después. Una vez que el producto de temperatura fría se ha entibiado, el riesgo de seguridad ya está ahí."
+    },
+    {
+      "title": "Empieza en el muelle",
+      "kicker": "EN EL MUELLE",
+      "lead": "Eres la primera línea de defensa.",
+      "photo": "FOTO: trabajador revisando una entrega / escaneando una tarima en recepción",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Inspecciona antes de aceptar — un rechazo ahora evita un retiro después.",
+          "Registra el lote y la temperatura; un recibo sin registrar no se rastrea.",
+          "Un auditor puede preguntar: ¿cómo sabes que este ingrediente es seguro?"
+        ],
+        "chip": "Cuando una entrega se ve mal, retenla y repórtala."
+      },
+      "notes": "La persona en el muelle de recepción es la primera línea de defensa de la planta, porque tú decides qué se permite entrar. Inspecciona antes de aceptar — un rechazo en el muelle ahora evita un retiro después, y siempre es más barato y más seguro rechazar una carga mala que retirar producto de los clientes. Registra el lote y la temperatura; un recibo que no se registra no se puede rastrear, lo cual rompe nuestra capacidad de retiro. Recuerda que los auditores entrevistan al personal del piso, y una pregunta común es: ¿cómo sabes que este ingrediente es seguro de usar? Tu respuesta es la verificación de proveedor aprobado, la inspección de recepción y los registros. Cuando una entrega se ve mal, retenla y repórtala."
+    },
+    {
+      "title": "Resumen",
+      "kicker": "RESUMEN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Compra solo a proveedores aprobados; inspecciona cada entrega",
+          "Registra lotes para la trazabilidad; rota el inventario con PEPS",
+          "Almacena separado del piso, segrega alérgenos, mantén la cadena de frío",
+          "Maneja el ron bajo control seguro, registrado y reconciliado"
+        ],
+        "next": "Sigue: Manejo de Producto Congelado"
+      },
+      "notes": "Repasemos. Compramos solo a proveedores aprobados e inspeccionamos cada entrega contra sus documentos antes de aceptarla. Registramos el código de lote de todo lo recibido para tener trazabilidad, y rotamos el inventario primeras-entradas-primeras-salidas para que lo más viejo se use primero. Almacenamos el producto separado del piso y de las paredes, segregamos alérgenos con el libre de alérgenos almacenado sobre el que los contiene, y mantenemos los artículos fríos y congelados en una cadena de frío sin cortes. Y manejamos el ron como un ingrediente controlado — seguro, registrado, mantenido bajo su límite y reconciliado. Recuerda que estos controles deben reconciliarse con nuestro programa escrito antes de la auditoría. A continuación, Manejo de Producto Congelado. Buen trabajo."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Por qué decimos que la seguridad alimentaria \"empieza en el muelle de recepción\"?",
+      "options": [
+        "Porque el muelle es el área más limpia y controlada de la planta",
+        "Porque los camiones siempre los inspecciona el proveedor antes de salir",
+        "Porque el muelle de carga es donde se envía el producto terminado",
+        "Porque un problema aceptado en recepción viaja a todo lo que fabricamos"
+      ],
+      "correct": 3,
+      "hint": "Piensa en dónde entran primero los ingredientes a la planta.",
+      "rationale": "Lo que aceptamos en el muelle termina en el producto. Un problema que pasa la recepción fluye a todo lo que fabricamos, así que recepción es el primer lugar donde mantenemos fuera los peligros."
+    },
+    {
+      "question": "¿Qué significa que un proveedor esté \"aprobado\"?",
+      "options": [
+        "Un proveedor evaluado para cumplir nuestros requisitos de seguridad y documentación",
+        "Cualquier proveedor que entregue el ingrediente al precio más bajo del momento",
+        "Un proveedor al que el equipo de compras le ha pedido alguna vez antes",
+        "El proveedor que tenga el ingrediente en existencia esa semana en particular"
+      ],
+      "correct": 0,
+      "hint": "Se trata de evaluación, no de precio ni conveniencia.",
+      "rationale": "Un proveedor aprobado ha sido evaluado para cumplir nuestros requisitos de seguridad y documentación, porque dependemos de él para controlar peligros y dar información de alérgenos exacta antes de que el material llegue."
+    },
+    {
+      "question": "Una entrega llega sin certificado de análisis ni ficha técnica. ¿Qué debes hacer?",
+      "options": [
+        "Acéptala ahora y pide al proveedor que envíe los documentos después",
+        "Descárgala al almacén y reporta la falta de papeles a fin de mes",
+        "Retén la entrega y no la aceptes hasta que se verifiquen los documentos",
+        "Acepta la carga pero almacénala aparte de los demás ingredientes recibidos"
+      ],
+      "correct": 2,
+      "hint": "La documentación es parte de aceptar una entrega.",
+      "rationale": "Una entrega sin su documentación requerida no se acepta en la planta. Retenla y escálala hasta que los documentos se verifiquen contra lo que se aprobó y se pidió."
+    },
+    {
+      "question": "¿Cuál es el propósito del rastreo de lotes y los registros de un paso arriba/abajo?",
+      "options": [
+        "Encontrar qué proveedor ofreció el mejor precio en cada lote de ingrediente",
+        "Rastrear un ingrediente hacia adelante y atrás para dirigir un retiro",
+        "Contar cuántos lotes recibe cada empleado durante un turno típico de trabajo",
+        "Decidir qué lotes usar primero según únicamente su orden de llegada"
+      ],
+      "correct": 1,
+      "hint": "Piensa en qué vuelve un retiro pequeño en vez de enorme.",
+      "rationale": "Los registros de lote permiten rastrear un paso atrás al proveedor y uno adelante a los productos a los que fue un lote, volviendo un posible retiro de toda la planta en uno pequeño y dirigido."
+    },
+    {
+      "question": "¿Qué significa PEPS en la práctica?",
+      "options": [
+        "Almacenar el inventario más nuevo al frente para que sea el más fácil de alcanzar",
+        "Usar el lote que esté más cerca de la puerta sin importar su código de fecha",
+        "Guardar cada lote hasta la inspección, y luego liberarlos todos a la vez",
+        "Usar el inventario más viejo o el que vence primero antes que cualquier nuevo"
+      ],
+      "correct": 3,
+      "hint": "Lo primero que entra o que vence sale primero.",
+      "rationale": "PEPS significa usar el inventario más viejo, o el más cercano a vencer, antes que el nuevo — por eso fechamos todo y colocamos el inventario nuevo detrás del más viejo."
+    },
+    {
+      "question": "¿Cuál de estas es una regla correcta de almacenamiento de ingredientes?",
+      "options": [
+        "Mantén el producto separado del piso y las paredes, con los alérgenos segregados",
+        "Apila los ingredientes directo en el piso mientras el piso se vea limpio",
+        "Guarda los químicos de limpieza junto a los ingredientes para tenerlos a mano",
+        "Coloca el inventario con alérgenos sobre el producto libre para ahorrar espacio"
+      ],
+      "correct": 0,
+      "hint": "Separado del piso, alérgenos aparte y debajo del libre.",
+      "rationale": "Almacena el producto separado del piso y las paredes, segrega los alérgenos (libre de alérgenos sobre el que los contiene), y nunca guardes químicos con ni sobre los ingredientes."
+    },
+    {
+      "question": "¿Cómo se maneja el ron como ingrediente controlado?",
+      "options": [
+        "Se almacena afuera en el piso abierto como cualquier otro ingrediente que recibimos",
+        "Se usa libremente en cualquier tanda ya que el límite final es difícil de exceder",
+        "Se recibe, almacena y usa bajo control seguro, registrado y reconciliado",
+        "Se cuenta una vez al año y por lo demás se deja a cada operador manejarlo"
+      ],
+      "correct": 2,
+      "hint": "Seguro, registrado, bajo su límite, reconciliado.",
+      "rationale": "El ron se recibe, almacena y usa bajo control seguro y registrado, se mantiene bajo el límite del producto terminado, y se reconcilia para que el uso coincida con lo recibido. Los límites exactos vienen del programa escrito."
+    },
+    {
+      "question": "Una entrega congelada llega por encima de su temperatura requerida. ¿Cuál es la acción correcta?",
+      "options": [
+        "Acéptala y muévela directo al congelador para que vuelva a bajar de temperatura",
+        "Rechaza o retén la carga y registra la desviación de temperatura encontrada",
+        "Acéptala si solo parte de la tarima se siente más tibia que el resto de ella",
+        "Almacénala ahora y pide al siguiente turno que revise la temperatura después"
+      ],
+      "correct": 1,
+      "hint": "Una cadena de frío rota no se arregla re-enfriando.",
+      "rationale": "Una carga congelada con abuso de temperatura se rechaza o retiene y se registra la desviación. Re-enfriar no deshace una cadena de frío rota — una vez que el producto se entibió, el riesgo ya está ahí."
+    }
+  ]
+}
