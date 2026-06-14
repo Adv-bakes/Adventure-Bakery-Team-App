@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Lightbulb, Clock, Lock, Volume2, Square } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, Lightbulb, Clock, Lock, Volume2, Square, ChevronDown, FileText } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   TRAINING_CATEGORY_LABELS,
@@ -19,6 +21,7 @@ import {
 } from "@/lib/training";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
+const TRANSCRIPT_PREF_KEY = "training-transcript-open";
 
 export default function TrainingModuleDetail() {
   const { moduleId } = useParams<{ moduleId: string }>();
@@ -35,6 +38,15 @@ export default function TrainingModuleDetail() {
   // Dwell-time gate: highest slide index whose minimum viewing time has elapsed
   const [highestUnlocked, setHighestUnlocked] = useState(-1);
   const [remaining, setRemaining] = useState(0);
+
+  // Narration transcript panel: remembered open/closed preference (collapsed first time)
+  const [transcriptOpen, setTranscriptOpen] = useState<boolean>(
+    () => { try { return localStorage.getItem(TRANSCRIPT_PREF_KEY) === "1"; } catch { return false; } }
+  );
+  const handleTranscriptToggle = (open: boolean) => {
+    setTranscriptOpen(open);
+    try { localStorage.setItem(TRANSCRIPT_PREF_KEY, open ? "1" : "0"); } catch { /* storage unavailable */ }
+  };
 
   const [quizStarted, setQuizStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -522,6 +534,23 @@ export default function TrainingModuleDetail() {
                   <span className="text-sm text-[#2A1F0E]/50 self-center">End of slides</span>
                 )}
               </div>
+
+              {/* Narration transcript — read along with the voice, or read instead of listening */}
+              {currentNarration && (
+                <Collapsible open={transcriptOpen} onOpenChange={handleTranscriptToggle}>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex w-full items-center justify-between rounded-md border border-[#C89B3C]/30 bg-[#C89B3C]/5 px-3 py-2 text-xs font-medium text-[#9A6F1E] hover:bg-[#C89B3C]/10">
+                      <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Transcript</span>
+                      <ChevronDown className={cn("w-4 h-4 transition-transform", transcriptOpen && "rotate-180")} />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <p className="mt-2 rounded-md bg-[#2A1F0E]/[0.03] px-3 py-2 text-sm leading-relaxed text-[#2A1F0E]/80 whitespace-pre-wrap">
+                      {currentNarration}
+                    </p>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </div>
           ) : module.content ? (
             <pre className="whitespace-pre-wrap rounded-md border border-black/10 bg-black/5 p-3 text-xs text-[#2A1F0E]">
