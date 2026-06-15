@@ -1,0 +1,300 @@
+{
+  "module": 9,
+  "language": "es",
+  "moduleLabel": "Módulo 9",
+  "title": "Manejo de Producto Congelado",
+  "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 9 — Manejo de Producto Congelado",
+      "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+      "titleSize": 54,
+      "photo": "FOTO: cámara de congelación / tarimas de producto congelado",
+      "photoCaption": "ESPECÍFICO DEL PRODUCTO · CONGELADOS",
+      "intro": "Las hamburguesas de origen vegetal que fabricamos son congeladas, y el frío es lo que las mantiene seguras. Este módulo cubre la cadena de frío, la congelación y el monitoreo del congelador, la regla de no descongelar/recongelar, y por qué la Listeria recibe atención especial en el ambiente frío y húmedo de la línea de congelados.",
+      "notes": "Bienvenido al Módulo 9. Las hamburguesas de origen vegetal que fabricamos son un producto congelado y listo para comer, y eso hace del frío su control de seguridad principal. No hay un paso de cocción que el cliente aplique antes de comer, así que la hamburguesa tiene que ser segura al salir de aquí y mantenerse así. En este módulo aprenderás cómo la cadena de frío mantiene el producto seguro desde nuestro congelador hasta el cliente, cómo congelamos y monitoreamos la temperatura del congelador, la regla firme contra descongelar y recongelar, y por qué la Listeria — un patógeno que prospera en lugares fríos y húmedos — recibe atención especial en la línea de congelados. Una nota: los límites del congelador y el programa de monitoreo ambiental aquí deben reconciliarse con nuestro plan de seguridad alimentaria escrito antes de la auditoría."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "kicker": "PREPÁRATE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explicar por qué la cadena de frío mantiene seguro el producto congelado",
+          "Congelar y almacenar bien el producto y monitorear la temperatura del congelador",
+          "Seguir la regla de no descongelar, no recongelar",
+          "Reconocer el riesgo de Listeria y tu rol en el monitoreo ambiental"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que podrás hacer al terminar. Explicar por qué una cadena de frío sin cortes es lo que mantiene seguro nuestro producto congelado. Congelar y almacenar el producto correctamente, y entender cómo se monitorea la temperatura del congelador. Seguir la regla firme contra descongelar y luego recongelar el producto. Y reconocer por qué la Listeria es un riesgo especial en la línea de congelados, además de tu propio rol en mantener limpio el ambiente y apoyar el monitoreo ambiental."
+    },
+    {
+      "title": "Por qué importa",
+      "lead": "El frío es el control de seguridad de un producto congelado listo para comer.",
+      "kicker": "POR QUÉ IMPORTA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "La hamburguesa es lista para comer — no hay cocción posterior que la corrija",
+          "El frío pausa el crecimiento de patógenos; al calentarse vuelve a empezar",
+          "La Listeria prospera en lugares fríos y húmedos como la línea de congelados",
+          "Lleva nuestra declaración libre de los 9 alérgenos — el producto de mayor riesgo"
+        ]
+      },
+      "notes": "¿Por qué tanto enfoque en el manejo de congelados? Primero, la hamburguesa es lista para comer — un cliente puede comerla sin una cocción a fondo, así que no hay un paso posterior que corrija un problema que dejemos pasar. Segundo, el frío pausa el crecimiento de patógenos, pero no mata lo que ya está; si el producto se calienta, el crecimiento vuelve a empezar. Tercero, la Listeria, un patógeno peligroso, en realidad prospera en las condiciones frías y húmedas de una línea de congelados, así que es un riesgo real y específico aquí. Y cuarto, este es el producto que lleva nuestra declaración libre de los 9 alérgenos, lo que lo hace el artículo de mayor riesgo de la planta en dos frentes a la vez. El frío y la limpieza son cómo lo protegemos."
+    },
+    {
+      "title": "Mantén la cadena de frío sin cortes",
+      "lead": "Desde nuestro congelador hasta el cliente, nunca se calienta.",
+      "kicker": "CADENA DE FRÍO",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Congela a la temperatura central objetivo justo después de producir",
+          "Mantén en el congelador a la temperatura requerida",
+          "Carga y envía en frío, sin huecos ni demoras",
+          "El producto se mantiene congelado todo el camino al cliente"
+        ],
+        "highlight": 0
+      },
+      "notes": "La cadena de frío es el camino ininterrumpido de frío desde el momento en que el producto se congela hasta que llega al cliente. Tiene algunos eslabones. Primero, congelamos el producto a su temperatura central objetivo justo después de producir. Segundo, lo mantenemos en el congelador a la temperatura requerida. Tercero, lo cargamos y enviamos en frío, sin huecos ni demoras esperando en un muelle tibio. Y cuarto, se mantiene congelado todo el camino al cliente. Cada eslabón importa, porque la cadena es tan fuerte como su punto más débil — un calentamiento en cualquier parte del camino pone el producto en riesgo, aunque después vuelva a enfriarse."
+    },
+    {
+      "title": "Congela bien",
+      "lead": "Congelación rápida y completa — luego fecha y almacena.",
+      "kicker": "CONGELAR BIEN",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Congela pronto a la temperatura central dentro del tiempo validado",
+          "No sobrecargues el congelador — deja flujo de aire alrededor",
+          "Fecha y etiqueta para que el inventario rote primeras entradas primeras salidas",
+          "Llévalo al almacén de congelados de inmediato; no lo dejes afuera"
+        ],
+        "highlight": 0
+      },
+      "notes": "Congelar bien es el primer eslabón de la cadena. Congelamos el producto pronto a su temperatura central dentro del tiempo validado — una congelación lenta deja el producto tibio por dentro, donde los patógenos aún pueden crecer. No sobrecargamos el congelador; el producto necesita flujo de aire a su alrededor para congelarse de manera pareja y completa. Fechamos y etiquetamos todo para que el inventario congelado también rote primeras entradas primeras salidas, igual que el almacén seco. Y movemos el producto terminado al almacén de congelados de inmediato en lugar de dejarlo afuera calentándose. Qué tan bien congelamos prepara todo lo que sigue."
+    },
+    {
+      "title": "Monitorea la temperatura del congelador",
+      "lead": "No suponemos que está frío — lo revisamos y lo registramos.",
+      "kicker": "MONITOREO",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Las temperaturas del congelador y del almacén se revisan y registran según programa",
+          "Las alarmas avisan cuando una unidad se sale del rango",
+          "Una desviación de temperatura se reporta, no se ignora",
+          "El producto afectado se retiene hasta que se evalúa"
+        ]
+      },
+      "notes": "Un congelador puede fallar en silencio — una puerta entreabierta, una unidad perdiendo carga — así que no suponemos que está frío, lo verificamos. Las temperaturas del congelador y del almacén se revisan y registran según un programa fijo. Las unidades tienen alarmas que avisan cuando la temperatura se sale del rango, de día o de noche. Cuando hay una desviación de temperatura, se reporta, no se ignora ni se reinicia en silencio, porque el producto pudo haberse comprometido. Y cualquier producto afectado se retiene hasta que pueda evaluarse contra nuestros límites, en lugar de enviarse suponiendo que está bien. El registro también es nuestra prueba ante un auditor de que la cadena de frío se mantuvo."
+    },
+    {
+      "title": "No descongelar, no recongelar",
+      "kicker": "NO RECONGELAR",
+      "visual": {
+        "type": "stopSign",
+        "label": "DESHIELO",
+        "lines": [
+          "Una vez que el producto se descongeló, no lo recongeles.",
+          "Recongelar puede dejar crecer patógenos y arruina la calidad.",
+          "¿Encontraste una tarima descongelada o parcialmente descongelada? Retén y reporta."
+        ]
+      },
+      "notes": "Esta regla es simple y firme: una vez que el producto se descongeló, no lo recongelamos. Esta es la razón. Mientras el producto está descongelado y tibio, los patógenos que estaban pausados por el frío pueden volver a crecer. Recongelarlo no deshace ese crecimiento — solo esconde la evidencia al volver el producto frío y sólido otra vez, así que parece bien cuando no lo está. Recongelar también arruina la textura y la calidad. Así que si encuentras una tarima que se descongeló, o incluso parcialmente — puntos blandos, condensación, un congelador descompuesto — no la recongeles y no la envíes. Retenla y repórtala, y deja que el personal capacitado decida qué pasa. Un producto recongelado puede verse perfecto y aun así ser inseguro."
+    },
+    {
+      "title": "A la Listeria le gusta el frío",
+      "lead": "El único patógeno que está en casa en una línea de congelados.",
+      "kicker": "LISTERIA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "La Listeria tolera el frío — puede crecer donde la mayoría de bacterias no",
+          "Vive en nichos húmedos: drenajes, pisos, agua estancada, grietas",
+          "Se propaga del ambiente a las superficies de contacto con el producto",
+          "En un producto listo para comer, es un riesgo grave de enfermedad"
+        ]
+      },
+      "notes": "La mayoría de los patógenos se frenan en el frío, pero la Listeria es la excepción — tolera el frío e incluso puede crecer a temperaturas de refrigeración, lo que hace de una línea de congelados fría y húmeda el tipo de lugar que le gusta. No vive principalmente en el producto; vive en el ambiente — en nichos húmedos como drenajes, grietas del piso, agua estancada y puntos difíciles de limpiar — y desde ahí puede propagarse a las superficies de contacto con alimentos y al producto. Y como la hamburguesa es lista para comer, la Listeria en ella es un riesgo grave de enfermedad, especialmente para personas vulnerables. Por eso un ambiente frío y húmedo no es solo un tema de limpieza en esta línea — es un tema directo de seguridad alimentaria."
+    },
+    {
+      "title": "Monitoreo ambiental",
+      "lead": "Buscamos la Listeria antes de que encuentre el producto.",
+      "kicker": "AMBIENTAL",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Drenajes, pisos y superficies se hisopan según un programa",
+          "Un resultado positivo activa limpieza y nueva prueba, no pánico",
+          "Mantén pisos y drenajes limpios y secos; reporta el agua estancada",
+          "No pases de un área húmeda y sucia a una línea limpia"
+        ]
+      },
+      "notes": "Como la Listeria se esconde en el ambiente, vamos a buscarla antes de que pueda llegar al producto — eso es el monitoreo ambiental. Los drenajes, pisos, paredes y superficies se hisopan según un programa y se analizan. Un resultado positivo no es un desastre ni algo que esconder; activa una limpieza dirigida y una nueva prueba para encontrar y eliminar la fuente. Tu parte es la diaria, que es la que más importa: mantén pisos y drenajes limpios y secos, limpia el agua estancada y reporta los puntos húmedos o sucios que no puedas manejar. Y no andes cargando contaminación — no pases directo de un área húmeda y sucia a una línea limpia sin limpiarte. El ambiente es donde se gana o se pierde esta batalla."
+    },
+    {
+      "title": "Congelado no es estéril",
+      "lead": "Congelar pausa los patógenos — no los mata.",
+      "kicker": "NO ESTÉRIL",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Congelar sí",
+          "items": [
+            "Pausa el crecimiento de bacterias y otros patógenos",
+            "Mantiene seguro un producto listo para comer mientras sigue congelado",
+            "Preserva la calidad y la vida útil del producto"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Congelar NO",
+          "items": [
+            "Mata los patógenos que ya están en el producto",
+            "Corrige la contaminación que ocurrió antes de congelar",
+            "Hace seguro descongelar, recongelar o maltratar después"
+          ],
+          "color": "amber"
+        },
+        "chip": "El frío compra seguridad solo mientras la cadena se mantiene"
+      },
+      "notes": "Es un mito común que congelado significa estéril, y entender bien esto cambia cómo manejas el producto. Congelar sí pausa el crecimiento de bacterias y otros patógenos, mantiene seguro un producto listo para comer mientras sigue congelado, y preserva la calidad y la vida útil. Pero congelar no mata los patógenos que ya están en el producto — solo están pausados, y despiertan cuando se calienta. No corrige la contaminación que ocurrió antes de congelar, así que lo que metemos tiene que estar limpio. Y no hace seguro descongelar y recongelar o maltratar el producto de otra forma. El frío nos compra seguridad, pero solo mientras la cadena de frío realmente se mantenga."
+    },
+    {
+      "title": "Tu rol en la línea de congelados",
+      "kicker": "LA LÍNEA DE CONGELADOS",
+      "lead": "Mantenlo frío, mantenlo limpio, habla.",
+      "photo": "FOTO: trabajador con ropa para frío revisando una bitácora del congelador / en la línea de congelados",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Mantén el producto frío y en movimiento; no dejes que se quede y se caliente.",
+          "Mantén tu área limpia y seca; limpia y reporta el agua estancada.",
+          "Un auditor puede preguntar: ¿cómo mantienes la Listeria fuera de esta línea?"
+        ],
+        "chip": "¿Lo ves descongelándose o ves agua estancada? Repórtalo."
+      },
+      "notes": "En la línea de congelados, proteges el producto de dos maneras en cada turno. Mantenlo frío y en movimiento — no dejes que el producto se quede afuera y se caliente entre pasos, y respeta la cadena de frío. Y mantén tu área limpia y seca, porque un ambiente seco y limpio es cómo evitamos que la Listeria se afiance; limpia el agua estancada y reporta los puntos húmedos o sucios. Recuerda que los auditores entrevistan al personal del piso, y en esta línea una pregunta común es: ¿cómo mantienes la Listeria fuera del producto? Tu respuesta es la cadena de frío, la limpieza y el monitoreo. Si ves producto descongelándose, o agua estancada cerca de la línea, repórtalo — detectarlo a tiempo es justamente el punto."
+    },
+    {
+      "title": "Resumen",
+      "kicker": "RESUMEN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "El frío es el control de seguridad — mantén la cadena sin cortes hasta el cliente",
+          "Congela por completo, monitorea la temperatura del congelador, actúa ante desviaciones",
+          "Nunca recongeles producto descongelado; retén y reporta",
+          "A la Listeria le gusta el frío y la humedad — mantén el ambiente limpio y seco"
+        ],
+        "next": "Sigue: Empaque, Etiquetado y Trazabilidad"
+      },
+      "notes": "Repasemos. Para nuestras hamburguesas congeladas y listas para comer, el frío es el control de seguridad, así que mantenemos la cadena de frío sin cortes desde nuestro congelador hasta el cliente. Congelamos el producto por completo y pronto, monitoreamos y registramos la temperatura del congelador, y actuamos ante cualquier desviación en lugar de ignorarla. Nunca recongelamos producto que se descongeló — lo retenemos y reportamos, porque recongelar esconde el crecimiento sin deshacerlo. Y como la Listeria prospera en lugares fríos y húmedos, mantenemos el ambiente limpio y seco y apoyamos el programa de monitoreo ambiental. Recuerda que los límites y ese programa deben reconciliarse con nuestro plan escrito antes de la auditoría. A continuación, Empaque, Etiquetado y Trazabilidad. Bien hecho."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Por qué es tan crítica la cadena de frío para nuestras hamburguesas congeladas de origen vegetal?",
+      "options": [
+        "Porque congelar hace que las hamburguesas sepan notablemente mejor al cliente",
+        "Porque el almacén frío es más barato que mantener la línea corriendo caliente",
+        "Porque los clientes simplemente prefieren comprar productos que llegan bien congelados",
+        "Porque el frío evita que los patógenos crezcan en un producto listo para comer"
+      ],
+      "correct": 3,
+      "hint": "La hamburguesa se come sin un paso de cocción posterior.",
+      "rationale": "La hamburguesa es lista para comer sin cocción posterior, así que el frío es lo que evita que crezcan patógenos. Una cadena de frío sin cortes es su control de seguridad principal."
+    },
+    {
+      "question": "¿Qué le hace realmente la congelación a las bacterias que ya están en el producto?",
+      "options": [
+        "Pausa su crecimiento pero no las mata de forma confiable",
+        "Esteriliza por completo el producto y mata todo lo presente en él",
+        "No tiene en esencia ningún efecto sobre las bacterias de un modo u otro",
+        "Hace que las bacterias se multipliquen mucho más rápido una vez congeladas"
+      ],
+      "correct": 0,
+      "hint": "Congelado no es lo mismo que estéril.",
+      "rationale": "Congelar pausa el crecimiento de patógenos pero no mata lo que ya está. Los patógenos despiertan y crecen otra vez cuando el producto se calienta, así que congelado no es estéril."
+    },
+    {
+      "question": "Una tarima de hamburguesas llega parcialmente descongelada. ¿Cuál es la acción correcta?",
+      "options": [
+        "Recongelarla rápido para que la cadena de frío parezca intacta otra vez",
+        "Aceptarla igual ya que una tarima tibia en realidad no va a importar",
+        "Retenerla o rechazarla y reportar el problema de temperatura encontrado",
+        "Almacenarla ahora y dejar que el siguiente turno decida qué hacer luego"
+      ],
+      "correct": 2,
+      "hint": "Una cadena de frío rota no se deshace recongelando.",
+      "rationale": "El producto descongelado o parcialmente descongelado se retiene o rechaza y se reporta la desviación. Recongelar solo esconde el crecimiento — no deshace una cadena de frío rota."
+    },
+    {
+      "question": "¿Por qué la Listeria recibe atención especial en la línea de congelados?",
+      "options": [
+        "Porque solo crece en áreas de producción cálidas y secas de la planta",
+        "Porque tolera el frío y vive en nichos húmedos como los drenajes",
+        "Porque en esencia es inofensiva para casi cualquier ser humano",
+        "Porque congelar el producto la mata al instante en el primer contacto"
+      ],
+      "correct": 1,
+      "hint": "Es el patógeno que está en casa en el frío y la humedad.",
+      "rationale": "La Listeria tolera el frío y vive en nichos ambientales húmedos como drenajes y pisos. En una línea fría, húmeda y lista para comer es un riesgo grave y específico."
+    },
+    {
+      "question": "¿Cuál es la regla sobre descongelar y recongelar el producto?",
+      "options": [
+        "El producto descongelado siempre se puede recongelar si aún se ve bien",
+        "Recongelar es aceptable siempre que lo hagas dentro de una hora máximo",
+        "Una pequeña descongelación parcial nunca necesita reportarse a nadie",
+        "Una vez descongelado, no lo recongeles — retenlo y repórtalo siempre"
+      ],
+      "correct": 3,
+      "hint": "Descongelado una vez no vuelve al congelador.",
+      "rationale": "Una vez que el producto se descongeló, nunca se recongela — se retiene y reporta. Recongelar esconde el crecimiento de patógenos ocurrido mientras estuvo tibio y arruina la calidad."
+    },
+    {
+      "question": "¿Cómo se controla la temperatura del congelador en nuestro almacén?",
+      "options": [
+        "Se monitorea y registra según programa, con alarmas para las desviaciones",
+        "Se revisa solo una vez al mes cuando el auditor pasa de visita",
+        "Se supone correcta a menos que un trabajador note hielo derritiéndose",
+        "Se deja por completo a la unidad del congelador que se administre sola"
+      ],
+      "correct": 0,
+      "hint": "No suponemos que está frío — lo verificamos y registramos.",
+      "rationale": "Las temperaturas del congelador y del almacén se revisan y registran según programa, con alarmas para salidas de rango, y cualquier desviación se reporta con el producto retenido."
+    },
+    {
+      "question": "¿Qué es el \"monitoreo ambiental\" en la línea de congelados?",
+      "options": [
+        "Revisar el clima exterior antes de cada corrida de producción congelada",
+        "Llevar la cuenta de cuántos trabajadores se asignan a la línea de congelados",
+        "Hisopar drenajes, pisos y superficies para hallar Listeria escondida",
+        "Medir cuánta electricidad usan los congeladores durante un turno completo"
+      ],
+      "correct": 2,
+      "hint": "Vamos a buscar el patógeno en el ambiente.",
+      "rationale": "El monitoreo ambiental hisopa drenajes, pisos y superficies para hallar Listeria en el ambiente antes de que llegue al producto; un positivo activa limpieza y nueva prueba."
+    },
+    {
+      "question": "Ves agua estancada cerca de un drenaje en la línea de congelados. ¿Qué debes hacer?",
+      "options": [
+        "Ignorarla, ya que un poco de agua cerca de un drenaje es perfectamente normal",
+        "Reportarla y hacer que se limpie — es un refugio de Listeria en potencia",
+        "Esperar hasta el final de tu turno para mencionarla a un supervisor luego",
+        "Trapearla hacia el área del producto para mantener tu propia estación seca"
+      ],
+      "correct": 1,
+      "hint": "Los nichos húmedos son justo donde vive la Listeria.",
+      "rationale": "El agua estancada es un refugio de Listeria. Repórtala y haz que se limpie — mantener pisos y drenajes limpios y secos es un control de primera línea contra la Listeria."
+    }
+  ]
+}

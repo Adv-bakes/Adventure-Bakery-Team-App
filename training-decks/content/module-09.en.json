@@ -1,0 +1,299 @@
+{
+  "module": 9,
+  "language": "en",
+  "moduleLabel": "Module 9",
+  "title": "Frozen Product Handling",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 9 — Frozen Product Handling",
+      "subtitle": "SQF Food Safety Training",
+      "photo": "PHOTO: frozen storage freezer / pallets of frozen product",
+      "photoCaption": "PRODUCT-SPECIFIC · FROZEN HANDLING",
+      "intro": "Our plant-based burgers are frozen, and cold is what keeps them safe. This module covers the cold chain, freezing and freezer monitoring, the no-thaw/refreeze rule, and why Listeria gets special attention in the cold, wet environment of the frozen line.",
+      "notes": "Welcome to Module 9. The plant-based burgers we make are a frozen, ready-to-eat product, and that makes cold their main safety control. There's no kill step a customer applies before eating, so the burger has to be safe as it leaves us and stay that way. In this module you'll learn how the cold chain keeps the product safe from our freezer to the customer, how we freeze and monitor freezer temperature, the firm rule against thawing and refreezing, and why Listeria — a pathogen that thrives in cold, damp places — gets special attention on the frozen line. A note: the freezer limits and the environmental monitoring program here must be reconciled with our written food safety plan before the audit."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explain why the cold chain keeps frozen product safe",
+          "Freeze and store product correctly and monitor freezer temperature",
+          "Follow the no-thaw, no-refreeze rule",
+          "Recognize Listeria risk and your role in environmental monitoring"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here is what you'll be able to do by the end. Explain why an unbroken cold chain is what keeps our frozen product safe. Freeze and store product correctly, and understand how freezer temperature is monitored. Follow the firm rule against thawing and then refreezing product. And recognize why Listeria is a special risk on the frozen line, plus your own role in keeping the environment clean and supporting environmental monitoring."
+    },
+    {
+      "title": "Why it matters",
+      "lead": "Cold is the safety control for a ready-to-eat frozen product.",
+      "kicker": "WHY IT MATTERS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "The burger is ready-to-eat — there is no later cook step to fix it",
+          "Cold pauses pathogen growth; warming lets it start again",
+          "Listeria thrives in cold, damp places like the frozen line",
+          "It carries our top-9-allergen-free claim — the highest-risk product"
+        ]
+      },
+      "notes": "Why so much focus on frozen handling? First, the burger is ready-to-eat — a customer may eat it without a thorough cook, so there's no later step to fix a problem we let through. Second, cold pauses pathogen growth, but it doesn't kill what's there; let the product warm up and growth starts again. Third, Listeria, a dangerous pathogen, actually thrives in the cold, damp conditions of a frozen line, so it's a real and specific risk here. And fourth, this is the product that carries our top-9-allergen-free claim, making it the highest-risk item in the plant on two fronts at once. Cold and cleanliness are how we protect it."
+    },
+    {
+      "title": "Keep the cold chain unbroken",
+      "lead": "From our freezer to the customer, it never warms up.",
+      "kicker": "COLD CHAIN",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Freeze to the target core temperature right after production",
+          "Hold in the freezer at the required temperature",
+          "Load and ship cold with no gaps or delays",
+          "Product stays frozen all the way to the customer"
+        ],
+        "highlight": 0
+      },
+      "notes": "The cold chain is the unbroken path of cold from the moment product is frozen until it reaches the customer. It has a few links. First, we freeze the product to its target core temperature right after production. Second, we hold it in the freezer at the required temperature. Third, we load and ship it cold, with no gaps or delays sitting on a warm dock. And fourth, it stays frozen the whole way to the customer. Every link matters, because the chain is only as strong as its weakest point — one warm-up anywhere along the way puts the product at risk, even if it gets cold again afterward."
+    },
+    {
+      "title": "Freeze it right",
+      "lead": "Fast, complete freezing — then date and store it.",
+      "kicker": "FREEZE RIGHT",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Freeze promptly to the core temperature within the validated time",
+          "Don't overload the freezer — leave airflow around product",
+          "Date and label so stock rotates first-in, first-out",
+          "Move to frozen storage right away; don't let it sit out"
+        ],
+        "highlight": 0
+      },
+      "notes": "Freezing well is the first link in the chain. We freeze product promptly to its core temperature within the validated time — slow freezing leaves product warm in the middle, where pathogens can still grow. We don't overload the freezer; product needs airflow around it to freeze evenly and fully. We date and label everything so frozen stock still rotates first-in, first-out, just like dry storage. And we move finished product into frozen storage right away rather than letting it sit out warming up. How well we freeze sets up everything that follows."
+    },
+    {
+      "title": "Monitor freezer temperature",
+      "lead": "We don't assume it's cold — we check and record it.",
+      "kicker": "MONITORING",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Freezer and storage temperatures are checked and recorded on schedule",
+          "Alarms flag when a unit drifts out of range",
+          "A temperature excursion is reported, not ignored",
+          "Affected product is held until it's evaluated"
+        ]
+      },
+      "notes": "A freezer can fail quietly — a door left ajar, a unit losing charge — so we don't assume it's cold, we verify it. Freezer and storage temperatures are checked and recorded on a set schedule. Units have alarms that flag when the temperature drifts out of range, day or night. When there's a temperature excursion, it's reported, not ignored or quietly reset, because the product may have been compromised. And any affected product is held until it can be evaluated against our limits, rather than shipped on the assumption it's fine. The record is also our proof to an auditor that the cold chain held."
+    },
+    {
+      "title": "No thaw, no refreeze",
+      "kicker": "NO REFREEZE",
+      "visual": {
+        "type": "stopSign",
+        "label": "THAW",
+        "lines": [
+          "Once product has thawed, do not refreeze it.",
+          "Refreezing can let pathogens grow and ruins quality.",
+          "Found a thawed or partially thawed pallet? Hold it and report."
+        ]
+      },
+      "notes": "This rule is simple and firm: once product has thawed, we do not refreeze it. Here's why. While product is thawed and warm, pathogens that were paused by the cold can start growing again. Refreezing it doesn't undo that growth — it just hides the evidence by making the product cold and solid again, so it looks fine when it isn't. Refreezing also wrecks the texture and quality. So if you find a pallet that has thawed, or even partially thawed — soft spots, condensation, a broken freezer — don't refreeze it and don't ship it. Hold it and report it, and let trained staff decide what happens. A refrozen product can look perfect and still be unsafe."
+    },
+    {
+      "title": "Listeria likes the cold",
+      "lead": "The one pathogen that's at home on a frozen line.",
+      "kicker": "LISTERIA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Listeria tolerates cold — it can grow where most bacteria can't",
+          "It lives in damp niches: drains, floors, standing water, cracks",
+          "It spreads from the environment onto product contact surfaces",
+          "In a ready-to-eat product, it's a serious illness risk"
+        ]
+      },
+      "notes": "Most pathogens slow down in the cold, but Listeria is the exception — it tolerates cold and can even grow at refrigeration temperatures, which makes a cold, wet frozen line the kind of place it likes. It doesn't live mainly in the product; it lives in the environment — in damp niches like drains, floor cracks, standing water, and hard-to-clean spots — and from there it can spread onto food-contact surfaces and onto product. And because the burger is ready-to-eat, Listeria on it is a serious illness risk, especially for vulnerable people. That's why a cold, wet environment isn't just a housekeeping issue on this line — it's a direct food safety issue."
+    },
+    {
+      "title": "Environmental monitoring",
+      "lead": "We hunt for Listeria before it finds the product.",
+      "kicker": "ENVIRONMENTAL",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Drains, floors, and surfaces are swabbed on a schedule",
+          "A positive result triggers cleaning and re-testing, not panic",
+          "Keep floors and drains clean and dry; report standing water",
+          "Don't move from a wet, dirty area onto a clean line"
+        ]
+      },
+      "notes": "Because Listeria hides in the environment, we go looking for it before it can reach product — that's environmental monitoring. Drains, floors, walls, and surfaces are swabbed on a schedule and tested. A positive result isn't a disaster or something to hide; it triggers targeted cleaning and re-testing so we find and remove the source. Your part is the daily one that matters most: keep floors and drains clean and dry, clean up standing water, and report wet or dirty spots you can't handle. And don't carry contamination around — don't move straight from a wet, dirty area onto a clean line without cleaning up. The environment is where this battle is won or lost."
+    },
+    {
+      "title": "Frozen isn't sterile",
+      "lead": "Freezing pauses pathogens — it doesn't kill them.",
+      "kicker": "NOT STERILE",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Freezing does",
+          "items": [
+            "Pauses the growth of bacteria and other pathogens",
+            "Keeps a ready-to-eat product safe while it stays frozen",
+            "Preserves quality and shelf life of the product"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Freezing does NOT",
+          "items": [
+            "Kill the pathogens that are already on the product",
+            "Fix contamination that happened before freezing",
+            "Make it safe to thaw, refreeze, or mishandle later"
+          ],
+          "color": "amber"
+        },
+        "chip": "Cold buys safety only while the chain holds"
+      },
+      "notes": "It's a common myth that frozen means sterile, and getting this right changes how you handle the product. Freezing does pause the growth of bacteria and other pathogens, it keeps a ready-to-eat product safe while it stays frozen, and it preserves quality and shelf life. But freezing does not kill the pathogens already on the product — they're just paused, and they wake up when it warms. It doesn't fix contamination that happened before freezing, so what we put in has to be clean. And it doesn't make the product safe to thaw and refreeze or otherwise mishandle. Cold buys us safety, but only for as long as the cold chain actually holds."
+    },
+    {
+      "title": "Your role on the frozen line",
+      "kicker": "THE FROZEN LINE",
+      "lead": "Keep it cold, keep it clean, speak up.",
+      "photo": "PHOTO: worker in cold-weather gear checking a freezer log / on the frozen line",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Keep product cold and moving; don't let it sit and warm up.",
+          "Keep your area clean and dry; clean up and report standing water.",
+          "An auditor may ask: how do you keep Listeria off this line?"
+        ],
+        "chip": "See it thawing or see standing water? Report it."
+      },
+      "notes": "On the frozen line, you protect the product in two ways every shift. Keep it cold and moving — don't let product sit out and warm up between steps, and respect the cold chain. And keep your area clean and dry, because a dry, clean environment is how we keep Listeria from getting a foothold; clean up standing water and report wet or dirty spots. Remember auditors interview floor staff, and on this line a common question is: how do you keep Listeria off the product? Your answer is the cold chain, the cleaning, and the monitoring. If you see product thawing, or standing water near the line, report it — catching it early is the whole point."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Cold is the safety control — keep the chain unbroken to the customer",
+          "Freeze fully, monitor freezer temperature, act on excursions",
+          "Never refreeze thawed product; hold and report it",
+          "Listeria likes cold and damp — keep the environment clean and dry"
+        ],
+        "next": "Next: Packaging, Labeling & Traceability"
+      },
+      "notes": "Let's recap. For our frozen, ready-to-eat burgers, cold is the safety control, so we keep the cold chain unbroken from our freezer all the way to the customer. We freeze product fully and promptly, monitor and record freezer temperature, and act on any excursion rather than ignoring it. We never refreeze product that has thawed — we hold it and report it, because refreezing hides growth without undoing it. And because Listeria thrives in cold, damp places, we keep the environment clean and dry and support the environmental monitoring program. Remember the limits and that program must be reconciled with our written plan before the audit. Up next, Packaging, Labeling and Traceability. Well done."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Why is the cold chain so critical for our frozen plant-based burgers?",
+      "options": [
+        "Because freezing makes the burgers taste noticeably better to customers",
+        "Because cold storage is cheaper than keeping the line running warm",
+        "Because customers simply prefer to buy products that arrive frozen solid",
+        "Because cold keeps pathogens from growing in a ready-to-eat product"
+      ],
+      "correct": 3,
+      "hint": "The burger is eaten without a later cook step.",
+      "rationale": "The burger is ready-to-eat with no later cook step, so cold is what keeps pathogens from growing. An unbroken cold chain is the product's main safety control."
+    },
+    {
+      "question": "What does freezing actually do to bacteria already in the product?",
+      "options": [
+        "It pauses their growth but does not reliably kill them off",
+        "It completely sterilizes the product and kills everything present",
+        "It has essentially no effect on bacteria one way or the other",
+        "It makes the bacteria multiply much faster once frozen solid"
+      ],
+      "correct": 0,
+      "hint": "Frozen is not the same as sterile.",
+      "rationale": "Freezing pauses pathogen growth but does not kill what's already there. The pathogens wake up and grow again when the product warms, so frozen is not sterile."
+    },
+    {
+      "question": "A pallet of burgers arrives partially thawed. What is the right action?",
+      "options": [
+        "Refreeze it quickly so the cold chain looks unbroken again",
+        "Accept it anyway since one warm pallet will not really matter",
+        "Hold or reject it and report the temperature problem found",
+        "Store it now and let the next shift decide what to do later"
+      ],
+      "correct": 2,
+      "hint": "A broken cold chain can't be undone by refreezing.",
+      "rationale": "Thawed or partially thawed product is held or rejected and the deviation reported. Refreezing only hides growth — it can't undo a broken cold chain."
+    },
+    {
+      "question": "Why does Listeria get special attention on the frozen line?",
+      "options": [
+        "Because it only grows in warm, dry production areas of the plant",
+        "Because it tolerates cold and lives in damp niches like drains",
+        "Because it is essentially harmless to almost every human being",
+        "Because freezing the product kills it instantly on first contact"
+      ],
+      "correct": 1,
+      "hint": "It's the pathogen that's at home in the cold and damp.",
+      "rationale": "Listeria tolerates cold and lives in damp environmental niches like drains and floors. On a cold, wet, ready-to-eat line it's a serious and specific risk."
+    },
+    {
+      "question": "What is the rule on thawing and refreezing product?",
+      "options": [
+        "Thawed product can always be refrozen if it still looks fine",
+        "Refreezing is acceptable as long as you do it within an hour",
+        "A little partial thawing never needs to be reported to anyone",
+        "Once it has thawed, do not refreeze it — hold and report it"
+      ],
+      "correct": 3,
+      "hint": "Thawed once means it doesn't go back in the freezer.",
+      "rationale": "Once product has thawed, it is never refrozen — it's held and reported. Refreezing hides pathogen growth that happened while warm and wrecks quality."
+    },
+    {
+      "question": "How is freezer temperature controlled in our storage?",
+      "options": [
+        "It is monitored and recorded on schedule, with alarms for excursions",
+        "It is checked just once a month when the auditor comes by",
+        "It is assumed correct unless a worker happens to notice ice melting",
+        "It is left entirely to the freezer unit to manage on its own"
+      ],
+      "correct": 0,
+      "hint": "We don't assume it's cold — we verify and record.",
+      "rationale": "Freezer and storage temperatures are checked and recorded on a schedule, with alarms for out-of-range drifts, and any excursion is reported with product held."
+    },
+    {
+      "question": "What is \"environmental monitoring\" on the frozen line?",
+      "options": [
+        "Checking the outdoor weather before each frozen production run",
+        "Tracking how many workers are assigned to the frozen line",
+        "Swabbing drains, floors, and surfaces to find hidden Listeria",
+        "Measuring how much electricity the freezers use during a shift"
+      ],
+      "correct": 2,
+      "hint": "We go looking for the pathogen in the environment.",
+      "rationale": "Environmental monitoring swabs drains, floors, and surfaces to find Listeria in the environment before it reaches product; a positive triggers cleaning and re-testing."
+    },
+    {
+      "question": "You see standing water near a drain on the frozen line. What should you do?",
+      "options": [
+        "Ignore it, since a little water near a drain is perfectly normal",
+        "Report it and have it cleaned — it is a Listeria harborage spot",
+        "Wait until the end of your shift to mention it to a supervisor",
+        "Mop it toward the product area to keep your own station dry"
+      ],
+      "correct": 1,
+      "hint": "Damp niches are exactly where Listeria lives.",
+      "rationale": "Standing water is a Listeria harborage. Report it and get it cleaned up — keeping floors and drains clean and dry is a frontline control against Listeria."
+    }
+  ]
+}
