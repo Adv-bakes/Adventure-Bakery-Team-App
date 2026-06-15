@@ -11,7 +11,7 @@
       "kind": "title",
       "title": "Module 11 — Food Defense & Food Fraud",
       "subtitle": "SQF Food Safety Training",
-      "photo": "PHOTO: secured plant entrance / badge access door / visitor sign-in",
+      "photo": "PHOTO: employee vetting a visitor at the reception / sign-in counter",
       "photoCaption": "EDITION 10 · DEFENSE & FRAUD",
       "intro": "Most of this program is about accidents. This module is about people doing harm on purpose — food defense protects against intentional tampering, and food fraud is cheating with ingredients for money. Both are Edition 10 requirements.",
       "notes": "Welcome to Module 11. Almost everything we've covered so far protects against accidents — a missed step, a broken seal, an honest mistake. This module is different: it's about harm done on purpose. There are two kinds. Food defense is about protecting our food and our site from intentional tampering or sabotage — by an outsider or, occasionally, an insider. Food fraud is about economically motivated adulteration — someone faking, substituting, or diluting an ingredient to make money, which can make a product unsafe or break our allergen claim. Both food defense and food fraud are SQF Edition 10 requirements, and both depend on people on the floor noticing and reporting things that don't look right."
@@ -30,7 +30,7 @@
         ],
         "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
       },
-      "notes": "Here is what you'll be able to do by the end. Tell the difference between food defense — protecting against intentional harm — and food fraud — cheating with ingredients. Follow our site security and visitor controls, like badges and escorting. Recognize the red flags of ingredient fraud and of tampering, such as a broken seal or an off-spec delivery. And report suspicious activity quickly and to the right person. The whole module comes down to one habit: notice, and speak up."
+      "notes": "Here is what you'll be able to do by the end. Tell the difference between food defense — protecting against intentional harm — and food fraud — cheating with ingredients. Follow our site security and visitor controls, like vetting visitors at reception and escorting them. Recognize the red flags of ingredient fraud and of tampering, such as a broken seal or an off-spec delivery. And report suspicious activity quickly and to the right person. The whole module comes down to one habit: notice, and speak up."
     },
     {
       "title": "Two threats, on purpose",
@@ -67,13 +67,13 @@
       "visual": {
         "type": "cards",
         "items": [
-          "Access is controlled — badges, locked doors, restricted areas",
-          "Cameras and monitoring cover key points",
-          "Sensitive areas and materials are kept secured",
-          "Only authorized people are on the production floor"
+          "All visitors are vetted at reception before going further",
+          "Restricted areas are clearly marked with signage",
+          "Doors to restricted and exterior areas stay secured",
+          "We're a small team — an unfamiliar face stands out"
         ]
       },
-      "notes": "Food defense starts with physical security — keeping the wrong people away from the product. Access to the site is controlled with badges, locked doors, and restricted areas that not everyone can enter. Cameras and monitoring cover key points like entrances, docks, and storage. Sensitive areas and high-value or controlled materials are kept secured, not left open. And only authorized people belong on the production floor. None of this works if we get casual about it — a propped door or a borrowed badge undoes the whole system, which is why the everyday habits on the next slides matter."
+      "notes": "Food defense starts with keeping the wrong people away from the product, and on a site our size it's built on a few simple things. Every visitor is vetted at reception before they go any further — no one wanders straight onto the floor. The restricted areas of the bakery are clearly marked with signage, and those signs mean what they say: only authorized people go past them. Doors to restricted areas and to the outside stay secured, not propped open for convenience. And we have a real advantage here — we're a small team, so an unfamiliar face stands out right away. None of this needs a fancy security system; it needs all of us paying attention, which is what the next slides are about."
     },
     {
       "title": "Visitors & contractors",
@@ -82,14 +82,14 @@
       "visual": {
         "type": "flow",
         "steps": [
-          "Visitors and contractors sign in at the entrance",
-          "They get a visitor badge and follow GMP rules",
-          "They're escorted — never left alone near product",
-          "Anyone unbadged or unescorted is challenged or reported"
+          "All visitors and contractors check in at reception first",
+          "They're vetted and signed in before going past reception",
+          "They follow GMP rules and are escorted at all times",
+          "Anyone unescorted past reception is questioned or reported"
         ],
         "highlight": 3
       },
-      "notes": "Visitors and contractors are a normal part of a plant, but they have to be controlled. Everyone signs in at the entrance, so there's a record of who's on site. They get a visitor badge and follow the same GMP rules we do — hairnets, hygiene, no jewelry. They're escorted, never left alone near product or sensitive areas. And if you see anyone unbadged or wandering unescorted, that's exactly the moment to act — politely challenge them or report it to a supervisor. It isn't rude to ask who someone is; on a food-defense program, it's your job."
+      "notes": "Visitors and contractors are a normal part of the business, but they don't just walk in. Everyone checks in at reception first, where they're vetted and signed in — so there's always a record of who's on site and why. They follow the same GMP rules we do — hairnets, hygiene, no jewelry — and they're escorted at all times, never left alone near product or in a restricted area. And if you ever see someone unescorted past reception, or in a restricted area where they don't belong, that's exactly the moment to act — politely ask who they are or report it to a supervisor. It isn't rude to ask; on a food-defense program, it's your job."
     },
     {
       "title": "Food fraud: ingredient integrity",
@@ -129,11 +129,11 @@
         "label": "REPORT",
         "lines": [
           "See a stranger, a broken seal, or tampering? Report it now.",
-          "Don't confront a threat alone — tell a supervisor or security.",
+          "Don't confront a threat alone — tell a supervisor right away.",
           "You are never in trouble for reporting something that looks wrong."
         ]
       },
-      "notes": "The single most important food-defense control isn't a camera or a lock — it's a person who notices and speaks up. If you see a stranger where they don't belong, a broken seal, or signs of tampering, report it right away. Don't try to confront a serious threat on your own; tell a supervisor or security and let trained people handle it. And like the stop-the-line authority from the very first module, you are never in trouble for reporting something that looks wrong — even if it turns out to be nothing. A false alarm costs a few minutes; a missed threat can cost far more. When in doubt, report."
+      "notes": "The single most important food-defense control isn't a sign or a lock — it's a person who notices and speaks up. If you see a stranger where they don't belong, a broken seal, or signs of tampering, report it right away. Don't try to confront a serious threat on your own; tell a supervisor and let the right people handle it. And like the stop-the-line authority from the very first module, you are never in trouble for reporting something that looks wrong — even if it turns out to be nothing. A false alarm costs a few minutes; a missed threat can cost far more. When in doubt, report."
     },
     {
       "title": "Don't make it easy",
@@ -142,13 +142,13 @@
       "visual": {
         "type": "checklist",
         "items": [
-          "Don't prop open secured doors or share your badge",
-          "Don't let people tailgate in behind you",
+          "Don't prop open doors to restricted or exterior areas",
+          "Send visitors to reception — don't wave them through",
           "Keep controlled materials, like rum, secured and logged",
-          "Challenge or report anyone you don't recognize"
+          "Greet or report anyone you don't recognize inside"
         ]
       },
-      "notes": "All the cameras and locks in the world don't help if we make it easy for someone, so the everyday habits are the real security system. Don't prop open secured doors for convenience, and don't share or lend your badge — it's tied to you. Don't let people tailgate in behind you through a controlled door; everyone badges in. Keep controlled and high-value materials — like the rum, which we already handle under lock and log — secured and accounted for, because they're exactly what a bad actor or thief would target. And challenge or report anyone you don't recognize. These small habits are what actually keep the site secure."
+      "notes": "Locks and signs don't help if we make it easy for someone, so the everyday habits are the real security system. Don't prop open doors to restricted areas or to the outside for convenience — that's the easiest way in. If someone shows up who isn't expected, send them to reception; don't wave them through onto the floor. Keep controlled and high-value materials — like the rum, which we already handle under lock and log — secured and accounted for, because they're exactly what a bad actor or thief would target. And on a small team, you'll know almost everyone, so greet or report anyone you don't recognize inside. These small habits are what actually keep the site secure."
     },
     {
       "title": "Why it's everyone's job",
@@ -157,29 +157,29 @@
       "visual": {
         "type": "cards",
         "items": [
-          "Staff on the floor notice what cameras and rules can't",
-          "Small habits — badges, seals, reporting — add up to security",
+          "On a small team, staff notice what written rules can't",
+          "Small habits — vetting visitors, checking seals, reporting — add up",
           "Edition 10 requires food defense and fraud prevention",
           "It protects our customers and our allergen-free claim"
         ]
       },
-      "notes": "Food defense and fraud prevention only work as a team effort, and here's why it's everyone's job. Staff on the floor notice what cameras and written rules can't — a person who seems out of place, a seal that's off, a material that doesn't look right. The small habits all of us keep — badging properly, checking seals, reporting — are what actually add up to a secure site. SQF Edition 10 specifically requires both a food defense plan and food fraud prevention, so auditors expect everyone to understand their part. And it protects the same things every module has: our customers and the allergen-free claim. Security isn't a department — it's all of us."
+      "notes": "Food defense and fraud prevention only work as a team effort, and here's why it's everyone's job. On a small team, staff on the floor notice what written rules and signs can't — a person who seems out of place, a seal that's off, a material that doesn't look right. The small habits all of us keep — making sure visitors go through reception, checking seals, reporting what's odd — are what actually add up to a secure site. SQF Edition 10 specifically requires both a food defense plan and food fraud prevention, so auditors expect everyone to understand their part. And it protects the same things every module has: our customers and the allergen-free claim. Security isn't a department — it's all of us."
     },
     {
       "title": "You're the eyes of the plant",
       "kicker": "EYES OF THE PLANT",
-      "lead": "Notice, challenge, report.",
-      "photo": "PHOTO: worker badging in at a secured door / checking a visitor badge",
+      "lead": "Notice, ask, report.",
+      "photo": "PHOTO: clearly-marked restricted-area door (Authorized Personnel Only)",
       "visual": {
         "type": "workers",
         "body": [
           "If someone or something seems out of place, say something.",
-          "Don't prop doors, share badges, or let strangers tailgate in.",
+          "Send visitors to reception; keep restricted-area doors secured.",
           "An auditor may ask: what would you do if you saw a stranger inside?"
         ],
         "chip": "See something off? Report it — you're never in trouble for it."
       },
-      "notes": "Cameras and locks are tools, but you are the eyes of the plant — you see more of it, more of the time, than any system does. If someone or something seems out of place, say something; a quick word to a supervisor is all it takes. Keep the everyday habits: don't prop secured doors, don't share your badge, and don't let strangers tailgate in behind you. Remember auditors interview floor staff, and on this topic a common question is simply: what would you do if you saw a stranger inside the plant? Your answer is challenge or report. See something off, report it — and you are never in trouble for doing so."
+      "notes": "Signs and locks are tools, but on a small team you are the eyes of the plant — you see more of it, more of the time, than any system does, and you know who belongs. If someone or something seems out of place, say something; a quick word to a supervisor is all it takes. Keep the everyday habits: send any visitor to reception to be vetted, and keep the doors to restricted areas secured. Remember auditors interview floor staff, and on this topic a common question is simply: what would you do if you saw a stranger inside the plant? Your answer is ask who they are or report it. See something off, report it — and you are never in trouble for doing so."
     },
     {
       "title": "Summary",
@@ -188,13 +188,13 @@
         "type": "checklist",
         "items": [
           "Food defense stops intentional harm; food fraud is cheating with ingredients",
-          "Control the site: badges, locked doors, visitors signed in and escorted",
+          "Control the site: vet visitors at reception, mark and secure restricted areas",
           "Protect ingredient integrity; watch for broken seals and off-spec material",
           "See something off? Report it — you're never in trouble"
         ],
         "next": "Next: Records & Talking to Auditors"
       },
-      "notes": "Let's recap. There are two intentional threats: food defense protects against intentional tampering or sabotage, and food fraud is cheating with ingredients for money. We control the site with badges, locked doors, restricted areas, and visitors who are signed in and escorted. We protect ingredient integrity by buying from approved suppliers, verifying specs and certificates, and watching for broken seals, substitution, or off-spec material. And the single most important control is you: if you see something off — a stranger, a broken seal, tampering — report it, and you are never in trouble for doing so. Both are Edition 10 requirements. Up next, our final module: Records and Talking to Auditors. Well done."
+      "notes": "Let's recap. There are two intentional threats: food defense protects against intentional tampering or sabotage, and food fraud is cheating with ingredients for money. We control the site by vetting every visitor at reception, clearly marking and securing the restricted areas, and escorting anyone who isn't staff. We protect ingredient integrity by buying from approved suppliers, verifying specs and certificates, and watching for broken seals, substitution, or off-spec material. And the single most important control is you: if you see something off — a stranger, a broken seal, tampering — report it, and you are never in trouble for doing so. Both are Edition 10 requirements. Up next, our final module: Records and Talking to Auditors. Well done."
     }
   ],
   "quiz": [
@@ -235,7 +235,7 @@
       "rationale": "Food fraud is economically motivated adulteration — faking, substituting, or diluting an ingredient to make money, which can make product unsafe or hide an undeclared allergen."
     },
     {
-      "question": "A stranger with no badge is walking through the production area. What do you do?",
+      "question": "You see a stranger you don't recognize in a restricted area. What do you do?",
       "options": [
         "Assume a manager already approved them and keep on working",
         "Politely challenge them or report it to a supervisor right away",
@@ -244,7 +244,7 @@
       ],
       "correct": 1,
       "hint": "It's not rude to ask who someone is.",
-      "rationale": "Anyone unbadged or unescorted should be politely challenged or reported to a supervisor right away. On a food-defense program, asking who someone is is your job, not rudeness."
+      "rationale": "Anyone unescorted in a restricted area, or a face you don't recognize on a small team, should be politely asked who they are or reported to a supervisor right away. Asking is your job, not rudeness."
     },
     {
       "question": "How do we protect ingredient integrity against food fraud?",
@@ -285,14 +285,14 @@
     {
       "question": "Why is food defense and fraud prevention \"everyone's job\"?",
       "options": [
-        "Because only the security guard can actually prevent any of it",
+        "Because a manager is the only one who can actually prevent it",
         "Because staff on the floor are the eyes that spot what's wrong",
         "Because it only ever matters during an announced auditor visit",
         "Because the rum is the only thing anyone would ever try to target"
       ],
       "correct": 1,
-      "hint": "Who sees more of the plant than a camera?",
-      "rationale": "Staff on the floor notice what cameras and rules can't, and everyday habits — badging, checking seals, reporting — add up to security. Edition 10 expects everyone to know their part."
+      "hint": "Who knows best who belongs on a small team?",
+      "rationale": "Staff on the floor notice what rules and signs can't, and everyday habits — vetting visitors, checking seals, reporting — add up to security. Edition 10 expects everyone to know their part."
     }
   ]
 }

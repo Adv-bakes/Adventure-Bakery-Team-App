@@ -12,7 +12,7 @@
       "kind": "title",
       "title": "Módulo 11 — Defensa Alimentaria y Fraude Alimentario",
       "subtitle": "Capacitación de Inocuidad SQF",
-      "photo": "FOTO: entrada segura de la planta / puerta con credencial / registro de visitantes",
+      "photo": "FOTO: empleado evaluando a un visitante en el mostrador de recepción / registro",
       "photoCaption": "EDICIÓN 10 · DEFENSA Y FRAUDE",
       "intro": "Casi todo este programa trata de accidentes. Este módulo trata del daño hecho a propósito: la defensa alimentaria protege contra la manipulación intencional, y el fraude alimentario es engañar con los ingredientes por dinero. Ambos son requisitos de la Edición 10.",
       "titleSize": 40,
@@ -32,7 +32,7 @@
         ],
         "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
       },
-      "notes": "Esto es lo que podrás hacer al terminar. Distinguir entre defensa alimentaria —proteger contra el daño intencional— y fraude alimentario —engañar con los ingredientes—. Seguir nuestra seguridad del sitio y el control de visitantes, como credenciales y acompañamiento. Reconocer las señales de alerta del fraude de ingredientes y de la manipulación, como un sello roto o una entrega fuera de especificación. Y reportar la actividad sospechosa rápido y a la persona correcta. Todo el módulo se reduce a un hábito: notar y avisar."
+      "notes": "Esto es lo que podrás hacer al terminar. Distinguir entre defensa alimentaria —proteger contra el daño intencional— y fraude alimentario —engañar con los ingredientes—. Seguir nuestra seguridad del sitio y el control de visitantes, como evaluarlos en recepción y acompañarlos. Reconocer las señales de alerta del fraude de ingredientes y de la manipulación, como un sello roto o una entrega fuera de especificación. Y reportar la actividad sospechosa rápido y a la persona correcta. Todo el módulo se reduce a un hábito: notar y avisar."
     },
     {
       "title": "Dos amenazas, a propósito",
@@ -69,13 +69,13 @@
       "visual": {
         "type": "cards",
         "items": [
-          "El acceso se controla: credenciales, puertas con llave, áreas restringidas",
-          "Las cámaras y el monitoreo cubren los puntos clave",
-          "Las áreas y materiales sensibles se mantienen asegurados",
-          "Solo personas autorizadas están en el piso de producción"
+          "Todos los visitantes se evalúan en recepción antes de entrar",
+          "Las áreas restringidas están claramente señalizadas",
+          "Las puertas a áreas restringidas y al exterior se mantienen aseguradas",
+          "Somos un equipo pequeño: una cara desconocida resalta"
         ]
       },
-      "notes": "La defensa alimentaria empieza con la seguridad física: mantener a las personas equivocadas lejos del producto. El acceso al sitio se controla con credenciales, puertas con llave y áreas restringidas a las que no cualquiera puede entrar. Las cámaras y el monitoreo cubren los puntos clave como entradas, andenes y almacenamiento. Las áreas sensibles y los materiales de alto valor o controlados se mantienen asegurados, no a la vista. Y solo las personas autorizadas pertenecen al piso de producción. Nada de esto funciona si nos relajamos: una puerta trabada abierta o una credencial prestada deshace todo el sistema, por eso importan los hábitos diarios de las siguientes diapositivas."
+      "notes": "La defensa alimentaria empieza por mantener a las personas equivocadas lejos del producto, y en un sitio de nuestro tamaño se basa en unas cuantas cosas sencillas. Todo visitante se evalúa en recepción antes de pasar más allá: nadie entra directo al piso. Las áreas restringidas de la panadería están claramente señalizadas, y esos letreros significan lo que dicen: solo las personas autorizadas pasan de ahí. Las puertas a las áreas restringidas y al exterior se mantienen aseguradas, no trabadas abiertas por comodidad. Y tenemos una ventaja real aquí: somos un equipo pequeño, así que una cara desconocida resalta de inmediato. Nada de esto necesita un sistema de seguridad complicado; necesita que todos estemos atentos, que es de lo que tratan las siguientes diapositivas."
     },
     {
       "title": "Visitantes y contratistas",
@@ -84,14 +84,14 @@
       "visual": {
         "type": "flow",
         "steps": [
-          "Los visitantes y contratistas se registran en la entrada",
-          "Reciben una credencial de visitante y siguen las reglas BPM",
-          "Son acompañados — nunca solos cerca del producto",
-          "A quien no tenga credencial o acompañante se le pregunta o reporta"
+          "Todos los visitantes y contratistas se reportan en recepción",
+          "Se evalúan y se registran antes de pasar de recepción",
+          "Siguen las reglas BPM y son acompañados en todo momento",
+          "A quien esté sin acompañante más allá de recepción se le pregunta o reporta"
         ],
         "highlight": 3
       },
-      "notes": "Los visitantes y contratistas son parte normal de una planta, pero deben controlarse. Todos se registran en la entrada, para que haya un registro de quién está en el sitio. Reciben una credencial de visitante y siguen las mismas reglas de BPM que nosotros: cofias, higiene, sin joyería. Son acompañados, nunca dejados solos cerca del producto o de áreas sensibles. Y si ves a alguien sin credencial o paseando sin acompañante, ese es justo el momento de actuar: pregúntale con cortesía o repórtalo a un supervisor. No es grosero preguntar quién es alguien; en un programa de defensa alimentaria, es tu trabajo."
+      "notes": "Los visitantes y contratistas son parte normal del negocio, pero no entran sin más. Todos se reportan primero en recepción, donde se les evalúa y se registran, así que siempre hay un registro de quién está en el sitio y por qué. Siguen las mismas reglas de BPM que nosotros —cofias, higiene, sin joyería— y son acompañados en todo momento, nunca dejados solos cerca del producto o en un área restringida. Y si alguna vez ves a alguien sin acompañante más allá de recepción, o en un área restringida donde no debe estar, ese es justo el momento de actuar: pregúntale con cortesía quién es o repórtalo a un supervisor. No es grosero preguntar; en un programa de defensa alimentaria, es tu trabajo."
     },
     {
       "title": "Fraude: integridad del ingrediente",
@@ -131,11 +131,11 @@
         "label": "REPORTA",
         "lines": [
           "¿Ves un desconocido, un sello roto o manipulación? Repórtalo ya.",
-          "No enfrentes una amenaza solo: avisa a un supervisor o a seguridad.",
+          "No enfrentes una amenaza solo: avisa a un supervisor de inmediato.",
           "Nunca tendrás problemas por reportar algo que se ve mal."
         ]
       },
-      "notes": "El control de defensa alimentaria más importante no es una cámara ni una cerradura: es una persona que nota y avisa. Si ves a un desconocido donde no debe estar, un sello roto o señales de manipulación, repórtalo de inmediato. No intentes enfrentar una amenaza seria por tu cuenta; avisa a un supervisor o a seguridad y deja que personas capacitadas lo manejen. Y como la autoridad de detener la línea del primer módulo, nunca tendrás problemas por reportar algo que se ve mal, aunque resulte no ser nada. Una falsa alarma cuesta unos minutos; una amenaza no detectada puede costar mucho más. Ante la duda, reporta."
+      "notes": "El control de defensa alimentaria más importante no es un letrero ni una cerradura: es una persona que nota y avisa. Si ves a un desconocido donde no debe estar, un sello roto o señales de manipulación, repórtalo de inmediato. No intentes enfrentar una amenaza seria por tu cuenta; avisa a un supervisor y deja que las personas indicadas lo manejen. Y como la autoridad de detener la línea del primer módulo, nunca tendrás problemas por reportar algo que se ve mal, aunque resulte no ser nada. Una falsa alarma cuesta unos minutos; una amenaza no detectada puede costar mucho más. Ante la duda, reporta."
     },
     {
       "title": "No lo hagas fácil",
@@ -144,13 +144,13 @@
       "visual": {
         "type": "checklist",
         "items": [
-          "No dejes puertas seguras trabadas ni prestes tu credencial",
-          "No dejes que entren personas pegadas detrás de ti",
+          "No dejes abiertas las puertas a áreas restringidas o al exterior",
+          "Envía a los visitantes a recepción — no los dejes pasar sin más",
           "Mantén los materiales controlados, como el ron, asegurados y registrados",
-          "Pregunta o reporta a cualquiera que no reconozcas"
+          "Saluda o reporta a cualquiera que no reconozcas adentro"
         ]
       },
-      "notes": "Todas las cámaras y cerraduras del mundo no sirven si le hacemos las cosas fáciles a alguien, así que los hábitos diarios son el verdadero sistema de seguridad. No dejes puertas seguras trabadas abiertas por comodidad, y no prestes tu credencial: está ligada a ti. No dejes que entren personas pegadas detrás de ti por una puerta controlada; todos pasan su credencial. Mantén los materiales controlados y de alto valor —como el ron, que ya manejamos bajo llave y registro— asegurados y contabilizados, porque son justo lo que un mal actor o un ladrón buscaría. Y pregunta o reporta a cualquiera que no reconozcas. Estos pequeños hábitos son lo que de verdad mantiene seguro el sitio."
+      "notes": "Los letreros y las cerraduras no sirven si le hacemos las cosas fáciles a alguien, así que los hábitos diarios son el verdadero sistema de seguridad. No dejes trabadas abiertas las puertas a las áreas restringidas o al exterior por comodidad: esa es la forma más fácil de entrar. Si aparece alguien que no se espera, envíalo a recepción; no lo dejes pasar al piso sin más. Mantén los materiales controlados y de alto valor —como el ron, que ya manejamos bajo llave y registro— asegurados y contabilizados, porque son justo lo que un mal actor o un ladrón buscaría. Y en un equipo pequeño conocerás a casi todos, así que saluda o reporta a cualquiera que no reconozcas adentro. Estos pequeños hábitos son lo que de verdad mantiene seguro el sitio."
     },
     {
       "title": "Por qué es tarea de todos",
@@ -159,29 +159,29 @@
       "visual": {
         "type": "cards",
         "items": [
-          "El personal del piso nota lo que las cámaras y reglas no pueden",
-          "Pequeños hábitos —credenciales, sellos, reportar— suman seguridad",
+          "En un equipo pequeño, el personal nota lo que las reglas no pueden",
+          "Pequeños hábitos —evaluar visitantes, revisar sellos, reportar— suman",
           "La Edición 10 exige defensa alimentaria y prevención de fraude",
           "Protege a nuestros clientes y nuestra declaración sin alérgenos"
         ]
       },
-      "notes": "La defensa alimentaria y la prevención del fraude solo funcionan en equipo, y por eso es tarea de todos. El personal del piso nota lo que las cámaras y las reglas escritas no pueden: una persona que parece fuera de lugar, un sello que no está bien, un material que no se ve correcto. Los pequeños hábitos que todos mantenemos —usar bien la credencial, revisar sellos, reportar— son lo que de verdad suma a un sitio seguro. La Edición 10 de SQF exige específicamente tanto un plan de defensa alimentaria como prevención de fraude, así que los auditores esperan que todos entiendan su parte. Y al final protege lo mismo que todos los módulos: la seguridad de nuestros clientes y la declaración sin alérgenos que hemos trabajado por defender. La seguridad no es un departamento, somos todos nosotros."
+      "notes": "La defensa alimentaria y la prevención del fraude solo funcionan en equipo, y por eso es tarea de todos. En un equipo pequeño, el personal del piso nota lo que las reglas escritas y los letreros no pueden: una persona que parece fuera de lugar, un sello que no está bien, un material que no se ve correcto. Los pequeños hábitos que todos mantenemos —asegurarnos de que los visitantes pasen por recepción, revisar sellos, reportar lo que sea raro— son lo que de verdad suma a un sitio seguro. La Edición 10 de SQF exige específicamente tanto un plan de defensa alimentaria como prevención de fraude, así que los auditores esperan que todos entiendan su parte. Y al final protege lo mismo que todos los módulos: la seguridad de nuestros clientes y la declaración sin alérgenos que hemos trabajado por defender. La seguridad no es un departamento, somos todos nosotros."
     },
     {
       "title": "Eres los ojos de la planta",
       "kicker": "OJOS DE LA PLANTA",
       "lead": "Observa, pregunta, reporta.",
-      "photo": "FOTO: trabajador pasando su credencial en una puerta segura / revisando una credencial de visitante",
+      "photo": "FOTO: puerta de área restringida claramente señalizada (Solo Personal Autorizado)",
       "visual": {
         "type": "workers",
         "body": [
           "Si alguien o algo parece fuera de lugar, avisa.",
-          "No trabes puertas, no prestes credenciales ni dejes entrar a extraños pegados.",
+          "Envía a los visitantes a recepción; mantén aseguradas las puertas de áreas restringidas.",
           "Un auditor puede preguntar: ¿qué harías si vieras a un desconocido adentro?"
         ],
         "chip": "¿Ves algo raro? Repórtalo — nunca tendrás problemas por hacerlo."
       },
-      "notes": "Las cámaras y las cerraduras son herramientas, pero tú eres los ojos de la planta: ves más de ella, más tiempo, que cualquier sistema. Si alguien o algo parece fuera de lugar, avisa; una palabra rápida a un supervisor es todo lo que hace falta. Mantén los hábitos diarios: no trabes puertas seguras, no prestes tu credencial y no dejes entrar a extraños pegados detrás de ti. Recuerda que los auditores entrevistan al personal del piso, y en este tema una pregunta común es simplemente: ¿qué harías si vieras a un desconocido dentro de la planta? Tu respuesta es preguntar o reportar. Si ves algo raro, repórtalo, y nunca tendrás problemas por hacerlo."
+      "notes": "Los letreros y las cerraduras son herramientas, pero en un equipo pequeño tú eres los ojos de la planta: ves más de ella, más tiempo, que cualquier sistema, y sabes quién pertenece. Si alguien o algo parece fuera de lugar, avisa; una palabra rápida a un supervisor es todo lo que hace falta. Mantén los hábitos diarios: envía a cualquier visitante a recepción para que se le evalúe, y mantén aseguradas las puertas de las áreas restringidas. Recuerda que los auditores entrevistan al personal del piso, y en este tema una pregunta común es simplemente: ¿qué harías si vieras a un desconocido dentro de la planta? Tu respuesta es preguntar quién es o reportarlo. Si ves algo raro, repórtalo, y nunca tendrás problemas por hacerlo."
     },
     {
       "title": "Resumen",
@@ -190,13 +190,13 @@
         "type": "checklist",
         "items": [
           "La defensa frena el daño intencional; el fraude es engañar con ingredientes",
-          "Controla el sitio: credenciales, puertas con llave, visitantes registrados y acompañados",
+          "Controla el sitio: evalúa visitantes en recepción, señaliza y asegura las áreas restringidas",
           "Protege la integridad del ingrediente; vigila sellos rotos y material fuera de especificación",
           "¿Ves algo raro? Repórtalo — nunca tendrás problemas"
         ],
         "next": "Sigue: Registros y Hablar con los Auditores"
       },
-      "notes": "Repasemos. Hay dos amenazas intencionales: la defensa alimentaria protege contra la manipulación o el sabotaje intencional, y el fraude alimentario es engañar con los ingredientes por dinero. Controlamos el sitio con credenciales, puertas con llave, áreas restringidas y visitantes que se registran y son acompañados. Protegemos la integridad del ingrediente comprando a proveedores aprobados, verificando especificaciones y certificados, y vigilando sellos rotos, sustitución o material fuera de especificación. Y el control más importante eres tú: si ves algo raro —un desconocido, un sello roto, manipulación— repórtalo, y nunca tendrás problemas por hacerlo. Ambos son requisitos de la Edición 10. A continuación, nuestro módulo final: Registros y Hablar con los Auditores. Bien hecho."
+      "notes": "Repasemos. Hay dos amenazas intencionales: la defensa alimentaria protege contra la manipulación o el sabotaje intencional, y el fraude alimentario es engañar con los ingredientes por dinero. Controlamos el sitio evaluando a cada visitante en recepción, señalizando y asegurando las áreas restringidas, y acompañando a quien no sea del personal. Protegemos la integridad del ingrediente comprando a proveedores aprobados, verificando especificaciones y certificados, y vigilando sellos rotos, sustitución o material fuera de especificación. Y el control más importante eres tú: si ves algo raro —un desconocido, un sello roto, manipulación— repórtalo, y nunca tendrás problemas por hacerlo. Ambos son requisitos de la Edición 10. A continuación, nuestro módulo final: Registros y Hablar con los Auditores. Bien hecho."
     }
   ],
   "quiz": [
@@ -237,7 +237,7 @@
       "rationale": "El fraude alimentario es la adulteración motivada por dinero: falsificar, sustituir o diluir un ingrediente para ganar dinero, lo que puede volver inseguro un producto u ocultar un alérgeno no declarado."
     },
     {
-      "question": "Un desconocido sin credencial camina por el área de producción. ¿Qué haces?",
+      "question": "Ves a un desconocido que no reconoces en un área restringida. ¿Qué haces?",
       "options": [
         "Suponer que un gerente ya lo aprobó y seguir trabajando como siempre",
         "Preguntarle con cortesía o reportarlo a un supervisor de inmediato",
@@ -246,7 +246,7 @@
       ],
       "correct": 1,
       "hint": "No es grosero preguntar quién es alguien.",
-      "rationale": "A cualquiera sin credencial o sin acompañante hay que preguntarle con cortesía o reportarlo a un supervisor de inmediato. En un programa de defensa, preguntar quién es alguien es tu trabajo, no una grosería."
+      "rationale": "A cualquiera sin acompañante en un área restringida, o una cara que no reconoces en un equipo pequeño, hay que preguntarle con cortesía quién es o reportarlo a un supervisor de inmediato. Preguntar es tu trabajo, no una grosería."
     },
     {
       "question": "¿Cómo protegemos la integridad del ingrediente contra el fraude?",
@@ -287,14 +287,14 @@
     {
       "question": "¿Por qué la defensa y la prevención del fraude son \"tarea de todos\"?",
       "options": [
-        "Porque solo el guardia de seguridad puede de verdad prevenir algo de esto",
+        "Porque un gerente es el único que de verdad puede prevenir algo de esto",
         "Porque el personal del piso son los ojos que detectan lo que está mal",
         "Porque solo importa durante una visita de auditoría que fue anunciada",
         "Porque el ron es lo único que alguien intentaría tener como objetivo"
       ],
       "correct": 1,
-      "hint": "¿Quién ve más de la planta que una cámara?",
-      "rationale": "El personal del piso nota lo que las cámaras y las reglas no pueden, y los hábitos diarios —credenciales, revisar sellos, reportar— suman seguridad. La Edición 10 espera que todos conozcan su parte."
+      "hint": "¿Quién conoce mejor quién pertenece al sitio?",
+      "rationale": "El personal del piso nota lo que las reglas y los letreros no pueden, y los hábitos diarios —evaluar visitantes, revisar sellos, reportar— suman seguridad. La Edición 10 espera que todos conozcan su parte."
     }
   ]
 }
