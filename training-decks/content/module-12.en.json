@@ -1,0 +1,312 @@
+{
+  "module": 12,
+  "language": "en",
+  "moduleLabel": "Module 12",
+  "title": "Records & Talking to Auditors",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 12 — Records & Talking to Auditors",
+      "subtitle": "SQF Food Safety Training",
+      "photo": "PHOTO: a clean paper log / clipboard being filled in on the production floor",
+      "photoCaption": "EDITION 10 · RECORDS & AUDITS",
+      "titleSize": 52,
+      "intro": "Everything we've learned only counts if we can prove we did it — and that proof is our records. This final module covers filling in records honestly and what to do when an auditor talks to you.",
+      "notes": "Welcome to the final module of the series. Across the last eleven modules we've covered hygiene, allergens, HACCP, foreign material, cleaning, receiving, frozen handling, packaging, traceability, and food defense. All of that work only counts if we can prove it happened — and the proof is our records. This module is about two things: filling in our records honestly and completely, and knowing what to do when an auditor talks to you. Here, records are mostly on paper — the logs and forms you fill in on the floor every day. They aren't busywork; they're the evidence that our whole food-safety system actually ran. Get records right, and the audit takes care of itself."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explain why records are the proof our system works",
+          "Fill in a paper record correctly and honestly",
+          "Correct a mistake in a record the right way",
+          "Answer an auditor calmly and truthfully"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here's what you'll be able to do by the end. Explain why records matter — that they're the proof our food-safety system actually works. Fill in a paper record correctly and honestly, in real time. Correct a mistake in a record the right way, without erasing or hiding it. And answer an auditor calmly and truthfully if they ask you about your work. It all comes down to one idea: records are how we show that what we say we do is what we actually do."
+    },
+    {
+      "title": "Why records matter",
+      "lead": "If it isn't recorded, it didn't happen.",
+      "kicker": "WHY RECORDS",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "A record is proof",
+          "items": [
+            "It shows a food-safety step was actually done",
+            "It shows when, what value, and by whom",
+            "It's the evidence behind every other module"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "No record, no proof",
+          "items": [
+            "A step with no record can't be proven at all",
+            "To an auditor, unproven means not done",
+            "A gap in a log is a gap in our defense"
+          ],
+          "color": "amber"
+        },
+        "chip": "Doing the work and recording it are one job, not two"
+      },
+      "notes": "There's a saying in food safety: if it isn't recorded, it didn't happen. Here's why. A record is proof — it shows that a food-safety step was actually carried out, when it was done, what the value was, and who did it. Every module we've covered leaves a record behind: the oven temperature, the cleaning sign-off, the receiving check, the metal-detector test. On the flip side, a step with no record can't be proven — and to an auditor, something that can't be proven is treated as not done, even if you really did it. A blank line in a log is a gap in our defense. So think of doing the work and recording it as one job, not two: the task isn't finished until it's written down."
+    },
+    {
+      "title": "What we record",
+      "lead": "Mostly paper logs, filled in as you work.",
+      "kicker": "WHAT WE RECORD",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Temperature logs — ovens, coolers, freezers",
+          "Cleaning and sanitation sign-offs",
+          "Receiving sheets — what came in, and checks",
+          "CCP and metal-detector check records"
+        ]
+      },
+      "notes": "So what are these records? Here, they're mostly paper logs and forms that you fill in as you work. Temperature logs for the ovens, coolers, and freezers — the cold chain and kill-step proof from earlier modules. Cleaning and sanitation sign-offs that show a line was cleaned before it ran. Receiving sheets that record what came in and the checks done at the dock. And the records for our critical control points and metal-detector checks. These aren't extra paperwork on top of the job — they are part of the job, and each one connects back to something we've already trained on. When you complete a log, you're closing the loop on a food-safety step."
+    },
+    {
+      "title": "Fill it in right",
+      "lead": "A good record is honest, complete, and on time.",
+      "kicker": "FILL IT IN RIGHT",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Write legibly — someone else has to read it",
+          "Record it as you do it, not from memory later",
+          "Write the real value, even if it's out of range",
+          "Initial and date every entry; leave no blanks"
+        ]
+      },
+      "notes": "Filling in a record right is simple, and it comes down to a few habits. Write legibly — a record nobody can read is no proof at all, and someone else may need to read it later. Record it as you do it, in real time, not from memory at the end of your shift, because that's when numbers get fuzzy. Write the real value — even, and especially, when it's out of range; an out-of-range reading that's recorded and acted on is good food safety, while a 'nice' number that's made up is falsification. And initial and date every entry, leaving no blank lines. If something doesn't apply, mark it so — a blank looks like a missed step. Honest, complete, and on time: that's a good record."
+    },
+    {
+      "title": "Records are always honest",
+      "kicker": "ALWAYS HONEST",
+      "visual": {
+        "type": "stopSign",
+        "label": "HONEST",
+        "lines": [
+          "Never fill in a check before you've actually done it.",
+          "Never guess or invent a value, and never sign for someone else.",
+          "An honest out-of-range number is always better than a fake good one."
+        ]
+      },
+      "notes": "This is the one rule that matters most in this module: records are always honest. Never fill in a check before you've actually done the task — that's not a record, it's a guess. Never invent or estimate a value to fill a box, and never sign or initial for someone else; your initials mean you did it and saw it. And remember the most important point: an honest out-of-range number is always better than a fake good one. A real reading that's out of range lets us catch and fix a problem; a made-up 'good' reading hides it and can let unsafe product through. Falsifying a record is one of the most serious things that can happen on a food-safety program — it breaks the trust the whole system runs on. When in doubt, record the truth."
+    },
+    {
+      "title": "Made a mistake? Fix it right",
+      "lead": "Correct it openly — never hide it.",
+      "kicker": "FIXING MISTAKES",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Draw a single line through the wrong entry",
+          "Write the correct value next to it",
+          "Add your initials and the date",
+          "Never erase, scribble out, or use white-out"
+        ],
+        "highlight": 3
+      },
+      "notes": "Mistakes happen, and that's fine — what matters is fixing them the right way, in the open. If you write something wrong, draw a single line through it, so the original is still readable. Write the correct value next to it. Add your initials and the date so it's clear who made the correction and when. And the thing you never do is erase it, scribble it out so it can't be read, or use white-out. Why? Because a record that's been hidden or rubbed out looks like someone had something to cover up — even when it was an honest slip. An open correction is trusted; a hidden one is a red flag. Correcting a mistake properly isn't a problem; trying to make it disappear is."
+    },
+    {
+      "title": "Records get kept",
+      "lead": "Filed, stored, and easy to find again.",
+      "kicker": "KEEP THE RECORDS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Completed logs go back to their right place",
+          "They're filed and stored, not left lying around",
+          "Kept for the required retention period",
+          "Easy to find quickly when someone asks"
+        ]
+      },
+      "notes": "A record only does its job if we can find it later, so what happens after you fill one in matters too. Completed logs go back to their assigned place — not left on a bench or carried off the floor. They're filed and stored properly so they don't get lost, damaged, or mixed up. They're kept for the required retention period, because an auditor or a customer may ask to see records going back months. And they're organized so they can be found quickly when someone asks — during an audit, being able to pull the right record in a minute instead of an hour makes a real difference. Fill it in, then put it where it belongs."
+    },
+    {
+      "title": "The audit",
+      "lead": "Once a year, someone checks that we do what we say.",
+      "kicker": "THE AUDIT",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "What an audit is",
+          "items": [
+            "An outside auditor reviews our SQF system",
+            "They read records, walk the floor, and ask questions",
+            "It confirms we actually do what our plan says"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Management leads it",
+          "items": [
+            "The owner and management host the audit",
+            "They answer questions about the overall program",
+            "You may be asked about your own work"
+          ],
+          "color": "amber"
+        },
+        "chip": "An audit isn't a test to fear — it's us showing our work"
+      },
+      "notes": "Let's talk about the audit itself, because it shouldn't be a mystery. An SQF audit is when an outside auditor comes in, usually once a year, and checks that our food-safety system is real — they review our records, walk the floor, and ask questions to confirm we actually do what our written plan says. Here, management and the owner lead the audit: they host the auditor and answer the questions about the overall program, the plan, and the documentation. Your part is smaller but real — you may be asked about your own work, the task right in front of you. An audit isn't a test to be afraid of; it's simply us showing our work. And if everyone has been keeping honest records all year, there's nothing to dread."
+    },
+    {
+      "title": "If an auditor asks you",
+      "lead": "Calm, honest, and about your own job.",
+      "kicker": "IF YOU'RE ASKED",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Stay calm — it's a conversation, not a trap",
+          "Answer honestly about your own work",
+          "It's fine to show the record you keep",
+          "Don't know? Say so and check with your supervisor"
+        ]
+      },
+      "notes": "So what do you do if the auditor turns to you? First, stay calm — it's a conversation, not a trap, and they expect normal, honest answers, not perfect speeches. Answer honestly about your own work: what you do, how you do it, and where you write it down. It's completely fine to show them the record you keep — that's exactly the proof they're looking for. And if they ask something you don't know, the best answer in the world is simple: say you're not sure and that you'll check with your supervisor. Never guess, never make up a number, and never feel you have to have every answer. A calm 'I do this task, here's my log, and for anything beyond that I'd ask my supervisor' is a perfect answer."
+    },
+    {
+      "title": "You're part of the proof",
+      "kicker": "YOU'RE THE PROOF",
+      "lead": "Honest records, honest answers.",
+      "photo": "PHOTO: worker completing a paper log at their station / clipboard in hand",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Every honest record you keep is part of the proof.",
+          "Record it as you do it — real values, no blanks, initialed.",
+          "If an auditor asks, answer calmly and truthfully about your job."
+        ],
+        "chip": "Do the work, record the truth — that's the whole job."
+      },
+      "notes": "As we close out the whole series, here's the idea to carry with you: you are part of the proof. Every honest record you keep is a piece of the evidence that our food is safe and our claims are true. Keep the habit simple — record it as you do it, with real values, no blank lines, and your initials. And if an auditor ever asks, answer calmly and truthfully about your own job, and lean on your supervisor for anything beyond it. That's really the whole job: do the work, and record the truth. Do those two things every shift, and you've done your part for food safety and for the audit."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Records are the proof — if it isn't recorded, it didn't happen",
+          "Fill them in legibly, in real time, with real values and your initials",
+          "Fix mistakes openly: one line, correct value, initial and date",
+          "With an auditor: stay calm, be honest, defer to your supervisor"
+        ],
+        "next": "You've completed the SQF Food Safety Training series. Thank you."
+      },
+      "notes": "Let's recap this module and the series. Records are the proof our food-safety system works — if it isn't recorded, it didn't happen. Fill them in legibly, in real time, with real values and your initials, and never falsify or backfill. Fix a mistake openly with a single line through it, the correct value, and your initials and date — never erase or hide it. And if an auditor talks to you, stay calm, be honest about your own work, show your record, and defer to your supervisor for anything else. That's the end of the SQF Food Safety Training series. Thank you for the attention you've given every module — the safety of our food and the trust our customers place in us rests on exactly this kind of everyday care. Well done."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Why do we keep records?",
+      "options": [
+        "Because filling out forms is just a habit we happen to have here",
+        "Mainly to give the office staff something to file away each week",
+        "Records are only really needed on the day an auditor visits us",
+        "They're the proof our food-safety steps were actually done right"
+      ],
+      "correct": 3,
+      "hint": "Think about what an auditor can and can't see.",
+      "rationale": "Records are the evidence that food-safety steps actually happened — when, what value, and by whom. They're the proof behind every other module."
+    },
+    {
+      "question": "What does \"if it isn't recorded, it didn't happen\" mean?",
+      "options": [
+        "With no record, there is no proof the step was ever done",
+        "You can do the step and write it down whenever is convenient",
+        "Recording a task matters more than actually doing the task",
+        "Only the steps that you enjoy doing need to be written down"
+      ],
+      "correct": 0,
+      "hint": "It's about proof, not the task being optional.",
+      "rationale": "A step with no record can't be proven, and to an auditor unproven is treated as not done. It doesn't mean recording replaces doing — both are required."
+    },
+    {
+      "question": "How should you fill in a paper record?",
+      "options": [
+        "In pencil, so that any wrong numbers can be erased cleanly later",
+        "From memory at the end of your shift, as best you can recall it",
+        "Legibly and in real time, with real values, then initial it",
+        "Leave blanks for anything you're unsure of and just move along"
+      ],
+      "correct": 2,
+      "hint": "Honest, complete, and on time.",
+      "rationale": "Write legibly and in real time, record the real value (even out of range), and initial and date every entry with no blank lines."
+    },
+    {
+      "question": "You realize you wrote the wrong number in a log. What's the correct fix?",
+      "options": [
+        "Erase it completely or cover it with white-out, then rewrite it",
+        "Line through it once, write the right value, initial and date",
+        "Scribble over it heavily so the wrong number can't be read",
+        "Leave the wrong number and just tell your supervisor verbally"
+      ],
+      "correct": 1,
+      "hint": "Correct it openly so the original is still visible.",
+      "rationale": "Draw a single line through the error, write the correct value, and add your initials and the date. Never erase, scribble out, or use white-out — a hidden correction looks like a cover-up."
+    },
+    {
+      "question": "Which of these is never okay with records?",
+      "options": [
+        "Initialing each separate entry you complete during your own shift",
+        "Asking a supervisor when you're unsure how to fill one in right",
+        "Recording the real temperature even when it is out of its range",
+        "Filling in a check before you've done it, or guessing at a value"
+      ],
+      "correct": 3,
+      "hint": "Honesty is the cardinal rule.",
+      "rationale": "Never pre-fill a check you haven't done, never invent a value, and never sign for someone else. An honest out-of-range number always beats a fake good one."
+    },
+    {
+      "question": "An auditor walks up and asks you about your job. What should you do?",
+      "options": [
+        "Stay calm and answer honestly about your own work",
+        "Guess at an answer so you don't look like you don't know it",
+        "Say nothing at all to them and quickly walk away from it",
+        "Make up a number if you cannot remember the real value"
+      ],
+      "correct": 0,
+      "hint": "It's a conversation, not a trap.",
+      "rationale": "Stay calm and answer honestly about your own work — it's fine to show the record you keep. Auditors expect normal, truthful answers, not perfect speeches."
+    },
+    {
+      "question": "An auditor asks something you don't know the answer to. Best response?",
+      "options": [
+        "Invent an answer that sounds about right to you in the moment",
+        "Pretend that you didn't hear the question and just keep working",
+        "Say you're not sure and you'll check with your supervisor",
+        "Give them a long guess and hope that one part of it is correct"
+      ],
+      "correct": 2,
+      "hint": "You don't have to know everything.",
+      "rationale": "Say you're not sure and that you'll check with your supervisor. Never guess or invent an answer — deferring honestly is a perfectly good response."
+    },
+    {
+      "question": "Who leads the SQF audit and answers questions about the overall program?",
+      "options": [
+        "Each floor employee runs their own separate part of the audit alone",
+        "Management leads the audit; you answer about your own job",
+        "The auditor fills in all of our missing records for us that day",
+        "No one really needs to be there; the auditor just reviews files"
+      ],
+      "correct": 1,
+      "hint": "Who hosts the auditor here?",
+      "rationale": "Management and the owner lead the audit and answer program-level questions. Floor staff may be asked about their own work and defer specifics to their supervisor."
+    }
+  ]
+}

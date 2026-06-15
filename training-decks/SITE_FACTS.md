@@ -24,6 +24,15 @@ Last reviewed: 2026-06-15.
   Doors to restricted/exterior areas are kept secured.
 - Departments: Production · Sourcing · Quality Control · Admin · R&D · Sales.
 
+## Records & audits (confirmed 2026-06-15)
+- Records are kept **mostly on paper** — floor logs and forms (temperature logs,
+  cleaning/sanitation records, receiving sheets, CCP/metal-detection checks), filed and
+  stored. Examples should reference legible handwriting, real-time entry, initialing/dating,
+  no blank gaps, real values.
+- **Management/the owner leads the SQF audit** and answers program-level questions. Floor
+  staff may be asked direct questions and should answer honestly about their **own job**,
+  and defer specifics to their supervisor ("I'll check with my supervisor").
+
 ## Products & key materials
 - Product lines referenced generically: **rum cakes, biscotti, plant-based/vegan burgers**.
 - The plant-based burger carries an **allergen-free ("free-from") claim** — protecting

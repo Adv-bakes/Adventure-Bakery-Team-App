@@ -1,0 +1,313 @@
+{
+  "module": 12,
+  "language": "es",
+  "moduleLabel": "Módulo 12",
+  "title": "Registros y Hablar con los Auditores",
+  "subtitle": "Capacitación de Inocuidad SQF",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "titleSize": 50,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 12 — Registros y Hablar con los Auditores",
+      "subtitle": "Capacitación de Inocuidad SQF",
+      "photo": "FOTO: un registro de papel limpio / tablilla siendo llenado en el piso de producción",
+      "photoCaption": "EDICIÓN 10 · REGISTROS Y AUDITORÍAS",
+      "intro": "Todo lo que aprendimos solo cuenta si podemos probar que lo hicimos, y esa prueba son nuestros registros. Este módulo final trata de llenar los registros con honestidad y qué hacer cuando un auditor te habla.",
+      "titleSize": 38,
+      "notes": "Bienvenido al módulo final de la serie. A lo largo de los once módulos anteriores cubrimos higiene, alérgenos, HACCP, material extraño, limpieza, recepción, manejo de congelados, empaque, trazabilidad y defensa alimentaria. Todo ese trabajo solo cuenta si podemos probar que ocurrió, y la prueba son nuestros registros. Este módulo trata de dos cosas: llenar nuestros registros con honestidad y de forma completa, y saber qué hacer cuando un auditor te habla. Aquí los registros son en su mayoría de papel: las bitácoras y formatos que llenas en el piso todos los días. No son trámite de relleno; son la evidencia de que todo nuestro sistema de inocuidad realmente funcionó. Haz bien los registros y la auditoría se resuelve sola."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "kicker": "PREPÁRATE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explicar por qué los registros son la prueba de que el sistema funciona",
+          "Llenar un registro de papel de forma correcta y honesta",
+          "Corregir un error en un registro de la manera correcta",
+          "Responder a un auditor con calma y con la verdad"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que podrás hacer al terminar. Explicar por qué importan los registros: que son la prueba de que nuestro sistema de inocuidad de verdad funciona. Llenar un registro de papel de forma correcta y honesta, en tiempo real. Corregir un error en un registro de la manera correcta, sin borrarlo ni esconderlo. Y responder a un auditor con calma y con la verdad si te pregunta sobre tu trabajo. Todo se reduce a una idea: los registros son cómo mostramos que lo que decimos que hacemos es lo que de verdad hacemos."
+    },
+    {
+      "title": "Por qué importan los registros",
+      "lead": "Si no está registrado, no ocurrió.",
+      "kicker": "POR QUÉ REGISTROS",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Un registro es prueba",
+          "items": [
+            "Muestra que un paso de inocuidad de verdad se hizo",
+            "Muestra cuándo, qué valor y quién lo hizo",
+            "Es la evidencia detrás de cada módulo anterior"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Sin registro, sin prueba",
+          "items": [
+            "Un paso sin registro no se puede probar de ninguna forma",
+            "Para un auditor, lo no probado es lo no hecho",
+            "Un hueco en una bitácora es un hueco en nuestra defensa"
+          ],
+          "color": "amber"
+        },
+        "chip": "Hacer el trabajo y registrarlo son un solo trabajo, no dos"
+      },
+      "notes": "Hay un dicho en inocuidad alimentaria: si no está registrado, no ocurrió. Aquí está el porqué. Un registro es prueba: muestra que un paso de inocuidad de verdad se llevó a cabo, cuándo se hizo, cuál fue el valor y quién lo hizo. Cada módulo que vimos deja un registro: la temperatura del horno, la firma de limpieza, la revisión de recepción, la prueba del detector de metales. Por el otro lado, un paso sin registro no se puede probar, y para un auditor algo que no se puede probar se trata como no hecho, aunque de verdad lo hayas hecho. Una línea en blanco en una bitácora es un hueco en nuestra defensa. Así que piensa en hacer el trabajo y registrarlo como un solo trabajo, no dos: la tarea no termina hasta que está anotada."
+    },
+    {
+      "title": "Qué registramos",
+      "lead": "Sobre todo bitácoras de papel, llenadas mientras trabajas.",
+      "kicker": "QUÉ REGISTRAMOS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Bitácoras de temperatura — hornos, cámaras, congeladores",
+          "Firmas de limpieza y sanitización",
+          "Hojas de recepción — qué llegó y las revisiones",
+          "Registros de PCC y del detector de metales"
+        ]
+      },
+      "notes": "¿Y qué son estos registros? Aquí son sobre todo bitácoras y formatos de papel que llenas mientras trabajas. Bitácoras de temperatura para los hornos, las cámaras y los congeladores: la prueba de la cadena de frío y del paso letal de módulos anteriores. Firmas de limpieza y sanitización que muestran que una línea se limpió antes de operar. Hojas de recepción que registran qué llegó y las revisiones hechas en el andén. Y los registros de nuestros puntos críticos de control y de las revisiones del detector de metales. No son papeleo extra encima del trabajo: son parte del trabajo, y cada uno se conecta con algo que ya capacitamos. Cuando completas una bitácora, cierras el ciclo de un paso de inocuidad."
+    },
+    {
+      "title": "Llénalo bien",
+      "lead": "Un buen registro es honesto, completo y a tiempo.",
+      "kicker": "LLÉNALO BIEN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Escribe legible — alguien más tiene que poder leerlo",
+          "Regístralo mientras lo haces, no de memoria después",
+          "Anota el valor real, aunque esté fuera de rango",
+          "Pon tus iniciales y la fecha; no dejes espacios en blanco"
+        ]
+      },
+      "notes": "Llenar un registro bien es sencillo y se reduce a unos cuantos hábitos. Escribe legible: un registro que nadie puede leer no es prueba de nada, y alguien más quizá necesite leerlo después. Regístralo mientras lo haces, en tiempo real, no de memoria al final del turno, porque ahí es cuando los números se vuelven borrosos. Anota el valor real, incluso, y sobre todo, cuando esté fuera de rango; una lectura fuera de rango que se registra y se atiende es buena inocuidad, mientras que un número bonito inventado es falsificación. Y pon tus iniciales y la fecha en cada entrada, sin dejar líneas en blanco. Si algo no aplica, márcalo así: un espacio en blanco parece un paso que se saltó. Honesto, completo y a tiempo: ese es un buen registro."
+    },
+    {
+      "title": "Los registros siempre son honestos",
+      "kicker": "SIEMPRE HONESTOS",
+      "visual": {
+        "type": "stopSign",
+        "label": "HONESTO",
+        "lines": [
+          "Nunca llenes una revisión antes de haberla hecho de verdad.",
+          "Nunca adivines ni inventes un valor, ni firmes por otra persona.",
+          "Un número honesto fuera de rango siempre es mejor que uno falso bueno."
+        ]
+      },
+      "notes": "Esta es la regla que más importa en este módulo: los registros siempre son honestos. Nunca llenes una revisión antes de haber hecho la tarea de verdad: eso no es un registro, es una suposición. Nunca inventes ni estimes un valor para llenar una casilla, y nunca firmes ni pongas iniciales por otra persona; tus iniciales significan que tú lo hiciste y lo viste. Y recuerda el punto más importante: un número honesto fuera de rango siempre es mejor que uno falso bueno. Una lectura real fuera de rango nos deja detectar y corregir un problema; una lectura buena inventada lo esconde y puede dejar pasar producto inseguro. Falsificar un registro es de las cosas más graves que pueden pasar en un programa de inocuidad: rompe la confianza sobre la que funciona todo el sistema. Ante la duda, registra la verdad."
+    },
+    {
+      "title": "¿Cometiste un error? Corrígelo bien",
+      "lead": "Corrígelo de forma abierta, nunca lo escondas.",
+      "kicker": "CORREGIR ERRORES",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Traza una sola línea sobre la entrada incorrecta",
+          "Escribe el valor correcto a un lado",
+          "Agrega tus iniciales y la fecha",
+          "Nunca borres, taches por completo ni uses corrector"
+        ],
+        "highlight": 3
+      },
+      "notes": "Los errores pasan, y está bien: lo que importa es corregirlos de la forma correcta, de manera abierta. Si escribes algo mal, traza una sola línea sobre ello, para que lo original siga siendo legible. Escribe el valor correcto a un lado. Agrega tus iniciales y la fecha para que quede claro quién hizo la corrección y cuándo. Y lo que nunca haces es borrarlo, tacharlo por completo para que no se pueda leer, o usar corrector. ¿Por qué? Porque un registro escondido o borrado parece que alguien tenía algo que ocultar, aunque haya sido un desliz honesto. Una corrección abierta genera confianza; una escondida es una señal de alerta. Corregir un error bien no es un problema; tratar de hacerlo desaparecer sí lo es."
+    },
+    {
+      "title": "Los registros se guardan",
+      "lead": "Archivados, almacenados y fáciles de encontrar.",
+      "kicker": "GUARDA LOS REGISTROS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Las bitácoras completas vuelven a su lugar correcto",
+          "Se archivan y almacenan, no se dejan tiradas",
+          "Se conservan por el periodo de retención requerido",
+          "Fáciles de encontrar rápido cuando alguien pregunta"
+        ]
+      },
+      "notes": "Un registro solo cumple su función si podemos encontrarlo después, así que lo que pasa luego de llenarlo también importa. Las bitácoras completas vuelven a su lugar asignado, no se dejan en una mesa ni se sacan del piso. Se archivan y almacenan bien para que no se pierdan, se dañen ni se confundan. Se conservan por el periodo de retención requerido, porque un auditor o un cliente puede pedir ver registros de hace meses. Y se organizan para poder encontrarlas rápido cuando alguien pregunta: durante una auditoría, poder sacar el registro correcto en un minuto en vez de en una hora hace una diferencia real. Llénalo y luego ponlo donde corresponde."
+    },
+    {
+      "title": "La auditoría",
+      "lead": "Una vez al año alguien verifica que hacemos lo que decimos.",
+      "kicker": "LA AUDITORÍA",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Qué es una auditoría",
+          "items": [
+            "Un auditor externo revisa nuestro sistema SQF",
+            "Lee registros, recorre el piso y hace preguntas",
+            "Confirma que de verdad hacemos lo que dice el plan"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "La dirección la encabeza",
+          "items": [
+            "El dueño y la dirección reciben al auditor",
+            "Responden las preguntas sobre el programa general",
+            "A ti pueden preguntarte sobre tu propio trabajo"
+          ],
+          "color": "amber"
+        },
+        "chip": "Una auditoría no es un examen que temer: es mostrar nuestro trabajo"
+      },
+      "notes": "Hablemos de la auditoría en sí, porque no debería ser un misterio. Una auditoría SQF es cuando un auditor externo viene, normalmente una vez al año, y verifica que nuestro sistema de inocuidad es real: revisa nuestros registros, recorre el piso y hace preguntas para confirmar que de verdad hacemos lo que dice nuestro plan escrito. Aquí, la dirección y el dueño encabezan la auditoría: reciben al auditor y responden las preguntas sobre el programa general, el plan y la documentación. Tu parte es más pequeña pero real: te pueden preguntar sobre tu propio trabajo, la tarea que tienes enfrente. Una auditoría no es un examen que temer; es simplemente mostrar nuestro trabajo. Y si todos hemos llevado registros honestos todo el año, no hay nada que temer."
+    },
+    {
+      "title": "Si un auditor te pregunta",
+      "lead": "Con calma, con la verdad y sobre tu propio trabajo.",
+      "kicker": "SI TE PREGUNTAN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Mantén la calma — es una conversación, no una trampa",
+          "Responde con honestidad sobre tu propio trabajo",
+          "Está bien mostrar el registro que tú llevas",
+          "¿No sabes? Dilo y consulta con tu supervisor"
+        ]
+      },
+      "notes": "Entonces, ¿qué haces si el auditor se dirige a ti? Primero, mantén la calma: es una conversación, no una trampa, y esperan respuestas normales y honestas, no discursos perfectos. Responde con honestidad sobre tu propio trabajo: qué haces, cómo lo haces y dónde lo anotas. Está completamente bien mostrarles el registro que tú llevas: esa es justo la prueba que buscan. Y si te preguntan algo que no sabes, la mejor respuesta del mundo es simple: di que no estás seguro y que lo consultarás con tu supervisor. Nunca adivines, nunca inventes un número y nunca sientas que tienes que tener todas las respuestas. Un tranquilo 'yo hago esta tarea, aquí está mi bitácora, y para algo más allá de eso preguntaría a mi supervisor' es una respuesta perfecta."
+    },
+    {
+      "title": "Eres parte de la prueba",
+      "kicker": "ERES LA PRUEBA",
+      "lead": "Registros honestos, respuestas honestas.",
+      "photo": "FOTO: trabajador llenando un registro de papel en su estación / con una tablilla en mano",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Cada registro honesto que llevas es parte de la prueba.",
+          "Regístralo mientras lo haces — valores reales, sin huecos, con iniciales.",
+          "Si un auditor pregunta, responde con calma y verdad sobre tu trabajo."
+        ],
+        "chip": "Haz el trabajo, registra la verdad — ese es todo el trabajo."
+      },
+      "notes": "Al cerrar toda la serie, esta es la idea para llevarte: tú eres parte de la prueba. Cada registro honesto que llevas es una pieza de la evidencia de que nuestros alimentos son seguros y nuestras declaraciones son ciertas. Mantén el hábito sencillo: regístralo mientras lo haces, con valores reales, sin líneas en blanco y con tus iniciales. Y si un auditor alguna vez pregunta, responde con calma y con la verdad sobre tu propio trabajo, y apóyate en tu supervisor para cualquier otra cosa. Ese es de verdad todo el trabajo: haz la tarea y registra la verdad. Haz esas dos cosas cada turno y habrás hecho tu parte por la inocuidad y por la auditoría."
+    },
+    {
+      "title": "Resumen",
+      "kicker": "REPASO",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Los registros son la prueba — si no está registrado, no ocurrió",
+          "Llénalos legibles, en tiempo real, con valores reales y tus iniciales",
+          "Corrige errores abiertamente: una línea, valor correcto, iniciales y fecha",
+          "Con un auditor: ten calma, sé honesto, consulta a tu supervisor"
+        ],
+        "next": "Has completado la serie de Capacitación de Inocuidad SQF. Gracias."
+      },
+      "notes": "Repasemos este módulo y la serie. Los registros son la prueba de que nuestro sistema de inocuidad funciona: si no está registrado, no ocurrió. Llénalos legibles, en tiempo real, con valores reales y tus iniciales, y nunca falsifiques ni los llenes después. Corrige un error de forma abierta con una sola línea sobre él, el valor correcto y tus iniciales y la fecha; nunca lo borres ni lo escondas. Y si un auditor te habla, mantén la calma, sé honesto sobre tu propio trabajo, muestra tu registro y consulta a tu supervisor para lo demás. Ese es el final de la serie de Capacitación de Inocuidad SQF. Gracias por la atención que le has dado a cada módulo: la seguridad de nuestros alimentos y la confianza que nuestros clientes depositan en nosotros descansan justo en este tipo de cuidado diario. Bien hecho."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Por qué llevamos registros?",
+      "options": [
+        "Porque llenar formatos es solo una costumbre que tenemos aquí",
+        "Sobre todo para darle a la oficina algo que archivar cada semana",
+        "Los registros solo se necesitan de verdad el día que viene un auditor",
+        "Son la prueba de que los pasos de inocuidad de verdad se hicieron bien"
+      ],
+      "correct": 3,
+      "hint": "Piensa en lo que un auditor puede y no puede ver.",
+      "rationale": "Los registros son la evidencia de que los pasos de inocuidad de verdad ocurrieron: cuándo, qué valor y quién. Son la prueba detrás de cada módulo anterior."
+    },
+    {
+      "question": "¿Qué significa \"si no está registrado, no ocurrió\"?",
+      "options": [
+        "Sin registro, no hay prueba de que el paso se haya hecho alguna vez",
+        "Puedes hacer el paso y anotarlo en el momento que te resulte cómodo",
+        "Registrar una tarea importa más que de verdad hacer la tarea",
+        "Solo los pasos que disfrutas hacer necesitan quedar anotados"
+      ],
+      "correct": 0,
+      "hint": "Es sobre la prueba, no sobre que la tarea sea opcional.",
+      "rationale": "Un paso sin registro no se puede probar, y para un auditor lo no probado se trata como no hecho. No significa que registrar reemplace hacer: ambos son obligatorios."
+    },
+    {
+      "question": "¿Cómo debes llenar un registro de papel?",
+      "options": [
+        "Con lápiz, para que cualquier número equivocado se pueda borrar después",
+        "De memoria al final de tu turno, lo mejor que puedas recordarlo",
+        "Legible y en tiempo real, con valores reales, y luego con iniciales",
+        "Deja en blanco lo que no estés seguro y simplemente sigue adelante"
+      ],
+      "correct": 2,
+      "hint": "Honesto, completo y a tiempo.",
+      "rationale": "Escribe legible y en tiempo real, anota el valor real (aunque esté fuera de rango), y pon iniciales y fecha en cada entrada sin líneas en blanco."
+    },
+    {
+      "question": "Te das cuenta de que anotaste el número equivocado en una bitácora. ¿Cuál es la corrección correcta?",
+      "options": [
+        "Borrarlo por completo o cubrirlo con corrector, y volver a escribir",
+        "Una línea encima, escribe el valor correcto, iniciales y fecha",
+        "Tacharlo con fuerza para que el número equivocado no se pueda leer",
+        "Dejar el número equivocado y solo decírselo a tu supervisor de palabra"
+      ],
+      "correct": 1,
+      "hint": "Corrígelo de forma abierta para que lo original siga visible.",
+      "rationale": "Traza una sola línea sobre el error, escribe el valor correcto y agrega tus iniciales y la fecha. Nunca borres, taches por completo ni uses corrector: una corrección escondida parece encubrimiento."
+    },
+    {
+      "question": "¿Cuál de estas nunca está bien con los registros?",
+      "options": [
+        "Poner tus iniciales en cada entrada que completas durante tu turno",
+        "Preguntar a un supervisor cuando no estás seguro de cómo llenarlo",
+        "Anotar la temperatura real incluso cuando está fuera de su rango",
+        "Llenar una revisión antes de hacerla, o adivinar al inventar un valor"
+      ],
+      "correct": 3,
+      "hint": "La honestidad es la regla cardinal.",
+      "rationale": "Nunca prellenes una revisión que no hiciste, nunca inventes un valor y nunca firmes por otra persona. Un número honesto fuera de rango siempre vence a uno falso bueno."
+    },
+    {
+      "question": "Un auditor se acerca y te pregunta sobre tu trabajo. ¿Qué debes hacer?",
+      "options": [
+        "Mantener la calma y responder con honestidad sobre tu propio trabajo",
+        "Adivinar una respuesta para no parecer que no la sabes en el momento",
+        "No decirle nada en absoluto y alejarte rápidamente de ahí",
+        "Inventar un número si no logras recordar cuál es el valor real"
+      ],
+      "correct": 0,
+      "hint": "Es una conversación, no una trampa.",
+      "rationale": "Mantén la calma y responde con honestidad sobre tu propio trabajo; está bien mostrar el registro que llevas. Los auditores esperan respuestas normales y veraces, no discursos perfectos."
+    },
+    {
+      "question": "Un auditor pregunta algo cuya respuesta no sabes. ¿Cuál es la mejor reacción?",
+      "options": [
+        "Inventar una respuesta que te suene más o menos correcta en el momento",
+        "Fingir que no escuchaste la pregunta y simplemente seguir trabajando",
+        "Decir que no estás seguro y que lo consultarás con tu supervisor",
+        "Darle una larga suposición y esperar que una parte resulte correcta"
+      ],
+      "correct": 2,
+      "hint": "No tienes que saberlo todo.",
+      "rationale": "Di que no estás seguro y que lo consultarás con tu supervisor. Nunca adivines ni inventes una respuesta: deferir con honestidad es una reacción perfectamente buena."
+    },
+    {
+      "question": "¿Quién encabeza la auditoría SQF y responde las preguntas del programa general?",
+      "options": [
+        "Cada empleado del piso lleva su propia parte de la auditoría por su cuenta",
+        "La dirección encabeza la auditoría; tú respondes sobre tu propio trabajo",
+        "El auditor llena por nosotros todos los registros que falten ese día",
+        "Nadie necesita estar ahí; el auditor solo revisa los archivos por su lado"
+      ],
+      "correct": 1,
+      "hint": "¿Quién recibe aquí al auditor?",
+      "rationale": "La dirección y el dueño encabezan la auditoría y responden las preguntas del programa. El personal del piso puede ser consultado sobre su propio trabajo y defiere los detalles a su supervisor."
+    }
+  ]
+}
