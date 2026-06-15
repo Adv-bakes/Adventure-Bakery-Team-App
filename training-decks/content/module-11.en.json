@@ -1,0 +1,298 @@
+{
+  "module": 11,
+  "language": "en",
+  "moduleLabel": "Module 11",
+  "title": "Food Defense & Food Fraud",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 11 — Food Defense & Food Fraud",
+      "subtitle": "SQF Food Safety Training",
+      "photo": "PHOTO: secured plant entrance / badge access door / visitor sign-in",
+      "photoCaption": "EDITION 10 · DEFENSE & FRAUD",
+      "intro": "Most of this program is about accidents. This module is about people doing harm on purpose — food defense protects against intentional tampering, and food fraud is cheating with ingredients for money. Both are Edition 10 requirements.",
+      "notes": "Welcome to Module 11. Almost everything we've covered so far protects against accidents — a missed step, a broken seal, an honest mistake. This module is different: it's about harm done on purpose. There are two kinds. Food defense is about protecting our food and our site from intentional tampering or sabotage — by an outsider or, occasionally, an insider. Food fraud is about economically motivated adulteration — someone faking, substituting, or diluting an ingredient to make money, which can make a product unsafe or break our allergen claim. Both food defense and food fraud are SQF Edition 10 requirements, and both depend on people on the floor noticing and reporting things that don't look right."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Tell the difference between food defense and food fraud",
+          "Follow site security and visitor controls",
+          "Recognize ingredient-integrity and tampering red flags",
+          "Report suspicious activity quickly and correctly"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here is what you'll be able to do by the end. Tell the difference between food defense — protecting against intentional harm — and food fraud — cheating with ingredients. Follow our site security and visitor controls, like badges and escorting. Recognize the red flags of ingredient fraud and of tampering, such as a broken seal or an off-spec delivery. And report suspicious activity quickly and to the right person. The whole module comes down to one habit: notice, and speak up."
+    },
+    {
+      "title": "Two threats, on purpose",
+      "lead": "Both are intentional — that's what makes them different.",
+      "kicker": "TWO THREATS",
+      "visual": {
+        "type": "split",
+        "left": {
+          "header": "Food defense",
+          "items": [
+            "Protects food from intentional tampering or sabotage",
+            "Threat can be an outsider or an insider",
+            "Controls: site security, access, visitor control"
+          ],
+          "color": "green"
+        },
+        "right": {
+          "header": "Food fraud",
+          "items": [
+            "Cheating with ingredients to make money",
+            "Faking, substituting, or diluting a material",
+            "Controls: approved suppliers, specs, certificates"
+          ],
+          "color": "amber"
+        },
+        "chip": "Accidents are handled elsewhere — this is on purpose"
+      },
+      "notes": "These are two different threats, and what they share is intent — both are done on purpose, unlike the accidents the rest of the program guards against. Food defense protects our food from intentional tampering or sabotage; the threat can come from an outsider or, sometimes, an insider, and we control it with site security, access control, and visitor control. Food fraud is cheating with ingredients to make money — faking, substituting, or diluting a material — and we control it with approved suppliers, specifications, and certificates. Same goal, different angle: defense keeps bad actors out, fraud-prevention keeps fake materials out."
+    },
+    {
+      "title": "Food defense: secure the site",
+      "lead": "Keep the wrong people away from the product.",
+      "kicker": "SECURE THE SITE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Access is controlled — badges, locked doors, restricted areas",
+          "Cameras and monitoring cover key points",
+          "Sensitive areas and materials are kept secured",
+          "Only authorized people are on the production floor"
+        ]
+      },
+      "notes": "Food defense starts with physical security — keeping the wrong people away from the product. Access to the site is controlled with badges, locked doors, and restricted areas that not everyone can enter. Cameras and monitoring cover key points like entrances, docks, and storage. Sensitive areas and high-value or controlled materials are kept secured, not left open. And only authorized people belong on the production floor. None of this works if we get casual about it — a propped door or a borrowed badge undoes the whole system, which is why the everyday habits on the next slides matter."
+    },
+    {
+      "title": "Visitors & contractors",
+      "lead": "Everyone on site is known, signed in, and escorted.",
+      "kicker": "VISITORS",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Visitors and contractors sign in at the entrance",
+          "They get a visitor badge and follow GMP rules",
+          "They're escorted — never left alone near product",
+          "Anyone unbadged or unescorted is challenged or reported"
+        ],
+        "highlight": 3
+      },
+      "notes": "Visitors and contractors are a normal part of a plant, but they have to be controlled. Everyone signs in at the entrance, so there's a record of who's on site. They get a visitor badge and follow the same GMP rules we do — hairnets, hygiene, no jewelry. They're escorted, never left alone near product or sensitive areas. And if you see anyone unbadged or wandering unescorted, that's exactly the moment to act — politely challenge them or report it to a supervisor. It isn't rude to ask who someone is; on a food-defense program, it's your job."
+    },
+    {
+      "title": "Food fraud: ingredient integrity",
+      "lead": "What comes in must be what it claims to be.",
+      "kicker": "INGREDIENT INTEGRITY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Buy only from approved, vetted suppliers",
+          "Verify specs and certificates of analysis on delivery",
+          "Watch for substitution, dilution, or fake material",
+          "An off-spec or suspiciously cheap material is a flag"
+        ]
+      },
+      "notes": "Food fraud comes in through the ingredients, so protecting ingredient integrity is how we fight it — and it builds on what we covered in receiving. We buy only from approved, vetted suppliers, because we're trusting them not to cut corners. We verify specifications and certificates of analysis on delivery, so the material matches what it's supposed to be. We stay alert to the signs of fraud — substitution of a cheaper material, dilution, or an outright fake. And a material that's off-spec, or suspiciously cheap, or arrives with paperwork that doesn't add up, is a red flag worth raising. Fraudulent ingredients can carry undeclared allergens, which ties straight back to protecting our claim."
+    },
+    {
+      "title": "Red flags to watch for",
+      "lead": "If something feels off, it's worth a closer look.",
+      "kicker": "RED FLAGS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "An unknown person, or someone where they shouldn't be",
+          "A broken, missing, or tampered seal on a container",
+          "A delivery that's off-spec, unscheduled, or suspiciously cheap",
+          "Anything that looks deliberately damaged or altered"
+        ]
+      },
+      "notes": "You don't need to be a security expert to spot a problem — you just need to know the common red flags. An unknown person, or someone in an area where they shouldn't be. A broken, missing, or tampered seal on a container or drum — seals exist precisely so a break is visible. A delivery that's off-spec, unscheduled, or priced suspiciously low. And anything that looks deliberately damaged, opened, or altered. None of these automatically means something bad happened, but each one is worth a closer look and a report. Trust your instinct: if something feels off, it's worth raising."
+    },
+    {
+      "title": "See it, report it",
+      "kicker": "REPORT IT",
+      "visual": {
+        "type": "stopSign",
+        "label": "REPORT",
+        "lines": [
+          "See a stranger, a broken seal, or tampering? Report it now.",
+          "Don't confront a threat alone — tell a supervisor or security.",
+          "You are never in trouble for reporting something that looks wrong."
+        ]
+      },
+      "notes": "The single most important food-defense control isn't a camera or a lock — it's a person who notices and speaks up. If you see a stranger where they don't belong, a broken seal, or signs of tampering, report it right away. Don't try to confront a serious threat on your own; tell a supervisor or security and let trained people handle it. And like the stop-the-line authority from the very first module, you are never in trouble for reporting something that looks wrong — even if it turns out to be nothing. A false alarm costs a few minutes; a missed threat can cost far more. When in doubt, report."
+    },
+    {
+      "title": "Don't make it easy",
+      "lead": "Everyday habits are the real security system.",
+      "kicker": "DON'T MAKE IT EASY",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Don't prop open secured doors or share your badge",
+          "Don't let people tailgate in behind you",
+          "Keep controlled materials, like rum, secured and logged",
+          "Challenge or report anyone you don't recognize"
+        ]
+      },
+      "notes": "All the cameras and locks in the world don't help if we make it easy for someone, so the everyday habits are the real security system. Don't prop open secured doors for convenience, and don't share or lend your badge — it's tied to you. Don't let people tailgate in behind you through a controlled door; everyone badges in. Keep controlled and high-value materials — like the rum, which we already handle under lock and log — secured and accounted for, because they're exactly what a bad actor or thief would target. And challenge or report anyone you don't recognize. These small habits are what actually keep the site secure."
+    },
+    {
+      "title": "Why it's everyone's job",
+      "lead": "You see more of the plant than any camera does.",
+      "kicker": "EVERYONE'S JOB",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Staff on the floor notice what cameras and rules can't",
+          "Small habits — badges, seals, reporting — add up to security",
+          "Edition 10 requires food defense and fraud prevention",
+          "It protects our customers and our allergen-free claim"
+        ]
+      },
+      "notes": "Food defense and fraud prevention only work as a team effort, and here's why it's everyone's job. Staff on the floor notice what cameras and written rules can't — a person who seems out of place, a seal that's off, a material that doesn't look right. The small habits all of us keep — badging properly, checking seals, reporting — are what actually add up to a secure site. SQF Edition 10 specifically requires both a food defense plan and food fraud prevention, so auditors expect everyone to understand their part. And it protects the same things every module has: our customers and the allergen-free claim. Security isn't a department — it's all of us."
+    },
+    {
+      "title": "You're the eyes of the plant",
+      "kicker": "EYES OF THE PLANT",
+      "lead": "Notice, challenge, report.",
+      "photo": "PHOTO: worker badging in at a secured door / checking a visitor badge",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "If someone or something seems out of place, say something.",
+          "Don't prop doors, share badges, or let strangers tailgate in.",
+          "An auditor may ask: what would you do if you saw a stranger inside?"
+        ],
+        "chip": "See something off? Report it — you're never in trouble for it."
+      },
+      "notes": "Cameras and locks are tools, but you are the eyes of the plant — you see more of it, more of the time, than any system does. If someone or something seems out of place, say something; a quick word to a supervisor is all it takes. Keep the everyday habits: don't prop secured doors, don't share your badge, and don't let strangers tailgate in behind you. Remember auditors interview floor staff, and on this topic a common question is simply: what would you do if you saw a stranger inside the plant? Your answer is challenge or report. See something off, report it — and you are never in trouble for doing so."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Food defense stops intentional harm; food fraud is cheating with ingredients",
+          "Control the site: badges, locked doors, visitors signed in and escorted",
+          "Protect ingredient integrity; watch for broken seals and off-spec material",
+          "See something off? Report it — you're never in trouble"
+        ],
+        "next": "Next: Records & Talking to Auditors"
+      },
+      "notes": "Let's recap. There are two intentional threats: food defense protects against intentional tampering or sabotage, and food fraud is cheating with ingredients for money. We control the site with badges, locked doors, restricted areas, and visitors who are signed in and escorted. We protect ingredient integrity by buying from approved suppliers, verifying specs and certificates, and watching for broken seals, substitution, or off-spec material. And the single most important control is you: if you see something off — a stranger, a broken seal, tampering — report it, and you are never in trouble for doing so. Both are Edition 10 requirements. Up next, our final module: Records and Talking to Auditors. Well done."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "What is the difference between food defense and food fraud?",
+      "options": [
+        "They are simply two different names for the exact same program",
+        "Food defense is about money; food fraud is about sabotage instead",
+        "Both of them only deal with accidental contamination in production",
+        "Defense stops intentional harm; fraud is cheating with ingredients for money"
+      ],
+      "correct": 3,
+      "hint": "One keeps bad people out, one keeps fake materials out.",
+      "rationale": "Food defense protects against intentional tampering or sabotage; food fraud is economically motivated — faking, substituting, or diluting ingredients to make money. Both are intentional."
+    },
+    {
+      "question": "What is food defense?",
+      "options": [
+        "Protecting food from intentional harm, like tampering or sabotage",
+        "Checking that the freezer holds the right temperature overnight",
+        "Making sure the labels are printed in the correct bright colors",
+        "Rotating the stock so the oldest ingredients get used up first"
+      ],
+      "correct": 0,
+      "hint": "It's about people doing harm on purpose.",
+      "rationale": "Food defense is protecting our food and site from intentional harm — tampering or sabotage by an outsider or insider — using site security, access control, and visitor control."
+    },
+    {
+      "question": "What is food fraud (economically motivated adulteration)?",
+      "options": [
+        "Accidentally dropping a hand tool into the product on the line",
+        "A customer returning a product that they simply did not like",
+        "Faking, substituting, or diluting an ingredient to save money",
+        "Running the line faster than its validated speed to ship more"
+      ],
+      "correct": 2,
+      "hint": "It's cheating with ingredients for profit.",
+      "rationale": "Food fraud is economically motivated adulteration — faking, substituting, or diluting an ingredient to make money, which can make product unsafe or hide an undeclared allergen."
+    },
+    {
+      "question": "A stranger with no badge is walking through the production area. What do you do?",
+      "options": [
+        "Assume a manager already approved them and keep on working",
+        "Politely challenge them or report it to a supervisor right away",
+        "Quietly follow them around the plant to see what they get up to",
+        "Wait until your break and then mention it to a coworker later"
+      ],
+      "correct": 1,
+      "hint": "It's not rude to ask who someone is.",
+      "rationale": "Anyone unbadged or unescorted should be politely challenged or reported to a supervisor right away. On a food-defense program, asking who someone is is your job, not rudeness."
+    },
+    {
+      "question": "How do we protect ingredient integrity against food fraud?",
+      "options": [
+        "Buy from the cheapest supplier available that week, whoever it is",
+        "Accept any ingredient as long as it looks roughly about correct",
+        "Skip the paperwork when a delivery is running a little bit late",
+        "Buy from approved suppliers and verify specs and certificates"
+      ],
+      "correct": 3,
+      "hint": "Approved suppliers, specs, certificates.",
+      "rationale": "We buy only from approved, vetted suppliers and verify specifications and certificates of analysis on delivery, staying alert to substitution, dilution, or off-spec material."
+    },
+    {
+      "question": "Which of these is a food-defense red flag worth reporting?",
+      "options": [
+        "An unknown person, a broken seal, or visible signs of tampering",
+        "A pallet of ingredients stored neatly on its assigned rack space",
+        "A coworker who is wearing their hairnet correctly on the line",
+        "A delivery that arrives exactly on time with its full paperwork"
+      ],
+      "correct": 0,
+      "hint": "Out-of-place people and broken seals.",
+      "rationale": "Red flags include an unknown person or someone out of place, a broken/missing/tampered seal, an off-spec or suspiciously cheap delivery, and anything deliberately damaged or altered."
+    },
+    {
+      "question": "You find a broken tamper seal on a drum of ingredient. What's the right step?",
+      "options": [
+        "Use it anyway, since the seal most likely broke during transit",
+        "Re-seal the drum yourself with tape and move it into storage",
+        "Hold it, don't use it, and report the broken seal right away",
+        "Pour it into a fresh clean container and start using it now"
+      ],
+      "correct": 2,
+      "hint": "A broken seal is a tampering red flag.",
+      "rationale": "A broken or tampered seal is a red flag. Hold the material, don't use it, and report it — don't assume it broke in transit and don't quietly re-seal or transfer it."
+    },
+    {
+      "question": "Why is food defense and fraud prevention \"everyone's job\"?",
+      "options": [
+        "Because only the security guard can actually prevent any of it",
+        "Because staff on the floor are the eyes that spot what's wrong",
+        "Because it only ever matters during an announced auditor visit",
+        "Because the rum is the only thing anyone would ever try to target"
+      ],
+      "correct": 1,
+      "hint": "Who sees more of the plant than a camera?",
+      "rationale": "Staff on the floor notice what cameras and rules can't, and everyday habits — badging, checking seals, reporting — add up to security. Edition 10 expects everyone to know their part."
+    }
+  ]
+}

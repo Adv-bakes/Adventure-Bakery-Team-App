@@ -1,0 +1,287 @@
+{
+  "module": 10,
+  "language": "es",
+  "moduleLabel": "Módulo 10",
+  "title": "Empaque, Etiquetado y Trazabilidad",
+  "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Módulo 10 — Empaque, Etiquetado y Trazabilidad",
+      "subtitle": "Capacitación SQF en Seguridad Alimentaria",
+      "titleSize": 48,
+      "photo": "FOTO: estación de etiquetado / codificado de fecha en la línea de empaque",
+      "photoCaption": "LISTOS PARA AUDITORÍA · ETIQUETADO Y TRAZA",
+      "intro": "La etiqueta es la última promesa que el producto le hace al cliente, y el código de lote es cómo lo encontraríamos de nuevo. Este módulo cubre la verificación de etiquetas, el codificado de lote y fecha, la trazabilidad, y tu parte en un retiro simulado.",
+      "notes": "Bienvenido al Módulo 10. El empaque y el etiquetado son lo último que le pasa a un producto antes de salir de aquí, y cargan dos de los trabajos más importantes de la planta. La etiqueta es la última promesa que el producto le hace al cliente — declara lo que contiene, incluidos los alérgenos, y lleva la declaración libre de alérgenos. Una etiqueta equivocada es una de las causas más comunes de un retiro. Y el código de lote y fecha en cada unidad es cómo podríamos encontrar y retirar ese producto después. En este módulo aprenderás cómo verificamos las etiquetas en la línea, cómo funciona el codificado de lote y fecha, qué son la trazabilidad y un retiro simulado, y tu parte en todo ello."
+    },
+    {
+      "title": "Objetivos de aprendizaje",
+      "lead": "Al terminar este módulo podrás:",
+      "kicker": "PREPÁRATE",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explicar por qué la etiqueta es un control de seguridad, no solo empaque",
+          "Verificar la etiqueta correcta y la declaración de alérgenos en la línea",
+          "Aplicar códigos de lote y fecha correctos para la trazabilidad",
+          "Describir tu rol en un retiro simulado"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Esto es lo que podrás hacer al terminar. Explicar por qué la etiqueta es un control de seguridad alimentaria y no solo decoración o empaque. Verificar que la etiqueta correcta y la declaración de alérgenos estén cargadas y corriendo en la línea. Aplicar códigos de lote y fecha correctos para que cada unidad se pueda rastrear. Y describir tu parte en un retiro simulado — el ejercicio de práctica que demuestra que podríamos retirar producto si tuviéramos que hacerlo."
+    },
+    {
+      "title": "Por qué importa",
+      "lead": "El empaque es lo que protege, declara y nos permite rastrear.",
+      "kicker": "POR QUÉ IMPORTA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "La etiqueta declara alérgenos — una equivocada puede dañar gravemente a alguien",
+          "Una etiqueta equivocada o ausente es una causa principal de retiros",
+          "Los códigos de lote y fecha son cómo encontramos y retiramos un producto",
+          "Buenos registros vuelven un retiro enorme en uno pequeño y dirigido"
+        ]
+      },
+      "notes": "¿Por qué importan tanto el empaque y el etiquetado? Primero, la etiqueta declara los alérgenos — para alguien con una alergia, una etiqueta equivocada no es un error cosmético, puede dañarlo gravemente. Segundo, una etiqueta equivocada o ausente es una de las causas principales de retiros de alimentos, punto. Tercero, los códigos de lote y fecha que ponemos en el producto son cómo de verdad encontraríamos y retiraríamos un lote específico si hubiera un problema. Y cuarto, igual que en recepción, los buenos registros vuelven lo que podría ser un retiro enorme de toda la planta en uno pequeño y dirigido. El empaque es lo último que controlamos y lo que nos permite rastrear todo."
+    },
+    {
+      "title": "La etiqueta es un control de seguridad",
+      "lead": "No es decoración — es información en la que la gente confía.",
+      "kicker": "LA ETIQUETA",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Declara los alérgenos y los ingredientes con exactitud",
+          "Lleva la declaración libre de alérgenos en la hamburguesa que fabricamos",
+          "La etiqueta correcta debe coincidir con el producto correcto, cada corrida",
+          "Una declaración de alérgenos errónea puede mandar a alguien al hospital"
+        ]
+      },
+      "notes": "Ayuda pensar en la etiqueta como un control de seguridad, no como decoración. La etiqueta declara los alérgenos y los ingredientes, y las personas con alergias la leen y confían en ella para decidir si un alimento es seguro para ellas. Lleva la declaración libre de alérgenos en la hamburguesa de origen vegetal que fabricamos — la declaración que hemos protegido a lo largo de cada módulo. La etiqueta correcta tiene que estar en el producto correcto en cada corrida; una etiqueta que es correcta para un producto pero cargada en otro es un error grave. Y una declaración de alérgenos errónea o ausente no es un pequeño error — puede mandar a alguien al hospital. Por eso el etiquetado recibe la misma seriedad que cualquier otro paso de seguridad."
+    },
+    {
+      "title": "Verifica la etiqueta en la línea",
+      "lead": "Confirma que es correcta antes de la corrida, no después.",
+      "kicker": "VERIFICACIÓN",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Confirma la etiqueta y el rollo correctos para este producto",
+          "Coteja la declaración de alérgenos y el arte contra la ficha",
+          "Concilia el conteo de etiquetas; destruye las obsoletas o mal impresas",
+          "Registra la verificación antes de que empiece la corrida"
+        ],
+        "highlight": 0
+      },
+      "notes": "La verificación de etiquetas ocurre en la línea, antes de la corrida, no como algo de último momento. Primero, confirma que la etiqueta correcta y el rollo correcto estén cargados para este producto específico — nunca supongas que el rollo que ya está en la máquina es el adecuado. Segundo, coteja la declaración de alérgenos y el arte contra la ficha técnica aprobada, para que lo que se imprime coincida con lo que debería imprimirse. Tercero, concilia el conteo de etiquetas al inicio y al final de una corrida, y destruye las etiquetas obsoletas o mal impresas para que no terminen en el producto equivocado después. Y cuarto, registra la verificación antes de que empiece la corrida. Atrapar un problema de etiqueta aquí, antes de que corran miles de unidades, es justamente el punto."
+    },
+    {
+      "title": "Codificado de lote y fecha",
+      "lead": "Cada unidad lleva un código que nos permite rastrearla.",
+      "kicker": "LOTE Y FECHA",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Cada unidad recibe un código de lote y un código de fecha",
+          "Los códigos son legibles, correctos y en el lugar adecuado",
+          "El código liga una unidad de vuelta a su lote de producción",
+          "Un código ausente o ilegible significa que no se puede rastrear"
+        ]
+      },
+      "notes": "El codificado de lote y fecha es lo que hace posible la trazabilidad a nivel de unidad. Cada unidad recibe un código de lote y un código de fecha aplicados durante el empaque. Esos códigos tienen que ser legibles, correctos y estar en el lugar adecuado — un código borroso o equivocado es tan bueno como ningún código. El código es lo que liga una unidad terminada de vuelta a su lote de producción, los ingredientes que lleva y cuándo se hizo. Y este es el punto clave: una unidad con un código ausente o ilegible no se puede rastrear, lo que significa que si hubiera un problema, no podríamos retirar limpiamente solo ese lote. Así que un problema de codificado no es cosmético — verifica que los códigos se impriman con claridad durante toda la corrida."
+    },
+    {
+      "title": "Etiqueta equivocada = retiro",
+      "kicker": "ETIQUETA EQUIVOCADA",
+      "visual": {
+        "type": "stopSign",
+        "label": "ETIQUETAS",
+        "lines": [
+          "Confirma la etiqueta correcta en el producto correcto antes de correr.",
+          "Una declaración de alérgenos errónea o ausente es un retiro.",
+          "¿No estás seguro de que la etiqueta sea correcta? Detente y revisa — no corras."
+        ]
+      },
+      "notes": "Esta merece su propia diapositiva porque es tan común y tan grave: una etiqueta equivocada equivale a un retiro. Confirma que la etiqueta correcta esté en el producto correcto antes de correr — en cada cambio, en cada cambio de rollo. Una declaración de alérgenos errónea o ausente es, por sí sola, motivo de un retiro, porque puede ocultar un alérgeno a alguien que necesita evitarlo. Así que si alguna vez no estás seguro de que la etiqueta cargada sea correcta, detente y revisa en lugar de correr suponiendo que está bien. Correr primero y descubrir un error de etiqueta después significa retirar producto de los clientes — mucho más costoso y peligroso que una revisión de treinta segundos. Ante la duda, no corras."
+    },
+    {
+      "title": "Trazabilidad: uno arriba, uno abajo",
+      "lead": "Sigue el producto hacia atrás y hacia adelante por la planta.",
+      "kicker": "TRAZABILIDAD",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Un paso atrás — los proveedores y lotes que entraron",
+          "Un paso adelante — los productos y clientes a los que fue",
+          "El código de lote es el hilo que liga todo",
+          "Una trazabilidad fuerte limita un retiro solo a los lotes afectados"
+        ]
+      },
+      "notes": "La trazabilidad es nuestra capacidad de seguir el producto por la planta en ambas direcciones, y se construye sobre el codificado de lote que acabamos de cubrir. Un paso atrás significa que podemos rastrear un lote terminado hasta los lotes de ingredientes de proveedores que entraron en él — lo que preparamos allá en recepción. Un paso adelante significa que podemos rastrear ese lote hasta los productos y clientes a los que fue. El código de lote es el hilo que liga todo, desde la materia prima hasta la caja terminada. Y la recompensa es el mismo tema que has escuchado a lo largo del programa: una trazabilidad fuerte nos permite limitar un retiro solo a los lotes afectados, en lugar de retirar todo porque no podemos distinguir qué es qué."
+    },
+    {
+      "title": "El retiro simulado",
+      "lead": "Practicamos retirar un lote antes de tener que hacerlo de verdad.",
+      "kicker": "RETIRO SIMULADO",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Elige un lote y finge que tiene un problema",
+          "Rastréalo hacia atrás a ingredientes y adelante a donde se envió",
+          "Suma las cantidades y rinde cuentas de todo",
+          "Cronometra el ejercicio y corrige los huecos que encuentres"
+        ],
+        "highlight": 3
+      },
+      "notes": "Un retiro simulado es un ejercicio de práctica — ensayamos retirar un producto para que, si alguna vez llega un retiro real, seamos rápidos y exactos. Funciona así: elegimos un lote y fingimos que tiene un problema. Lo rastreamos hacia atrás a los lotes de ingredientes que entraron y hacia adelante a cada lugar donde se envió. Sumamos las cantidades y rendimos cuentas de todo — lo que se hizo, lo que se envió, lo que aún está disponible. Y cronometramos todo el ejercicio y corregimos los huecos que encontramos, como un registro faltante o un código que no se leyó. La meta es encontrar nuestras debilidades durante la práctica, cuando es seguro, en lugar de durante un retiro real cuando cuenta."
+    },
+    {
+      "title": "Tu rol en un retiro",
+      "lead": "Lo que haces cada día es lo que hace que un retiro funcione.",
+      "kicker": "TU ROL",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Aplica y verifica los códigos de lote y fecha con exactitud",
+          "Mantén completos tus registros de empaque y etiquetado",
+          "Reporta de inmediato cualquier etiqueta equivocada o código ilegible",
+          "Si se convoca un retiro simulado o real, responde rápido"
+        ]
+      },
+      "notes": "Un retiro tiene éxito o fracasa según el trabajo diario de la gente en el piso, así que esta es tu parte. Aplica y verifica los códigos de lote y fecha con exactitud, porque esos códigos son sobre lo que se construye un retiro. Mantén completos y legibles tus registros de empaque y etiquetado — los registros son lo que nos permite rastrear el producto rápido. Reporta cualquier etiqueta equivocada o código ilegible en el momento en que lo veas, en lugar de dejar que se envíe. Y si se convoca un retiro simulado o uno real, responde rápido y sigue el procedimiento — la rapidez y la exactitud son justo lo que se está probando. La disciplina del día a día es lo que hace que todo el sistema funcione cuando importa."
+    },
+    {
+      "title": "Proteges la promesa en el empaque",
+      "kicker": "EN EL EMPAQUE",
+      "lead": "Etiqueta correcta, código claro, cada unidad.",
+      "photo": "FOTO: trabajador revisando una etiqueta / código de fecha en producto empacado",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Verifica la etiqueta y el código — una revisión rápida evita un retiro.",
+          "Reporta una etiqueta equivocada o código ilegible en vez de enviarlo.",
+          "Un auditor puede preguntar: ¿cómo manejarías un retiro en tu línea?"
+        ],
+        "chip": "¿La etiqueta se ve mal? Detente y revisa antes de enviarla."
+      },
+      "notes": "El empaque es lo último que tocamos y aquello en lo que el cliente confía, así que proteges esa promesa en cada turno. Verifica la etiqueta y el código — una revisión rápida en la línea evita un retiro que saca producto de los clientes. Reporta una etiqueta equivocada o un código ilegible en vez de dejar que se envíe, porque una vez que sale, corregirlo significa un retiro. Y recuerda que los auditores entrevistan al personal del piso: una pregunta común aquí es cómo manejarías un retiro en tu línea, y tu respuesta son los códigos de lote, los registros y la verificación que haces cada día. Etiqueta correcta, código claro, cada unidad — así mantenemos la promesa en el empaque."
+    },
+    {
+      "title": "Resumen",
+      "kicker": "RESUMEN",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "La etiqueta es un control de seguridad — declara alérgenos y la declaración",
+          "Verifica la etiqueta correcta en la línea; una equivocada es un retiro",
+          "Los códigos de lote y fecha hacen rastreable cada unidad",
+          "La trazabilidad y los retiros simulados permiten retirar solo lo afectado, rápido"
+        ],
+        "next": "Sigue: Defensa Alimentaria y Fraude Alimentario"
+      },
+      "notes": "Repasemos. La etiqueta es un control de seguridad alimentaria, no decoración — declara los alérgenos y lleva la declaración libre de alérgenos, así que la etiqueta correcta tiene que estar en el producto correcto en cada corrida. Verificamos las etiquetas en la línea antes de correr, y tratamos una etiqueta equivocada o ausente como lo que es: un retiro. Los códigos de lote y fecha hacen rastreable cada unidad de vuelta a su lote de producción. Y la trazabilidad, probada mediante retiros simulados, es lo que nos permite retirar solo los lotes afectados — rápido y por completo — en lugar de todo. Tu exactitud diaria con etiquetas, códigos y registros es lo que hace que todo funcione. A continuación, Defensa Alimentaria y Fraude Alimentario. Bien hecho."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "¿Por qué llamamos a la etiqueta \"la última promesa\" que el producto le hace al cliente?",
+      "options": [
+        "Porque la etiqueta es la parte más colorida de todo el empaque",
+        "Porque imprimir las etiquetas es el costo final antes de que salga el producto",
+        "Porque la etiqueta es lo último que se agrega en la línea de empaque",
+        "Porque le dice al cliente lo que hay dentro, incluidos los alérgenos"
+      ],
+      "correct": 3,
+      "hint": "Piensa en quién la lee y para qué confía en ella.",
+      "rationale": "La etiqueta declara lo que hay dentro — incluidos los alérgenos — y lleva la declaración libre de alérgenos. La gente confía en ella para decidir si un alimento es seguro, lo que la hace un control de seguridad."
+    },
+    {
+      "question": "¿Cuál es el mayor riesgo de seguridad alimentaria de una etiqueta equivocada?",
+      "options": [
+        "Un alérgeno no declarado que llega a alguien que necesita evitarlo",
+        "Que el empaque simplemente se vea un poco menos atractivo en el estante",
+        "Usar un poco más de material de etiqueta del que la corrida necesitaba",
+        "Que la línea de producción corra un poco más lento de lo habitual"
+      ],
+      "correct": 0,
+      "hint": "Una etiqueta oculta o revela alérgenos.",
+      "rationale": "Una etiqueta equivocada o ausente puede ocultar un alérgeno a alguien que debe evitarlo, lo que puede dañarlo gravemente. Por eso una declaración de alérgenos errónea es motivo de retiro."
+    },
+    {
+      "question": "En un cambio, ¿qué debes confirmar sobre la etiqueta?",
+      "options": [
+        "Que el rollo de etiqueta sea más o menos del color correcto para el producto",
+        "Que haya suficientes etiquetas cargadas para terminar toda la corrida",
+        "Que la etiqueta correcta y la declaración de alérgenos estén cargadas y bien",
+        "Que la impresora de etiquetas se haya limpiado y mantenido recientemente"
+      ],
+      "correct": 2,
+      "hint": "Etiqueta correcta, producto correcto, declaración correcta.",
+      "rationale": "Confirma que la etiqueta correcta y la declaración de alérgenos estén cargadas para este producto, cotejadas contra la ficha — nunca supongas que el rollo que ya está en la máquina es el correcto."
+    },
+    {
+      "question": "¿Cuál es el propósito del codificado de lote y fecha?",
+      "options": [
+        "Hacer que cada empaque se vea un poco más profesional y pulido",
+        "Estampar un código que liga una unidad de vuelta a su lote de producción",
+        "Decirle al equipo de empaque qué tan rápido debe correr la línea",
+        "Decidir el precio de venta impreso en cada unidad individual"
+      ],
+      "correct": 1,
+      "hint": "Es lo que hace rastreable una unidad.",
+      "rationale": "El código de lote y fecha liga una unidad terminada de vuelta a su lote y fecha de producción, lo que hace rastreable la unidad. Un código ausente o ilegible no se puede rastrear."
+    },
+    {
+      "question": "¿Qué significa la trazabilidad \"uno arriba, uno abajo\"?",
+      "options": [
+        "Rastrear solo el único lote más reciente que hayamos producido",
+        "Mantener registros por exactamente un año atrás y un año adelante",
+        "Revisar la unidad justo arriba y abajo de ella en la tarima apilada",
+        "Rastrear un paso atrás a proveedores y un paso adelante al producto"
+      ],
+      "correct": 3,
+      "hint": "Un paso en cada dirección por la planta.",
+      "rationale": "Uno arriba, uno abajo significa rastrear un paso atrás a los lotes de proveedores que entraron y un paso adelante a los productos y clientes a los que fue un lote."
+    },
+    {
+      "question": "¿Qué es un retiro simulado?",
+      "options": [
+        "Un ejercicio de práctica que prueba si podemos rastrear y retirar un lote",
+        "Un retiro real que un cliente o un regulador ha ordenado a la planta",
+        "Un simulacro para ver qué tan rápido se puede limpiar la línea",
+        "Una reunión donde el equipo prueba el sabor del lote de producto más nuevo"
+      ],
+      "correct": 0,
+      "hint": "Es un ensayo, no la cosa real.",
+      "rationale": "Un retiro simulado es un ejercicio de práctica: elige un lote, rastréalo atrás y adelante, rinde cuentas de todas las cantidades, cronométralo y corrige los huecos — para que un retiro real sea rápido y exacto."
+    },
+    {
+      "question": "Notas una caja que sale con un código de fecha ausente o ilegible. ¿Qué haces?",
+      "options": [
+        "Enviarla ahora; el almacén siempre puede agregarle un código después",
+        "Tacharlo y escribir un código de reemplazo en la caja a mano",
+        "Detente y repórtalo — esa caja no se puede rastrear como está",
+        "Apártala en silencio y simplemente toma la siguiente caja de la línea"
+      ],
+      "correct": 2,
+      "hint": "Sin código legible no hay trazabilidad.",
+      "rationale": "Una unidad con un código ausente o ilegible no se puede rastrear, así que no puede enviarse como está. Detente y repórtalo para que el problema de codificado se corrija antes de que el producto salga."
+    },
+    {
+      "question": "Un auditor te pregunta cómo manejarías un retiro. ¿Qué deberías poder describir?",
+      "options": [
+        "Que los retiros los maneja por completo gente en otro edificio",
+        "Tus registros, tus códigos de lote y cómo retirarías el producto",
+        "Solo el nombre del gerente que firma la aprobación de cualquier retiro",
+        "Que la planta simplemente nunca ha tenido que hacer un retiro antes"
+      ],
+      "correct": 1,
+      "hint": "Señala los registros y códigos que llevas a diario.",
+      "rationale": "Los auditores entrevistan al personal del piso. Deberías poder señalar tus códigos de lote, tus registros de empaque y etiquetado, y cómo identificarías y retirarías el producto afectado."
+    }
+  ]
+}

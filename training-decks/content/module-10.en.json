@@ -1,0 +1,287 @@
+{
+  "module": 10,
+  "language": "en",
+  "moduleLabel": "Module 10",
+  "title": "Packaging, Labeling & Traceability",
+  "subtitle": "SQF Food Safety Training",
+  "brand": "Adventure Bakery",
+  "passingScorePct": 75,
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Module 10 — Packaging, Labeling & Traceability",
+      "subtitle": "SQF Food Safety Training",
+      "titleSize": 52,
+      "photo": "PHOTO: labeling / date-coding station on the packaging line",
+      "photoCaption": "AUDIT READINESS · LABELING & TRACE",
+      "intro": "The label is the last promise the product makes to a customer, and the lot code is how we'd find it again. This module covers label verification, lot and date coding, traceability, and your part in a mock recall.",
+      "notes": "Welcome to Module 10. Packaging and labeling are the last things that happen to a product before it leaves us, and they carry two of the most important jobs in the plant. The label is the last promise the product makes to a customer — it declares what's inside, including the allergens, and carries the free-from claim. A wrong label is one of the most common causes of a recall. And the lot and date code on each unit is how we could find and pull that product later. In this module you'll learn how we verify labels at the line, how lot and date coding works, what traceability and a mock recall are, and your part in all of it."
+    },
+    {
+      "title": "Learning Objectives",
+      "lead": "By the end of this module you will be able to:",
+      "kicker": "GET READY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Explain why the label is a food safety control, not just packaging",
+          "Verify the right label and allergen statement at the line",
+          "Apply correct lot and date codes for traceability",
+          "Describe your role in a mock recall"
+        ],
+        "icons": ["iconChat", "iconHand", "iconPeople", "iconTruck"]
+      },
+      "notes": "Here is what you'll be able to do by the end. Explain why the label is a food safety control and not just decoration or packaging. Verify that the correct label and allergen statement are loaded and running at the line. Apply correct lot and date codes so every unit can be traced. And describe your part in a mock recall — the practice run that proves we could pull product if we ever had to."
+    },
+    {
+      "title": "Why it matters",
+      "lead": "The package is what protects, declares, and lets us trace.",
+      "kicker": "WHY IT MATTERS",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "The label declares allergens — a wrong one can seriously harm someone",
+          "A wrong or missing label is a leading cause of recalls",
+          "Lot and date codes are how we find and pull a product",
+          "Good records turn a huge recall into a small, targeted one"
+        ]
+      },
+      "notes": "Why do packaging and labeling matter so much? First, the label declares the allergens — for someone with an allergy, a wrong label isn't a cosmetic error, it can seriously harm them. Second, a wrong or missing label is one of the leading causes of food recalls, full stop. Third, the lot and date codes we put on product are how we'd actually find and pull a specific batch if there were ever a problem. And fourth, just like at receiving, good records turn what could be a huge, plant-wide recall into a small, targeted one. The package is the last thing we control and the thing that lets us trace everything."
+    },
+    {
+      "title": "The label is a safety control",
+      "lead": "It's not decoration — it's information people rely on.",
+      "kicker": "THE LABEL",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "Declares allergens and ingredients accurately",
+          "Carries the free-from claim on the plant-based burger we make",
+          "Right label must match the right product, every run",
+          "A wrong allergen statement can put someone in the hospital"
+        ]
+      },
+      "notes": "It helps to think of the label as a safety control, not decoration. The label declares the allergens and ingredients, and people with allergies read it and trust it to decide whether a food is safe for them. It carries the free-from claim on the plant-based burger we make — the claim we've protected through every other module. The right label has to be on the right product every single run; a label that's correct for one product but loaded onto another is a serious error. And a wrong or missing allergen statement isn't a small mistake — it can put someone in the hospital. That's why labeling gets the same seriousness as any other safety step."
+    },
+    {
+      "title": "Verify the label at the line",
+      "lead": "Confirm it's right before the run, not after.",
+      "kicker": "VERIFICATION",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Confirm the correct label and reel for this product",
+          "Check the allergen statement and artwork against the spec",
+          "Reconcile label counts; destroy obsolete or misprinted labels",
+          "Record the check before the run starts"
+        ],
+        "highlight": 0
+      },
+      "notes": "Label verification happens at the line, before the run, not as an afterthought. First, confirm the correct label and the correct reel are loaded for this specific product — never assume the reel already on the machine is right. Second, check the allergen statement and the artwork against the approved specification, so what prints matches what should print. Third, reconcile label counts at the start and end of a run, and destroy obsolete or misprinted labels so they can't end up on the wrong product later. And fourth, record the check before the run starts. Catching a label problem here, before thousands of units run, is the whole point."
+    },
+    {
+      "title": "Lot & date coding",
+      "lead": "Every unit carries a code that lets us trace it.",
+      "kicker": "LOT & DATE",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Every unit gets a lot code and a date code",
+          "Codes are legible, correct, and in the right place",
+          "The code ties a unit back to its production lot",
+          "A missing or unreadable code means it can't be traced"
+        ]
+      },
+      "notes": "Lot and date coding is what makes traceability possible at the unit level. Every unit gets a lot code and a date code applied during packaging. Those codes have to be legible, correct, and in the right place — a smudged or wrong code is as good as no code. The code is what ties a finished unit back to its production lot, the ingredients in it, and when it was made. And here's the key point: a unit with a missing or unreadable code can't be traced, which means if there were ever a problem, we couldn't cleanly pull just that lot. So a coding problem isn't cosmetic — check that codes are printing clearly throughout the run."
+    },
+    {
+      "title": "Wrong label = recall",
+      "kicker": "WRONG LABEL",
+      "visual": {
+        "type": "stopSign",
+        "label": "LABELS",
+        "lines": [
+          "Confirm the right label on the right product before you run.",
+          "A wrong or missing allergen statement is a recall.",
+          "Unsure if the label is correct? Stop and check — don't run."
+        ]
+      },
+      "notes": "This one deserves its own slide because it's so common and so serious: a wrong label equals a recall. Confirm the right label is on the right product before you run — at every changeover, every reel change. A wrong or missing allergen statement is, by itself, grounds for a recall, because it can hide an allergen from someone who needs to avoid it. So if you're ever unsure whether the loaded label is correct, stop and check rather than running on the assumption it's fine. Running first and discovering a label error later means pulling product back from customers — far more costly and dangerous than a thirty-second check. When in doubt, don't run."
+    },
+    {
+      "title": "Traceability: one-up, one-back",
+      "lead": "Follow the product backward and forward through the plant.",
+      "kicker": "TRACEABILITY",
+      "visual": {
+        "type": "cards",
+        "items": [
+          "One step back — the suppliers and lots that went in",
+          "One step forward — the products and customers it went to",
+          "The lot code is the thread that links it all together",
+          "Strong traceability limits a recall to only affected lots"
+        ]
+      },
+      "notes": "Traceability is our ability to follow product through the plant in both directions, and it builds on the lot coding we just covered. One step back means we can trace a finished lot to the supplier lots of ingredients that went into it — which we set up back at receiving. One step forward means we can trace that lot to the products and customers it went to. The lot code is the thread that links all of it together, from raw material to finished case. And the payoff is the same theme you've heard throughout: strong traceability lets us limit a recall to only the affected lots, instead of pulling everything because we can't tell what's what."
+    },
+    {
+      "title": "The mock recall",
+      "lead": "We practice pulling a lot before we ever have to for real.",
+      "kicker": "MOCK RECALL",
+      "visual": {
+        "type": "flow",
+        "steps": [
+          "Pick a lot and pretend there's a problem with it",
+          "Trace it back to ingredients and forward to where it shipped",
+          "Add up the quantities and account for all of it",
+          "Time the exercise and fix any gaps we find"
+        ],
+        "highlight": 3
+      },
+      "notes": "A mock recall is a practice drill — we rehearse pulling a product so that if a real recall ever comes, we're fast and accurate. It works like this: we pick a lot and pretend there's a problem with it. We trace it back to the ingredient lots that went in and forward to every place it shipped. We add up the quantities and account for all of it — what was made, what shipped, what's still on hand. And we time the whole exercise and fix any gaps we find, like a missing record or a code that didn't read. The goal is to find our weaknesses during practice, when it's safe, rather than during a real recall when it counts."
+    },
+    {
+      "title": "Your role in a recall",
+      "lead": "What you do every day is what makes a recall work.",
+      "kicker": "YOUR ROLE",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "Apply and check lot and date codes accurately",
+          "Keep your packaging and labeling records complete",
+          "Report any label mismatch or unreadable code right away",
+          "If a mock or real recall is called, respond quickly"
+        ]
+      },
+      "notes": "A recall succeeds or fails on the everyday work of people on the floor, so here's your part. Apply and check the lot and date codes accurately, because those codes are what a recall is built on. Keep your packaging and labeling records complete and legible — the records are what let us trace product fast. Report any label mismatch or unreadable code the moment you see it, rather than letting it ship. And if a mock or real recall is called, respond quickly and follow the procedure — speed and accuracy are exactly what's being tested. The day-to-day discipline is what makes the system work when it matters."
+    },
+    {
+      "title": "You protect the promise on the package",
+      "kicker": "ON THE PACKAGE",
+      "lead": "Right label, clear code, every unit.",
+      "photo": "PHOTO: worker checking a label / date code on packaged product",
+      "visual": {
+        "type": "workers",
+        "body": [
+          "Verify the label and the code — a quick check prevents a recall.",
+          "Report a wrong label or unreadable code instead of shipping it.",
+          "An auditor may ask: how would you handle a recall on your line?"
+        ],
+        "chip": "Label looks wrong? Stop and check before it ships."
+      },
+      "notes": "The package is the last thing we touch and the thing the customer relies on, so you protect that promise every shift. Verify the label and the code — a quick check at the line prevents a recall that pulls product from customers. Report a wrong label or an unreadable code instead of letting it ship, because once it leaves, fixing it means a recall. And remember auditors interview floor staff: a common question here is how you would handle a recall on your line, and your answer is the lot codes, the records, and the verification you do every day. Right label, clear code, every unit — that's how we keep the promise on the package."
+    },
+    {
+      "title": "Summary",
+      "kicker": "RECAP",
+      "visual": {
+        "type": "checklist",
+        "items": [
+          "The label is a safety control — it declares allergens and the claim",
+          "Verify the right label at the line; a wrong label is a recall",
+          "Lot and date codes make every unit traceable",
+          "Traceability and mock recalls let us pull only affected lots, fast"
+        ],
+        "next": "Next: Food Defense & Food Fraud"
+      },
+      "notes": "Let's recap. The label is a food safety control, not decoration — it declares the allergens and carries the free-from claim, so the right label has to be on the right product every run. We verify labels at the line before running, and we treat a wrong or missing label as what it is: a recall. Lot and date codes make every unit traceable back to its production lot. And traceability, proven by mock recalls, is what lets us pull only the affected lots — quickly and completely — instead of everything. Your everyday accuracy with labels, codes, and records is what makes all of it work. Up next, Food Defense and Food Fraud. Well done."
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Why do we call the label \"the last promise\" the product makes to a customer?",
+      "options": [
+        "Because the label is the most colorful part of the whole package",
+        "Because printing the labels is the final cost before a product ships",
+        "Because the label is the last thing added on the packaging line",
+        "Because it tells the customer what is inside, including allergens"
+      ],
+      "correct": 3,
+      "hint": "Think about who reads it and what they trust it for.",
+      "rationale": "The label declares what's inside — including allergens — and carries the free-from claim. People rely on it to decide if a food is safe, which makes it a safety control."
+    },
+    {
+      "question": "What is the biggest food-safety risk of a wrong label?",
+      "options": [
+        "An undeclared allergen reaching someone who needs to avoid it",
+        "The package simply looking a little less attractive on the shelf",
+        "Using slightly more label stock than the run actually needed",
+        "The production line running a little slower than its usual pace"
+      ],
+      "correct": 0,
+      "hint": "A label hides or reveals allergens.",
+      "rationale": "A wrong or missing label can hide an allergen from someone who must avoid it, which can seriously harm them. That's why a wrong allergen statement is grounds for a recall."
+    },
+    {
+      "question": "At a changeover, what must you confirm about the label?",
+      "options": [
+        "That the label reel is roughly the right color for the product",
+        "That there are enough labels loaded to finish the whole run",
+        "That the correct label and allergen statement are loaded and right",
+        "That the label printer has recently been cleaned and serviced"
+      ],
+      "correct": 2,
+      "hint": "Right label, right product, right allergen statement.",
+      "rationale": "Confirm the correct label and allergen statement are loaded for this product, checked against the spec — never assume the reel already on the machine is correct."
+    },
+    {
+      "question": "What is the purpose of lot and date coding?",
+      "options": [
+        "To make each package look a bit more professional and polished",
+        "To stamp a code that ties a unit back to its production lot",
+        "To tell the packaging team how fast they should run the line",
+        "To decide the retail price printed on each individual unit"
+      ],
+      "correct": 1,
+      "hint": "It's what makes a unit traceable.",
+      "rationale": "The lot and date code ties a finished unit back to its production lot and date, which is what makes the unit traceable. A missing or unreadable code can't be traced."
+    },
+    {
+      "question": "What does \"one-up, one-back\" traceability mean?",
+      "options": [
+        "Tracking only the single most recent lot that we have produced",
+        "Keeping records for exactly one year back and one year forward",
+        "Checking the unit just above and below it on the pallet stack",
+        "Tracing one step back to suppliers and one step forward to product"
+      ],
+      "correct": 3,
+      "hint": "One step each direction through the plant.",
+      "rationale": "One-up/one-back means tracing one step back to the supplier lots that went in and one step forward to the products and customers a lot went to."
+    },
+    {
+      "question": "What is a mock recall?",
+      "options": [
+        "A practice run that tests whether we can trace and pull a lot",
+        "An actual recall that a customer or a regulator has ordered",
+        "A drill to see how quickly the line can be cleaned down",
+        "A meeting where the team taste-tests the newest product batch"
+      ],
+      "correct": 0,
+      "hint": "It's a rehearsal, not the real thing.",
+      "rationale": "A mock recall is a practice drill: pick a lot, trace it back and forward, account for all quantities, time it, and fix any gaps — so a real recall would be fast and accurate."
+    },
+    {
+      "question": "You notice a case going out with a date code that is missing or unreadable. What do you do?",
+      "options": [
+        "Ship it now; the warehouse can always add a code to it later",
+        "Cross it out and write a replacement code on the case by hand",
+        "Stop and report it — that case cannot be traced the way it is",
+        "Set it aside quietly and just grab the next case in the line"
+      ],
+      "correct": 2,
+      "hint": "No readable code means no traceability.",
+      "rationale": "A unit with a missing or unreadable code can't be traced, so it can't ship as-is. Stop and report it so the coding issue is fixed before product goes out."
+    },
+    {
+      "question": "An auditor asks how you would handle a recall. What should you be able to describe?",
+      "options": [
+        "That recalls are handled entirely by people in another building",
+        "Your records, your lot codes, and how you'd pull the product",
+        "Only the name of the manager who signs off on any recall",
+        "That the plant has simply never had to do a recall before now"
+      ],
+      "correct": 1,
+      "hint": "Point to the records and codes you keep daily.",
+      "rationale": "Auditors interview floor staff. You should be able to point to your lot codes, your packaging/labeling records, and how you'd identify and pull the affected product."
+    }
+  ]
+}
