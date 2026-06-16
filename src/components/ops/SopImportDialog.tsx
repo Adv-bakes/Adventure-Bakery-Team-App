@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { parseSopDocx, type ParsedSop, type SopType } from "@/lib/sopDocxParser";
+import { uploadSopFile, updateModuleContent } from "@/lib/training";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -127,11 +128,19 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
             governing_reference: p.content.governing_reference,
           },
     };
-    const { error } = await (supabase as any).from("sop_documents").insert(payload);
+    const { data: inserted, error } = await (supabase as any)
+      .from("sop_documents").insert(payload).select("id").single();
     if (error) {
       setQueue(prev => prev.map((q, qi) => (qi === activeIdx ? { ...q, status: "error", error: error.message } : q)));
       toast.error(error.message);
       return;
+    }
+    // Keep the original Word file as a downloadable attachment on the record.
+    try {
+      const path = await uploadSopFile(inserted.id, item.file);
+      await updateModuleContent(inserted.id, { ...payload.content, attachments: [{ path, name: item.file.name }] });
+    } catch {
+      toast.warning(`Saved "${p.title}", but the source Word file couldn't be attached.`);
     }
     setQueue(prev => prev.map((q, qi) => (qi === activeIdx ? { ...q, status: "done" } : q)));
     toast.success(`Imported "${p.title}"`);

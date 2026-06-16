@@ -20,7 +20,8 @@ import { SlideContentEditor } from "@/components/team/SlideContentEditor";
 import { DocumentAttachment } from "@/components/team/DocumentAttachment";
 import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
-import { TRAINING_CATEGORY_LABELS, updateModuleContent, hasReferenceDocs, type Attachment } from "@/lib/training";
+import { TRAINING_CATEGORY_LABELS, updateModuleContent, hasReferenceDocs, hasSopBody, type Attachment } from "@/lib/training";
+import { SopBodyEditor } from "@/components/team/SopBodyEditor";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Map a SOPs Library category name back to its HR training category number
@@ -272,6 +273,14 @@ export default function SopsLibrary() {
     const updated = { ...selected, file_url } as SopDocument;
     setSelected(updated);
     setDetail(prev => ({ ...prev, file_url }));
+    setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+  };
+
+  // The SopBodyEditor writes content itself; this just syncs local state with the merged content.
+  const saveBody = (content: any) => {
+    if (!selected) return;
+    const updated = { ...selected, content } as SopDocument;
+    setSelected(updated);
     setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
   };
 
@@ -632,12 +641,26 @@ export default function SopsLibrary() {
                   <div><Label className="text-xs text-muted-foreground">Approved By</Label><p>{selected.approved_by ?? "—"}</p></div>
                 </div>
               )}
-              {/* Two coexisting regions — pure view toggle, no data is changed by switching. */}
-              <Tabs defaultValue={selected.training_category != null ? "training" : "reference"} className="space-y-3">
+              {/* Coexisting regions — pure view toggle, no data is changed by switching. */}
+              <Tabs defaultValue={selected.training_category != null ? "training" : hasSopBody(selected.content) ? "document" : "reference"} className="space-y-3">
                 <TabsList>
                   <TabsTrigger value="training"><GraduationCap className="w-3.5 h-3.5 mr-1.5" />Training</TabsTrigger>
+                  {hasSopBody(selected.content) && (
+                    <TabsTrigger value="document"><FileText className="w-3.5 h-3.5 mr-1.5" />Document</TabsTrigger>
+                  )}
                   <TabsTrigger value="reference"><BookOpen className="w-3.5 h-3.5 mr-1.5" />Reference Documents</TabsTrigger>
                 </TabsList>
+
+                {hasSopBody(selected.content) && (
+                  <TabsContent value="document">
+                    <SopBodyEditor
+                      sopId={selected.id}
+                      content={selected.content}
+                      docType={selected.type}
+                      onChange={isAdmin ? saveBody : undefined}
+                    />
+                  </TabsContent>
+                )}
 
                 <TabsContent value="training" className="space-y-4">
                   {selected.training_category != null ? (

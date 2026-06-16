@@ -527,6 +527,16 @@ export async function getSourceDeckUrl(sopId: string): Promise<string | null> {
 
 // Reference (non-training) documents: the mirror of fetchTrainingModules — rows with
 // no training_category. Defaults to active only.
+// A record has a structured SOP body (from Word import or manual entry) worth its own view.
+export function hasSopBody(content: any): boolean {
+  if (!content) return false;
+  if (typeof content.statement === "string" && content.statement.trim()) return true;
+  const fields = ["purpose", "scope", "responsibility", "form_references", "records", "governing_reference"];
+  if (fields.some(k => typeof content[k] === "string" && content[k].trim())) return true;
+  if (Array.isArray(content.procedure) && content.procedure.length > 0) return true;
+  return false;
+}
+
 // A record carries reference documents if it has any attachments or a legacy file_url.
 export function hasReferenceDocs(d: any): boolean {
   return (Array.isArray(d?.content?.attachments) && d.content.attachments.length > 0) || !!d?.file_url;

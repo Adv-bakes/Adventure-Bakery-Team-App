@@ -25,7 +25,7 @@ export interface ParsedSop {
   warnings: string[];
 }
 
-const SECTION_LABELS: { key: keyof ParsedSop["content"]; pattern: RegExp; display: string }[] = [
+export const SECTION_LABELS: { key: keyof ParsedSop["content"]; pattern: RegExp; display: string }[] = [
   { key: "purpose", pattern: /^purpose\b/i, display: "Purpose" },
   { key: "scope", pattern: /^scope\b/i, display: "Scope" },
   { key: "responsibility", pattern: /^responsibilit(y|ies)\b/i, display: "Responsibility" },
