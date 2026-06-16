@@ -99,11 +99,22 @@ export default function TrainingSops() {
     return map;
   }, [myAssignments]);
 
+  const spanishByEnTitle = useMemo(() => {
+    const map = new Map<string, TrainingModule>();
+    for (const m of modules) {
+      if (m.title.includes("(ES)")) {
+        const enTitle = m.title.replace(/\s*\(ES\)\s*$/, "").trim();
+        map.set(enTitle, m);
+      }
+    }
+    return map;
+  }, [modules]);
+
   const groups = useMemo(() => {
     return TRAINING_CATEGORIES.map(cat => ({
       category: cat,
       label: TRAINING_CATEGORY_LABELS[cat],
-      items: modules.filter(m => m.training_category === cat),
+      items: modules.filter(m => m.training_category === cat && !m.title.includes("(ES)")),
     })).filter(g => g.items.length > 0);
   }, [modules]);
 
@@ -412,7 +423,22 @@ export default function TrainingSops() {
                           onClick={() => navigate(`/team/hr/trainings/${m.id}`)}
                         >
                           <TableCell className="font-mono text-xs">{m.module_number}</TableCell>
-                          <TableCell className="font-medium">{m.title}</TableCell>
+                          <TableCell className="font-medium">
+                            <span>{m.title}</span>
+                            {(() => {
+                              const esModule = spanishByEnTitle.get(m.title);
+                              if (!esModule) return null;
+                              return (
+                                <button
+                                  onClick={e => { e.stopPropagation(); navigate(`/team/hr/trainings/${esModule.id}`); }}
+                                  title="Ver en español"
+                                  className="ml-2 text-base leading-none hover:opacity-60 transition-opacity align-middle"
+                                >
+                                  🇪🇸
+                                </button>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell className="text-xs text-[#2A1F0E]/60">
                             {m.required_departments ? m.required_departments.join(", ") : "All Staff"}
                           </TableCell>
