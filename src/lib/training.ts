@@ -484,6 +484,62 @@ export async function getTrainingSlideUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 
+// ----- Reference / attached documents (PDFs, source decks) -----
+
+// A reference item attached to a SOP/module, stored in content.attachments[].
+// Either an uploaded file (`path` into the training-content bucket) or an
+// external link (`url`). `name` is the display label.
+export type Attachment = { name: string; path?: string; url?: string };
+
+// Uploads an arbitrary attachment (PDF, doc, image) for a SOP/module and returns
+// its storage path. Stored under `${sopId}/files/` in the same training-content bucket.
+export async function uploadSopFile(sopId: string, file: File): Promise<string> {
+  const safe = file.name.replace(/[^\w.\-]+/g, "_");
+  const path = `${sopId}/files/${safe}`;
+  const { error } = await supabase.storage
+    .from("training-content")
+    .upload(path, file, { upsert: true });
+  if (error) throw error;
+  return path;
+}
+
+export async function removeSopFile(path: string): Promise<void> {
+  const { error } = await supabase.storage.from("training-content").remove([path]);
+  if (error) throw error;
+}
+
+// Resolves a stored file_url to something openable. Legacy values are full http(s)
+// URLs (external links) and pass through unchanged; new values are storage paths in
+// the private training-content bucket and get signed for a year.
+export async function resolveFileUrl(fileUrl: string): Promise<string> {
+  if (/^https?:\/\//i.test(fileUrl)) return fileUrl;
+  return getTrainingSlideUrl(fileUrl);
+}
+
+// Signed URL for the source .pptx a module was generated from (auditor reference),
+// or null if the module has no stored source deck.
+export async function getSourceDeckUrl(sopId: string): Promise<string | null> {
+  const { data, error } = await supabase.storage.from("training-content").list(sopId);
+  if (error) throw error;
+  if (!data?.some(f => f.name === "source.pptx")) return null;
+  return getTrainingSlideUrl(`${sopId}/source.pptx`);
+}
+
+// Reference (non-training) documents: the mirror of fetchTrainingModules — rows with
+// no training_category. Defaults to active only.
+export async function fetchReferenceDocuments(includeInactive = false): Promise<any[]> {
+  let query = (supabase as any)
+    .from("sop_documents")
+    .select("*")
+    .is("training_category", null);
+  if (!includeInactive) query = query.eq("status", "active");
+  const { data, error } = await query
+    .order("category", { ascending: true })
+    .order("sop_number", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function updateModuleContent(sopId: string, content: any): Promise<void> {
   const { error } = await (supabase as any)
     .from("sop_documents")

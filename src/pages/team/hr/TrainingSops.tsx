@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { DocumentAttachment } from "@/components/team/DocumentAttachment";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { RefreshCw, CheckCircle2, Clock, AlertTriangle, Settings, Copy, Plus, Trash2, Upload, ImagePlus, Volume2 } from "lucide-react";
@@ -18,10 +20,10 @@ import {
   TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS, DEPARTMENTS,
   TrainingModule, TrainingAssignment, QuizQuestion,
   AssignmentStatus, getAssignmentStatus,
-  fetchTrainingModules, fetchTrainingAssignments,
+  fetchTrainingModules, fetchTrainingAssignments, fetchReferenceDocuments,
   updateModuleRequirements, fetchQuizQuestions, saveQuizQuestions, updateModuleQuizConfig,
   parseQuizCsv, uploadTrainingSlide, updateModuleContent, getTrainingSlideUrl,
-  computeSlideDuration,
+  computeSlideDuration, type Attachment,
 } from "@/lib/training";
 
 type EditableQuestion = Omit<QuizQuestion, "id" | "sop_id">;
@@ -54,6 +56,8 @@ export default function TrainingSops() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<TrainingModule | null>(null);
   const [savingRequirements, setSavingRequirements] = useState(false);
+  const [refDocs, setRefDocs] = useState<any[]>([]);
+  const [selectedRef, setSelectedRef] = useState<any | null>(null);
 
   const [quizQuestions, setQuizQuestions] = useState<EditableQuestion[]>([]);
   const [passingScorePct, setPassingScorePct] = useState(80);
@@ -72,12 +76,14 @@ export default function TrainingSops() {
       const { data: { user } } = await supabase.auth.getUser();
       const uid = user?.id ?? null;
 
-      const [mods, assigns] = await Promise.all([
+      const [mods, assigns, refs] = await Promise.all([
         fetchTrainingModules(),
         uid ? fetchTrainingAssignments(uid) : Promise.resolve([]),
+        fetchReferenceDocuments(isAdmin),
       ]);
       setModules(mods);
       setMyAssignments(assigns);
+      setRefDocs(refs);
     } catch (e: any) {
       toast.error(e.message ?? "Failed to load training data");
     } finally {
@@ -250,6 +256,50 @@ export default function TrainingSops() {
     }
   };
 
+  const saveRefFileUrl = async (file_url: string | null) => {
+    if (!selectedRef) return;
+    const { error } = await (supabase as any).from("sop_documents").update({ file_url }).eq("id", selectedRef.id);
+    if (error) return toast.error(error.message);
+    const updated = { ...selectedRef, file_url };
+    setSelectedRef(updated);
+    setRefDocs(prev => prev.map(d => d.id === updated.id ? updated : d));
+  };
+
+  const saveModuleAttachments = async (attachments: Attachment[]) => {
+    if (!selected) return;
+    const content = { ...(selected.content ?? {}), attachments };
+    try {
+      await updateModuleContent(selected.id, content);
+    } catch (e: any) {
+      return toast.error(e.message ?? "Failed to save related materials");
+    }
+    const updated = { ...selected, content };
+    setSelected(updated);
+    setModules(prev => prev.map(m => m.id === updated.id ? updated : m));
+  };
+
+  const saveModuleFileUrl = async (file_url: string | null) => {
+    if (!selected) return;
+    const { error } = await (supabase as any).from("sop_documents").update({ file_url }).eq("id", selected.id);
+    if (error) return toast.error(error.message);
+    const updated = { ...selected, file_url };
+    setSelected(updated);
+    setModules(prev => prev.map(m => m.id === updated.id ? updated : m));
+  };
+
+  const saveRefAttachments = async (attachments: Attachment[]) => {
+    if (!selectedRef) return;
+    const content = { ...(selectedRef.content ?? {}), attachments };
+    try {
+      await updateModuleContent(selectedRef.id, content);
+    } catch (e: any) {
+      return toast.error(e.message ?? "Failed to save attachments");
+    }
+    const updated = { ...selectedRef, content };
+    setSelectedRef(updated);
+    setRefDocs(prev => prev.map(d => d.id === updated.id ? updated : d));
+  };
+
   const copyDeepLink = (moduleId: string) => {
     const url = `${window.location.origin}/team/hr/trainings/${moduleId}`;
     navigator.clipboard.writeText(url);
@@ -301,6 +351,13 @@ export default function TrainingSops() {
         </Button>
       </div>
 
+      <Tabs defaultValue="modules" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="modules">Training Modules</TabsTrigger>
+          <TabsTrigger value="reference">Reference Library</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="modules" className="space-y-3">
       {groups.length === 0 ? (
         <Card className="p-8 text-center border" style={cardStyle}>
           <p className="text-[#2A1F0E]/50 text-sm">No training modules found.</p>
@@ -390,6 +447,79 @@ export default function TrainingSops() {
           ))}
         </Accordion>
       )}
+        </TabsContent>
+
+        <TabsContent value="reference">
+          {refDocs.length === 0 ? (
+            <Card className="p-8 text-center border" style={cardStyle}>
+              <p className="text-[#2A1F0E]/50 text-sm">No reference documents yet.</p>
+            </Card>
+          ) : (
+            <Card className="border overflow-hidden" style={cardStyle}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-[#2A1F0E]/60">Title</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">Category</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">SQF Ref</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">Document</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {refDocs.map(d => (
+                    <TableRow
+                      key={d.id}
+                      className="cursor-pointer hover:bg-[#C89B3C]/5 text-[#2A1F0E]"
+                      onClick={() => setSelectedRef(d)}
+                    >
+                      <TableCell className="font-medium">{d.title}</TableCell>
+                      <TableCell className="text-xs text-[#2A1F0E]/60">{d.category ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-[#2A1F0E]/60">{d.sqf_reference ?? "—"}</TableCell>
+                      <TableCell>
+                        {(() => {
+                          const n = (Array.isArray(d.content?.attachments) ? d.content.attachments.length : 0) + (d.file_url ? 1 : 0);
+                          return (
+                            <Badge variant="outline" className="text-[#2A1F0E]/60 border-[#2A1F0E]/20">
+                              {n > 0 ? `${n} file${n !== 1 ? "s" : ""}` : "—"}
+                            </Badge>
+                          );
+                        })()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Reference document drawer */}
+      <Sheet open={!!selectedRef} onOpenChange={(o) => !o && setSelectedRef(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-xl lg:max-w-3xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{selectedRef?.title}</SheetTitle>
+          </SheetHeader>
+          {selectedRef && (
+            <div className="space-y-4 mt-4 text-sm text-[#2A1F0E]">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs text-muted-foreground">Category</Label><p>{selectedRef.category ?? "—"}</p></div>
+                <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><p>{selectedRef.sqf_reference ?? "—"}</p></div>
+              </div>
+              <DocumentAttachment
+                sopId={selectedRef.id}
+                attachments={Array.isArray(selectedRef.content?.attachments) ? selectedRef.content.attachments : []}
+                onChange={isAdmin ? saveRefAttachments : undefined}
+                legacyFileUrl={selectedRef.file_url}
+                onClearLegacy={isAdmin ? () => saveRefFileUrl(null) : undefined}
+              />
+              {!isAdmin && !selectedRef.file_url && (
+                <p className="text-xs text-[#2A1F0E]/50">No document is attached to this entry yet.</p>
+              )}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Module detail drawer */}
       <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
@@ -451,6 +581,17 @@ export default function TrainingSops() {
                   </p>
                 </div>
               )}
+
+              <div className="border-t pt-4" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
+                <DocumentAttachment
+                  sopId={selected.id}
+                  attachments={Array.isArray(selected.content?.attachments) ? selected.content.attachments : []}
+                  onChange={isAdmin ? saveModuleAttachments : undefined}
+                  legacyFileUrl={selected.file_url}
+                  onClearLegacy={isAdmin ? () => saveModuleFileUrl(null) : undefined}
+                  variant="training"
+                />
+              </div>
 
               {isAdmin && (
                 <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(200,155,60,0.25)" }}>

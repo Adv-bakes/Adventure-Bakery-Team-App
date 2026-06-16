@@ -12,13 +12,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Download, FileUp, ShieldCheck, Presentation } from "lucide-react";
+import { Plus, FileUp, ShieldCheck, Presentation } from "lucide-react";
 import { toast } from "sonner";
 import { SopImportDialog } from "@/components/ops/SopImportDialog";
 import { SlideContentEditor } from "@/components/team/SlideContentEditor";
+import { DocumentAttachment } from "@/components/team/DocumentAttachment";
 import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
-import { TRAINING_CATEGORY_LABELS } from "@/lib/training";
+import { TRAINING_CATEGORY_LABELS, updateModuleContent, type Attachment } from "@/lib/training";
 
 // Map a SOPs Library category name back to its HR training category number
 // (e.g. "Core Onboarding" → 1) so modules created here also appear in the
@@ -43,6 +44,7 @@ type SopDocument = {
   sqf_required: boolean;
   file_url: string | null;
   media_url: string | null;
+  training_category: number | null;
   created_at: string;
 };
 
@@ -83,6 +85,7 @@ function sqfSectionLabel(section: string): string {
 }
 
 type ViewMode = "category" | "sqf";
+type KindFilter = "all" | "training" | "reference";
 
 // Dropdown of existing categories with an escape hatch to type a brand-new one.
 // null means uncategorized.
@@ -139,6 +142,7 @@ export default function SopsLibrary() {
   const [docs, setDocs] = useState<SopDocument[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("category");
   const [sqfOnly, setSqfOnly] = useState(false);
   const [selected, setSelected] = useState<SopDocument | null>(null);
@@ -166,11 +170,13 @@ export default function SopsLibrary() {
     const q = search.trim().toLowerCase();
     return docs.filter(d => {
       if (typeFilter !== "all" && d.type !== typeFilter) return false;
+      if (kindFilter === "training" && d.training_category == null) return false;
+      if (kindFilter === "reference" && d.training_category != null) return false;
       if (sqfOnly && !d.sqf_required) return false;
       if (q && !`${d.sop_number ?? ""} ${d.title}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [docs, search, typeFilter, sqfOnly]);
+  }, [docs, search, typeFilter, kindFilter, sqfOnly]);
 
   // Group by category
   const categoryGroups = useMemo(() => {
@@ -222,6 +228,7 @@ export default function SopsLibrary() {
       type: selected.type,
       status: selected.status,
       sqf_required: selected.sqf_required,
+      file_url: selected.file_url,
     });
   }, [selected?.id]);
 
@@ -248,6 +255,31 @@ export default function SopsLibrary() {
     setSelected(updated);
     setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
     toast.success("Details saved");
+  };
+
+  // Clears the legacy single file_url (upload/remove of the object happens in DocumentAttachment).
+  const saveFileUrl = async (file_url: string | null) => {
+    if (!selected) return;
+    const { error } = await (supabase as any).from("sop_documents").update({ file_url }).eq("id", selected.id);
+    if (error) return toast.error(error.message);
+    const updated = { ...selected, file_url } as SopDocument;
+    setSelected(updated);
+    setDetail(prev => ({ ...prev, file_url }));
+    setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+  };
+
+  // Persist the multi-attachment list into content.attachments (upload/remove done in the component).
+  const saveAttachments = async (attachments: Attachment[]) => {
+    if (!selected) return;
+    const content = { ...(selected.content ?? {}), attachments };
+    try {
+      await updateModuleContent(selected.id, content);
+    } catch (e: any) {
+      return toast.error(e.message ?? "Failed to save attachments");
+    }
+    const updated = { ...selected, content } as SopDocument;
+    setSelected(updated);
+    setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
   };
 
   const saveDoc = async () => {
@@ -362,6 +394,23 @@ export default function SopsLibrary() {
         >
           <ShieldCheck className="w-3.5 h-3.5" />SQF Required
         </button>
+
+        {/* Kind filter: training vs reference */}
+        <div className="flex rounded-lg border overflow-hidden" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
+          {([["all", "All"], ["training", "Training Modules"], ["reference", "Reference Material"]] as [KindFilter, string][]).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setKindFilter(k)}
+              className="px-3 py-1.5 text-sm font-medium transition-colors"
+              style={{
+                background: kindFilter === k ? "rgba(200,155,60,0.18)" : "transparent",
+                color: kindFilter === k ? "#F5F1E6" : "rgba(245,241,230,0.55)",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {/* View mode toggle */}
         <div className="ml-auto flex rounded-lg border overflow-hidden" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
@@ -554,11 +603,14 @@ export default function SopsLibrary() {
                   }}
                 />
               )}
-              {selected.file_url && (
-                <a href={selected.file_url} target="_blank" rel="noreferrer">
-                  <Button variant="outline" size="sm"><Download className="w-3.5 h-3.5 mr-1" />Download File</Button>
-                </a>
-              )}
+              <DocumentAttachment
+                sopId={selected.id}
+                attachments={Array.isArray(selected.content?.attachments) ? selected.content.attachments : []}
+                onChange={isAdmin ? saveAttachments : undefined}
+                legacyFileUrl={detail.file_url}
+                onClearLegacy={isAdmin ? () => saveFileUrl(null) : undefined}
+                variant={selected.training_category != null ? "training" : "reference"}
+              />
             </div>
           )}
         </SheetContent>
