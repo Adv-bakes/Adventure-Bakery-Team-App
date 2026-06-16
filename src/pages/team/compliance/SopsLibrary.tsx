@@ -47,8 +47,11 @@ type SopDocument = {
   file_url: string | null;
   media_url: string | null;
   training_category: number | null;
+  module_number: string | null;
   created_at: string;
 };
+
+const isSpanish = (doc: SopDocument) => doc.title.includes("(ES)");
 
 const cardStyle = {
   background: "#FFFFFF",
@@ -219,6 +222,27 @@ export default function SopsLibrary() {
     [docs],
   );
 
+  // Primary: module_number → Spanish doc
+  const spanishByModuleNumber = useMemo(() => {
+    const map = new Map<string, SopDocument>();
+    for (const d of docs) {
+      if (isSpanish(d) && d.module_number) map.set(d.module_number, d);
+    }
+    return map;
+  }, [docs]);
+
+  // Fallback: English title (stripped of " (ES)") → Spanish doc
+  const spanishByEnTitle = useMemo(() => {
+    const map = new Map<string, SopDocument>();
+    for (const d of docs) {
+      if (isSpanish(d)) {
+        const enTitle = d.title.replace(/\s*\(ES\)\s*$/, "").trim();
+        map.set(enTitle, d);
+      }
+    }
+    return map;
+  }, [docs]);
+
   const openNew = () => setEditDoc({ type: "sop", status: "draft", sqf_required: false });
 
   // Keep the drawer's editable fields in sync with the selected doc
@@ -358,39 +382,54 @@ export default function SopsLibrary() {
   const groups = viewMode === "category" ? categoryGroups : sqfGroups;
   const defaultOpen = groups.map(([key]) => key);
 
-  const DocTable = ({ items }: { items: SopDocument[] }) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="text-[#2A1F0E]/60">Number</TableHead>
-          <TableHead className="text-[#2A1F0E]/60">Title</TableHead>
-          <TableHead className="text-[#2A1F0E]/60">Type</TableHead>
-          <TableHead className="text-[#2A1F0E]/60">Revision</TableHead>
-          <TableHead className="text-[#2A1F0E]/60">Effective Date</TableHead>
-          <TableHead className="text-[#2A1F0E]/60">Status</TableHead>
-          {viewMode === "category" && <TableHead className="text-[#2A1F0E]/60">SQF Ref</TableHead>}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map(d => (
-          <TableRow key={d.id} className="cursor-pointer hover:bg-[#C89B3C]/5" onClick={() => setSelected(d)}>
-            <TableCell className="font-mono text-xs">{d.sop_number ?? "—"}</TableCell>
-            <TableCell className="font-medium">
-              <span>{d.title}</span>
-              {d.sqf_required && (
-                <ShieldCheck className="inline w-3.5 h-3.5 ml-1.5 text-[#C89B3C]" />
-              )}
-            </TableCell>
-            <TableCell><Badge variant="outline">{TYPE_LABELS[d.type]}</Badge></TableCell>
-            <TableCell>{d.revision ?? "—"}</TableCell>
-            <TableCell>{d.effective_date ?? "—"}</TableCell>
-            <TableCell><Badge className={statusColors[d.status]}>{d.status}</Badge></TableCell>
-            {viewMode === "category" && <TableCell className="text-xs text-[#2A1F0E]/60">{d.sqf_reference ?? "—"}</TableCell>}
+  const DocTable = ({ items }: { items: SopDocument[] }) => {
+    const visibleItems = items.filter(d => !isSpanish(d));
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-[#2A1F0E]/60">Number</TableHead>
+            <TableHead className="text-[#2A1F0E]/60">Title</TableHead>
+            <TableHead className="text-[#2A1F0E]/60">Type</TableHead>
+            <TableHead className="text-[#2A1F0E]/60">Revision</TableHead>
+            <TableHead className="text-[#2A1F0E]/60">Effective Date</TableHead>
+            <TableHead className="text-[#2A1F0E]/60">Status</TableHead>
+            {viewMode === "category" && <TableHead className="text-[#2A1F0E]/60">SQF Ref</TableHead>}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+        </TableHeader>
+        <TableBody>
+          {visibleItems.map(d => {
+            const esDoc = (d.module_number ? spanishByModuleNumber.get(d.module_number) : undefined) ?? spanishByEnTitle.get(d.title);
+            return (
+              <TableRow key={d.id} className="cursor-pointer hover:bg-[#C89B3C]/5" onClick={() => setSelected(d)}>
+                <TableCell className="font-mono text-xs">{d.sop_number ?? "—"}</TableCell>
+                <TableCell className="font-medium">
+                  <span>{d.title}</span>
+                  {d.sqf_required && (
+                    <ShieldCheck className="inline w-3.5 h-3.5 ml-1.5 text-[#C89B3C]" />
+                  )}
+                  {esDoc && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setSelected(esDoc); }}
+                      title="Ver en español"
+                      className="ml-2 text-base leading-none hover:opacity-60 transition-opacity align-middle"
+                    >
+                      🇪🇸
+                    </button>
+                  )}
+                </TableCell>
+                <TableCell><Badge variant="outline">{TYPE_LABELS[d.type]}</Badge></TableCell>
+                <TableCell>{d.revision ?? "—"}</TableCell>
+                <TableCell>{d.effective_date ?? "—"}</TableCell>
+                <TableCell><Badge className={statusColors[d.status]}>{d.status}</Badge></TableCell>
+                {viewMode === "category" && <TableCell className="text-xs text-[#2A1F0E]/60">{d.sqf_reference ?? "—"}</TableCell>}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    );
+  };
 
   return (
     <div className="space-y-6">
