@@ -138,7 +138,7 @@ All are public (anon) Supabase credentials — safe on the client.
 |-------|---------|
 | `profiles` | User profiles — `full_name`, `department`, `job_title`, `access_granted` |
 | `user_roles` | Role assignments — `user_id`, `role` (owner/admin/staff/user) |
-| `sop_documents` | Training modules & SOPs — `training_category` (int 1–4, HR portal), `category` (text, SOPs Library grouping; names mirror the training category labels), `module_number`, `content` (JSON), `passing_score_pct`, `is_critical`, `required_departments`, `status` |
+| `sop_documents` | Training modules & SOPs — `training_category` (int 1–4 = assignable training module; **null = reference doc**), `category` (text, SOPs Library grouping; names mirror the training category labels), `module_number`, `content` (JSON — slides/quiz/`attachments[]`/Word-SOP body), `file_url` (legacy single attachment), `passing_score_pct`, `is_critical`, `required_departments`, `status` |
 | `training_assignments` | Employee ↔ module assignments — `completed_at`, `quiz_score`, `quiz_attempts`, `expires_at`, `recurrence_months`, `signed`/`signed_at` (acknowledgment), `progress` (JSON save/resume state, cleared on completion) |
 | `quiz_questions` | Per-module quiz — `options` (array), `correct_option_index`, `hint`, `rationale` |
 | `prf_submissions` | Product Request Forms — `concept_id`, `lead_id`, `product_name` |
@@ -172,10 +172,11 @@ All are public (anon) Supabase credentials — safe on the client.
   "narrations": ["narration text per slide", ...],
   "slideDurations": [17, 20, ...],
   "audio": ["moduleId/audio/slide-01.mp3", null, ...],
-  "acknowledgment": { "required": true, "text": "I have read and understand..." }
+  "acknowledgment": { "required": true, "text": "I have read and understand..." },
+  "attachments": [{ "name": "Manual.pdf", "path": "moduleId/files/Manual.pdf" }, { "name": "Vendor portal", "url": "https://…" }]
 }
 ```
-The first four are parallel arrays indexed by slide position (`audio` holds a storage path to the pre-generated voice MP3, or `null` for slides without one). `acknowledgment` is optional; when `required`, the employee must check an "agree to comply" box before the module can be completed (recorded on the assignment as `signed`/`signed_at`).
+The first four are parallel arrays indexed by slide position (`audio` holds a storage path to the pre-generated voice MP3, or `null` for slides without one). `acknowledgment` is optional; when `required`, the employee must check an "agree to comply" box before the module can be completed (recorded on the assignment as `signed`/`signed_at`). **`attachments`** is the reference docs/links list (each item has a storage `path` OR an external `url`). A **Word-imported** SOP also stores a structured body on `content` — sop/form: `purpose, scope, responsibility, procedure[], form_references, records, governing_reference`; policy: `statement` — surfaced in the drawer's **Document** tab.
 
 **Save/resume:** `training_assignments.progress` JSON (`{ slideIndex, maxVisitedIndex, highestUnlocked, updatedAt }`) is auto-saved by the viewer on every slide transition (`saveAssignmentProgress()` in `training.ts`), restored on load (clamped to current slide count), and set to null on completion. In-progress rows in `TrainingSops.tsx` show "Slide N of M · X%".
 
@@ -222,9 +223,33 @@ Component in `src/components/team/`, rendered below the Content section in the S
 
 `/team/compliance/sops`. Groups documents by `category` (text) or by SQF section. Admin features:
 - **Per-category "Add Module"** button on each category accordion header (category view only) — opens `PptxImportDialog` targeted at that category. Button is a *sibling* of `AccordionTrigger` (Radix renders the trigger as a `<button>`; nesting would break it).
-- **Editable detail drawer:** title, SOP #, revision, effective date, SQF reference, approved by, category, type, status, SQF-required — saved via "Save Details" (updates `sop_documents`, re-files the doc into the right group).
+- **Header "+ Add" dropdown** — splits creation into **Import Training Deck** (`PptxImportDialog`) and **Add Reference Document** (a title-only dialog that inserts a draft reference doc — `training_category` null — then opens its drawer so files/links can be attached). Plus **Import from Word** (`SopImportDialog`).
+- **Kind filter** (segmented All / Training Modules / Reference Material) — content-based: Training = `training_category != null`; Reference = `training_category == null || hasReferenceDocs(d)`. A record with both passes both.
+- **Editable detail drawer:** metadata form (title, SOP #, revision, effective date, SQF reference, approved by, category, type, status, SQF-required — "Save Details") sits above a **tabbed region**.
 - **`CategorySelect`** (defined in this file): dropdown of existing categories + "Uncategorized" + "Add New Category…" (swaps to a text input). Used in the detail drawer and the Add SOP dialog — category is never free text.
-- Detail drawer also embeds `SlideContentEditor` and `QuizEditor`.
+
+**Drawer tabs (coexisting regions — toggling is pure view, never writes/deletes):**
+- **Training** — `SlideContentEditor` + `QuizEditor` when `training_category != null`; otherwise an empty-state with a non-destructive **"Make this a training module"** button (sets `training_category` via `trainingCategoryForLabel(category)`; the DB trigger auto-assigns when active).
+- **Document** — shown only when `hasSopBody(content)`; renders/edits the structured SOP body via `SopBodyEditor` (Word-imported or manual).
+- **Reference Documents** — `DocumentAttachment` (multi-file upload + URL links + inline PDF viewer + source-deck download).
+- **Default active tab:** `training_category != null ? "training" : hasSopBody ? "document" : "reference"`.
+- A record can hold training material, a document body, AND reference attachments simultaneously; nothing is removed except by an explicit per-item Delete.
+
+---
+
+## Document Attachments — `DocumentAttachment.tsx`
+
+Component in `src/components/team/`, rendered in the SOPs Library drawer's **Reference Documents** tab and the HR Training & SOPs Reference Library drawer. Manages a list of reference items stored in `content.attachments[]` (`Attachment = { name; path?; url? }`):
+- **Files** — multi-select upload to `training-content/<sopId>/files/<name>` via `uploadSopFile()`; inline PDF preview (`<object>`, toggleable) + Download (signed URL via `resolveFileUrl()`). Remove deletes the storage object.
+- **Links** — external URL (opens in a new tab); the Label auto-fills from the URL in Title Case until edited. Links are encouraged over uploads to save storage.
+- **Source deck** — when `getSourceDeckUrl(sopId)` finds `<sopId>/source.pptx`, shows a "Download source PowerPoint" button (auditor reference).
+- `variant` (`training` | `reference`) only changes the heading ("Related Materials" vs "Attached Documents"). Legacy single `file_url` still renders alongside the list. View-only when no `onChange` (non-admin).
+
+---
+
+## SOP Body — `SopBodyEditor.tsx`
+
+Component in `src/components/team/`, rendered in the drawer's **Document** tab. Edits/renders the structured SOP body in `content` (sop/form: `purpose, scope, responsibility, procedure[], form_references, records, governing_reference`; policy: `statement`). Section order/labels reuse `SECTION_LABELS` (exported from `sopDocxParser.ts`). Admin: editable fields + "Save Document" (`updateModuleContent`, merges so `attachments` are preserved). Non-admin: read-only formatted sections (procedure as a numbered list).
 
 ---
 
@@ -249,6 +274,12 @@ Pipeline steps shown in a live progress list:
 AI quiz count (no CSV): `clamp(ceil(slides.length / 2), 5, 15)`.
 
 **Hand-authored content wins over AI**, so SQF decks are produced by the generator in `training-decks/` (below) and import deterministically. Authoring rules, quiz CSV format, content policy (no customer/product names), and the visual-layout catalog live in `DECK_FORMAT_CONTRACT.md`.
+
+---
+
+## Word Import — `SopImportDialog.tsx`
+
+Component in `src/components/ops/`. Drag/drop `.docx` files; `parseSopDocx()` (`src/lib/sopDocxParser.ts`, mammoth + JSZip) extracts metadata + a structured body into `ParsedSop`. Each file is reviewed/edited in the dialog, then **Confirm & Save** inserts a draft `sop_documents` row (reference doc — no `training_category`) with the body on `content`. On save it also **uploads the original `.docx`** to `training-content/<id>/files/<name>` and records it in `content.attachments` (downloadable in the drawer's Reference Documents tab; non-fatal if the upload fails). The saved body renders/edits in the **Document** tab (`SopBodyEditor`). ("Generate SOP from source document" is a coming-soon placeholder.)
 
 ---
 
@@ -295,8 +326,8 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | File | Key exports |
 |------|-------------|
 | `utils.ts` | `cn()` — class merging |
-| `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult` (4th arg `complete=false` saves score only, deferring completion to acknowledgment), `saveAssignmentProgress`, `markAssignmentComplete`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration`, `generateModuleAudio` (renders+caches ElevenLabs voice MP3s into `content.audio[]`), `getTrainingAudioUrl`, `audioPathFor` |
+| `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult` (4th arg `complete=false` saves score only, deferring completion to acknowledgment), `saveAssignmentProgress`, `markAssignmentComplete`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration`, `generateModuleAudio` (renders+caches ElevenLabs voice MP3s into `content.audio[]`), `getTrainingAudioUrl`, `audioPathFor`, **reference/attachment helpers** (`Attachment` type, `uploadSopFile`, `removeSopFile`, `resolveFileUrl`, `getSourceDeckUrl`, `fetchReferenceDocuments`, `hasReferenceDocs`, `hasSopBody`) |
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
-| `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP data from a .docx upload |
+| `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP data from a .docx upload; exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`) |
 | `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
