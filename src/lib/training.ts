@@ -527,17 +527,22 @@ export async function getSourceDeckUrl(sopId: string): Promise<string | null> {
 
 // Reference (non-training) documents: the mirror of fetchTrainingModules — rows with
 // no training_category. Defaults to active only.
+// A record carries reference documents if it has any attachments or a legacy file_url.
+export function hasReferenceDocs(d: any): boolean {
+  return (Array.isArray(d?.content?.attachments) && d.content.attachments.length > 0) || !!d?.file_url;
+}
+
+// Reference-visible records: pure reference docs (no training_category) OR training modules
+// that also carry reference documents. Filtered client-side since attachment presence lives
+// in the content JSON (dataset is small).
 export async function fetchReferenceDocuments(includeInactive = false): Promise<any[]> {
-  let query = (supabase as any)
-    .from("sop_documents")
-    .select("*")
-    .is("training_category", null);
+  let query = (supabase as any).from("sop_documents").select("*");
   if (!includeInactive) query = query.eq("status", "active");
   const { data, error } = await query
     .order("category", { ascending: true })
     .order("sop_number", { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).filter((d: any) => d.training_category == null || hasReferenceDocs(d));
 }
 
 export async function updateModuleContent(sopId: string, content: any): Promise<void> {

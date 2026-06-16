@@ -11,15 +11,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileUp, ShieldCheck, Presentation } from "lucide-react";
+import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { SopImportDialog } from "@/components/ops/SopImportDialog";
 import { SlideContentEditor } from "@/components/team/SlideContentEditor";
 import { DocumentAttachment } from "@/components/team/DocumentAttachment";
 import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
-import { TRAINING_CATEGORY_LABELS, updateModuleContent, type Attachment } from "@/lib/training";
+import { TRAINING_CATEGORY_LABELS, updateModuleContent, hasReferenceDocs, type Attachment } from "@/lib/training";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Map a SOPs Library category name back to its HR training category number
 // (e.g. "Core Onboarding" → 1) so modules created here also appear in the
@@ -152,9 +154,14 @@ export default function SopsLibrary() {
   const [pptxImportOpen, setPptxImportOpen] = useState(false);
   // Category targeted by a per-group "Add Module" button; null = dialog closed
   const [importCategory, setImportCategory] = useState<string | null>(null);
+  // "Add Reference Document" dialog: the category it targets (null = closed), title input, saving flag
+  const [refDocCategory, setRefDocCategory] = useState<string | null>(null);
+  const [refDocTitle, setRefDocTitle] = useState("");
+  const [creatingRefDoc, setCreatingRefDoc] = useState(false);
   // Editable copy of the selected doc's metadata shown in the detail drawer
   const [detail, setDetail] = useState<Partial<SopDocument>>({});
   const [savingDetail, setSavingDetail] = useState(false);
+  const [changingKind, setChangingKind] = useState(false);
 
   const load = async () => {
     const { data, error } = await (supabase as any)
@@ -171,7 +178,7 @@ export default function SopsLibrary() {
     return docs.filter(d => {
       if (typeFilter !== "all" && d.type !== typeFilter) return false;
       if (kindFilter === "training" && d.training_category == null) return false;
-      if (kindFilter === "reference" && d.training_category != null) return false;
+      if (kindFilter === "reference" && !(d.training_category == null || hasReferenceDocs(d))) return false;
       if (sqfOnly && !d.sqf_required) return false;
       if (q && !`${d.sop_number ?? ""} ${d.title}`.toLowerCase().includes(q)) return false;
       return true;
@@ -280,6 +287,48 @@ export default function SopsLibrary() {
     const updated = { ...selected, content } as SopDocument;
     setSelected(updated);
     setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+  };
+
+  // Creates a reference document (no slides/quiz; training_category null) and opens its
+  // drawer so the user can attach files/links right away.
+  const createRefDoc = async () => {
+    if (!refDocTitle.trim()) return toast.error("Title required");
+    setCreatingRefDoc(true);
+    const payload = {
+      title: refDocTitle.trim(),
+      type: "sop",
+      status: "draft",
+      category: refDocCategory === "Uncategorized" ? null : refDocCategory,
+    };
+    const { data, error } = await (supabase as any)
+      .from("sop_documents").insert(payload).select("*").single();
+    setCreatingRefDoc(false);
+    if (error) return toast.error(error.message);
+    toast.success("Reference document created");
+    setRefDocCategory(null);
+    setRefDocTitle("");
+    setDocs(prev => [...prev, data as SopDocument]);
+    setSelected(data as SopDocument); // open drawer to attach files/links
+  };
+
+  // Non-destructive: turns a reference document into a training module by assigning a
+  // training_category (the DB trigger auto-assigns to employees when status is active).
+  const setAsTraining = async () => {
+    if (!selected) return;
+    setChangingKind(true);
+    try {
+      const tc = trainingCategoryForLabel(selected.category ?? "");
+      const { error } = await (supabase as any).from("sop_documents").update({ training_category: tc }).eq("id", selected.id);
+      if (error) throw error;
+      const updated = { ...selected, training_category: tc } as SopDocument;
+      setSelected(updated);
+      setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+      toast.success("Now a training module");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update");
+    } finally {
+      setChangingKind(false);
+    }
   };
 
   const saveDoc = async () => {
@@ -472,14 +521,26 @@ export default function SopsLibrary() {
                     </div>
                   </AccordionTrigger>
                   {isAdmin && viewMode === "category" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mr-3 shrink-0 border-[#C89B3C]/40 text-[#2A1F0E]"
-                      onClick={() => setImportCategory(groupKey)}
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1" />Add Module
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mr-3 shrink-0 border-[#C89B3C]/40 text-[#2A1F0E]"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" />Add
+                          <ChevronDown className="w-3.5 h-3.5 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setImportCategory(groupKey)}>
+                          <Presentation className="w-3.5 h-3.5 mr-2" />Import Training Deck
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { setRefDocTitle(""); setRefDocCategory(groupKey); }}>
+                          <FileText className="w-3.5 h-3.5 mr-2" />Add Reference Document
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
                 <AccordionContent className="px-0 pb-0">
@@ -511,6 +572,7 @@ export default function SopsLibrary() {
                   </Badge>
                 )}
               </div>
+
               {isAdmin ? (
                 <div className="space-y-3">
                   <div><Label className="text-xs text-muted-foreground">Title *</Label><Input value={detail.title ?? ""} onChange={e => setDetail({ ...detail, title: e.target.value })} /></div>
@@ -570,47 +632,80 @@ export default function SopsLibrary() {
                   <div><Label className="text-xs text-muted-foreground">Approved By</Label><p>{selected.approved_by ?? "—"}</p></div>
                 </div>
               )}
-              <div>
-                <Label className="text-xs text-muted-foreground">Content</Label>
-                {isAdmin ? (
-                  <div className="mt-1">
-                    <SlideContentEditor
-                      sopId={selected.id}
-                      content={selected.content}
-                      onContentChange={(content) => {
-                        const updated = { ...selected, content };
-                        setSelected(updated);
-                        setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <pre className="mt-1 whitespace-pre-wrap rounded-md border border-white/10 bg-black/20 p-3 text-xs">
-                    {selected.content ? JSON.stringify(selected.content, null, 2) : "—"}
-                  </pre>
-                )}
-              </div>
-              {isAdmin && (
-                <QuizEditor
-                  key={selected.id}
-                  sopId={selected.id}
-                  title={selected.title}
-                  content={selected.content}
-                  onContentChange={(content) => {
-                    const updated = { ...selected, content };
-                    setSelected(updated);
-                    setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
-                  }}
-                />
-              )}
-              <DocumentAttachment
-                sopId={selected.id}
-                attachments={Array.isArray(selected.content?.attachments) ? selected.content.attachments : []}
-                onChange={isAdmin ? saveAttachments : undefined}
-                legacyFileUrl={detail.file_url}
-                onClearLegacy={isAdmin ? () => saveFileUrl(null) : undefined}
-                variant={selected.training_category != null ? "training" : "reference"}
-              />
+              {/* Two coexisting regions — pure view toggle, no data is changed by switching. */}
+              <Tabs defaultValue={selected.training_category != null ? "training" : "reference"} className="space-y-3">
+                <TabsList>
+                  <TabsTrigger value="training"><GraduationCap className="w-3.5 h-3.5 mr-1.5" />Training</TabsTrigger>
+                  <TabsTrigger value="reference"><BookOpen className="w-3.5 h-3.5 mr-1.5" />Reference Documents</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="training" className="space-y-4">
+                  {selected.training_category != null ? (
+                    <>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Content</Label>
+                        {isAdmin ? (
+                          <div className="mt-1">
+                            <SlideContentEditor
+                              sopId={selected.id}
+                              content={selected.content}
+                              onContentChange={(content) => {
+                                const updated = { ...selected, content };
+                                setSelected(updated);
+                                setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <pre className="mt-1 whitespace-pre-wrap rounded-md border border-white/10 bg-black/20 p-3 text-xs">
+                            {selected.content ? JSON.stringify(selected.content, null, 2) : "—"}
+                          </pre>
+                        )}
+                      </div>
+                      {isAdmin && (
+                        <QuizEditor
+                          key={selected.id}
+                          sopId={selected.id}
+                          title={selected.title}
+                          content={selected.content}
+                          onContentChange={(content) => {
+                            const updated = { ...selected, content };
+                            setSelected(updated);
+                            setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+                          }}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <div className="rounded-md border border-dashed border-[#C89B3C]/40 p-6 text-center space-y-3">
+                      <p className="text-sm text-[#2A1F0E]/70">
+                        This is a reference document — it has no training material.
+                      </p>
+                      {isAdmin && (
+                        <>
+                          <p className="text-xs text-[#2A1F0E]/50">
+                            Make it a training module to add slides and a quiz and assign it to employees. Nothing already attached is removed.
+                          </p>
+                          <Button onClick={setAsTraining} disabled={changingKind} size="sm" className="bg-[#C89B3C] hover:bg-[#B8892C]">
+                            <GraduationCap className="w-3.5 h-3.5 mr-1" />{changingKind ? "Working…" : "Make this a training module"}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="reference">
+                  <DocumentAttachment
+                    sopId={selected.id}
+                    attachments={Array.isArray(selected.content?.attachments) ? selected.content.attachments : []}
+                    onChange={isAdmin ? saveAttachments : undefined}
+                    legacyFileUrl={detail.file_url}
+                    onClearLegacy={isAdmin ? () => saveFileUrl(null) : undefined}
+                    variant={selected.training_category != null ? "training" : "reference"}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </SheetContent>
@@ -671,6 +766,37 @@ export default function SopsLibrary() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDoc(null)}>Cancel</Button>
             <Button onClick={saveDoc} disabled={saving} className="bg-[#C89B3C] hover:bg-[#B8892C]">{saving ? "Saving…" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Reference Document dialog (no slides/quiz — just a titled record to attach files/links to) */}
+      <Dialog open={refDocCategory !== null} onOpenChange={(o) => { if (!o) setRefDocCategory(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Reference Document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Creates a reference entry{refDocCategory && refDocCategory !== "Uncategorized" ? ` under "${refDocCategory}"` : ""}.
+              No slides or quiz — after it's created you can attach files or links.
+            </p>
+            <div>
+              <Label className="mb-1.5 block">Document Title *</Label>
+              <Input
+                autoFocus
+                placeholder="e.g. Allergen Cleaning Procedure"
+                value={refDocTitle}
+                onChange={e => setRefDocTitle(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") createRefDoc(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefDocCategory(null)}>Cancel</Button>
+            <Button onClick={createRefDoc} disabled={creatingRefDoc} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+              {creatingRefDoc ? "Creating…" : "Create & Attach"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
