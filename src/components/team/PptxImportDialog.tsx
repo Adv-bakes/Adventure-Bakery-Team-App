@@ -110,7 +110,7 @@ export function PptxImportDialog({ open, onOpenChange, onImported, existingModul
           .from("sop_documents")
           .insert({
             title: title.trim(),
-            type: "sop",
+            type: "training",
             status: "draft",
             training_category: defaults?.training_category ?? 1,
             category: defaults?.category ?? null,
