@@ -37,7 +37,7 @@ type SopDocument = {
   id: string;
   sop_number: string | null;
   title: string;
-  type: "sop" | "form" | "policy" | "training";
+  type: "sop" | "form" | "policy" | "training" | "fsqm";
   category: string | null;
   revision: string | null;
   effective_date: string | null;
@@ -70,8 +70,8 @@ const statusColors: Record<string, string> = {
   archived: "bg-amber-500/20 text-amber-700",
 };
 
-const TYPES = ["sop", "form", "policy", "training"] as const;
-const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training" };
+const TYPES = ["sop", "form", "policy", "training", "fsqm"] as const;
+const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM" };
 
 // SQF Code section names (top-level integer prefix of the reference code)
 const SQF_SECTION_NAMES: Record<string, string> = {

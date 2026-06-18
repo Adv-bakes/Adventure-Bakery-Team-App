@@ -138,7 +138,7 @@ All are public (anon) Supabase credentials — safe on the client.
 |-------|---------|
 | `profiles` | User profiles — `full_name`, `department`, `job_title`, `access_granted` |
 | `user_roles` | Role assignments — `user_id`, `role` (owner/admin/staff/user) |
-| `sop_documents` | Training modules & SOPs — `training_category` (int 1–4 = assignable training module; **null = reference doc**), `category` (text, SOPs Library grouping; names mirror the training category labels), `module_number`, `content` (JSON — slides/quiz/`attachments[]`/Word-SOP body), `file_url` (legacy single attachment), `passing_score_pct`, `is_critical`, `required_departments`, `status` |
+| `sop_documents` | Training modules & SOPs — `training_category` (int 1–4 = assignable training module; **null = reference doc**), `category` (text, SOPs Library grouping; names mirror the training category labels), `type` (`sop`/`form`/`policy`/`training`/`fsqm` — CHECK constraint `sop_documents_type_check`), `module_number`, `content` (JSON — slides/quiz/`attachments[]`/Word-SOP body), `file_url` (legacy single attachment), `passing_score_pct`, `is_critical`, `required_departments`, `status` |
 | `training_assignments` | Employee ↔ module assignments — `completed_at`, `quiz_score`, `quiz_attempts`, `expires_at`, `recurrence_months`, `signed`/`signed_at` (acknowledgment), `progress` (JSON save/resume state, cleared on completion) |
 | `quiz_questions` | Per-module quiz — `options` (array), `correct_option_index`, `hint`, `rationale` |
 | `prf_submissions` | Product Request Forms — `concept_id`, `lead_id`, `product_name` |
@@ -176,7 +176,7 @@ All are public (anon) Supabase credentials — safe on the client.
   "attachments": [{ "name": "Manual.pdf", "path": "moduleId/files/Manual.pdf" }, { "name": "Vendor portal", "url": "https://…" }]
 }
 ```
-The first four are parallel arrays indexed by slide position (`audio` holds a storage path to the pre-generated voice MP3, or `null` for slides without one). `acknowledgment` is optional; when `required`, the employee must check an "agree to comply" box before the module can be completed (recorded on the assignment as `signed`/`signed_at`). **`attachments`** is the reference docs/links list (each item has a storage `path` OR an external `url`). A **Word-imported** SOP also stores a structured body on `content` — sop/form: `purpose, scope, responsibility, procedure[], form_references, records, governing_reference`; policy: `statement` — surfaced in the drawer's **Document** tab.
+The first four are parallel arrays indexed by slide position (`audio` holds a storage path to the pre-generated voice MP3, or `null` for slides without one). `acknowledgment` is optional; when `required`, the employee must check an "agree to comply" box before the module can be completed (recorded on the assignment as `signed`/`signed_at`). **`attachments`** is the reference docs/links list (each item has a storage `path` OR an external `url`). A **Word-imported** SOP/FSQM also stores a structured body on `content` — sop/form/**fsqm**: `purpose, scope, definitions, responsibility, procedure[], form_references, records, governing_reference, revision_history`; policy: `statement` — surfaced in the drawer's **Document** tab. (**FSQM** = Food Safety Quality Manual; parses with the same structured sections as an SOP — see Word Import below.)
 
 **Save/resume:** `training_assignments.progress` JSON (`{ slideIndex, maxVisitedIndex, highestUnlocked, updatedAt }`) is auto-saved by the viewer on every slide transition (`saveAssignmentProgress()` in `training.ts`), restored on load (clamped to current slide count), and set to null on completion. In-progress rows in `TrainingSops.tsx` show "Slide N of M · X%".
 
@@ -249,7 +249,7 @@ Component in `src/components/team/`, rendered in the SOPs Library drawer's **Ref
 
 ## SOP Body — `SopBodyEditor.tsx`
 
-Component in `src/components/team/`, rendered in the drawer's **Document** tab. Edits/renders the structured SOP body in `content` (sop/form: `purpose, scope, responsibility, procedure[], form_references, records, governing_reference`; policy: `statement`). Section order/labels reuse `SECTION_LABELS` (exported from `sopDocxParser.ts`). Admin: editable fields + "Save Document" (`updateModuleContent`, merges so `attachments` are preserved). Non-admin: read-only formatted sections (procedure as a numbered list).
+Component in `src/components/team/`, rendered in the drawer's **Document** tab. Edits/renders the structured SOP body in `content` (sop/form/**fsqm**: `purpose, scope, definitions, responsibility, procedure[], form_references, records, governing_reference, revision_history`; policy: `statement`). Section order/labels reuse `SECTION_LABELS` (exported from `sopDocxParser.ts`) — adding a key there propagates to both the parser and this editor. `isPolicy` (the single free-form statement view) keys on `docType === "policy"` only; `fsqm` renders the structured sections. Admin: editable fields + "Save Document" (`updateModuleContent`, merges so `attachments` are preserved). Non-admin: read-only formatted sections (procedure as a numbered list), empty sections hidden.
 
 ---
 
@@ -280,6 +280,17 @@ AI quiz count (no CSV): `clamp(ceil(slides.length / 2), 5, 15)`.
 ## Word Import — `SopImportDialog.tsx`
 
 Component in `src/components/ops/`. Drag/drop `.docx` files; `parseSopDocx()` (`src/lib/sopDocxParser.ts`, mammoth + JSZip) extracts metadata + a structured body into `ParsedSop`. Each file is reviewed/edited in the dialog, then **Confirm & Save** inserts a draft `sop_documents` row (reference doc — no `training_category`) with the body on `content`. On save it also **uploads the original `.docx`** to `training-content/<id>/files/<name>` and records it in `content.attachments` (downloadable in the drawer's Reference Documents tab; non-fatal if the upload fails). The saved body renders/edits in the **Document** tab (`SopBodyEditor`). ("Generate SOP from source document" is a coming-soon placeholder.)
+
+**Type detection** (`detectType` / `detectTypeLocal`): doc-number prefix → `FSQM` = **`fsqm`** (Food Safety Quality Manual), `FRM` = `form`, else `sop`. Only `policy` is free-form (`parsePolicyBody` → `statement`); `fsqm`/sop/form all parse into structured sections via `parseBody`.
+
+**Scanned-hardcopy robustness** (these documents are often scans of paper originals — the parser is built to survive the resulting mess):
+- **Merged header cells** — `inlineHeaderValue` splits `"Label: value"` out of a single cell (e.g. `"Effective Date: 11/15/2019"`) when the label/value weren't in separate cells. The captured value is the LAST regex group (several `HEADER_FIELDS` patterns carry their own label sub-groups).
+- **Body-leaked metadata** — `scanInlineMetadata` + `guessTitle` recover number/title/date/revision from the first body paragraphs when there's no clean header table.
+- **Mid-body running-header tables** — a scan repeats the page header as a `<table>` partway down the body; `headerAtTop` only applies the "skip blocks before the header table" filter when that table actually precedes the first section heading (otherwise it would drop every section above it).
+- **List-rendered headings** — mammoth renders a numbered Word heading (`1. PURPOSE`) as a single-item `<ol>`; `listSectionHeading` recognizes these as headings instead of swallowing them as list content.
+- **Noise filtering** — `isNoiseLine`/`stripRunningHeader` drop page numbers, confidentiality boilerplate, leaked doc-number/date/revision lines, the repeated title, and stray OCR tokens.
+- **Revision history table** — `extractRevisionHistoryTable` finds the trailing `Rev #/…/Approved by` table, renders rows into `content.revision_history`, and fills `approved_by` from its column when the header didn't supply one.
+- **Rebrand** — `rebrandParsed` runs a final pass replacing `Compass Blending` → `Adventure Bakery` (case-insensitive) across every parsed string. **Always applied** (the source hardcopies were authored under the prior company name).
 
 ---
 
@@ -328,6 +339,6 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `utils.ts` | `cn()` — class merging |
 | `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult` (4th arg `complete=false` saves score only, deferring completion to acknowledgment), `saveAssignmentProgress`, `markAssignmentComplete`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration`, `generateModuleAudio` (renders+caches ElevenLabs voice MP3s into `content.audio[]`), `getTrainingAudioUrl`, `audioPathFor`, **reference/attachment helpers** (`Attachment` type, `uploadSopFile`, `removeSopFile`, `resolveFileUrl`, `getSourceDeckUrl`, `fetchReferenceDocuments`, `hasReferenceDocs`, `hasSopBody`) |
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
-| `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP data from a .docx upload; exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`) |
+| `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP/FSQM data from a .docx upload (scanned-hardcopy robust: merged-header splitting, running-header/noise filtering, list-rendered headings, trailing revision-history table, `Compass Blending`→`Adventure Bakery` rebrand); exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`) and `SopType` (`sop`/`form`/`policy`/`fsqm`) |
 | `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
