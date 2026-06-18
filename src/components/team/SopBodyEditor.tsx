@@ -11,7 +11,7 @@ type Props = {
   sopId: string;
   // The record's content object (holds the structured body + attachments).
   content: any;
-  docType: "sop" | "form" | "policy" | "training";
+  docType: "sop" | "form" | "policy" | "training" | "fsqm";
   // Provided for admins → editable; omit → read-only.
   onChange?: (content: any) => void | Promise<void>;
 };

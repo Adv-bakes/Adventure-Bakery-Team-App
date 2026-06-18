@@ -27,8 +27,8 @@ interface SopImportDialogProps {
   onImported?: () => void;
 }
 
-const TYPES: SopType[] = ["sop", "form", "policy"];
-const TYPE_LABELS: Record<SopType, string> = { sop: "SOP", form: "Form", policy: "Policy" };
+const TYPES: SopType[] = ["sop", "form", "policy", "fsqm"];
+const TYPE_LABELS: Record<SopType, string> = { sop: "SOP", form: "Form", policy: "Policy", fsqm: "FSQM" };
 
 type ImportMode = "existing" | "generate";
 
@@ -121,11 +121,13 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
         : {
             purpose: p.content.purpose,
             scope: p.content.scope,
+            definitions: p.content.definitions,
             responsibility: p.content.responsibility,
             procedure: p.content.procedure,
             form_references: p.content.form_references,
             records: p.content.records,
             governing_reference: p.content.governing_reference,
+            revision_history: p.content.revision_history,
           },
     };
     const { data: inserted, error } = await (supabase as any)
@@ -319,6 +321,7 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
                   <div className="grid grid-cols-1 gap-3">
                     <div><Label>Purpose</Label><Textarea rows={2} value={parsed.content.purpose} onChange={e => updateActiveContent({ purpose: e.target.value })} /></div>
                     <div><Label>Scope</Label><Textarea rows={2} value={parsed.content.scope} onChange={e => updateActiveContent({ scope: e.target.value })} /></div>
+                    <div><Label>Definitions</Label><Textarea rows={2} value={parsed.content.definitions} onChange={e => updateActiveContent({ definitions: e.target.value })} /></div>
                     <div><Label>Responsibility</Label><Textarea rows={2} value={parsed.content.responsibility} onChange={e => updateActiveContent({ responsibility: e.target.value })} /></div>
                     <div>
                       <Label>Procedure (steps, one per line)</Label>
@@ -331,6 +334,7 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
                     <div><Label>Form References</Label><Textarea rows={2} value={parsed.content.form_references} onChange={e => updateActiveContent({ form_references: e.target.value })} /></div>
                     <div><Label>Records</Label><Textarea rows={2} value={parsed.content.records} onChange={e => updateActiveContent({ records: e.target.value })} /></div>
                     <div><Label>Governing Reference</Label><Textarea rows={2} value={parsed.content.governing_reference} onChange={e => updateActiveContent({ governing_reference: e.target.value })} /></div>
+                    <div><Label>Revision History</Label><Textarea rows={3} value={parsed.content.revision_history} onChange={e => updateActiveContent({ revision_history: e.target.value })} /></div>
                   </div>
                 )}
               </div>
@@ -357,7 +361,7 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
 
 function detectTypeLocal(sopNumber: string): SopType {
   const n = sopNumber.trim().toUpperCase();
-  if (n.startsWith("FSQM")) return "policy";
+  if (n.startsWith("FSQM")) return "fsqm";
   if (n.startsWith("FRM")) return "form";
   return "sop";
 }
