@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CategorySelect } from "@/components/team/CategorySelect";
 import { UploadCloud, FileText, ChevronRight, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +19,7 @@ interface QueueItem {
   file: File;
   status: "pending" | "parsing" | "ready" | "saving" | "done" | "error";
   parsed?: ParsedSop;
+  category?: string | null;
   error?: string;
 }
 
@@ -25,6 +27,8 @@ interface SopImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImported?: () => void;
+  // Existing category names, for the category picker in the review form.
+  categories?: string[];
 }
 
 const TYPES: SopType[] = ["sop", "form", "policy", "fsqm"];
@@ -32,7 +36,7 @@ const TYPE_LABELS: Record<SopType, string> = { sop: "SOP", form: "Form", policy:
 
 type ImportMode = "existing" | "generate";
 
-export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDialogProps) {
+export function SopImportDialog({ open, onOpenChange, onImported, categories = [] }: SopImportDialogProps) {
   const [mode, setMode] = useState<ImportMode>("existing");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
@@ -88,6 +92,11 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
     }));
   };
 
+  const updateActiveCategory = (category: string | null) => {
+    if (activeIdx === null) return;
+    setQueue(prev => prev.map((q, qi) => (qi === activeIdx ? { ...q, category } : q)));
+  };
+
   const updateActiveContent = (patch: Partial<ParsedSop["content"]>) => {
     if (activeIdx === null) return;
     setQueue(prev => prev.map((q, qi) => {
@@ -115,6 +124,7 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
       approved_by: p.approved_by || null,
       sqf_reference: p.sqf_reference || null,
       sqf_required: p.sqf_required,
+      category: item.category ?? null,
       status: "draft",
       content: p.type === "policy"
         ? { statement: p.content.statement }
@@ -291,7 +301,10 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
                   <div><Label>Effective Date</Label><Input type="date" value={parsed.effective_date} onChange={e => updateActiveParsed({ effective_date: e.target.value })} /></div>
                   <div><Label>Approved By</Label><Input value={parsed.approved_by} onChange={e => updateActiveParsed({ approved_by: e.target.value })} /></div>
                 </div>
-                <div><Label>SQF Reference</Label><Input value={parsed.sqf_reference} onChange={e => updateActiveParsed({ sqf_reference: e.target.value })} /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>SQF Reference</Label><Input value={parsed.sqf_reference} onChange={e => updateActiveParsed({ sqf_reference: e.target.value })} /></div>
+                  <div><Label>Category</Label><CategorySelect value={active?.category ?? null} categories={categories} onChange={updateActiveCategory} /></div>
+                </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="sqf_required"
