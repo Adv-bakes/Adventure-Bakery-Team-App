@@ -12,15 +12,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DocumentAttachment } from "@/components/team/DocumentAttachment";
 import { SpanishFlag } from "@/components/team/SpanishFlag";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, CheckCircle2, Clock, AlertTriangle, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
+import { RefreshCw, CheckCircle2, Clock, AlertTriangle, ArrowUp, ArrowDown, ChevronsUpDown, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS,
   TrainingModule, TrainingAssignment,
   AssignmentStatus, getAssignmentStatus,
   fetchTrainingModules, fetchTrainingAssignments, fetchReferenceDocuments,
-  updateModuleContent, type Attachment,
+  updateModuleContent, hasSopBody, type Attachment,
 } from "@/lib/training";
+import { generateSopPdf } from "@/lib/sopPdf";
+
+const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM" };
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
 
@@ -105,7 +108,7 @@ export default function TrainingSops() {
   };
   const sortValue = (m: TrainingModule): string | number => {
     switch (sortKey) {
-      case "module": return m.module_number ?? "";
+      case "module": return m.sop_number ?? "";
       case "title": return m.title;
       case "required": return m.required_departments?.join(", ") ?? "All Staff";
       case "status": return STATUS_ORDER[getAssignmentStatus(assignmentByModule.get(m.id))];
@@ -204,11 +207,12 @@ export default function TrainingSops() {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-0 pb-0">
-                <Table>
+                <Table className="[&_td]:py-2 [&_th]:h-9">
                   <TableHeader>
                     <TableRow>
-                      <SortHead k="module" label="Module" />
+                      <SortHead k="module" label="Number" />
                       <SortHead k="title" label="Title" />
+                      <TableHead className="text-[#2A1F0E]/60 w-10"></TableHead>
                       <SortHead k="required" label="Required For" />
                       <SortHead k="status" label="Status" />
                       <SortHead k="renewal" label="Renewal" />
@@ -234,9 +238,9 @@ export default function TrainingSops() {
                           className="cursor-pointer hover:bg-[#C89B3C]/5 text-[#2A1F0E]"
                           onClick={() => navigate(`/team/hr/trainings/${m.id}`)}
                         >
-                          <TableCell className="font-mono text-xs">{m.module_number}</TableCell>
-                          <TableCell className="font-medium">
-                            <span>{m.title}</span>
+                          <TableCell className="font-mono text-xs">{m.sop_number ?? "—"}</TableCell>
+                          <TableCell className="font-medium">{m.title}</TableCell>
+                          <TableCell className="w-10">
                             {(() => {
                               const esModule = spanishByEnTitle.get(m.title);
                               if (!esModule) return null;
@@ -244,7 +248,7 @@ export default function TrainingSops() {
                                 <button
                                   onClick={e => { e.stopPropagation(); navigate(`/team/hr/trainings/${esModule.id}`); }}
                                   title="Ver en español"
-                                  className="ml-2 leading-none hover:opacity-60 transition-opacity align-middle"
+                                  className="leading-none hover:opacity-60 transition-opacity align-middle"
                                 >
                                   <SpanishFlag />
                                 </button>
@@ -291,6 +295,7 @@ export default function TrainingSops() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-[#2A1F0E]/60">Title</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">Type</TableHead>
                     <TableHead className="text-[#2A1F0E]/60">Category</TableHead>
                     <TableHead className="text-[#2A1F0E]/60">SQF Ref</TableHead>
                     <TableHead className="text-[#2A1F0E]/60">Document</TableHead>
@@ -304,6 +309,24 @@ export default function TrainingSops() {
                       onClick={() => setSelectedRef(d)}
                     >
                       <TableCell className="font-medium">{d.title}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[#2A1F0E]/60 border-[#2A1F0E]/20">{TYPE_LABELS[d.type] ?? d.type}</Badge>
+                          {d.type === "sop" && hasSopBody(d.content) && (
+                            <button
+                              onClick={async e => {
+                                e.stopPropagation();
+                                try { await generateSopPdf(d); }
+                                catch (err: any) { toast.error(err?.message ?? "Failed to generate PDF"); }
+                              }}
+                              title="Download PDF"
+                              className="leading-none text-[#C89B3C] hover:opacity-60 transition-opacity align-middle"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          )}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-xs text-[#2A1F0E]/60">{d.category ?? "—"}</TableCell>
                       <TableCell className="text-xs text-[#2A1F0E]/60">{d.sqf_reference ?? "—"}</TableCell>
                       <TableCell>

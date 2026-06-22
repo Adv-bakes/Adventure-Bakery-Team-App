@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, Copy } from "lucide-react";
+import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 import { SopImportDialog } from "@/components/ops/SopImportDialog";
 import { SlideContentEditor } from "@/components/team/SlideContentEditor";
@@ -22,6 +22,7 @@ import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
 import { TRAINING_CATEGORY_LABELS, DEPARTMENTS, updateModuleContent, updateModuleRequirements, updateModuleQuizConfig, hasReferenceDocs, hasSopBody, type Attachment } from "@/lib/training";
 import { SopBodyEditor } from "@/components/team/SopBodyEditor";
+import { generateSopPdf } from "@/lib/sopPdf";
 import { CategorySelect } from "@/components/team/CategorySelect";
 import { SpanishFlag } from "@/components/team/SpanishFlag";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -447,11 +448,12 @@ export default function SopsLibrary() {
   const DocTable = ({ items }: { items: SopDocument[] }) => {
     const visibleItems = sortDocs(items.filter(d => !isSpanish(d)));
     return (
-      <Table>
+      <Table className="[&_td]:py-2 [&_th]:h-9">
         <TableHeader>
           <TableRow>
             <SortHead k="number" label="Number" />
             <SortHead k="title" label="Title" />
+            <TableHead className="text-[#2A1F0E]/60 w-10"></TableHead>
             <SortHead k="type" label="Type" />
             <SortHead k="revision" label="Revision" />
             <SortHead k="effective" label="Effective Date" />
@@ -470,17 +472,36 @@ export default function SopsLibrary() {
                   {d.sqf_required && (
                     <ShieldCheck className="inline w-3.5 h-3.5 ml-1.5 text-[#C89B3C]" />
                   )}
+                </TableCell>
+                <TableCell className="w-10">
                   {esDoc && (
                     <button
                       onClick={e => { e.stopPropagation(); setSelected(esDoc); }}
                       title="Ver en español"
-                      className="ml-2 leading-none hover:opacity-60 transition-opacity align-middle"
+                      className="leading-none hover:opacity-60 transition-opacity align-middle"
                     >
                       <SpanishFlag />
                     </button>
                   )}
                 </TableCell>
-                <TableCell><Badge variant="outline">{TYPE_LABELS[d.type]}</Badge></TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Badge variant="outline">{TYPE_LABELS[d.type]}</Badge>
+                    {d.type === "sop" && hasSopBody(d.content) && (
+                      <button
+                        onClick={async e => {
+                          e.stopPropagation();
+                          try { await generateSopPdf(d); }
+                          catch (err: any) { toast.error(err?.message ?? "Failed to generate PDF"); }
+                        }}
+                        title="Download PDF"
+                        className="leading-none text-[#C89B3C] hover:opacity-60 transition-opacity align-middle"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    )}
+                  </span>
+                </TableCell>
                 <TableCell>{d.revision ?? "—"}</TableCell>
                 <TableCell>{d.effective_date ?? "—"}</TableCell>
                 <TableCell><Badge className={statusColors[d.status]}>{d.status}</Badge></TableCell>
@@ -745,6 +766,22 @@ export default function SopsLibrary() {
 
                 {hasSopBody(selected.content) && (
                   <TabsContent value="document">
+                    <div className="flex justify-end mb-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="bg-[#C89B3C] hover:bg-[#B8892C]"
+                        onClick={async () => {
+                          try {
+                            await generateSopPdf(selected);
+                          } catch (e: any) {
+                            toast.error(e?.message ?? "Failed to generate PDF");
+                          }
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-1.5" />Download PDF
+                      </Button>
+                    </div>
                     <SopBodyEditor
                       sopId={selected.id}
                       content={selected.content}
