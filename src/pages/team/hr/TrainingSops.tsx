@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { DocumentAttachment } from "@/components/team/DocumentAttachment";
+import { DocumentReader } from "@/components/team/DocumentReader";
 import { SpanishFlag } from "@/components/team/SpanishFlag";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RefreshCw, CheckCircle2, Clock, AlertTriangle, ArrowUp, ArrowDown, ChevronsUpDown, Download } from "lucide-react";
@@ -19,7 +19,7 @@ import {
   TrainingModule, TrainingAssignment,
   AssignmentStatus, getAssignmentStatus,
   fetchTrainingModules, fetchTrainingAssignments, fetchReferenceDocuments,
-  updateModuleContent, hasSopBody, type Attachment,
+  hasSopBody,
 } from "@/lib/training";
 import { generateSopPdf } from "@/lib/sopPdf";
 
@@ -139,29 +139,6 @@ export default function TrainingSops() {
       </button>
     </TableHead>
   );
-
-  const saveRefFileUrl = async (file_url: string | null) => {
-    if (!selectedRef) return;
-    const { error } = await (supabase as any).from("sop_documents").update({ file_url }).eq("id", selectedRef.id);
-    if (error) return toast.error(error.message);
-    const updated = { ...selectedRef, file_url };
-    setSelectedRef(updated);
-    setRefDocs(prev => prev.map(d => d.id === updated.id ? updated : d));
-  };
-
-  const saveRefAttachments = async (attachments: Attachment[]) => {
-    if (!selectedRef) return;
-    const content = { ...(selectedRef.content ?? {}), attachments };
-    try {
-      await updateModuleContent(selectedRef.id, content);
-    } catch (e: any) {
-      return toast.error(e.message ?? "Failed to save attachments");
-    }
-    const updated = { ...selectedRef, content };
-    setSelectedRef(updated);
-    setRefDocs(prev => prev.map(d => d.id === updated.id ? updated : d));
-  };
-
 
   return (
     <div className="space-y-6">
@@ -360,16 +337,10 @@ export default function TrainingSops() {
                 <div><Label className="text-xs text-muted-foreground">Category</Label><p>{selectedRef.category ?? "—"}</p></div>
                 <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><p>{selectedRef.sqf_reference ?? "—"}</p></div>
               </div>
-              <DocumentAttachment
-                sopId={selectedRef.id}
-                attachments={Array.isArray(selectedRef.content?.attachments) ? selectedRef.content.attachments : []}
-                onChange={isAdmin ? saveRefAttachments : undefined}
-                legacyFileUrl={selectedRef.file_url}
-                onClearLegacy={isAdmin ? () => saveRefFileUrl(null) : undefined}
-              />
-              {!isAdmin && !selectedRef.file_url && (
-                <p className="text-xs text-[#2A1F0E]/50">No document is attached to this entry yet.</p>
-              )}
+              {/* Training & SOPs is the read/launch surface — document management
+                  (upload/link/edit) lives in the SOPs Library. Always render the
+                  read-only reader here, for admins and employees alike. */}
+              <DocumentReader doc={selectedRef} />
             </div>
           )}
         </SheetContent>
