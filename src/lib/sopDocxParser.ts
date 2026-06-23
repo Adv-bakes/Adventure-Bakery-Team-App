@@ -45,6 +45,63 @@ export const SECTION_LABELS: { key: keyof ParsedSop["content"]; pattern: RegExp;
   { key: "revision_history", pattern: /^revision\s+history\b/i, display: "Revision History" },
 ];
 
+// A procedure line whose first non-space char is a bullet marker is a sub-bullet of the
+// step above it — not its own numbered step. Matches •, ◦, ‣, -, *, or a U+00B7 middle dot.
+const BULLET_LINE = /^\s*[•◦‣·\-*]\s+/;
+
+export function isBulletStep(line: string): boolean {
+  return BULLET_LINE.test(line);
+}
+
+// Strip the leading bullet marker (and any leading numbering) from a sub-bullet line.
+export function stripBulletMarker(line: string): string {
+  return line.replace(BULLET_LINE, "").trim();
+}
+
+/**
+ * Groups a flat procedure string[] into numbered steps, each carrying any bullet lines that
+ * follow it as sub-bullets. Bullet lines render under their step (own line, no number); a
+ * leading bullet block (before any numbered step) becomes a step with empty text.
+ */
+export function groupProcedureSteps(steps: string[]): { text: string; bullets: string[] }[] {
+  const groups: { text: string; bullets: string[] }[] = [];
+  for (const raw of steps) {
+    const line = String(raw);
+    if (isBulletStep(line)) {
+      if (groups.length === 0) groups.push({ text: "", bullets: [] });
+      groups[groups.length - 1].bullets.push(stripBulletMarker(line));
+    } else {
+      // Strip any stored leading "N." / "N)" so the rendered list owns the numbering.
+      groups.push({ text: line.replace(/^\s*\d+[.)]\s*/, "").trim(), bullets: [] });
+    }
+  }
+  return groups;
+}
+
+// One run of text with its inline formatting flags. Both the on-screen renderer and the
+// pdfmake export map these to their own node shapes (<strong>/<em> vs { bold, italics }).
+export type InlineSegment = { text: string; bold?: boolean; italic?: boolean };
+
+// Parses lightweight markdown inline marks: **bold** / __bold__ and *italic* / _italic_.
+// Storage stays plain text; this is applied at render time only. Unmatched markers pass
+// through verbatim (the regex requires non-empty, non-marker content between delimiters).
+export function parseInlineMarks(text: string): InlineSegment[] {
+  const segs: InlineSegment[] = [];
+  const re = /\*\*([^*]+)\*\*|__([^_]+)__|\*([^*]+)\*|_([^_]+)_/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) segs.push({ text: text.slice(last, m.index) });
+    if (m[1] != null) segs.push({ text: m[1], bold: true });
+    else if (m[2] != null) segs.push({ text: m[2], bold: true });
+    else if (m[3] != null) segs.push({ text: m[3], italic: true });
+    else if (m[4] != null) segs.push({ text: m[4], italic: true });
+    last = re.lastIndex;
+  }
+  if (last < text.length) segs.push({ text: text.slice(last) });
+  return segs.length ? segs : [{ text }];
+}
+
 const HEADER_FIELDS: { key: keyof Pick<ParsedSop, "sop_number" | "title" | "revision" | "effective_date" | "approved_by">; pattern: RegExp; display: string }[] = [
   { key: "sop_number", pattern: /^(sop|form)\s*(no\.?|number|#)\s*:?$/i, display: "SOP/Form number" },
   { key: "title", pattern: /^(sop|form)?\s*title\s*:?$/i, display: "Title" },

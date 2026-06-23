@@ -21,6 +21,7 @@ A B2B SaaS platform supporting end-to-end bakery product development. It has two
 | Charts | Recharts |
 | Date utils | date-fns |
 | DOCX parsing | Mammoth + JSZip |
+| PDF generation | pdfmake (client-side SOP export) |
 | Dark mode | next-themes |
 
 ---
@@ -253,6 +254,23 @@ Component in `src/components/team/`, rendered in the drawer's **Document** tab. 
 
 ---
 
+## SOP PDF Export — `lib/sopPdf.ts`
+
+`generateSopPdf(row)` renders an SOP `sop_documents` row to a downloadable PDF **client-side** via `pdfmake` (no server/storage — generated on demand, no caching). Output mirrors the paper SOP template:
+- **Logo** — the Adventure Bakery wordmark, fetched at runtime from `/sop-logo.png` (in `public/`, extracted from the original SOP PDF; the seal-only `logo.png` is the wrong asset for this) and cached in a module var as a data URL.
+- **3-row metadata header table** (black gridlines): company / `Revision Num.` · `SOP Title` / `Approval` · `SOP No.` / `Eff. Date:` — sourced from the row's `title, sop_number, revision, effective_date, approved_by`.
+- `Clause Reference` (← `sqf_reference` + "(SQF Code, Edition 9)") and `Linked Form` (← `content.form_references`) near the top.
+- **Body sections** in `SECTION_LABELS` order, empty ones omitted; `procedure` as a numbered list (a leading `N.`/`N)` in stored steps is stripped so `ol` doesn't double-number). Closing `Revision · Status · Approved By` line.
+- **Per-page footer** via pdfmake's `footer` callback: `Adventure Bakery, LLC · Confidential · <page #>` + the verbatim trade-secret/FOIA disclaimer.
+
+`SopPdfRow` is a minimal subset of the row; the function is pure (no DB call — callers already hold the row).
+
+**Download entry points** (all reuse `generateSopPdf` + `hasSopBody`, gated to `type === 'sop'` rows with a structured body):
+- **SOPs Library** (`SopsLibrary.tsx`) — a "Download PDF" button in the drawer's **Document** tab, and an inline `Download` icon beside the **Type** pill in the list (`e.stopPropagation()` so it doesn't open the drawer).
+- **Training & SOPs** (`TrainingSops.tsx`) — the Reference Library table has a **Type** column with the same inline download icon.
+
+---
+
 ## PowerPoint Import — `PptxImportDialog.tsx`
 
 Component in `src/components/team/`. Two modes:
@@ -341,4 +359,5 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
 | `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP/FSQM data from a .docx upload (scanned-hardcopy robust: merged-header splitting, running-header/noise filtering, list-rendered headings, trailing revision-history table, `Compass Blending`→`Adventure Bakery` rebrand); exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`) and `SopType` (`sop`/`form`/`policy`/`fsqm`) |
 | `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |
+| `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. See "SOP PDF Export" above |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |

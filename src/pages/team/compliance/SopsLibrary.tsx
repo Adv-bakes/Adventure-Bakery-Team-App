@@ -13,7 +13,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, Copy, Download } from "lucide-react";
+import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, Copy, Download, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { SopImportDialog } from "@/components/ops/SopImportDialog";
 import { SlideContentEditor } from "@/components/team/SlideContentEditor";
@@ -129,6 +139,9 @@ export default function SopsLibrary() {
   const [detail, setDetail] = useState<Partial<SopDocument>>({});
   const [savingDetail, setSavingDetail] = useState(false);
   const [changingKind, setChangingKind] = useState(false);
+  // Hard-delete confirmation: the doc pending permanent deletion (null = no dialog) + in-flight flag
+  const [deleteTarget, setDeleteTarget] = useState<SopDocument | null>(null);
+  const [deleting, setDeleting] = useState(false);
   // Training-module management (migrated from the Training & SOPs gear drawer)
   const [passingScorePct, setPassingScorePct] = useState(80);
   const [isCritical, setIsCritical] = useState(false);
@@ -378,6 +391,40 @@ export default function SopsLibrary() {
     }
   };
 
+  // Permanently removes a document. Unlike "Archived" (a status), this cannot be undone.
+  // quiz_questions + training_assignments are removed by their ON DELETE CASCADE FKs; the
+  // storage folder (slides/audio/files/source.pptx) is best-effort purged afterwards.
+  const deleteDoc = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeleting(true);
+    try {
+      const { error } = await (supabase as any).from("sop_documents").delete().eq("id", id);
+      if (error) throw error;
+
+      // Best-effort storage cleanup — orphaned objects are harmless, so failures don't block.
+      try {
+        const folders = ["slides", "audio", "files"];
+        const paths: string[] = [`${id}/source.pptx`];
+        for (const folder of folders) {
+          const { data: list } = await (supabase as any).storage
+            .from("training-content").list(`${id}/${folder}`, { limit: 1000 });
+          for (const obj of list ?? []) paths.push(`${id}/${folder}/${obj.name}`);
+        }
+        if (paths.length) await (supabase as any).storage.from("training-content").remove(paths);
+      } catch { /* ignore storage cleanup errors */ }
+
+      setDocs(prev => prev.filter(d => d.id !== id));
+      if (selected?.id === id) setSelected(null);
+      toast.success("Document permanently deleted");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to delete document");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
+
   const saveDoc = async () => {
     if (!editDoc?.title) return toast.error("Title required");
     setSaving(true);
@@ -487,7 +534,7 @@ export default function SopsLibrary() {
                 <TableCell>
                   <span className="inline-flex items-center gap-1.5">
                     <Badge variant="outline">{TYPE_LABELS[d.type]}</Badge>
-                    {d.type === "sop" && hasSopBody(d.content) && (
+                    {hasSopBody(d.content) && (
                       <button
                         onClick={async e => {
                           e.stopPropagation();
@@ -934,10 +981,53 @@ export default function SopsLibrary() {
                   />
                 </TabsContent>
               </Tabs>
+
+              {isAdmin && (
+                <div className="border-t pt-4 mt-2" style={{ borderColor: "rgba(220,38,38,0.25)" }}>
+                  <Label className="text-xs text-muted-foreground">Danger Zone</Label>
+                  <div className="flex items-center justify-between gap-3 mt-1.5">
+                    <p className="text-xs text-[#2A1F0E]/60">
+                      Permanently delete this document, its quiz, and all training assignments. This cannot be undone — use Archive instead to keep a record.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 border-red-500/40 text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => setDeleteTarget(selected)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />Delete Permanently
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Hard-delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o && !deleting) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteTarget?.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the document along with its quiz questions, training assignments,
+              and uploaded files. This action cannot be undone. To keep a record instead, set its status to Archived.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); deleteDoc(); }}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleting ? "Deleting…" : "Delete Permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add SOP dialog */}
       <Dialog open={!!editDoc} onOpenChange={(o) => !o && setEditDoc(null)}>

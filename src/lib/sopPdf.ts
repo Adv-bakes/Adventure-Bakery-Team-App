@@ -1,7 +1,12 @@
 import pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
 import type { TDocumentDefinitions, Content } from "pdfmake/interfaces";
-import { SECTION_LABELS } from "@/lib/sopDocxParser";
+import { SECTION_LABELS, groupProcedureSteps, parseInlineMarks } from "@/lib/sopDocxParser";
+
+// Converts plain text with **bold**/*italic* marks into a pdfmake text-run array.
+const inline = (s: string) => ({
+  text: parseInlineMarks(s).map(seg => ({ text: seg.text, bold: seg.bold, italics: seg.italic })),
+});
 
 // Wire up the bundled Roboto fonts (the import shape varies by build).
 (pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs ?? (pdfFonts as any).vfs ?? (pdfFonts as any).default?.pdfMake?.vfs;
@@ -115,7 +120,24 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
       const steps = Array.isArray(content.procedure) ? content.procedure.filter(Boolean) : [];
       if (!steps.length) continue;
       body.push({ text: `${display}:`, bold: true, color: GOLD, margin: [0, 8, 0, 2] });
-      body.push({ ol: steps.map((s: string) => String(s).replace(/^\s*\d+[.)]\s*/, "")), margin: [0, 0, 0, 4] });
+      // Group bullet lines under their numbered step so sub-bullets don't get their own number.
+      const groups = groupProcedureSteps(steps as string[]);
+      // A leading bullet block (no numbered step above it) renders as a plain bullet list.
+      const lead = groups[0]?.text === "" ? groups[0] : null;
+      const numbered = lead ? groups.slice(1) : groups;
+      if (lead && lead.bullets.length > 0) {
+        body.push({ ul: lead.bullets.map(inline), margin: [0, 0, 0, 4] });
+      }
+      if (numbered.length > 0) {
+        body.push({
+          ol: numbered.map(g =>
+            g.bullets.length > 0
+              ? { stack: [inline(g.text), { ul: g.bullets.map(inline), margin: [0, 2, 0, 0] }] }
+              : inline(g.text),
+          ),
+          margin: [0, 0, 0, 4],
+        });
+      }
       continue;
     }
     // form_references already rendered above as "Linked Form".
