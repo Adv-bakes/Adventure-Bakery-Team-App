@@ -8,8 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Thermometer, ChevronRight, Download, FileText, Sheet as SheetIcon } from "lucide-react";
+import { Thermometer, ChevronRight, Download, FileText, Sheet as SheetIcon, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { fetchReferenceDocuments, resolveFileUrl, type Attachment } from "@/lib/training";
 import { subDays, subHours, format } from "date-fns";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Legend, ResponsiveContainer,
@@ -31,6 +32,8 @@ type TempRow = {
   temperature_celsius: number | null;
   temperature_fahrenheit: number | null;
   humidity: number | null;
+  battery_level: number | null;
+  low_battery_alarm: boolean | null;
 };
 
 type Period = "daily" | "weekly" | "monthly";
@@ -58,6 +61,42 @@ function tzAbbr(d: Date) {
     .find(p => p.type === "timeZoneName")?.value ?? "";
 }
 
+// Battery level 1 (low) .. 4 (high) → color + label.
+const BATTERY_META: Record<number, { color: string; label: string }> = {
+  1: { color: "#A33B3B", label: "Low" },
+  2: { color: "#D08A3C", label: "Fair" },
+  3: { color: "#B5A93C", label: "Good" },
+  4: { color: "#5C7A4A", label: "Full" },
+};
+
+// Semicircular SVG gauge for a battery level (1..4). `alarm` forces the low/red styling.
+function BatteryGauge({ name, level, alarm }: { name: string; level: number | null; alarm: boolean }) {
+  const clamped = level == null ? 0 : Math.max(0, Math.min(4, level));
+  const meta = alarm ? BATTERY_META[1] : (BATTERY_META[clamped] ?? { color: "#999", label: "—" });
+  const frac = clamped / 4; // 0..1 across the 180° arc
+  const cx = 60, cy = 60, r = 48;
+  const a0 = Math.PI, a1 = Math.PI * (1 - frac); // start left, sweep to right
+  const pt = (a: number) => `${cx + r * Math.cos(a)},${cy - r * Math.sin(a)}`;
+  const arc = (from: number, to: number) =>
+    `M ${pt(from)} A ${r} ${r} 0 0 1 ${pt(to)}`;
+  return (
+    <div className="flex flex-col items-center text-center">
+      <svg viewBox="0 0 120 78" width="120" height="78" role="img" aria-label={`${name} battery ${meta.label}`}>
+        <path d={arc(Math.PI, 0)} fill="none" stroke="#E6DFCD" strokeWidth="10" strokeLinecap="round" />
+        {clamped > 0 && (
+          <path d={arc(a0, a1)} fill="none" stroke={meta.color} strokeWidth="10" strokeLinecap="round" />
+        )}
+        <text x={cx} y={cy - 6} textAnchor="middle" fontSize="22" fontWeight="700" fill={meta.color}>
+          {level == null ? "—" : level}
+        </text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize="11" fill="#666">{meta.label}</text>
+      </svg>
+      <div className="text-sm font-medium mt-1">{name}</div>
+      {alarm && <div className="text-xs font-medium" style={{ color: BATTERY_META[1].color }}>Low-battery alarm</div>}
+    </div>
+  );
+}
+
 export default function TemperatureReport() {
   const [period, setPeriod] = useState<Period>("daily");
   const [start, setStart] = useState<string>(toDateInput(PERIOD_CONFIG.daily.rangeStart()));
@@ -65,6 +104,7 @@ export default function TemperatureReport() {
   const [rows, setRows] = useState<TempRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [drilldown, setDrilldown] = useState<string | null>(null);
+  const [guide, setGuide] = useState<Attachment | null>(null);
 
   // When the period tab changes, reset the date inputs to that period's default window.
   function changePeriod(p: Period) {
@@ -83,7 +123,7 @@ export default function TemperatureReport() {
         const endTs = new Date(`${end}T23:59:59.999`).toISOString();
         const { data, error } = await supabase
           .from("temperature_logs" as any)
-          .select("id, created_at, device_id, equipment_name, temperature_celsius, temperature_fahrenheit, humidity")
+          .select("id, created_at, device_id, equipment_name, temperature_celsius, temperature_fahrenheit, humidity, battery_level, low_battery_alarm")
           .gte("created_at", startTs)
           .lte("created_at", endTs)
           .order("created_at", { ascending: true })
@@ -102,6 +142,37 @@ export default function TemperatureReport() {
     load();
     return () => { cancelled = true; };
   }, [start, end]);
+
+  // Locate the YoLink Operations Guide reference doc (by attachment filename) so we can
+  // point staff to it when the report data looks missing/stale.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const docs = await fetchReferenceDocuments();
+        const re = /yolink[_-]?operations[_-]?guide/i;
+        for (const d of docs) {
+          const atts: Attachment[] = d?.content?.attachments ?? [];
+          const match = atts.find(a => re.test(a.name ?? "") || re.test(a.path ?? "") || re.test(a.url ?? ""));
+          if (match) { if (!cancelled) setGuide(match); return; }
+        }
+      } catch {
+        // Non-fatal: the hint just renders without a link.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  async function openGuide() {
+    if (!guide) return;
+    try {
+      const url = guide.url ?? (guide.path ? await resolveFileUrl(guide.path) : null);
+      if (url) window.open(url, "_blank", "noopener");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not open the YoLink Operations Guide");
+    }
+  }
 
   const equipmentNames = useMemo(() => {
     const set = new Set<string>();
@@ -135,6 +206,38 @@ export default function TemperatureReport() {
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [rows]);
+
+  // Latest battery state per equipment (rows are ascending, so the last seen wins).
+  // battery_level is 1 (low) .. 4 (high).
+  const batteries = useMemo(() => {
+    const map = new Map<string, { level: number | null; alarm: boolean; at: string }>();
+    for (const r of rows) {
+      const key = r.equipment_name || r.device_id || "Unknown";
+      if (r.battery_level == null && r.low_battery_alarm == null) continue;
+      map.set(key, {
+        level: r.battery_level ?? null,
+        alarm: !!r.low_battery_alarm,
+        at: r.created_at,
+      });
+    }
+    return Array.from(map.entries())
+      .map(([name, b]) => ({ name, ...b }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
+  const lowBatteries = useMemo(
+    () => batteries.filter(b => b.alarm || (b.level != null && b.level <= 1)),
+    [batteries],
+  );
+
+  // Staleness: hours since the most recent reading in range (null when no rows).
+  const STALE_HOURS = 6;
+  const staleHours = useMemo(() => {
+    if (rows.length === 0) return null;
+    const latest = rows.reduce((max, r) => Math.max(max, new Date(r.created_at).getTime()), 0);
+    return (Date.now() - latest) / 3_600_000;
+  }, [rows]);
+  const isStale = staleHours !== null && staleHours > STALE_HOURS;
 
   // Chart data: bucket avg temp per equipment over time
   const chartData = useMemo(() => {
@@ -175,7 +278,7 @@ export default function TemperatureReport() {
   // Export raw readings in range as CSV (spreadsheet).
   function exportCsv() {
     if (rows.length === 0) { toast.error("No readings to export"); return; }
-    const headers = ["Timestamp", "Timezone", "Equipment", "Device ID", "Temp °F", "Temp °C", "Humidity %"];
+    const headers = ["Timestamp", "Timezone", "Equipment", "Device ID", "Temp °F", "Temp °C", "Humidity %", "Battery (1-4)", "Low Battery Alarm"];
     const esc = (v: string | number | null) => {
       const s = v === null ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -190,6 +293,8 @@ export default function TemperatureReport() {
         r.temperature_fahrenheit ?? "",
         r.temperature_celsius ?? "",
         r.humidity ?? "",
+        r.battery_level ?? "",
+        r.low_battery_alarm == null ? "" : (r.low_battery_alarm ? "YES" : "NO"),
       ].map(esc).join(",");
     });
     const csv = [headers.join(","), ...lines].join("\r\n");
@@ -301,6 +406,16 @@ export default function TemperatureReport() {
     return `temperature-${slug}-${start}_to_${end}`;
   }
 
+  // Renders the guide reference as a gold text link when the doc was found, else plain text.
+  function guideLink(label: string) {
+    if (!guide) return <span className="font-medium">{label}</span>;
+    return (
+      <button type="button" onClick={openGuide} className="font-medium underline" style={{ color: GOLD }}>
+        {label}
+      </button>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -350,6 +465,28 @@ export default function TemperatureReport() {
         </div>
       </div>
 
+      {/* Stale-data warning */}
+      {isStale && (
+        <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <p>
+            Latest reading is {Math.round(staleHours!)} hours old — sensors may have stopped
+            reporting. {guideLink("See the YoLink Operations Guide")} for setup &amp; troubleshooting.
+          </p>
+        </div>
+      )}
+
+      {/* Low-battery warning */}
+      {lowBatteries.length > 0 && (
+        <div className="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <p>
+            Low battery on {lowBatteries.map(b => b.name).join(", ")} — replace soon to avoid gaps
+            in monitoring. {guideLink("See the YoLink Operations Guide")} for battery replacement.
+          </p>
+        </div>
+      )}
+
       {/* Summary table */}
       <Card className="p-4">
         <h2 className="text-lg font-semibold mb-3">Summary by Equipment</h2>
@@ -369,7 +506,11 @@ export default function TemperatureReport() {
             {summary.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  {loading ? "Loading…" : "No readings in this range."}
+                  {loading ? "Loading…" : (
+                    <span>
+                      No readings in this range — sensors may be offline. {guideLink("See the YoLink Operations Guide")} for setup &amp; troubleshooting.
+                    </span>
+                  )}
                 </TableCell>
               </TableRow>
             ) : (
@@ -395,6 +536,21 @@ export default function TemperatureReport() {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Battery status gauges */}
+      {batteries.length > 0 && (
+        <Card className="p-4">
+          <h2 className="text-lg font-semibold mb-1">Battery Status</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Latest reported level per sensor (1 = low · 4 = full).
+          </p>
+          <div className="flex flex-wrap gap-6">
+            {batteries.map(b => (
+              <BatteryGauge key={b.name} name={b.name} level={b.level} alarm={b.alarm} />
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Chart */}
       <Card className="p-4">
