@@ -127,7 +127,7 @@ All are public (anon) Supabase credentials — safe on the client.
 | Relationships | `/team/sales/clients` | |
 | Sales | `/team/sales/dashboard`, `/team/sales/templates` | Dashboard has inbox badge |
 | Operations | `/team/ops/orders`, `/team/ops/inventory`, `/team/ops/floor`, `/team/ops/insights` | floor & insights are Phase 0 |
-| Compliance | `/team/compliance/sops`, `/team/compliance/traceability`, `/team/compliance/certifications` | traceability & certifications Phase 0 |
+| Compliance | `/team/compliance/sops`, `/team/compliance/traceability`, `/team/compliance/temperature`, `/team/compliance/certifications` | traceability & certifications Phase 0 |
 | HR | `/team/hr/directory`, `/team/hr/trainings`, `/team/hr/traceability` | directory is Phase 0 |
 | Internal | `/team/internal/email`, `/team/internal/finance` (owner only), `/team/sourcing`, `/team/account`, `/team/settings` | email/finance Phase 0 |
 
@@ -147,6 +147,7 @@ All are public (anon) Supabase credentials — safe on the client.
 | `document_templates` | NDA/PSS/PRF file templates — `kind`, `is_active`, `file_path` |
 | `chat_history` | CoachChat messages — `user_id`, `project_id`, `section`, `role`, `content` |
 | `ab_warehouses` | Inventory locations |
+| `temperature_logs` | YoLink sensor readings (ingested by a Hostinger VPS) — `created_at`, `device_id`, `equipment_name`, `temperature_celsius`, `temperature_fahrenheit`, `humidity`, `battery_level` (1 low – 4 full), `low_battery_alarm`. **Not in generated `types.ts`** — query with `supabase.from("temperature_logs" as any)`. Powers the Temperature Monitoring report (see below). |
 
 ---
 
@@ -268,6 +269,33 @@ Component in `src/components/team/`, rendered in the drawer's **Document** tab. 
 **Download entry points** (all reuse `generateSopPdf` + `hasSopBody`, gated to `type === 'sop'` rows with a structured body):
 - **SOPs Library** (`SopsLibrary.tsx`) — a "Download PDF" button in the drawer's **Document** tab, and an inline `Download` icon beside the **Type** pill in the list (`e.stopPropagation()` so it doesn't open the drawer).
 - **Training & SOPs** (`TrainingSops.tsx`) — the Reference Library table has a **Type** column with the same inline download icon.
+
+---
+
+## Temperature Monitoring Report — `pages/team/compliance/TemperatureReport.tsx`
+
+`/team/compliance/temperature` (Compliance nav, `Thermometer` icon). Read-only reporting over
+`temperature_logs` (YoLink sensor data). **All aggregation is client-side** — one ranged query,
+no DB view/RPC yet (a later phase will roll up summaries + purge old rows). Displays **°F**.
+
+- **Daily / Weekly / Monthly** tabs (shadcn `Tabs`) set the default window (last 24h / 7d / 30d);
+  editable **From/To** date inputs override it. The two date inputs live in separate parent divs,
+  so a `:last-of-type` selector won't target the second one.
+- **Summary by Equipment** table: Readings · Min/Max/Avg °F · Avg Humidity %. Rows are clickable →
+  a **drilldown `Sheet`** listing every individual reading (timezone-aware timestamps via
+  `tzAbbr()`, DST-correct).
+- **Battery Status** card: a per-sensor semicircular **SVG gauge** (`BatteryGauge`) of the latest
+  reported `battery_level` (1 low → 4 full), color-coded Low/Fair/Good/Full. A red **low-battery
+  banner** lists sensors with `low_battery_alarm` or level ≤ 1.
+- **Recharts** `LineChart`: avg °F per time bucket, one line per equipment.
+- **Exports** (both summary and drilldown): **PDF** via `pdfmake` (same vfs-font wiring + warm
+  palette + confidential footer as `lib/sopPdf.ts`) and **CSV** (raw readings incl. battery
+  columns). Built inline in the page, not a shared lib.
+- **Contextual guide link:** on mount it locates the `yolink_operations_guide.pdf` **reference
+  doc** by attachment-filename match (`fetchReferenceDocuments()` → `content.attachments[]`), and
+  surfaces a gold link to it (opens a fresh signed URL via `resolveFileUrl()`) **only when data
+  looks wrong** — empty range (missing) or latest reading > 6h old (stale). Renders as plain text
+  if the doc isn't found (graceful).
 
 ---
 
