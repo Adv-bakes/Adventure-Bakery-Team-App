@@ -35,6 +35,7 @@ import { SopBodyEditor } from "@/components/team/SopBodyEditor";
 import { generateSopPdf } from "@/lib/sopPdf";
 import { CategorySelect } from "@/components/team/CategorySelect";
 import { SpanishFlag } from "@/components/team/SpanishFlag";
+import { SqfReference } from "@/components/team/SqfReference";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Map a SOPs Library category name back to its HR training category number
@@ -552,7 +553,7 @@ export default function SopsLibrary() {
                 <TableCell>{d.revision ?? "—"}</TableCell>
                 <TableCell>{d.effective_date ?? "—"}</TableCell>
                 <TableCell><Badge className={statusColors[d.status]}>{d.status}</Badge></TableCell>
-                {viewMode === "category" && <TableCell className="text-xs text-[#2A1F0E]/60">{d.sqf_reference ?? "—"}</TableCell>}
+                {viewMode === "category" && <TableCell className="text-xs text-[#2A1F0E]/60"><SqfReference value={d.sqf_reference} /></TableCell>}
               </TableRow>
             );
           })}
@@ -797,7 +798,7 @@ export default function SopsLibrary() {
                   <div><Label className="text-xs text-muted-foreground">SOP #</Label><p>{selected.sop_number ?? "—"}</p></div>
                   <div><Label className="text-xs text-muted-foreground">Revision</Label><p>{selected.revision ?? "—"}</p></div>
                   <div><Label className="text-xs text-muted-foreground">Effective Date</Label><p>{selected.effective_date ?? "—"}</p></div>
-                  <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><p>{selected.sqf_reference ?? "—"}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><p><SqfReference value={selected.sqf_reference} /></p></div>
                   <div><Label className="text-xs text-muted-foreground">Approved By</Label><p>{selected.approved_by ?? "—"}</p></div>
                 </div>
               )}
