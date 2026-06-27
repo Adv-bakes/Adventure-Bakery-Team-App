@@ -26,6 +26,10 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
           .maybeSingle()
           .then(({ data }) => {
             setAccessGranted(data?.access_granted ?? false);
+          })
+          .catch((err) => {
+            console.error("Failed to load profile access:", err);
+            setAccessGranted(false);
           });
       } else {
         setAccessGranted(false);

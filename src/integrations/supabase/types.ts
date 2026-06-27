@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -11,6 +12,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -37,6 +63,111 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      batch_measuring_entries: {
+        Row: {
+          actual_weight_lbs: number | null
+          batch_id: string | null
+          group_name: string | null
+          id: string
+          ingredient_brand: string | null
+          ingredient_lot_code: string | null
+          ingredient_name: string
+          measured_at: string
+          measured_by: string | null
+          measured_by_name: string | null
+          session_id: string | null
+          target_weight_lbs: number | null
+        }
+        Insert: {
+          actual_weight_lbs?: number | null
+          batch_id?: string | null
+          group_name?: string | null
+          id?: string
+          ingredient_brand?: string | null
+          ingredient_lot_code?: string | null
+          ingredient_name: string
+          measured_at?: string
+          measured_by?: string | null
+          measured_by_name?: string | null
+          session_id?: string | null
+          target_weight_lbs?: number | null
+        }
+        Update: {
+          actual_weight_lbs?: number | null
+          batch_id?: string | null
+          group_name?: string | null
+          id?: string
+          ingredient_brand?: string | null
+          ingredient_lot_code?: string | null
+          ingredient_name?: string
+          measured_at?: string
+          measured_by?: string | null
+          measured_by_name?: string | null
+          session_id?: string | null
+          target_weight_lbs?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_measuring_entries_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "production_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_measuring_entries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "batch_measuring_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batch_measuring_sessions: {
+        Row: {
+          batch_ids: string[]
+          batch_sheet_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          order_id: string | null
+          session_date: string
+        }
+        Insert: {
+          batch_ids?: string[]
+          batch_sheet_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          order_id?: string | null
+          session_date?: string
+        }
+        Update: {
+          batch_ids?: string[]
+          batch_sheet_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          order_id?: string | null
+          session_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_measuring_sessions_batch_sheet_id_fkey"
+            columns: ["batch_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "batch_sheets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_measuring_sessions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       batch_sheets: {
         Row: {
@@ -584,6 +715,154 @@ export type Database = {
         }
         Relationships: []
       }
+      finished_goods_inventory: {
+        Row: {
+          bol_number: string | null
+          created_at: string
+          id: string
+          lot_codes: string[]
+          notes: string | null
+          order_id: string | null
+          product_name: string
+          qty_cases: number
+          qty_units: number
+          received_date: string
+          ship_carrier: string | null
+          shipped_at: string | null
+          shipping_arranged_by: string | null
+          shipping_surcharge: number | null
+          tracking_number: string | null
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          bol_number?: string | null
+          created_at?: string
+          id?: string
+          lot_codes?: string[]
+          notes?: string | null
+          order_id?: string | null
+          product_name: string
+          qty_cases?: number
+          qty_units?: number
+          received_date?: string
+          ship_carrier?: string | null
+          shipped_at?: string | null
+          shipping_arranged_by?: string | null
+          shipping_surcharge?: number | null
+          tracking_number?: string | null
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          bol_number?: string | null
+          created_at?: string
+          id?: string
+          lot_codes?: string[]
+          notes?: string | null
+          order_id?: string | null
+          product_name?: string
+          qty_cases?: number
+          qty_units?: number
+          received_date?: string
+          ship_carrier?: string | null
+          shipped_at?: string | null
+          shipping_arranged_by?: string | null
+          shipping_surcharge?: number | null
+          tracking_number?: string | null
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finished_goods_inventory_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finished_goods_inventory_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "ab_warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          data: Json | null
+          form_template_id: string
+          id: string
+          signed: boolean
+          signed_at: string | null
+          submitted_at: string
+          submitted_by: string
+        }
+        Insert: {
+          data?: Json | null
+          form_template_id: string
+          id?: string
+          signed?: boolean
+          signed_at?: string | null
+          submitted_at?: string
+          submitted_by: string
+        }
+        Update: {
+          data?: Json | null
+          form_template_id?: string
+          id?: string
+          signed?: boolean
+          signed_at?: string | null
+          submitted_at?: string
+          submitted_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_form_template_id_fkey"
+            columns: ["form_template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          created_at: string
+          fields: Json | null
+          form_number: string | null
+          form_title: string
+          id: string
+          sop_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fields?: Json | null
+          form_number?: string | null
+          form_title: string
+          id?: string
+          sop_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fields?: Json | null
+          form_number?: string | null
+          form_title?: string
+          id?: string
+          sop_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_templates_sop_id_fkey"
+            columns: ["sop_id"]
+            isOneToOne: false
+            referencedRelation: "sop_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formulas: {
         Row: {
           concept_id: number | null
@@ -655,6 +934,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ingredient_barcodes: {
+        Row: {
+          barcode: string
+          brand_name: string
+          created_at: string
+          id: string
+          ingredient_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          barcode: string
+          brand_name?: string
+          created_at?: string
+          id?: string
+          ingredient_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string
+          brand_name?: string
+          created_at?: string
+          id?: string
+          ingredient_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       ingredient_specs: {
         Row: {
@@ -842,8 +1148,41 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_reservations: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_name: string
+          order_id: string | null
+          reserved_lbs: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_name: string
+          order_id?: string | null
+          reserved_lbs?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_name?: string
+          order_id?: string | null
+          reserved_lbs?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_reservations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_tolling: {
         Row: {
+          category: string
           client_id: string | null
           client_name: string | null
           created_at: string
@@ -859,6 +1198,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: string
           client_id?: string | null
           client_name?: string | null
           created_at?: string
@@ -874,6 +1214,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: string
           client_id?: string | null
           client_name?: string | null
           created_at?: string
@@ -889,6 +1230,159 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      inventory_tolling_adjustments: {
+        Row: {
+          adjusted_at: string
+          adjusted_by: string | null
+          client_id: string
+          counted_qty: number
+          id: string
+          ingredient_name: string
+          note: string | null
+          previous_qty: number
+          source: string
+          tolling_id: string | null
+        }
+        Insert: {
+          adjusted_at?: string
+          adjusted_by?: string | null
+          client_id: string
+          counted_qty: number
+          id?: string
+          ingredient_name: string
+          note?: string | null
+          previous_qty: number
+          source?: string
+          tolling_id?: string | null
+        }
+        Update: {
+          adjusted_at?: string
+          adjusted_by?: string | null
+          client_id?: string
+          counted_qty?: number
+          id?: string
+          ingredient_name?: string
+          note?: string | null
+          previous_qty?: number
+          source?: string
+          tolling_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_tolling_adjustments_tolling_id_fkey"
+            columns: ["tolling_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_tolling"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_tolling_dismissed_duplicates: {
+        Row: {
+          client_id: string
+          dismissed_at: string
+          dismissed_by: string | null
+          id: string
+          name_a: string
+          name_b: string
+        }
+        Insert: {
+          client_id: string
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          name_a: string
+          name_b: string
+        }
+        Update: {
+          client_id?: string
+          dismissed_at?: string
+          dismissed_by?: string | null
+          id?: string
+          name_a?: string
+          name_b?: string
+        }
+        Relationships: []
+      }
+      order_stage_events: {
+        Row: {
+          completed_by: string | null
+          created_at: string
+          entered_at: string
+          exited_at: string | null
+          id: string
+          order_id: string
+          stage: string
+        }
+        Insert: {
+          completed_by?: string | null
+          created_at?: string
+          entered_at?: string
+          exited_at?: string | null
+          id?: string
+          order_id: string
+          stage: string
+        }
+        Update: {
+          completed_by?: string | null
+          created_at?: string
+          entered_at?: string
+          exited_at?: string | null
+          id?: string
+          order_id?: string
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_stage_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_station_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          inputs: Json | null
+          order_id: string
+          started_at: string | null
+          station: string
+          worker_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          inputs?: Json | null
+          order_id: string
+          started_at?: string | null
+          station: string
+          worker_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          inputs?: Json | null
+          order_id?: string
+          started_at?: string | null
+          station?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_station_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       packaging: {
         Row: {
@@ -973,6 +1467,7 @@ export type Database = {
           price_target_per_unit: string | null
           primary_packaging_other: string | null
           primary_packaging_vessel: string | null
+          product_approved_at: string | null
           product_name: string | null
           project_type: string | null
           quote_approved_at: string | null
@@ -1033,6 +1528,7 @@ export type Database = {
           price_target_per_unit?: string | null
           primary_packaging_other?: string | null
           primary_packaging_vessel?: string | null
+          product_approved_at?: string | null
           product_name?: string | null
           project_type?: string | null
           quote_approved_at?: string | null
@@ -1093,6 +1589,7 @@ export type Database = {
           price_target_per_unit?: string | null
           primary_packaging_other?: string | null
           primary_packaging_vessel?: string | null
+          product_approved_at?: string | null
           product_name?: string | null
           project_type?: string | null
           quote_approved_at?: string | null
@@ -1303,47 +1800,113 @@ export type Database = {
       production_batches: {
         Row: {
           batch_date: string
+          batch_sheet_id: string | null
           client_name: string | null
           completed_at: string | null
           created_at: string
           created_by: string | null
+          depositing_completed_at: string | null
+          depositing_completed_by: string | null
+          depositing_session_date: string | null
           id: string
-          lot_code: string
+          lot_code: string | null
+          mixing_completed_at: string | null
+          mixing_completed_by: string | null
+          mixing_session_date: string | null
           notes: string | null
+          order_id: string | null
+          oven_temp_out: number | null
+          packaging_cases_total: number | null
+          packaging_completed_at: string | null
+          packaging_completed_by: string | null
+          packaging_loose_units: number | null
+          packaging_session_date: string | null
+          packaging_trips_json: Json | null
           product_name: string
+          qc_completed: boolean | null
+          qc_notes: string | null
           status: string
           target_batch_size_lbs: number
           updated_at: string
         }
         Insert: {
           batch_date?: string
+          batch_sheet_id?: string | null
           client_name?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          depositing_completed_at?: string | null
+          depositing_completed_by?: string | null
+          depositing_session_date?: string | null
           id?: string
-          lot_code: string
+          lot_code?: string | null
+          mixing_completed_at?: string | null
+          mixing_completed_by?: string | null
+          mixing_session_date?: string | null
           notes?: string | null
+          order_id?: string | null
+          oven_temp_out?: number | null
+          packaging_cases_total?: number | null
+          packaging_completed_at?: string | null
+          packaging_completed_by?: string | null
+          packaging_loose_units?: number | null
+          packaging_session_date?: string | null
+          packaging_trips_json?: Json | null
           product_name: string
+          qc_completed?: boolean | null
+          qc_notes?: string | null
           status?: string
           target_batch_size_lbs: number
           updated_at?: string
         }
         Update: {
           batch_date?: string
+          batch_sheet_id?: string | null
           client_name?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          depositing_completed_at?: string | null
+          depositing_completed_by?: string | null
+          depositing_session_date?: string | null
           id?: string
-          lot_code?: string
+          lot_code?: string | null
+          mixing_completed_at?: string | null
+          mixing_completed_by?: string | null
+          mixing_session_date?: string | null
           notes?: string | null
+          order_id?: string | null
+          oven_temp_out?: number | null
+          packaging_cases_total?: number | null
+          packaging_completed_at?: string | null
+          packaging_completed_by?: string | null
+          packaging_loose_units?: number | null
+          packaging_session_date?: string | null
+          packaging_trips_json?: Json | null
           product_name?: string
+          qc_completed?: boolean | null
+          qc_notes?: string | null
           status?: string
           target_batch_size_lbs?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "production_batches_batch_sheet_id_fkey"
+            columns: ["batch_sheet_id"]
+            isOneToOne: false
+            referencedRelation: "batch_sheets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_batches_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "production_orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       production_intake: {
         Row: {
@@ -1422,51 +1985,84 @@ export type Database = {
       }
       production_orders: {
         Row: {
+          batch_count: number | null
+          batch_size_lbs: number | null
           case_count: number | null
           client_id: string | null
           created_at: string | null
           created_by: string | null
+          deposit_confirmed_at: string | null
+          deposit_confirmed_by: string | null
           id: string
           items: Json | null
+          material_calc_json: Json | null
           notes: string | null
+          order_number: string | null
+          order_type: string
+          payment_status: string
           product_id: string | null
           qb_estimate_accepted_at: string | null
           qb_estimate_sent_at: string | null
+          schedule_confirmed: boolean
+          scheduled_date: string | null
           ship_to_kind: string | null
           ship_to_warehouse_id: string | null
           status: string | null
+          target_completion_date: string | null
           waste_pct: number | null
         }
         Insert: {
+          batch_count?: number | null
+          batch_size_lbs?: number | null
           case_count?: number | null
           client_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          deposit_confirmed_at?: string | null
+          deposit_confirmed_by?: string | null
           id?: string
           items?: Json | null
+          material_calc_json?: Json | null
           notes?: string | null
+          order_number?: string | null
+          order_type?: string
+          payment_status?: string
           product_id?: string | null
           qb_estimate_accepted_at?: string | null
           qb_estimate_sent_at?: string | null
+          schedule_confirmed?: boolean
+          scheduled_date?: string | null
           ship_to_kind?: string | null
           ship_to_warehouse_id?: string | null
           status?: string | null
+          target_completion_date?: string | null
           waste_pct?: number | null
         }
         Update: {
+          batch_count?: number | null
+          batch_size_lbs?: number | null
           case_count?: number | null
           client_id?: string | null
           created_at?: string | null
           created_by?: string | null
+          deposit_confirmed_at?: string | null
+          deposit_confirmed_by?: string | null
           id?: string
           items?: Json | null
+          material_calc_json?: Json | null
           notes?: string | null
+          order_number?: string | null
+          order_type?: string
+          payment_status?: string
           product_id?: string | null
           qb_estimate_accepted_at?: string | null
           qb_estimate_sent_at?: string | null
+          schedule_confirmed?: boolean
+          scheduled_date?: string | null
           ship_to_kind?: string | null
           ship_to_warehouse_id?: string | null
           status?: string | null
+          target_completion_date?: string | null
           waste_pct?: number | null
         }
         Relationships: [
@@ -1671,6 +2267,50 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_questions: {
+        Row: {
+          correct_option_index: number
+          created_at: string
+          hint: string | null
+          id: string
+          options: Json
+          question_number: number
+          question_text: string
+          rationale: string | null
+          sop_id: string
+        }
+        Insert: {
+          correct_option_index: number
+          created_at?: string
+          hint?: string | null
+          id?: string
+          options: Json
+          question_number: number
+          question_text: string
+          rationale?: string | null
+          sop_id: string
+        }
+        Update: {
+          correct_option_index?: number
+          created_at?: string
+          hint?: string | null
+          id?: string
+          options?: Json
+          question_number?: number
+          question_text?: string
+          rationale?: string | null
+          sop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_sop_id_fkey"
+            columns: ["sop_id"]
+            isOneToOne: false
+            referencedRelation: "sop_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       readiness: {
         Row: {
           concept_complete: boolean | null
@@ -1785,6 +2425,7 @@ export type Database = {
           preservation_strategy: string | null
           product_id: number | null
           shelf_life_days: number | null
+          shelf_life_unit: string | null
           storage_condition: string
           test_date: string | null
           updated_at: string
@@ -1796,7 +2437,7 @@ export type Database = {
           concept_id?: number | null
           created_at?: string
           functional_ingredients?: Json | null
-          id: number
+          id?: number
           moisture_pct?: number | null
           notes?: string | null
           packaging_material?: string | null
@@ -1804,6 +2445,7 @@ export type Database = {
           preservation_strategy?: string | null
           product_id?: number | null
           shelf_life_days?: number | null
+          shelf_life_unit?: string | null
           storage_condition: string
           test_date?: string | null
           updated_at?: string
@@ -1823,12 +2465,123 @@ export type Database = {
           preservation_strategy?: string | null
           product_id?: number | null
           shelf_life_days?: number | null
+          shelf_life_unit?: string | null
           storage_condition?: string
           test_date?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      sop_documents: {
+        Row: {
+          approved_by: string | null
+          category: string | null
+          content: Json | null
+          created_at: string
+          effective_date: string | null
+          file_url: string | null
+          id: string
+          is_annual_refresher: boolean
+          is_critical: boolean
+          media_url: string | null
+          module_number: string | null
+          passing_score_pct: number
+          required_departments: string[] | null
+          revision: string | null
+          sop_number: string | null
+          sqf_reference: string | null
+          sqf_required: boolean
+          sqf_section: string | null
+          status: string
+          title: string
+          training_category: number | null
+          type: string
+        }
+        Insert: {
+          approved_by?: string | null
+          category?: string | null
+          content?: Json | null
+          created_at?: string
+          effective_date?: string | null
+          file_url?: string | null
+          id?: string
+          is_annual_refresher?: boolean
+          is_critical?: boolean
+          media_url?: string | null
+          module_number?: string | null
+          passing_score_pct?: number
+          required_departments?: string[] | null
+          revision?: string | null
+          sop_number?: string | null
+          sqf_reference?: string | null
+          sqf_required?: boolean
+          sqf_section?: string | null
+          status?: string
+          title: string
+          training_category?: number | null
+          type: string
+        }
+        Update: {
+          approved_by?: string | null
+          category?: string | null
+          content?: Json | null
+          created_at?: string
+          effective_date?: string | null
+          file_url?: string | null
+          id?: string
+          is_annual_refresher?: boolean
+          is_critical?: boolean
+          media_url?: string | null
+          module_number?: string | null
+          passing_score_pct?: number
+          required_departments?: string[] | null
+          revision?: string | null
+          sop_number?: string | null
+          sqf_reference?: string | null
+          sqf_required?: boolean
+          sqf_section?: string | null
+          status?: string
+          title?: string
+          training_category?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
+      sop_versions: {
+        Row: {
+          change_notes: string | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          revision: string | null
+          sop_id: string
+        }
+        Insert: {
+          change_notes?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          revision?: string | null
+          sop_id: string
+        }
+        Update: {
+          change_notes?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          revision?: string | null
+          sop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sop_versions_sop_id_fkey"
+            columns: ["sop_id"]
+            isOneToOne: false
+            referencedRelation: "sop_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stage2_prf_submissions: {
         Row: {
@@ -1886,6 +2639,101 @@ export type Database = {
           reason?: string
         }
         Relationships: []
+      }
+      temperature_logs: {
+        Row: {
+          battery_level: number | null
+          created_at: string
+          device_id: string
+          equipment_name: string
+          humidity: number | null
+          id: number
+          low_battery_alarm: boolean | null
+          temperature_celsius: number
+          temperature_fahrenheit: number | null
+        }
+        Insert: {
+          battery_level?: number | null
+          created_at?: string
+          device_id: string
+          equipment_name: string
+          humidity?: number | null
+          id?: never
+          low_battery_alarm?: boolean | null
+          temperature_celsius: number
+          temperature_fahrenheit?: number | null
+        }
+        Update: {
+          battery_level?: number | null
+          created_at?: string
+          device_id?: string
+          equipment_name?: string
+          humidity?: number | null
+          id?: never
+          low_battery_alarm?: boolean | null
+          temperature_celsius?: number
+          temperature_fahrenheit?: number | null
+        }
+        Relationships: []
+      }
+      training_assignments: {
+        Row: {
+          assigned_at: string
+          completed_at: string | null
+          due_at: string | null
+          employee_id: string
+          expires_at: string | null
+          id: string
+          progress: Json | null
+          quiz_attempts: number
+          quiz_passed_at: string | null
+          quiz_score: number | null
+          recurrence_months: number | null
+          signed: boolean
+          signed_at: string | null
+          sop_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          completed_at?: string | null
+          due_at?: string | null
+          employee_id: string
+          expires_at?: string | null
+          id?: string
+          progress?: Json | null
+          quiz_attempts?: number
+          quiz_passed_at?: string | null
+          quiz_score?: number | null
+          recurrence_months?: number | null
+          signed?: boolean
+          signed_at?: string | null
+          sop_id: string
+        }
+        Update: {
+          assigned_at?: string
+          completed_at?: string | null
+          due_at?: string | null
+          employee_id?: string
+          expires_at?: string | null
+          id?: string
+          progress?: Json | null
+          quiz_attempts?: number
+          quiz_passed_at?: string | null
+          quiz_score?: number | null
+          recurrence_months?: number | null
+          signed?: boolean
+          signed_at?: string | null
+          sop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_assignments_sop_id_fkey"
+            columns: ["sop_id"]
+            isOneToOne: false
+            referencedRelation: "sop_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -2041,6 +2889,11 @@ export type Database = {
         Args: { _data: Json; _id: string; _token: string }
         Returns: boolean
       }
+      sync_employee_training: {
+        Args: { p_employee_id: string }
+        Returns: undefined
+      }
+      sync_module_training: { Args: { p_sop_id: string }; Returns: undefined }
       validate_invitation_token: {
         Args: { _token: string }
         Returns: {
@@ -2188,6 +3041,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "staff", "user"],
@@ -2195,3 +3051,5 @@ export const Constants = {
     },
   },
 } as const
+A new version of Supabase CLI is available: v2.107.0 (currently installed v2.101.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

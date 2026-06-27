@@ -20,29 +20,36 @@ const TeamAuth = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const redirectByRole = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .limit(1)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle();
 
-    const role = data?.role || "user";
-    if (role !== "admin" && role !== "owner" && role !== "staff") {
-      toast.error("You don't have access to the Team Portal. Please use the Brand Portal login.");
-      await supabase.auth.signOut();
-      return;
+      if (error) throw error;
+
+      const role = data?.role || "user";
+      if (role !== "admin" && role !== "owner" && role !== "staff") {
+        toast.error("You don't have access to the Team Portal. Please use the Brand Portal login.");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      if (redirect && redirect.startsWith("/team")) {
+        navigate(redirect);
+        return;
+      }
+
+      if (role === "admin" || role === "owner") navigate("/team/dashboard");
+      else navigate("/team/operations-hub");
+    } catch (err) {
+      console.error("redirectByRole failed:", err);
+      toast.error("Couldn't load your account role. Please try signing in again.");
     }
-
-    const params = new URLSearchParams(window.location.search);
-    const redirect = params.get("redirect");
-    if (redirect && redirect.startsWith("/team")) {
-      navigate(redirect);
-      return;
-    }
-
-    if (role === "admin" || role === "owner") navigate("/team/dashboard");
-    else navigate("/team/operations-hub");
   };
 
   useEffect(() => {
