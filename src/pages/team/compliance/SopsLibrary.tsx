@@ -13,15 +13,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen } from "lucide-react";
+import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, Copy, Download, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { SopImportDialog } from "@/components/ops/SopImportDialog";
 import { SlideContentEditor } from "@/components/team/SlideContentEditor";
 import { DocumentAttachment } from "@/components/team/DocumentAttachment";
 import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
-import { TRAINING_CATEGORY_LABELS, updateModuleContent, hasReferenceDocs, hasSopBody, type Attachment } from "@/lib/training";
+import { TRAINING_CATEGORY_LABELS, DEPARTMENTS, updateModuleContent, updateModuleRequirements, updateModuleQuizConfig, hasReferenceDocs, hasSopBody, type Attachment } from "@/lib/training";
 import { SopBodyEditor } from "@/components/team/SopBodyEditor";
+import { generateSopPdf } from "@/lib/sopPdf";
+import { CategorySelect } from "@/components/team/CategorySelect";
+import { SpanishFlag } from "@/components/team/SpanishFlag";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Map a SOPs Library category name back to its HR training category number
@@ -36,7 +49,7 @@ type SopDocument = {
   id: string;
   sop_number: string | null;
   title: string;
-  type: "sop" | "form" | "policy";
+  type: "sop" | "form" | "policy" | "training" | "fsqm";
   category: string | null;
   revision: string | null;
   effective_date: string | null;
@@ -49,6 +62,10 @@ type SopDocument = {
   media_url: string | null;
   training_category: number | null;
   module_number: string | null;
+  required_departments: string[] | null;
+  passing_score_pct: number | null;
+  is_critical: boolean | null;
+  is_annual_refresher: boolean | null;
   created_at: string;
 };
 
@@ -65,8 +82,8 @@ const statusColors: Record<string, string> = {
   archived: "bg-amber-500/20 text-amber-700",
 };
 
-const TYPES = ["sop", "form", "policy"] as const;
-const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy" };
+const TYPES = ["sop", "form", "policy", "training", "fsqm"] as const;
+const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM" };
 
 // SQF Code section names (top-level integer prefix of the reference code)
 const SQF_SECTION_NAMES: Record<string, string> = {
@@ -92,54 +109,7 @@ function sqfSectionLabel(section: string): string {
 
 type ViewMode = "category" | "sqf";
 type KindFilter = "all" | "training" | "reference";
-
-// Dropdown of existing categories with an escape hatch to type a brand-new one.
-// null means uncategorized.
-function CategorySelect({ value, categories, onChange }: {
-  value: string | null | undefined;
-  categories: string[];
-  onChange: (v: string | null) => void;
-}) {
-  const [adding, setAdding] = useState(false);
-  const options = useMemo(() => {
-    const set = new Set(categories);
-    if (value) set.add(value);
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [categories, value]);
-
-  if (adding) {
-    return (
-      <div className="flex gap-2">
-        <Input
-          autoFocus
-          placeholder="New category name"
-          value={value ?? ""}
-          onChange={e => onChange(e.target.value || null)}
-        />
-        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => setAdding(false)}>
-          Pick existing
-        </Button>
-      </div>
-    );
-  }
-  return (
-    <Select
-      value={value ?? "__none__"}
-      onValueChange={v => {
-        if (v === "__new__") { onChange(null); setAdding(true); }
-        else if (v === "__none__") onChange(null);
-        else onChange(v);
-      }}
-    >
-      <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__none__">Uncategorized</SelectItem>
-        {options.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-        <SelectItem value="__new__">Add New Category…</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-}
+type DocSortKey = "number" | "title" | "type" | "revision" | "effective" | "status" | "sqf";
 
 export default function SopsLibrary() {
   const { role } = useUserRole();
@@ -151,6 +121,9 @@ export default function SopsLibrary() {
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("category");
   const [sqfOnly, setSqfOnly] = useState(false);
+  // Column sorting for the document tables (shared across all category/SQF groups)
+  const [sortKey, setSortKey] = useState<DocSortKey>("number");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selected, setSelected] = useState<SopDocument | null>(null);
   const [editDoc, setEditDoc] = useState<Partial<SopDocument> | null>(null);
   const [saving, setSaving] = useState(false);
@@ -166,6 +139,14 @@ export default function SopsLibrary() {
   const [detail, setDetail] = useState<Partial<SopDocument>>({});
   const [savingDetail, setSavingDetail] = useState(false);
   const [changingKind, setChangingKind] = useState(false);
+  // Hard-delete confirmation: the doc pending permanent deletion (null = no dialog) + in-flight flag
+  const [deleteTarget, setDeleteTarget] = useState<SopDocument | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  // Training-module management (migrated from the Training & SOPs gear drawer)
+  const [passingScorePct, setPassingScorePct] = useState(80);
+  const [isCritical, setIsCritical] = useState(false);
+  const [savingRequirements, setSavingRequirements] = useState(false);
+  const [savingQuizSettings, setSavingQuizSettings] = useState(false);
 
   const load = async () => {
     const { data, error } = await (supabase as any)
@@ -262,6 +243,8 @@ export default function SopsLibrary() {
       sqf_required: selected.sqf_required,
       file_url: selected.file_url,
     });
+    setPassingScorePct(selected.passing_score_pct ?? 80);
+    setIsCritical(selected.is_critical ?? false);
   }, [selected?.id]);
 
   const saveDetail = async () => {
@@ -287,6 +270,50 @@ export default function SopsLibrary() {
     setSelected(updated);
     setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
     toast.success("Details saved");
+  };
+
+  const copyDeepLink = (moduleId: string) => {
+    const url = `${window.location.origin}/team/hr/trainings/${moduleId}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copied");
+  };
+
+  const applyRequirements = async (next: string[] | null) => {
+    if (!selected) return;
+    setSavingRequirements(true);
+    try {
+      await updateModuleRequirements(selected.id, next);
+      const updated = { ...selected, required_departments: next } as SopDocument;
+      setSelected(updated);
+      setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to update requirements");
+    } finally {
+      setSavingRequirements(false);
+    }
+  };
+
+  const toggleRequiredDepartment = (dept: string) => {
+    if (!selected) return;
+    const current = selected.required_departments ?? [];
+    const next = current.includes(dept) ? current.filter(d => d !== dept) : [...current, dept];
+    applyRequirements(next.length === 0 ? null : next);
+  };
+
+  const saveQuizSettings = async () => {
+    if (!selected) return;
+    setSavingQuizSettings(true);
+    try {
+      await updateModuleQuizConfig(selected.id, { passing_score_pct: passingScorePct, is_critical: isCritical });
+      const updated = { ...selected, passing_score_pct: passingScorePct, is_critical: isCritical } as SopDocument;
+      setSelected(updated);
+      setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+      toast.success("Quiz settings saved");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to save quiz settings");
+    } finally {
+      setSavingQuizSettings(false);
+    }
   };
 
   // Clears the legacy single file_url (upload/remove of the object happens in DocumentAttachment).
@@ -351,9 +378,9 @@ export default function SopsLibrary() {
     setChangingKind(true);
     try {
       const tc = trainingCategoryForLabel(selected.category ?? "");
-      const { error } = await (supabase as any).from("sop_documents").update({ training_category: tc }).eq("id", selected.id);
+      const { error } = await (supabase as any).from("sop_documents").update({ training_category: tc, type: "training" }).eq("id", selected.id);
       if (error) throw error;
-      const updated = { ...selected, training_category: tc } as SopDocument;
+      const updated = { ...selected, training_category: tc, type: "training" } as SopDocument;
       setSelected(updated);
       setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
       toast.success("Now a training module");
@@ -361,6 +388,40 @@ export default function SopsLibrary() {
       toast.error(e.message ?? "Failed to update");
     } finally {
       setChangingKind(false);
+    }
+  };
+
+  // Permanently removes a document. Unlike "Archived" (a status), this cannot be undone.
+  // quiz_questions + training_assignments are removed by their ON DELETE CASCADE FKs; the
+  // storage folder (slides/audio/files/source.pptx) is best-effort purged afterwards.
+  const deleteDoc = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeleting(true);
+    try {
+      const { error } = await (supabase as any).from("sop_documents").delete().eq("id", id);
+      if (error) throw error;
+
+      // Best-effort storage cleanup — orphaned objects are harmless, so failures don't block.
+      try {
+        const folders = ["slides", "audio", "files"];
+        const paths: string[] = [`${id}/source.pptx`];
+        for (const folder of folders) {
+          const { data: list } = await (supabase as any).storage
+            .from("training-content").list(`${id}/${folder}`, { limit: 1000 });
+          for (const obj of list ?? []) paths.push(`${id}/${folder}/${obj.name}`);
+        }
+        if (paths.length) await (supabase as any).storage.from("training-content").remove(paths);
+      } catch { /* ignore storage cleanup errors */ }
+
+      setDocs(prev => prev.filter(d => d.id !== id));
+      if (selected?.id === id) setSelected(null);
+      toast.success("Document permanently deleted");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to delete document");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -391,19 +452,60 @@ export default function SopsLibrary() {
   const groups = viewMode === "category" ? categoryGroups : sqfGroups;
   const defaultOpen = groups.map(([key]) => key);
 
+  const toggleSort = (key: DocSortKey) => {
+    if (key === sortKey) setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+  const docSortValue = (d: SopDocument): string => {
+    switch (sortKey) {
+      case "number": return d.sop_number ?? "";
+      case "title": return d.title;
+      case "type": return TYPE_LABELS[d.type] ?? d.type;
+      case "revision": return d.revision ?? "";
+      case "effective": return d.effective_date ?? "";
+      case "status": return d.status;
+      case "sqf": return d.sqf_reference ?? "";
+    }
+  };
+  const sortDocs = (items: SopDocument[]) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...items].sort((a, b) => {
+      const av = docSortValue(a), bv = docSortValue(b);
+      // Empty/"—" values always sort last regardless of direction
+      if (av === "" && bv !== "") return 1;
+      if (bv === "" && av !== "") return -1;
+      return av.localeCompare(bv, undefined, { numeric: true }) * dir;
+    });
+  };
+  const SortHead = ({ k, label }: { k: DocSortKey; label: string }) => (
+    <TableHead className="text-[#2A1F0E]/60">
+      <button
+        type="button"
+        onClick={() => toggleSort(k)}
+        className="inline-flex items-center gap-1 hover:text-[#C89B3C] transition-colors"
+      >
+        {label}
+        {sortKey === k
+          ? (sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)
+          : <ChevronsUpDown className="w-3 h-3 opacity-40" />}
+      </button>
+    </TableHead>
+  );
+
   const DocTable = ({ items }: { items: SopDocument[] }) => {
-    const visibleItems = items.filter(d => !isSpanish(d));
+    const visibleItems = sortDocs(items.filter(d => !isSpanish(d)));
     return (
-      <Table>
+      <Table className="[&_td]:py-2 [&_th]:h-9">
         <TableHeader>
           <TableRow>
-            <TableHead className="text-[#2A1F0E]/60">Number</TableHead>
-            <TableHead className="text-[#2A1F0E]/60">Title</TableHead>
-            <TableHead className="text-[#2A1F0E]/60">Type</TableHead>
-            <TableHead className="text-[#2A1F0E]/60">Revision</TableHead>
-            <TableHead className="text-[#2A1F0E]/60">Effective Date</TableHead>
-            <TableHead className="text-[#2A1F0E]/60">Status</TableHead>
-            {viewMode === "category" && <TableHead className="text-[#2A1F0E]/60">SQF Ref</TableHead>}
+            <SortHead k="number" label="Number" />
+            <SortHead k="title" label="Title" />
+            <TableHead className="text-[#2A1F0E]/60 w-10"></TableHead>
+            <SortHead k="type" label="Type" />
+            <SortHead k="revision" label="Revision" />
+            <SortHead k="effective" label="Effective Date" />
+            <SortHead k="status" label="Status" />
+            {viewMode === "category" && <SortHead k="sqf" label="SQF Ref" />}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -417,17 +519,36 @@ export default function SopsLibrary() {
                   {d.sqf_required && (
                     <ShieldCheck className="inline w-3.5 h-3.5 ml-1.5 text-[#C89B3C]" />
                   )}
+                </TableCell>
+                <TableCell className="w-10">
                   {esDoc && (
                     <button
                       onClick={e => { e.stopPropagation(); setSelected(esDoc); }}
                       title="Ver en español"
-                      className="ml-2 text-base leading-none hover:opacity-60 transition-opacity align-middle"
+                      className="leading-none hover:opacity-60 transition-opacity align-middle"
                     >
-                      🇪🇸
+                      <SpanishFlag />
                     </button>
                   )}
                 </TableCell>
-                <TableCell><Badge variant="outline">{TYPE_LABELS[d.type]}</Badge></TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Badge variant="outline">{TYPE_LABELS[d.type]}</Badge>
+                    {hasSopBody(d.content) && (
+                      <button
+                        onClick={async e => {
+                          e.stopPropagation();
+                          try { await generateSopPdf(d); }
+                          catch (err: any) { toast.error(err?.message ?? "Failed to generate PDF"); }
+                        }}
+                        title="Download PDF"
+                        className="leading-none text-[#C89B3C] hover:opacity-60 transition-opacity align-middle"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    )}
+                  </span>
+                </TableCell>
                 <TableCell>{d.revision ?? "—"}</TableCell>
                 <TableCell>{d.effective_date ?? "—"}</TableCell>
                 <TableCell><Badge className={statusColors[d.status]}>{d.status}</Badge></TableCell>
@@ -692,6 +813,22 @@ export default function SopsLibrary() {
 
                 {hasSopBody(selected.content) && (
                   <TabsContent value="document">
+                    <div className="flex justify-end mb-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="bg-[#C89B3C] hover:bg-[#B8892C]"
+                        onClick={async () => {
+                          try {
+                            await generateSopPdf(selected);
+                          } catch (e: any) {
+                            toast.error(e?.message ?? "Failed to generate PDF");
+                          }
+                        }}
+                      >
+                        <Download className="w-4 h-4 mr-1.5" />Download PDF
+                      </Button>
+                    </div>
                     <SopBodyEditor
                       sopId={selected.id}
                       content={selected.content}
@@ -705,6 +842,52 @@ export default function SopsLibrary() {
                   {selected.training_category != null ? (
                     <>
                       <div>
+                        <Label className="mb-2 block">Training Link</Label>
+                        <div className="flex gap-2">
+                          <Input readOnly value={`${window.location.origin}/team/hr/trainings/${selected.id}`} className="text-xs" />
+                          <Button type="button" variant="outline" size="icon" onClick={() => copyDeepLink(selected.id)}>
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Share this link in reminder emails so employees can jump directly to this module.
+                        </p>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="border-t pt-4" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
+                          <Label className="mb-2 block">Required For</Label>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Checkbox
+                              id="required-all"
+                              checked={!selected.required_departments}
+                              disabled={savingRequirements}
+                              onCheckedChange={(checked) => applyRequirements(checked ? null : [])}
+                            />
+                            <Label htmlFor="required-all" className="cursor-pointer font-normal">All Staff</Label>
+                          </div>
+                          {selected.required_departments !== null && (
+                            <div className="grid grid-cols-2 gap-1.5 pl-6">
+                              {DEPARTMENTS.map(dept => (
+                                <div key={dept} className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`dept-${dept}`}
+                                    checked={(selected.required_departments ?? []).includes(dept)}
+                                    disabled={savingRequirements}
+                                    onCheckedChange={() => toggleRequiredDepartment(dept)}
+                                  />
+                                  <Label htmlFor={`dept-${dept}`} className="cursor-pointer font-normal">{dept}</Label>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Employees in matching departments are automatically assigned this module.
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="border-t pt-4" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
                         <Label className="text-xs text-muted-foreground">Content</Label>
                         {isAdmin ? (
                           <div className="mt-1">
@@ -724,6 +907,36 @@ export default function SopsLibrary() {
                           </pre>
                         )}
                       </div>
+                      {isAdmin && (
+                        <div className="space-y-3 border-t pt-4" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
+                          <Label className="block">Quiz Settings</Label>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor="passing-score" className="font-normal text-xs">Passing score (%)</Label>
+                              <Input
+                                id="passing-score"
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={passingScorePct}
+                                onChange={e => setPassingScorePct(Number(e.target.value))}
+                                disabled={isCritical}
+                                className="w-20 h-8"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Checkbox id="is-critical" checked={isCritical} onCheckedChange={c => setIsCritical(!!c)} />
+                              <Label htmlFor="is-critical" className="cursor-pointer font-normal text-xs">
+                                Critical item — requires 100%
+                              </Label>
+                            </div>
+                          </div>
+                          <Button type="button" size="sm" onClick={saveQuizSettings} disabled={savingQuizSettings} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+                            {savingQuizSettings ? "Saving…" : "Save Quiz Settings"}
+                          </Button>
+                        </div>
+                      )}
+
                       {isAdmin && (
                         <QuizEditor
                           key={selected.id}
@@ -768,10 +981,53 @@ export default function SopsLibrary() {
                   />
                 </TabsContent>
               </Tabs>
+
+              {isAdmin && (
+                <div className="border-t pt-4 mt-2" style={{ borderColor: "rgba(220,38,38,0.25)" }}>
+                  <Label className="text-xs text-muted-foreground">Danger Zone</Label>
+                  <div className="flex items-center justify-between gap-3 mt-1.5">
+                    <p className="text-xs text-[#2A1F0E]/60">
+                      Permanently delete this document, its quiz, and all training assignments. This cannot be undone — use Archive instead to keep a record.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 border-red-500/40 text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={() => setDeleteTarget(selected)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />Delete Permanently
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Hard-delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o && !deleting) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteTarget?.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the document along with its quiz questions, training assignments,
+              and uploaded files. This action cannot be undone. To keep a record instead, set its status to Archived.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => { e.preventDefault(); deleteDoc(); }}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleting ? "Deleting…" : "Delete Permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add SOP dialog */}
       <Dialog open={!!editDoc} onOpenChange={(o) => !o && setEditDoc(null)}>
@@ -863,7 +1119,7 @@ export default function SopsLibrary() {
         </DialogContent>
       </Dialog>
 
-      <SopImportDialog open={importOpen} onOpenChange={setImportOpen} onImported={load} />
+      <SopImportDialog open={importOpen} onOpenChange={setImportOpen} onImported={load} categories={existingCategories} />
       <PptxImportDialog open={pptxImportOpen} onOpenChange={setPptxImportOpen} onImported={load} />
       <PptxImportDialog
         open={importCategory !== null}

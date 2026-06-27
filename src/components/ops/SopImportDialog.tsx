@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CategorySelect } from "@/components/team/CategorySelect";
 import { UploadCloud, FileText, ChevronRight, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +19,7 @@ interface QueueItem {
   file: File;
   status: "pending" | "parsing" | "ready" | "saving" | "done" | "error";
   parsed?: ParsedSop;
+  category?: string | null;
   error?: string;
 }
 
@@ -25,14 +27,16 @@ interface SopImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImported?: () => void;
+  // Existing category names, for the category picker in the review form.
+  categories?: string[];
 }
 
-const TYPES: SopType[] = ["sop", "form", "policy"];
-const TYPE_LABELS: Record<SopType, string> = { sop: "SOP", form: "Form", policy: "Policy" };
+const TYPES: SopType[] = ["sop", "form", "policy", "fsqm"];
+const TYPE_LABELS: Record<SopType, string> = { sop: "SOP", form: "Form", policy: "Policy", fsqm: "FSQM" };
 
 type ImportMode = "existing" | "generate";
 
-export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDialogProps) {
+export function SopImportDialog({ open, onOpenChange, onImported, categories = [] }: SopImportDialogProps) {
   const [mode, setMode] = useState<ImportMode>("existing");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
@@ -88,6 +92,11 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
     }));
   };
 
+  const updateActiveCategory = (category: string | null) => {
+    if (activeIdx === null) return;
+    setQueue(prev => prev.map((q, qi) => (qi === activeIdx ? { ...q, category } : q)));
+  };
+
   const updateActiveContent = (patch: Partial<ParsedSop["content"]>) => {
     if (activeIdx === null) return;
     setQueue(prev => prev.map((q, qi) => {
@@ -115,17 +124,20 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
       approved_by: p.approved_by || null,
       sqf_reference: p.sqf_reference || null,
       sqf_required: p.sqf_required,
+      category: item.category ?? null,
       status: "draft",
       content: p.type === "policy"
         ? { statement: p.content.statement }
         : {
             purpose: p.content.purpose,
             scope: p.content.scope,
+            definitions: p.content.definitions,
             responsibility: p.content.responsibility,
             procedure: p.content.procedure,
             form_references: p.content.form_references,
             records: p.content.records,
             governing_reference: p.content.governing_reference,
+            revision_history: p.content.revision_history,
           },
     };
     const { data: inserted, error } = await (supabase as any)
@@ -289,7 +301,10 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
                   <div><Label>Effective Date</Label><Input type="date" value={parsed.effective_date} onChange={e => updateActiveParsed({ effective_date: e.target.value })} /></div>
                   <div><Label>Approved By</Label><Input value={parsed.approved_by} onChange={e => updateActiveParsed({ approved_by: e.target.value })} /></div>
                 </div>
-                <div><Label>SQF Reference</Label><Input value={parsed.sqf_reference} onChange={e => updateActiveParsed({ sqf_reference: e.target.value })} /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>SQF Reference</Label><Input value={parsed.sqf_reference} onChange={e => updateActiveParsed({ sqf_reference: e.target.value })} /></div>
+                  <div><Label>Category</Label><CategorySelect value={active?.category ?? null} categories={categories} onChange={updateActiveCategory} /></div>
+                </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="sqf_required"
@@ -319,6 +334,7 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
                   <div className="grid grid-cols-1 gap-3">
                     <div><Label>Purpose</Label><Textarea rows={2} value={parsed.content.purpose} onChange={e => updateActiveContent({ purpose: e.target.value })} /></div>
                     <div><Label>Scope</Label><Textarea rows={2} value={parsed.content.scope} onChange={e => updateActiveContent({ scope: e.target.value })} /></div>
+                    <div><Label>Definitions</Label><Textarea rows={2} value={parsed.content.definitions} onChange={e => updateActiveContent({ definitions: e.target.value })} /></div>
                     <div><Label>Responsibility</Label><Textarea rows={2} value={parsed.content.responsibility} onChange={e => updateActiveContent({ responsibility: e.target.value })} /></div>
                     <div>
                       <Label>Procedure (steps, one per line)</Label>
@@ -331,6 +347,7 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
                     <div><Label>Form References</Label><Textarea rows={2} value={parsed.content.form_references} onChange={e => updateActiveContent({ form_references: e.target.value })} /></div>
                     <div><Label>Records</Label><Textarea rows={2} value={parsed.content.records} onChange={e => updateActiveContent({ records: e.target.value })} /></div>
                     <div><Label>Governing Reference</Label><Textarea rows={2} value={parsed.content.governing_reference} onChange={e => updateActiveContent({ governing_reference: e.target.value })} /></div>
+                    <div><Label>Revision History</Label><Textarea rows={3} value={parsed.content.revision_history} onChange={e => updateActiveContent({ revision_history: e.target.value })} /></div>
                   </div>
                 )}
               </div>
@@ -357,7 +374,7 @@ export function SopImportDialog({ open, onOpenChange, onImported }: SopImportDia
 
 function detectTypeLocal(sopNumber: string): SopType {
   const n = sopNumber.trim().toUpperCase();
-  if (n.startsWith("FSQM")) return "policy";
+  if (n.startsWith("FSQM")) return "fsqm";
   if (n.startsWith("FRM")) return "form";
   return "sop";
 }

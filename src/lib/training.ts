@@ -531,7 +531,7 @@ export async function getSourceDeckUrl(sopId: string): Promise<string | null> {
 export function hasSopBody(content: any): boolean {
   if (!content) return false;
   if (typeof content.statement === "string" && content.statement.trim()) return true;
-  const fields = ["purpose", "scope", "responsibility", "form_references", "records", "governing_reference"];
+  const fields = ["purpose", "scope", "definitions", "responsibility", "form_references", "records", "governing_reference", "revision_history"];
   if (fields.some(k => typeof content[k] === "string" && content[k].trim())) return true;
   if (Array.isArray(content.procedure) && content.procedure.length > 0) return true;
   return false;
