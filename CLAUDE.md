@@ -237,6 +237,8 @@ Component in `src/components/team/`, rendered below the Content section in the S
 - **Default active tab:** `training_category != null ? "training" : hasSopBody ? "document" : "reference"`.
 - A record can hold training material, a document body, AND reference attachments simultaneously; nothing is removed except by an explicit per-item Delete.
 
+**SQF Ref column / drawer — `SqfReference.tsx`:** the comma-delimited `sqf_reference` value (list category view + drawer read-only display) renders each clause number as a gold hover-card chip showing the clause text, with a **"View in SQF Code (p.N)"** link that opens `public/sqf-quality-code.pdf` at the matching page (`#page=N`). Clause text/page come from the **auto-generated** `src/lib/sqfClauses.ts` (`lookupSqfClause`, `sqfPdfHref`); unmapped numbers fall back to plain text. To refresh for a new SQF edition, replace the PDF and run `python scripts/generate-sqf-clauses.py` — full runbook in `UPDATING_SQF_CODE.md`.
+
 ---
 
 ## Document Attachments — `DocumentAttachment.tsx`
