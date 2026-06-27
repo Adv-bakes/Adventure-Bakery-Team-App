@@ -21,6 +21,7 @@ A B2B SaaS platform supporting end-to-end bakery product development. It has two
 | Charts | Recharts |
 | Date utils | date-fns |
 | DOCX parsing | Mammoth + JSZip |
+| XLSX parsing/export | ExcelJS (tolling inventory import/count sheets) |
 | PDF generation | pdfmake (client-side SOP export) |
 | Dark mode | next-themes |
 
@@ -147,6 +148,7 @@ All are public (anon) Supabase credentials — safe on the client.
 | `document_templates` | NDA/PSS/PRF file templates — `kind`, `is_active`, `file_path` |
 | `chat_history` | CoachChat messages — `user_id`, `project_id`, `section`, `role`, `content` |
 | `ab_warehouses` | Inventory locations |
+| `inventory_tolling` | Per-client tolling inventory — `client_id`, `ingredient_name`, `qty_on_hand`, `unit`, `lot_code`, `expiry_date`, `category` (`ingredient`/`packaging`/`finished_good`). **Not in generated `types.ts`** — query with `supabase.from("inventory_tolling" as any)`. Powers the Sales client folder's Tolling Inventory tab (see below). |
 | `temperature_logs` | YoLink sensor readings (ingested by a Hostinger VPS) — `created_at`, `device_id`, `equipment_name`, `temperature_celsius`, `temperature_fahrenheit`, `humidity`, `battery_level` (1 low – 4 full), `low_battery_alarm`. **Not in generated `types.ts`** — query with `supabase.from("temperature_logs" as any)`. Powers the Temperature Monitoring report (see below). |
 
 ---
@@ -298,6 +300,30 @@ no DB view/RPC yet (a later phase will roll up summaries + purge old rows). Disp
   surfaces a gold link to it (opens a fresh signed URL via `resolveFileUrl()`) **only when data
   looks wrong** — empty range (missing) or latest reading > 6h old (stale). Renders as plain text
   if the doc isn't found (graceful).
+
+---
+
+## Tolling Inventory — `pages/sales/SalesClientFolder.tsx` + `components/sales/TollingInventoryTools.tsx`
+
+A **Tolling Inventory** tab (staff-only) on the Sales client folder tracks each client's
+customer-owned (tolling) stock in `inventory_tolling`. The tab (`TollingInventoryTab` in
+`SalesClientFolder.tsx`) groups rows into collapsible **Ingredients / Packaging / Finished Goods**
+sections (`category` enum), with inline add/edit/delete and an available = `qty_on_hand − reserved`
+display. On load it **merges** ingredient names pulled from the client's batch sheets with existing
+`inventory_tolling` rows; batch-sheet provenance (`batchSheetIds`) is kept so a merge can rename the
+ingredient inside the source recipe (otherwise a merged-away row reappears on next load).
+
+`TollingInventoryTools.tsx` holds the supporting dialogs/helpers:
+- **`TollingExcelImportDialog`** — imports a client's spreadsheet via **ExcelJS**; `matchHeaderKey()`
+  does keyword-based (not exact-string) header matching so messy real-world sheets still parse
+  (`normalizeHeader`, `normalizeCategory`).
+- **`downloadCountSheet`** — exports an ExcelJS count sheet for a physical recount.
+- **`TollingRecountDialog`** — applies a physical recount back to inventory.
+- **`AdjustmentHistoryPopover`** — per-row adjustment history.
+- **`findDuplicateCandidates` + `TollingDuplicateReviewDialog` + `TollingManualMergeDialog`** —
+  detect and merge duplicate ingredient names (auto-suggested + manual).
+
+`inventory_tolling` is **not in generated `types.ts`** — query via `supabase.from("inventory_tolling" as any)`.
 
 ---
 
