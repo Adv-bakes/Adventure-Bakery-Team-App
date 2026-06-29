@@ -112,7 +112,7 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
       else batchSheetId = (bsData as any)?.batch_sheet?.id || null;
     }
 
-    if (status === "approved" && doc.user_id) {
+    if (status === "approved" && doc.lead_id) {
       // Always log per-doc approval
       await supabase.from("client_activity").insert({
         client_id: doc.user_id,
@@ -121,13 +121,13 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
       });
 
       // Check if this client has an approved NDA AND approved PSS
-      const { data: clientDocs } = await supabase
+      const { data: clientDocs } = await (supabase as any)
         .from("client_documents")
         .select("document_type, review_status")
-        .eq("user_id", doc.user_id);
-      const approved = (clientDocs || []).filter((d) => d.review_status === "approved");
-      const hasNda = approved.some((d) => (d.document_type || "").toLowerCase() === "nda");
-      const hasPss = approved.some((d) => (d.document_type || "").toLowerCase() === "pss");
+        .eq("lead_id", doc.lead_id);
+      const approved = (clientDocs || []).filter((d: any) => d.review_status === "approved");
+      const hasNda = approved.some((d: any) => (d.document_type || "").toLowerCase() === "nda");
+      const hasPss = approved.some((d: any) => (d.document_type || "").toLowerCase() === "pss");
       // include the one we just approved (in case the read raced)
       const justNda = docType === "nda";
       const justPss = docType === "pss";
@@ -135,7 +135,7 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
         await (supabase as any)
           .from("sales_leads")
           .update({ stage: "Follow-Up", stage_updated_at: new Date().toISOString() })
-          .eq("profile_id", doc.user_id)
+          .eq("id", doc.lead_id)
           .eq("stage", "Send Documents");
         await supabase.from("client_activity").insert({
           client_id: doc.user_id,
@@ -162,18 +162,11 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
     onClose();
 
     // Navigate to the client folder after PSS approval so the salesperson lands in context
-    if (status === "approved" && docType === "pss" && doc.user_id) {
-      const { data: lead } = await (supabase as any)
-        .from("sales_leads")
-        .select("id")
-        .eq("profile_id", doc.user_id)
-        .maybeSingle();
-      if (lead?.id) {
-        navigate(`/team/sales/clients/${lead.id}`);
-        if (batchSheetId) toast.success(`Batch sheet v1 created — open it from the project workspace.`);
-      } else {
-        toast.info("Approved, but no client folder linked to this document yet.");
-      }
+    if (status === "approved" && docType === "pss" && doc.lead_id) {
+      navigate(`/team/sales/clients/${doc.lead_id}`);
+      if (batchSheetId) toast.success(`Batch sheet v1 created — open it from the project workspace.`);
+    } else if (status === "approved" && docType === "pss") {
+      toast.info("Approved, but no client folder linked to this document yet.");
     }
   };
 

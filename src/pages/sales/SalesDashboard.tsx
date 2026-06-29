@@ -79,30 +79,21 @@ const SalesDashboard = () => {
     // Build pending-doc map per lead (NDA or PSS not yet approved)
     const leadIds = Array.from(new Set(rows.map(r => r.lead_id).filter(Boolean) as string[]));
     if (leadIds.length) {
-      const { data: leadsWithProfile } = await (supabase as any)
-        .from("sales_leads")
-        .select("id, profile_id")
-        .in("id", leadIds);
-      const profileToLead: Record<string, string> = {};
-      (leadsWithProfile || []).forEach((l: any) => { if (l.profile_id) profileToLead[l.profile_id] = l.id; });
-      const profileIds = Object.keys(profileToLead);
-      if (profileIds.length) {
-        const { data: docs } = await supabase
-          .from("client_documents")
-          .select("user_id, document_type, review_status")
-          .in("user_id", profileIds)
-          .in("review_status", ["pending", "ai_passed", "ai_flagged"]);
-        const map: Record<string, { nda: boolean; pss: boolean }> = {};
-        (docs || []).forEach((d: any) => {
-          const lid = profileToLead[d.user_id];
-          if (!lid) return;
-          const t = (d.document_type || "").toLowerCase();
-          if (!map[lid]) map[lid] = { nda: false, pss: false };
-          if (t === "nda") map[lid].nda = true;
-          if (t === "pss") map[lid].pss = true;
-        });
-        setPendingByLead(map);
-      }
+      const { data: docs } = await (supabase as any)
+        .from("client_documents")
+        .select("lead_id, document_type, review_status")
+        .in("lead_id", leadIds)
+        .in("review_status", ["pending", "ai_passed", "ai_flagged"]);
+      const map: Record<string, { nda: boolean; pss: boolean }> = {};
+      (docs || []).forEach((d: any) => {
+        const lid = d.lead_id;
+        if (!lid) return;
+        const t = (d.document_type || "").toLowerCase();
+        if (!map[lid]) map[lid] = { nda: false, pss: false };
+        if (t === "nda") map[lid].nda = true;
+        if (t === "pss") map[lid].pss = true;
+      });
+      setPendingByLead(map);
     }
 
     setLoading(false);
