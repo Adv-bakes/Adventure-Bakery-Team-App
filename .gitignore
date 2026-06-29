@@ -33,3 +33,6 @@ supabase/.temp
 training-decks/incoming/
 # Local QA render output (PDFs + slide PNGs)
 training-decks/qa/
+
+# Python
+__pycache__/

@@ -7,12 +7,19 @@ text on hover and links to the exact page of the code PDF.
 
 ## How the feature is wired (what depends on what)
 
+**Two codes are hosted** — the Quality Code and the Food Safety Code: Food Manufacturing (for Module 11 / 11.x references). They are independent PDFs + clause maps; the renderer resolves a token against Quality first, then Food Manufacturing.
+
 | Piece | Location | Role |
 |-------|----------|------|
-| The code PDF | `public/sqf-quality-code.pdf` | Served at `/sqf-quality-code.pdf`; opened at a page via `#page=N`. |
-| Clause data | `src/lib/sqfClauses.ts` | **Auto-generated** map `clauseId → { text, page }` + helpers `lookupSqfClause()`, `sqfPdfHref()`. |
-| Generator | `scripts/generate-sqf-clauses.py` | Parses the PDF and (re)writes `sqfClauses.ts`. |
-| Renderer | `src/components/team/SqfReference.tsx` | Hover-card chip for each clause; used in `SopsLibrary.tsx`. |
+| Quality Code PDF | `public/sqf-quality-code.pdf` | Served at `/sqf-quality-code.pdf`; opened via `#page=N`. |
+| Food Mfg Code PDF | `public/sqf-food-manufacturing-code.pdf` | Served at `/sqf-food-manufacturing-code.pdf`; opened via `#page=N`. |
+| Quality clause data | `src/lib/sqfClauses.ts` | **Auto-generated** map + `lookupSqfClause()`, `sqfPdfHref()`; exports the shared `SqfClause` type. |
+| Food clause data | `src/lib/sqfFoodClauses.ts` | **Auto-generated** map + `lookupSqfFoodClause()`, `sqfFoodPdfHref()`, `SQF_FOOD_CLAUSES`. |
+| Quality generator | `scripts/generate-sqf-clauses.py` | Parses the Quality PDF → `sqfClauses.ts`. `parse(text, noise=NOISE)` is reused by the food generator. |
+| Food generator | `scripts/generate-sqf-food-clauses.py` | Reuses the base `parse()`/`extract_text()` with a Food-Mfg NOISE filter → `sqfFoodClauses.ts`. |
+| Renderer | `src/components/team/SqfReference.tsx` | Hover-card chip; resolves Quality→Food, picks the matching PDF + label. |
+
+**Food Manufacturing code:** same workflow as below, but run `python scripts/generate-sqf-food-clauses.py`, spot-check `11.2.5.7`, `11.3.4.1`, `11.7.3.5`, and edit the `NOISE` tuple in `generate-sqf-food-clauses.py` if a new edition changes the footer. That `NOISE` deliberately uses the *full* footer strings (not bare "Edition 9"/"Food Manufacturing") so clause text such as "...in a food manufacturing environment" (11.2.5.2) is not stripped.
 
 Key fact this relies on: in the current PDF the **printed page number equals the physical page
 number** (clause 2.3.1.2 is on page 33, etc.), so `#page=N` lands correctly. **Re-verify this for

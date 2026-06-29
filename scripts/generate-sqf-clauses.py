@@ -54,7 +54,7 @@ def extract_text(pdf_path):
     return out.stdout.decode("utf-8", "replace")
 
 
-def parse(text):
+def parse(text, noise=NOISE):
     pages = text.split("\f")
     clauses = {}   # id -> [page, body_str]
     order = []
@@ -70,7 +70,7 @@ def parse(text):
 
     for pidx, ptext in enumerate(pages, 1):
         lines = [s.strip() for s in ptext.split("\n")]
-        lines = [s for s in lines if s and not any(n in s for n in NOISE)]
+        lines = [s for s in lines if s and not any(n in s for n in noise)]
         joined = re.sub(r"\s+", " ", " ".join(lines)).strip()
         if not joined:
             continue

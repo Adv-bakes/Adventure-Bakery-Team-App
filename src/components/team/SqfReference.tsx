@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { ExternalLink } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { lookupSqfClause, sqfPdfHref } from "@/lib/sqfClauses";
+import { lookupSqfFoodClause, sqfFoodPdfHref } from "@/lib/sqfFoodClauses";
 import { cn } from "@/lib/utils";
 
 interface SqfReferenceProps {
@@ -26,7 +27,18 @@ export function SqfReference({ value, className }: SqfReferenceProps) {
   return (
     <span className={className}>
       {tokens.map((token, i) => {
-        const clause = lookupSqfClause(token);
+        // Resolve against the Quality Code first, then the Food Manufacturing code
+        // (11.x clauses only exist in the latter; 2.x in both prefers Quality, matching
+        // existing behavior). The matched code determines which PDF the link opens.
+        const qClause = lookupSqfClause(token);
+        const fClause = qClause ? undefined : lookupSqfFoodClause(token);
+        const clause = qClause ?? fClause;
+        const href = qClause
+          ? sqfPdfHref(qClause.page)
+          : fClause
+            ? sqfFoodPdfHref(fClause.page)
+            : "";
+        const codeLabel = qClause ? "SQF Code" : "Food Mfg Code";
         const sep = i > 0 ? ", " : "";
 
         if (!clause) {
@@ -56,13 +68,13 @@ export function SqfReference({ value, className }: SqfReferenceProps) {
                     {clause.text}
                   </p>
                   <a
-                    href={sqfPdfHref(clause.page)}
+                    href={href}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
                     className="inline-flex items-center gap-1 text-xs font-medium text-[#C89B3C] hover:text-[#B8892C]"
                   >
-                    View in SQF Code (p.{clause.page})
+                    View in {codeLabel} (p.{clause.page})
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
