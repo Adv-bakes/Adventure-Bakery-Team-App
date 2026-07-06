@@ -95,6 +95,12 @@ any new edition** (see step 4) — if a new edition adds front matter, the offse
   instead of viewing them, the file still downloads correctly — it just won't auto-jump.
 - **Parser internals** (for when extraction looks wrong): the generator treats a clause id as a new
   clause boundary unless it's an inline cross-reference (preceded by words like "refer to", "in",
-  "see" — the `STOP` set) and it stitches page-spanning bodies together. It also repairs the common
-  `"R ecords" → "Records"` extraction artifact. Adjust `NOISE`, `STOP`, or the cleanup in
+  "see", "element" — the `STOP` set) and it stitches page-spanning bodies together. It also repairs
+  the common `"R ecords" → "Records"` extraction artifact. Adjust `NOISE`, `STOP`, or the cleanup in
   `clean()` if a new edition extracts differently.
+- **Part B gating (`require_marker="PART B"`):** both generators parse **only** pages whose text
+  contains the `PART B` running header, skipping Part A (implementation guidance). This is essential
+  — Part A prose re-uses clause numbers in lists (e.g. "elements 2.1.1, 2.1.2, 2.1.3, etc.") which
+  would otherwise be captured as spurious low-page clause entries. If a new edition changes that
+  header string, update the `require_marker` argument in each generator's `main()` (and re-verify
+  that no legitimate Part B page is skipped — clause pages should stay contiguous).

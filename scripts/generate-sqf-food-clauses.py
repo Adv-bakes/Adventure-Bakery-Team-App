@@ -70,7 +70,7 @@ def main():
     pdf = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PDF
     if not os.path.exists(pdf):
         sys.exit(f"PDF not found: {pdf}")
-    data = gen.parse(gen.extract_text(pdf), noise=NOISE)
+    data = gen.parse(gen.extract_text(pdf), noise=NOISE, require_marker="PART B")
     body = json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True)
     with open(OUT_TS, "w", encoding="utf-8") as f:
         f.write(HEADER + body + ";" + FOOTER)
