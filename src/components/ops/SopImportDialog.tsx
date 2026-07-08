@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategorySelect } from "@/components/team/CategorySelect";
+import { DocNumberHint } from "@/components/team/DocNumberHint";
 import { UploadCloud, FileText, ChevronRight, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -286,7 +287,11 @@ export function SopImportDialog({ open, onOpenChange, onImported, categories = [
                 )}
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label>SOP / Form Number *</Label><Input value={parsed.sop_number} onChange={e => updateActiveParsed({ sop_number: e.target.value, type: detectTypeLocal(e.target.value) })} /></div>
+                  <div>
+                    <Label>SOP / Form Number *</Label>
+                    <Input value={parsed.sop_number} onChange={e => updateActiveParsed({ sop_number: e.target.value, type: detectTypeLocal(e.target.value) })} />
+                    <DocNumberHint value={parsed.sop_number} />
+                  </div>
                   <div><Label>Revision</Label><Input value={parsed.revision} onChange={e => updateActiveParsed({ revision: e.target.value })} /></div>
                 </div>
                 <div><Label>Title *</Label><Input value={parsed.title} onChange={e => updateActiveParsed({ title: e.target.value })} /></div>

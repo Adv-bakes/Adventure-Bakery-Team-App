@@ -35,6 +35,7 @@ const navSections: NavSection[] = [
   ]},
   { title: "Compliance", items: [
     { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library" },
+    { path: "/team/compliance/register", icon: Database, label: "Document Register" },
     { path: "/team/compliance/traceability", icon: ClipboardCheck, label: "Traceability" },
     { path: "/team/compliance/temperature", icon: Thermometer, label: "Temperature Logs" },
     { path: "/team/compliance/certifications", icon: ShieldCheck, label: "Certifications" },
