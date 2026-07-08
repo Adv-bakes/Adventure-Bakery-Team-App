@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import { generateSopPdf } from "@/lib/sopPdf";
 import { CategorySelect } from "@/components/team/CategorySelect";
 import { SpanishFlag } from "@/components/team/SpanishFlag";
 import { SqfReference } from "@/components/team/SqfReference";
+import { DocNumberHint } from "@/components/team/DocNumberHint";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Map a SOPs Library category name back to its HR training category number
@@ -158,6 +160,20 @@ export default function SopsLibrary() {
     setDocs((data ?? []) as SopDocument[]);
   };
   useEffect(() => { load(); }, []);
+
+  // Deep-link support: the Document Register links here with ?doc=<id> to open a doc's drawer.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const docId = searchParams.get("doc");
+    if (!docId || docs.length === 0) return;
+    const match = docs.find(d => d.id === docId);
+    if (match) {
+      setSelected(match);
+      // Consume the param so re-renders / closing the drawer don't re-open it.
+      searchParams.delete("doc");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [docs, searchParams, setSearchParams]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -747,7 +763,7 @@ export default function SopsLibrary() {
                 <div className="space-y-3">
                   <div><Label className="text-xs text-muted-foreground">Title *</Label><Input value={detail.title ?? ""} onChange={e => setDetail({ ...detail, title: e.target.value })} /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs text-muted-foreground">SOP #</Label><Input value={detail.sop_number ?? ""} onChange={e => setDetail({ ...detail, sop_number: e.target.value })} /></div>
+                    <div><Label className="text-xs text-muted-foreground">SOP #</Label><Input value={detail.sop_number ?? ""} onChange={e => setDetail({ ...detail, sop_number: e.target.value })} /><DocNumberHint value={detail.sop_number} /></div>
                     <div><Label className="text-xs text-muted-foreground">Revision</Label><Input value={detail.revision ?? ""} onChange={e => setDetail({ ...detail, revision: e.target.value })} /></div>
                     <div><Label className="text-xs text-muted-foreground">Effective Date</Label><Input type="date" value={detail.effective_date ?? ""} onChange={e => setDetail({ ...detail, effective_date: e.target.value })} /></div>
                     <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><Input value={detail.sqf_reference ?? ""} onChange={e => setDetail({ ...detail, sqf_reference: e.target.value })} /></div>

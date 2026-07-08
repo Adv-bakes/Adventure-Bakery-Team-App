@@ -247,6 +247,17 @@ Unmapped numbers fall back to plain text. Both generators key physical==printed 
 
 ---
 
+## Document Numbering Convention — `lib/docNumber.ts`
+
+**Forms, manuals (FSQM), and policies** (`sop_documents.sop_number`) follow **`<TYPE>-<NNN>`**: a type prefix (`FRM`/`FSQM`/`POL` — same prefixes `detectType()` reads) plus a **3-digit number whose hundreds block = the process stage** (receiving 300s, production 500s, …; low number = early in the flow). The identifier is **stable for the document's life — the revision lives in the `revision` field, never baked into the number** (the old `FRM-046-1` style did the latter, the inconsistency this fixes). SQF clause numbers stay **decoupled** from these IDs (SQF renumbers between editions) — cross-reference via the existing `sqf_reference` field/chips. **SOPs are the deliberate exception:** they're numbered by the SQF clause they implement (`SOP-2.3.1`, `SOP-11.7.5`) so auditors can jump clause→SOP; `parseClauseNumber()` recognizes this so it isn't flagged, and the register groups them under "SOPs (numbered by SQF clause)".
+
+- **`src/lib/docNumber.ts`** is the single source of truth: `DOC_STAGES` (the block→stage map), `parseDocNumber` (tolerant; strips a legacy `-N` suffix and returns it), `stageForNumber`/`stageForSopNumber`, `formatDocNumber` (canonical `FRM-301`), `docNumberIssue`/`isValidDocNumber` (advisory, non-blocking).
+- **`DocNumberHint`** (`components/team/DocNumberHint.tsx`) renders the derived stage + a non-blocking warning under the `sop_number` inputs in `SopImportDialog` and the SOPs Library drawer.
+- **Document Register** (`pages/team/compliance/DocumentRegister.tsx`, `/team/compliance/register`, Compliance nav): read-only, groups every doc by stage block; unparseable/legacy numbers fall into an **"Unassigned"** worklist; rows deep-link into the SOPs Library drawer via `?doc=<id>`.
+- **Legacy IDs:** `sop_documents.legacy_sop_number` (migration `20260708000001…`) preserves the pre-convention number when a row is renumbered. Renumbering existing live rows is a reviewed data migration (crosswalk → id-keyed UPDATEs). Full runbook + stage table in **`DOCUMENT_REGISTER.md`**.
+
+---
+
 ## Document Attachments — `DocumentAttachment.tsx`
 
 Component in `src/components/team/`, rendered in the SOPs Library drawer's **Reference Documents** tab and the HR Training & SOPs Reference Library drawer. Manages a list of reference items stored in `content.attachments[]` (`Attachment = { name; path?; url? }`):
@@ -420,4 +431,5 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP/FSQM data from a .docx upload (scanned-hardcopy robust: merged-header splitting, running-header/noise filtering, list-rendered headings, trailing revision-history table, `Compass Blending`→`Adventure Bakery` rebrand); exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`) and `SopType` (`sop`/`form`/`policy`/`fsqm`) |
 | `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |
 | `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. See "SOP PDF Export" above |
+| `docNumber.ts` | Document numbering convention: `DOC_STAGES`, `parseDocNumber`, `stageForNumber`/`stageForSopNumber`, `formatDocNumber`, `docNumberIssue`/`isValidDocNumber`; `parseClauseNumber`/`compareClauseIds` (the deliberate SQF-clause SOP scheme). See "Document Numbering Convention" above |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |

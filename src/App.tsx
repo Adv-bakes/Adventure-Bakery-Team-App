@@ -87,6 +87,7 @@ import {
   InternalEmail, InternalFinance,
 } from "./pages/sections";
 import SopsLibrary from "./pages/team/compliance/SopsLibrary";
+import DocumentRegister from "./pages/team/compliance/DocumentRegister";
 import TemperatureReport from "./pages/team/compliance/TemperatureReport";
 import TrainingSops from "./pages/team/hr/TrainingSops";
 import TrainingCompliance from "./pages/team/hr/TrainingCompliance";
@@ -422,6 +423,11 @@ const App = () => (
           <Route path="/team/compliance/sops" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><SopsLibrary /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/compliance/register" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><DocumentRegister /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/compliance/temperature" element={
