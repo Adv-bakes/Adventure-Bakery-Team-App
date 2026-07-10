@@ -139,7 +139,10 @@ function sanitizeSchema(raw: any, warnings: string[]) {
           out.columns = columns;
           const rows = field.rows ?? {};
           if (rows.mode === "fixed" && Array.isArray(rows.labels) && rows.labels.length > 0) {
-            out.rows = { mode: "fixed", labels: rows.labels.map((l: any) => String(l).trim().slice(0, 120)).filter(Boolean) };
+            // Unlike column headers, a fixed row label can be a full review-item
+            // block (title + description + target line joined by \n) — 120 chars
+            // truncated these mid-sentence.
+            out.rows = { mode: "fixed", labels: rows.labels.map((l: any) => String(l).trim().slice(0, 1000)).filter(Boolean) };
           } else {
             const rowsOut: Record<string, unknown> = { mode: "dynamic" };
             if (typeof rows.min === "number" && rows.min >= 0) rowsOut.min = rows.min;
