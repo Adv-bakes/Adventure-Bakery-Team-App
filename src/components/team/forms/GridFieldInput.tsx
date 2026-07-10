@@ -1,6 +1,7 @@
 import { Controller, useFieldArray, type Control } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,8 +58,9 @@ function GridCell({ column, value, onChange, disabled }: {
       );
     default:
       return (
-        <Input
-          className="h-8 text-xs"
+        <Textarea
+          className="min-h-[32px] text-xs py-1.5 px-2 leading-snug resize-y break-words"
+          rows={1}
           value={value ?? ""}
           disabled={disabled}
           onChange={e => onChange(e.target.value)}
@@ -85,7 +87,12 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
   const maxRows = !fixed ? (field.rows as { max?: number }).max : undefined;
   const minRows = !fixed ? (field.rows as { min?: number }).min ?? 1 : fixedLabels.length;
   const addLabel = !fixed ? (field.rows as { addLabel?: string }).addLabel : undefined;
-  const totalWeight = field.columns.reduce((sum, c) => sum + (c.width ?? 1), 0);
+  const columnWeight = field.columns.reduce((sum, c) => sum + (c.width ?? 1), 0);
+  // The read-only label column has no configurable width — give it a share
+  // proportional to the average data column so it doesn't collapse under
+  // table-fixed layout (labels can be full sentences, e.g. review-item text).
+  const labelWeight = fixed ? (columnWeight / field.columns.length) * 1.4 : 0;
+  const totalWeight = columnWeight + labelWeight;
 
   return (
     <Controller
@@ -93,24 +100,29 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
       name={field.id}
       render={({ fieldState }) => (
         <div className="space-y-1.5">
-          <Label className="text-xs text-[#2A1F0E]/70">
+          <Label className="text-xs text-[#2A1F0E]/90">
             {field.label}
             {field.required && <span className="text-red-600 ml-0.5">*</span>}
           </Label>
           <div className="rounded-md border overflow-x-auto" style={{ borderColor: "rgba(200,155,60,0.35)" }}>
-            <Table className="[&_td]:py-1.5 [&_td]:px-2 [&_th]:h-8 [&_th]:px-2 min-w-max">
+            <Table className="[&_td]:py-1.5 [&_td]:px-2 [&_th]:h-8 [&_th]:px-2 table-fixed w-full">
               <TableHeader>
                 <TableRow className="bg-[#C89B3C]/8">
-                  {fixed && <TableHead className="text-[#2A1F0E]/60 text-xs font-semibold" />}
+                  {fixed && (
+                    <TableHead
+                      className="text-[#2A1F0E]/80 text-xs font-semibold"
+                      style={{ width: `${(labelWeight / totalWeight) * 100}%`, minWidth: 110 }}
+                    />
+                  )}
                   {field.columns.map(col => (
                     <TableHead
                       key={col.id}
-                      className="text-[#2A1F0E]/60 text-xs font-semibold whitespace-nowrap"
+                      className="text-[#2A1F0E]/80 text-xs font-semibold whitespace-nowrap"
                       style={{ width: `${((col.width ?? 1) / totalWeight) * 100}%`, minWidth: col.type === "pass_fail" ? 130 : 90 }}
                     >
                       {col.label}
                       {col.required && <span className="text-red-600 ml-0.5">*</span>}
-                      {col.unit && <span className="font-normal text-[#2A1F0E]/40 ml-1">({col.unit})</span>}
+                      {col.unit && <span className="font-normal text-[#2A1F0E]/55 ml-1">({col.unit})</span>}
                     </TableHead>
                   ))}
                   {!fixed && !disabled && <TableHead className="w-8" />}
@@ -120,7 +132,7 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
                 {rows.map((row, rowIdx) => (
                   <TableRow key={row.id}>
                     {fixed && (
-                      <TableCell className="text-xs font-medium text-[#2A1F0E]/70 whitespace-nowrap bg-[#C89B3C]/5">
+                      <TableCell className="text-xs font-medium text-[#2A1F0E]/90 whitespace-normal bg-[#C89B3C]/8">
                         {fixedLabels[rowIdx] ?? ""}
                       </TableCell>
                     )}

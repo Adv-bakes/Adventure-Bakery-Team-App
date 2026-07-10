@@ -218,7 +218,7 @@ export default function FormEntry() {
   }
 
   return (
-    <div className="space-y-4 max-w-5xl">
+    <div className="space-y-4 max-w-7xl">
       {/* Header */}
       <div>
         <Link

@@ -40,7 +40,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer }: FormRe
         break;
       case "info":
         el = (
-          <p className="text-xs text-[#2A1F0E]/60 whitespace-pre-wrap rounded-md bg-[#C89B3C]/5 p-2.5">
+          <p className="text-xs text-[#2A1F0E]/80 whitespace-pre-wrap rounded-md bg-[#C89B3C]/5 p-2.5">
             {(field as InfoField).text || field.label}
           </p>
         );
@@ -77,7 +77,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer }: FormRe
           {(section.title || section.description) && (
             <div>
               {section.title && <h2 className="font-semibold text-[#2A1F0E]">{section.title}</h2>}
-              {section.description && <p className="text-xs text-[#2A1F0E]/60 mt-0.5">{section.description}</p>}
+              {section.description && <p className="text-xs text-[#2A1F0E]/80 mt-0.5">{section.description}</p>}
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-3">

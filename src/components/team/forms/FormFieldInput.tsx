@@ -42,7 +42,7 @@ export function PassFailInput({ field, value, onChange, disabled, compact }: {
           className={cn(
             "border-r last:border-r-0 font-medium transition-colors disabled:opacity-60",
             compact ? "px-2 py-1 text-[11px]" : "px-3 py-1.5 text-xs",
-            "text-[#2A1F0E]/60 hover:bg-[#C89B3C]/10",
+            "text-[#2A1F0E]/80 hover:bg-[#C89B3C]/10",
             PASS_FAIL_STYLE[key],
           )}
           style={{ borderColor: "rgba(200,155,60,0.25)" }}
@@ -74,11 +74,11 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
       name={field.id}
       render={({ field: rhf, fieldState }) => {
         const labelEl = (
-          <Label className="text-xs text-[#2A1F0E]/70">
+          <Label className="text-xs text-[#2A1F0E]/90">
             {field.label}
             {field.required && <span className="text-red-600 ml-0.5">*</span>}
             {field.type === "number" && (field as NumberField).unit && (
-              <span className="text-[#2A1F0E]/40 ml-1">({(field as NumberField).unit})</span>
+              <span className="text-[#2A1F0E]/55 ml-1">({(field as NumberField).unit})</span>
             )}
           </Label>
         );
