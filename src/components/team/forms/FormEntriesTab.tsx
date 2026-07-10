@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { getFormSchema, instanceTitle } from "@/lib/formSchema";
-import { createResponse, fetchProfileNames, fetchResponses, type FormResponse } from "@/lib/formResponses";
+import { createResponse, fetchProfileNames, fetchResponses, shortUserId, type FormResponse } from "@/lib/formResponses";
 
 const statusBadge: Record<string, string> = {
   draft: "bg-[#C89B3C]/20 text-[#9A6F1E] border-[#C89B3C]/40",
@@ -91,7 +91,7 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
             </TableHeader>
             <TableBody>
               {entries.map(entry => {
-                const filler = names.get(entry.created_by) || "—";
+                const filler = names.get(entry.created_by) || shortUserId(entry.created_by);
                 return (
                   <TableRow
                     key={entry.id}

@@ -15,7 +15,7 @@ import {
   flattenForReport, getFormSchema, hasFormSchema, instanceTitle,
   type FormSchema, type ReportColumn,
 } from "@/lib/formSchema";
-import { fetchProfileNames, fetchResponses, type FormResponse } from "@/lib/formResponses";
+import { fetchProfileNames, fetchResponses, shortUserId, type FormResponse } from "@/lib/formResponses";
 import { generateFormReportPdf } from "@/lib/formPdf";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
@@ -84,7 +84,15 @@ export default function Records() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const range = { from: `${from}T00:00:00`, to: `${to}T23:59:59` };
+    // new Date("YYYY-MM-DDTHH:mm:ss") (no zone suffix) parses as the browser's
+    // LOCAL time; converting to ISO here turns the user's local day boundary
+    // into the correct UTC instant before it's sent to the timestamptz column.
+    // (Sending the naive string directly would have Postgres read it as UTC,
+    // silently excluding entries from users in timezones behind UTC.)
+    const range = {
+      from: new Date(`${from}T00:00:00`).toISOString(),
+      to: new Date(`${to}T23:59:59.999`).toISOString(),
+    };
     fetchResponses(selectedFormId || undefined, range)
       .then(async rows => {
         if (cancelled) return;
@@ -119,7 +127,7 @@ export default function Records() {
     const headers = ["Entry Date", "Filled By", "Status", ...reportColumns.map(c => c.header)];
     const lines = visible.map(r => [
       format(new Date(r.submitted_at ?? r.created_at), "yyyy-MM-dd HH:mm"),
-      names.get(r.created_by) ?? "",
+      names.get(r.created_by) || shortUserId(r.created_by),
       r.status,
       ...reportColumns.map(c => c.cell(r.data ?? {})),
     ].map(v => esc(String(v ?? ""))).join(","));
@@ -140,7 +148,7 @@ export default function Records() {
       await generateFormReportPdf(
         selectedForm,
         reportColumns,
-        visible.map(r => ({ response: r, fillerName: names.get(r.created_by) ?? "" })),
+        visible.map(r => ({ response: r, fillerName: names.get(r.created_by) || shortUserId(r.created_by) })),
         { from, to },
       );
     } catch (e: any) {
@@ -238,7 +246,7 @@ export default function Records() {
                         <span className="ml-1.5 text-[10px] text-[#2A1F0E]/40">Rev {r.form_revision}</span>
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">{names.get(r.created_by) ?? "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">{names.get(r.created_by) || shortUserId(r.created_by)}</TableCell>
                     <TableCell><Badge className={statusBadge[r.status]}>{r.status}</Badge></TableCell>
                     {reportColumns.map(c => {
                       const value = c.cell(r.data ?? {});
@@ -272,7 +280,7 @@ export default function Records() {
               {visible.map(r => {
                 const formDoc = formsById.get(r.document_id);
                 const formSchema = formDoc ? getFormSchema(formDoc.content) : null;
-                const filler = names.get(r.created_by) ?? "—";
+                const filler = names.get(r.created_by) || shortUserId(r.created_by);
                 return (
                   <TableRow key={r.id} className="cursor-pointer hover:bg-[#C89B3C]/5" onClick={() => openEntry(r)}>
                     <TableCell className="font-mono text-xs">{r.form_number ?? formDoc?.sop_number ?? "—"}</TableCell>

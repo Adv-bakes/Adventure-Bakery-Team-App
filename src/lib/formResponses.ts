@@ -176,16 +176,26 @@ export async function deleteResponse(id: string): Promise<void> {
   if (error) throw error;
 }
 
-/** full_name per user id, for "Filled by" columns and signature stamping. */
+/**
+ * Best available display name per user id, for "Filled by" columns and
+ * signature stamping: full_name, falling back to email when full_name was
+ * never filled in. Empty string means no profile row matched at all (e.g. a
+ * deleted account) — callers fall back further to a shortened user id.
+ */
 export async function fetchProfileNames(userIds: string[]): Promise<Map<string, string>> {
   const ids = Array.from(new Set(userIds.filter(Boolean)));
   if (ids.length === 0) return new Map();
   const { data, error } = await (supabase as any)
     .from("profiles")
-    .select("id, full_name")
+    .select("id, full_name, email")
     .in("id", ids);
   if (error) throw error;
-  return new Map((data ?? []).map((p: any) => [p.id, p.full_name ?? ""]));
+  return new Map((data ?? []).map((p: any) => [p.id, (p.full_name?.trim() || p.email || "")]));
+}
+
+/** Shortened user id for display when no profile name/email could be resolved. */
+export function shortUserId(userId: string): string {
+  return `User ${userId.slice(0, 8)}`;
 }
 
 export async function fetchHistorySnapshots(documentId: string): Promise<HistorySnapshot[]> {
