@@ -20,7 +20,7 @@ import {
 } from "@/lib/formSchema";
 import {
   StaleResponseError, deleteResponse, fetchProfileNames, fetchResponse, reopenResponse,
-  resolveSchemaForResponse, saveResponseData, submitResponse,
+  resolveSchemaForResponse, saveResponseData, shortUserId, submitResponse,
   type FormResponse, type ResolvedSchema,
 } from "@/lib/formResponses";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
@@ -90,7 +90,7 @@ export default function FormEntry() {
 
       const userId = auth?.user?.id;
       const names = await fetchProfileNames([entry.created_by, userId].filter(Boolean) as string[]);
-      setFillerName(names.get(entry.created_by) || "");
+      setFillerName(names.get(entry.created_by) || shortUserId(entry.created_by));
       if (userId) setSigner({ userId, name: names.get(userId) || auth?.user?.email || "Unknown" });
 
       form.reset({ ...emptyValues(res.schema), ...(entry.data ?? {}) });
