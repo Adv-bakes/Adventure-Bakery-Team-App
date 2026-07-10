@@ -347,6 +347,16 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                         <Label htmlFor={`req-${sIdx}-${fIdx}`} className="text-xs font-normal cursor-pointer">Required</Label>
                       </div>
                     )}
+                    {field.type !== "heading" && field.type !== "info" && field.type !== "grid" && (
+                      <div className="flex items-center gap-1.5 pb-2">
+                        <Checkbox
+                          id={`list-${sIdx}-${fIdx}`}
+                          checked={field.showInList ?? false}
+                          onCheckedChange={c => patchField(sIdx, fIdx, { showInList: !!c || undefined })}
+                        />
+                        <Label htmlFor={`list-${sIdx}-${fIdx}`} className="text-xs font-normal cursor-pointer">Show in Entries list</Label>
+                      </div>
+                    )}
                   </div>
 
                   {/* Per-type extras */}

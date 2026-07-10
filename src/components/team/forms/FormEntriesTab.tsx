@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { getFormSchema, instanceTitle } from "@/lib/formSchema";
+import { formatFieldValue, getFormSchema, instanceTitle, listFields } from "@/lib/formSchema";
 import { createResponse, fetchProfileNames, fetchResponses, shortUserId, type FormResponse } from "@/lib/formResponses";
 
 const statusBadge: Record<string, string> = {
@@ -35,6 +35,7 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const schema = getFormSchema(doc.content);
+  const extraColumns = schema ? listFields(schema) : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -84,6 +85,9 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-[#2A1F0E]/80">Entry</TableHead>
+                {extraColumns.map(f => (
+                  <TableHead key={f.id} className="text-[#2A1F0E]/80">{f.label}</TableHead>
+                ))}
                 <TableHead className="text-[#2A1F0E]/80">Filled by</TableHead>
                 <TableHead className="text-[#2A1F0E]/80">Status</TableHead>
                 <TableHead className="text-[#2A1F0E]/80">Updated</TableHead>
@@ -104,6 +108,11 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
                         <span className="ml-1.5 text-[10px] text-[#2A1F0E]/40">Rev {entry.form_revision}</span>
                       )}
                     </TableCell>
+                    {extraColumns.map(f => (
+                      <TableCell key={f.id} className="text-xs text-[#2A1F0E]/85">
+                        {formatFieldValue(f, entry.data?.[f.id]) || <span className="text-[#2A1F0E]/35">—</span>}
+                      </TableCell>
+                    ))}
                     <TableCell>{filler}</TableCell>
                     <TableCell><Badge className={statusBadge[entry.status]}>{entry.status}</Badge></TableCell>
                     <TableCell className="text-xs text-[#2A1F0E]/80">

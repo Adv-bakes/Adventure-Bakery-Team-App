@@ -69,6 +69,35 @@ function GridCell({ column, value, onChange, disabled }: {
   }
 }
 
+/**
+ * Fixed row labels can carry a title + description + target line joined by
+ * "\n" (the AI extractor's convention for a paper form's review-item cell —
+ * see generate-form-schema). Split them back out so the hierarchy the PDF
+ * export shows (bold title / italic description / gold target) survives here
+ * too, instead of one flat run-on line.
+ */
+function FixedRowLabel({ label }: { label: string }) {
+  const lines = label.split("\n").map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+  const [title, ...rest] = lines;
+  return (
+    <div className="space-y-0.5 py-0.5">
+      <p className="text-xs font-semibold text-[#2A1F0E]">{title}</p>
+      {rest.map((line, i) => {
+        const isTarget = /^target:/i.test(line);
+        return (
+          <p
+            key={i}
+            className={isTarget ? "text-[11px] font-medium text-[#9A6F1E]" : "text-[11px] italic text-[#2A1F0E]/70"}
+          >
+            {line}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 interface GridFieldInputProps {
   field: GridField;
   control: Control<Record<string, any>>;
@@ -111,7 +140,7 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
                   {fixed && (
                     <TableHead
                       className="text-[#2A1F0E]/80 text-xs font-semibold"
-                      style={{ width: `${(labelWeight / totalWeight) * 100}%`, minWidth: 110 }}
+                      style={{ width: `${(labelWeight / totalWeight) * 100}%`, minWidth: 140 }}
                     />
                   )}
                   {field.columns.map(col => (
@@ -132,8 +161,8 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
                 {rows.map((row, rowIdx) => (
                   <TableRow key={row.id}>
                     {fixed && (
-                      <TableCell className="text-xs font-medium text-[#2A1F0E]/90 whitespace-normal bg-[#C89B3C]/8">
-                        {fixedLabels[rowIdx] ?? ""}
+                      <TableCell className="align-top whitespace-normal bg-[#C89B3C]/8">
+                        <FixedRowLabel label={fixedLabels[rowIdx] ?? ""} />
                       </TableCell>
                     )}
                     {field.columns.map(col => (

@@ -28,6 +28,7 @@ export interface FieldBase {
   help?: string;              // muted hint under the input
   required?: boolean;         // enforced at SUBMIT time only; drafts save anything
   width?: "full" | "half" | "third";
+  showInList?: boolean;       // surface this field as its own column in the drawer's Entries list
 }
 
 export interface TextField     extends FieldBase { type: "text";     maxLength?: number; placeholder?: string; }
@@ -136,6 +137,16 @@ export function hasFormSchema(doc: { type?: string; content?: any } | null | und
 /** All value-bearing fields across sections, in display order. */
 export function valueFields(schema: FormSchema): FormField[] {
   return schema.sections.flatMap(s => s.fields).filter(f => VALUE_FIELD_TYPES.has(f.type));
+}
+
+/**
+ * Fields flagged settings.showInList — extra columns in the drawer's Entries
+ * list, admin-picked per form (e.g. "Complaint No.", "Customer"). Grids are
+ * excluded even if flagged: a multi-row value has no sensible single-cell
+ * rendering (formatFieldValue already returns "" for them).
+ */
+export function listFields(schema: FormSchema): FormField[] {
+  return valueFields(schema).filter(f => f.showInList && f.type !== "grid");
 }
 
 // ---------- Ids ----------
