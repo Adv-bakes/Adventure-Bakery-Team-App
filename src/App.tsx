@@ -89,6 +89,8 @@ import {
 import SopsLibrary from "./pages/team/compliance/SopsLibrary";
 import DocumentRegister from "./pages/team/compliance/DocumentRegister";
 import TemperatureReport from "./pages/team/compliance/TemperatureReport";
+import FormEntry from "./pages/team/compliance/FormEntry";
+import FormRecords from "./pages/team/compliance/Records";
 import TrainingSops from "./pages/team/hr/TrainingSops";
 import TrainingCompliance from "./pages/team/hr/TrainingCompliance";
 import TrainingModuleDetail from "./pages/team/hr/TrainingModuleDetail";
@@ -433,6 +435,16 @@ const App = () => (
           <Route path="/team/compliance/temperature" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><TemperatureReport /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/compliance/records" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><FormRecords /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/compliance/forms/:docId/entries/:responseId" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><FormEntry /></TeamLayout>
             </ProtectedRoute>
           } />
 

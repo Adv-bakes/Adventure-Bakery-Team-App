@@ -258,6 +258,53 @@ Unmapped numbers fall back to plain text. Both generators key physical==printed 
 
 ---
 
+## Dynamic Fillable Forms — `lib/formSchema.ts` + `components/team/forms/`
+
+FRM documents (`sop_documents.type='form'`) can carry a **fillable form schema** at `content.form_schema`
+(sections → typed fields incl. `grid` for paper log tables, `signature` for typed acknowledgment stamps,
+`pass_fail` QC checks); filled instances live in **`sop_document_responses`** (draft → submitted lifecycle),
+and **`sop_document_history`** auto-snapshots the prior `sop_documents` row (DB trigger, migration
+`20260709000001…`) whenever a *published* (active) doc's watched fields change — `revision, sop_number,
+title, effective_date, approved_by, status`, and `content->'form_schema'` only (slide/quiz/attachment
+churn does NOT snapshot).
+
+- **`src/lib/formSchema.ts`** — schema types + pure helpers: `getFormSchema`/`hasFormSchema`,
+  `buildZodSchema` (submit-time validation only; drafts save anything; per-field/per-grid-column
+  `required`), `emptyValues`, `formatFieldValue`, `flattenForReport` (grid → one report column per grid
+  column, rows `" | "`-joined), `instanceTitle` (`settings.instanceTitleTemplate` tokens `{date}`,
+  `{user}`, `{<fieldId>}`), `slugifyFieldId`. Field ids are stable snake_case, **locked after first save**
+  (answers key on them); response `data` is flat `{ [fieldId]: value }` — sections are presentation-only.
+- **`src/lib/formResponses.ts`** — all supabase access (tables not in generated types → `as any` confined
+  here): create (pins `form_number`/`form_revision`; honors `settings.allowMultipleDrafts=false` by
+  resuming the user's draft), save/submit with **optimistic concurrency** (`.eq("updated_at", loaded)` →
+  `StaleResponseError`), admin reopen/delete, `resolveSchemaForResponse` (live → revision-matched history
+  snapshot → live-with-fallback-banner; renderer tolerates unmatched ids and shows an "Unmapped answers"
+  block).
+- **Components** (`src/components/team/forms/`): `FormRenderer` (schema + external RHF instance; shadcn
+  form primitives; width hints on a 6-col grid), `FormFieldInput`/`GridFieldInput`/`SignatureFieldInput`
+  (verifier-role signatures admin-only), `FormSchemaBuilder` + `GridColumnsEditor` (admin authoring, live
+  Preview, saves via `updateModuleContent` **merge**), `FormEntriesTab` (drawer Entries list + New Entry).
+- **Surfaces:** SOPs Library drawer gains **Form** + **Entries** tabs for `type='form'` docs (default tab:
+  entries if fillable, else form) and a gold "Fillable" pill in the list; entry editor is a dedicated route
+  **`/team/compliance/forms/:docId/entries/:responseId`** (`FormEntry.tsx` — Save Draft / Submit (confirm +
+  validation) / admin Reopen / Download PDF / admin Delete, hidden when `settings.deletable === false`);
+  **Form Records** page **`/team/compliance/records`** (`Records.tsx`, Compliance nav) = cross-form recent
+  entries + per-form flattened answer table with From/To + status filters and CSV/PDF export.
+- **PDF:** `src/lib/formPdf.ts` — `generateFormResponsePdf` (paper-like entry PDF; grids as real tables)
+  and `generateFormReportPdf` (landscape, clamps to 10 columns → "see CSV"); reuses `loadLogoDataUrl`/
+  `confidentialFooter` now exported from `sopPdf.ts`.
+- **AI extraction:** drawer Form tab "Generate with AI" (shown when a source `.docx` is attached) runs
+  mammoth client-side (keeps the tables `sopDocxParser` drops), sends HTML to edge function
+  **`generate-form-schema`** (Gemini via Lovable gateway; server-side whitelist/sanitize; also accepts
+  `pdf_images` for a future scanned-PDF path) — result loads into the builder as an **unsaved proposal**.
+- **Retention:** `sop_document_responses.document_id` is `ON DELETE RESTRICT` — hard-deleting a form with
+  entries fails (code 23503 → "archive instead" toast). Response RLS: staff read all / insert own / update
+  own **drafts** only; admin-or-owner (`has_role('admin') OR is_owner()`) update/delete anything.
+  Dormant scaffold tables `sop_versions`/`form_templates`/`form_submissions` (20260608000001) are unused
+  and deliberately not reused.
+
+---
+
 ## Document Attachments — `DocumentAttachment.tsx`
 
 Component in `src/components/team/`, rendered in the SOPs Library drawer's **Reference Documents** tab and the HR Training & SOPs Reference Library drawer. Manages a list of reference items stored in `content.attachments[]` (`Attachment = { name; path?; url? }`):
