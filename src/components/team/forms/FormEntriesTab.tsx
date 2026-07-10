@@ -75,7 +75,7 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
       </div>
 
       {!loading && entries.length === 0 ? (
-        <div className="rounded-md border border-dashed p-6 text-center text-sm text-[#2A1F0E]/60" style={{ borderColor: "rgba(200,155,60,0.4)" }}>
+        <div className="rounded-md border border-dashed p-6 text-center text-sm text-[#2A1F0E]/75" style={{ borderColor: "rgba(200,155,60,0.4)" }}>
           No entries yet. Click New Entry to fill this form out for the first time.
         </div>
       ) : entries.length > 0 && (
@@ -83,10 +83,10 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
           <Table className="[&_td]:py-2 [&_th]:h-9">
             <TableHeader>
               <TableRow>
-                <TableHead className="text-[#2A1F0E]/60">Entry</TableHead>
-                <TableHead className="text-[#2A1F0E]/60">Filled by</TableHead>
-                <TableHead className="text-[#2A1F0E]/60">Status</TableHead>
-                <TableHead className="text-[#2A1F0E]/60">Updated</TableHead>
+                <TableHead className="text-[#2A1F0E]/80">Entry</TableHead>
+                <TableHead className="text-[#2A1F0E]/80">Filled by</TableHead>
+                <TableHead className="text-[#2A1F0E]/80">Status</TableHead>
+                <TableHead className="text-[#2A1F0E]/80">Updated</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -106,7 +106,7 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
                     </TableCell>
                     <TableCell>{filler}</TableCell>
                     <TableCell><Badge className={statusBadge[entry.status]}>{entry.status}</Badge></TableCell>
-                    <TableCell className="text-xs text-[#2A1F0E]/60">
+                    <TableCell className="text-xs text-[#2A1F0E]/80">
                       {format(new Date(entry.updated_at), "M/d/yyyy h:mm a")}
                     </TableCell>
                   </TableRow>

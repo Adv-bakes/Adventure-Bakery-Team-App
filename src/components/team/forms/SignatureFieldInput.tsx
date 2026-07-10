@@ -49,9 +49,9 @@ export function SignatureFieldInput({ field, value, onChange, disabled, isAdmin,
       <div className="flex items-center gap-2 text-xs font-medium text-[#9A6F1E]">
         <PenLine className="w-3.5 h-3.5" />
         {field.label}
-        {isVerifier && <span className="font-normal text-[#2A1F0E]/50">(verified by — admin only)</span>}
+        {isVerifier && <span className="font-normal text-[#2A1F0E]/65">(verified by — admin only)</span>}
       </div>
-      {field.statement && <p className="text-xs text-[#2A1F0E]/70">{field.statement}</p>}
+      {field.statement && <p className="text-xs text-[#2A1F0E]/85">{field.statement}</p>}
       <div className="flex items-center gap-2">
         <Checkbox
           id={`sig-${field.id}`}

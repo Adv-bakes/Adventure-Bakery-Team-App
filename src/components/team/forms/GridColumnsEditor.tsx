@@ -86,6 +86,15 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-16">
+              <Label className="text-[10px] text-muted-foreground">Width</Label>
+              <Input
+                type="number" min={1} step={1} className="h-8 text-xs"
+                value={col.width ?? 1}
+                onChange={e => updateColumn(idx, { width: e.target.value === "" ? undefined : Number(e.target.value) })}
+                title="Relative width weight — a column with 2 gets twice the width of one with 1"
+              />
+            </div>
             {col.type === "number" && (
               <div className="w-20">
                 <Label className="text-[10px] text-muted-foreground">Unit</Label>
