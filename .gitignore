@@ -36,3 +36,8 @@ training-decks/qa/
 
 # Python
 __pycache__/
+
+# Generated documentation PDFs (root-level, produced by scripts/generate-*.py) —
+# the generator scripts are tracked, their rendered output is not.
+/dynamic_forms_technical_guide.pdf
+/document_numbering_guide.pdf
