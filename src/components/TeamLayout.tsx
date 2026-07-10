@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Home, Users, FileText, Kanban, Boxes, TrendingUp, Factory, BarChart2,
-  ClipboardCheck, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
+  ClipboardCheck, ClipboardList, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
   ListTodo, Inbox, DollarSign, Database, Settings, User as UserIcon,
   LogOut, PanelLeftClose, PanelLeft, Thermometer,
 } from "lucide-react";
@@ -36,6 +36,7 @@ const navSections: NavSection[] = [
   { title: "Compliance", items: [
     { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library" },
     { path: "/team/compliance/register", icon: Database, label: "Document Register" },
+    { path: "/team/compliance/records", icon: ClipboardList, label: "Form Records" },
     { path: "/team/compliance/traceability", icon: ClipboardCheck, label: "Traceability" },
     { path: "/team/compliance/temperature", icon: Thermometer, label: "Temperature Logs" },
     { path: "/team/compliance/certifications", icon: ShieldCheck, label: "Certifications" },

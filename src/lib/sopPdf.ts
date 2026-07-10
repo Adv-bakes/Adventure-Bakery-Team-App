@@ -12,10 +12,27 @@ const inline = (s: string) => ({
 (pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs ?? (pdfFonts as any).vfs ?? (pdfFonts as any).default?.pdfMake?.vfs;
 
 // Trade-secret / confidentiality disclaimer — reproduced verbatim from the SOP template footer.
-const DISCLAIMER =
+// Exported for reuse by other pdfmake documents (form entries, reports).
+export const DISCLAIMER =
   "This document contains Confidential Commercial Information which constitutes TRADE SECRETS and is exempt from disclosure under the Freedom of Information Act pursuant to 5 USC (b) (4) and may not be disclosed without prior written approval from Adventure Bakery, LLC.";
 
-const GOLD = "#C89B3C";
+export const PDF_GOLD = "#C89B3C";
+const GOLD = PDF_GOLD;
+
+/** Standard per-page footer (company · Confidential · page #  + disclaimer). */
+export const confidentialFooter = (currentPage: number): Content => ({
+  margin: [54, 8, 54, 0],
+  stack: [
+    {
+      columns: [
+        { text: "Adventure Bakery, LLC", fontSize: 9, alignment: "left" },
+        { text: "Confidential", italics: true, fontSize: 9, alignment: "center" },
+        { text: String(currentPage), fontSize: 9, alignment: "right" },
+      ],
+    },
+    { text: DISCLAIMER, fontSize: 6.5, alignment: "center", color: "#444444", margin: [0, 2, 0, 0] },
+  ],
+});
 
 // Minimal shape of a sop_documents row needed to render the PDF.
 export interface SopPdfRow {
@@ -31,7 +48,7 @@ export interface SopPdfRow {
 
 let logoDataUrl: string | null = null;
 
-async function loadLogoDataUrl(): Promise<string | null> {
+export async function loadLogoDataUrl(): Promise<string | null> {
   if (logoDataUrl) return logoDataUrl;
   try {
     const res = await fetch("/sop-logo.png");
@@ -165,19 +182,7 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
     pageMargins: [54, 40, 54, 70],
     defaultStyle: { fontSize: 10, lineHeight: 1.2 },
     content: body,
-    footer: (currentPage: number) => ({
-      margin: [54, 8, 54, 0],
-      stack: [
-        {
-          columns: [
-            { text: "Adventure Bakery, LLC", fontSize: 9, alignment: "left" },
-            { text: "Confidential", italics: true, fontSize: 9, alignment: "center" },
-            { text: String(currentPage), fontSize: 9, alignment: "right" },
-          ],
-        },
-        { text: DISCLAIMER, fontSize: 6.5, alignment: "center", color: "#444444", margin: [0, 2, 0, 0] },
-      ],
-    }),
+    footer: confidentialFooter,
   };
 
   const fileName = `${row.sop_number ? `SOP-${row.sop_number} ` : ""}${row.title ?? "SOP"}.pdf`.replace(/[\\/:*?"<>|]/g, "-");

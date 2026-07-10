@@ -1,0 +1,5 @@
+-- Placeholder: this migration was applied directly to production (dashboard/another
+-- machine) on 2026-06-29 without a local file ever being committed to this repo.
+-- Its original SQL was not captured. Registered here (empty) purely so
+-- `supabase migration repair --status applied` has a file to key off of and the
+-- local/remote migration history can reconcile. Content unknown as of 2026-07-09.
