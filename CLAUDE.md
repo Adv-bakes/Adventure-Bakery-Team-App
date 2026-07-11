@@ -268,14 +268,22 @@ FRM documents (`sop_documents.type='form'`) can carry a **fillable form schema**
 and **`sop_document_history`** auto-snapshots the prior `sop_documents` row (DB trigger, migration
 `20260709000001…`) whenever a *published* (active) doc's watched fields change — `revision, sop_number,
 title, effective_date, approved_by, status`, and `content->'form_schema'` only (slide/quiz/attachment
-churn does NOT snapshot).
+churn does NOT snapshot). The trigger's `changed := changed || 'literal'` lines were rewritten to
+`array_append(changed, 'literal')` in migration `20260710000001_fix_snapshot_trigger_array_append.sql` —
+the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was parsing the literal as
+`{...}` array syntax, throwing "malformed array literal" on every publish-time save.
 
 - **`src/lib/formSchema.ts`** — schema types + pure helpers: `getFormSchema`/`hasFormSchema`,
   `buildZodSchema` (submit-time validation only; drafts save anything; per-field/per-grid-column
   `required`), `emptyValues`, `formatFieldValue`, `flattenForReport` (grid → one report column per grid
   column, rows `" | "`-joined), `instanceTitle` (`settings.instanceTitleTemplate` tokens `{date}`,
-  `{user}`, `{<fieldId>}`), `slugifyFieldId`. Field ids are stable snake_case, **locked after first save**
-  (answers key on them); response `data` is flat `{ [fieldId]: value }` — sections are presentation-only.
+  `{user}`, `{<fieldId>}`), `slugifyFieldId`, `listFields` (fields flagged `showInList: true` — surfaced
+  as extra columns in the drawer's Entries table, see below). Field ids are stable snake_case, **locked
+  after first save** (answers key on them); response `data` is flat `{ [fieldId]: value }` — sections
+  are presentation-only. `GridColumn.width` is a relative weight (default 1) authored per-column in
+  `GridColumnsEditor`; `GridFieldInput` sums the row's column weights and gives the read-only fixed-row
+  label column `1.4×` the average column's share so it doesn't collapse to near-zero under
+  `table-fixed` (labels can be full review-item sentences).
 - **`src/lib/formResponses.ts`** — all supabase access (tables not in generated types → `as any` confined
   here): create (pins `form_number`/`form_revision`; honors `settings.allowMultipleDrafts=false` by
   resuming the user's draft), save/submit with **optimistic concurrency** (`.eq("updated_at", loaded)` →
@@ -284,12 +292,24 @@ churn does NOT snapshot).
   block).
 - **Components** (`src/components/team/forms/`): `FormRenderer` (schema + external RHF instance; shadcn
   form primitives; width hints on a 6-col grid), `FormFieldInput`/`GridFieldInput`/`SignatureFieldInput`
-  (verifier-role signatures admin-only), `FormSchemaBuilder` + `GridColumnsEditor` (admin authoring, live
-  Preview, saves via `updateModuleContent` **merge**), `FormEntriesTab` (drawer Entries list + New Entry).
+  (verifier-role signatures admin-only), `FormSchemaBuilder` + `GridColumnsEditor` (admin authoring —
+  incl. per-field **"Show in Entries list"** checkbox and per-grid-column **Width**, live Preview, saves
+  via `updateModuleContent` **merge**), `FormEntriesTab` (drawer Entries list + New Entry; renders one
+  extra `TableHead`/`TableCell` per `listFields(schema)` field, e.g. Complaint No./Customer on FRM-002).
+  - `date`/`datetime` scalar fields (`FormFieldInput.tsx`) and `date` grid columns (`GridFieldInput.tsx`)
+    render a **"Today"/"Now" shortcut link** beside the native picker (`format(new Date(), "yyyy-MM-dd")`
+    / `"yyyy-MM-dd'T'HH:mm"`) so common dates don't require opening the calendar.
+  - Grid text cells use a wrapping `Textarea` (not `Input`) under `table-fixed` layout so long entries
+    are readable without horizontal scroll; a fixed-row label can carry a `\n`-joined title +
+    description + `Target: …` line (the AI extractor's convention for a paper review-item cell) —
+    `FixedRowLabel` in `GridFieldInput.tsx` splits on `\n` and renders title (bold) / description
+    (italic) / target (gold) instead of one flat run-on line.
 - **Surfaces:** SOPs Library drawer gains **Form** + **Entries** tabs for `type='form'` docs (default tab:
   entries if fillable, else form) and a gold "Fillable" pill in the list; entry editor is a dedicated route
-  **`/team/compliance/forms/:docId/entries/:responseId`** (`FormEntry.tsx` — Save Draft / Submit (confirm +
-  validation) / admin Reopen / Download PDF / admin Delete, hidden when `settings.deletable === false`);
+  **`/team/compliance/forms/:docId/entries/:responseId`** (`FormEntry.tsx`, `max-w-7xl` — Save Draft /
+  Submit (confirm + validation) / admin Reopen / Download PDF / admin Delete, hidden when
+  `settings.deletable === false`; the "Back to FRM-###" link is duplicated into the sticky bottom action
+  bar next to Save/Submit so returning to the library never requires scrolling to the header);
   **Form Records** page **`/team/compliance/records`** (`Records.tsx`, Compliance nav) = cross-form recent
   entries + per-form flattened answer table with From/To + status filters and CSV/PDF export.
 - **PDF:** `src/lib/formPdf.ts` — `generateFormResponsePdf` (paper-like entry PDF; grids as real tables)
@@ -299,6 +319,13 @@ churn does NOT snapshot).
   mammoth client-side (keeps the tables `sopDocxParser` drops), sends HTML to edge function
   **`generate-form-schema`** (Gemini via Lovable gateway; server-side whitelist/sanitize; also accepts
   `pdf_images` for a future scanned-PDF path) — result loads into the builder as an **unsaved proposal**.
+  Select options go through a `toOptionString()` coercion (label/value/name/text → string, not a blind
+  `String(o)`) since the model sometimes proposes `{label,value}`-shaped objects instead of plain strings
+  — without it, dropdowns render the literal text `"[object Object]"`. Fixed-row `rows.labels[]` are
+  capped at 1000 chars (not 120 — column headers are short but review-item title+description+target
+  blocks are not). **Known unresolved issue:** regenerating an already-large schema (seen on FRM-001) can
+  hit a `SyntaxError: Expected ',' or ']'...` — the model occasionally emits a raw unescaped newline
+  inside a JSON string; not yet fixed.
 - **Retention:** `sop_document_responses.document_id` is `ON DELETE RESTRICT` — hard-deleting a form with
   entries fails (code 23503 → "archive instead" toast). Response RLS: staff read all / insert own / update
   own **drafts** only; admin-or-owner (`has_role('admin') OR is_owner()`) update/delete anything.
@@ -482,6 +509,6 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. Also exports `loadLogoDataUrl`, `confidentialFooter`, `DISCLAIMER`, `PDF_GOLD` for reuse by `formPdf.ts`. See "SOP PDF Export" above |
 | `docNumber.ts` | Document numbering convention: `DOC_STAGES`, `parseDocNumber`, `stageForNumber`/`stageForSopNumber`, `formatDocNumber`, `docNumberIssue`/`isValidDocNumber`; `parseClauseNumber`/`compareClauseIds` (the deliberate SQF-clause SOP scheme). See "Document Numbering Convention" above |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
-| `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`. See "Dynamic Fillable Forms" below |
+| `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns). See "Dynamic Fillable Forms" below |
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse`, `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse`, `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames` |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF) and `generateFormReportPdf(...)` (landscape report, clamps to 10 columns); reuses `sopPdf.ts`'s logo/footer exports |
