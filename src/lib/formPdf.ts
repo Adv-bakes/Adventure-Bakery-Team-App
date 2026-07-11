@@ -246,3 +246,102 @@ export async function generateFormReportPdf(
   const fileName = `${show(doc.sop_number)} report ${range.from} to ${range.to}.pdf`.replace(/[\\/:*?"<>|]/g, "-");
   pdfMake.createPdf(docDefinition).download(fileName);
 }
+
+/**
+ * Derived-log register PDF (e.g. FRM-003 Customer Complaint Log rendered from
+ * FRM-002 responses): a paper-like register whose header uses the LOG doc's
+ * metadata, one table row per projected source entry, an optional legend, and
+ * the standard confidential footer. Rows arrive already projected (string
+ * cells) so this stays decoupled from the report engine.
+ */
+export async function generateDerivedReportPdf(
+  logDoc: FormPdfDoc,
+  headers: string[],
+  rows: string[][],
+  meta: { rangeLabel?: string; count: number; sourceLabel?: string; legend?: string[] },
+): Promise<void> {
+  const logo = await loadLogoDataUrl();
+  const clampCount = Math.min(headers.length, MAX_REPORT_COLUMNS);
+  const clampedHeaders = headers.slice(0, clampCount);
+  const truncated = headers.length > clampCount;
+
+  const body: Content[] = [];
+  if (logo) body.push({ image: logo, width: 130, margin: [0, 0, 0, 6] });
+
+  // Metadata header table (mirrors the paper register template).
+  body.push({
+    table: {
+      widths: ["18%", "*", "20%", "20%"],
+      body: [
+        [
+          { text: "Adventure Bakery, LLC", bold: true, colSpan: 2 }, {},
+          { text: "Revision Num.", bold: true, alignment: "center" },
+          { text: show(logDoc.revision), alignment: "center" },
+        ],
+        [
+          { text: "Log Title", bold: true },
+          { text: show(logDoc.title), bold: true },
+          { text: "Doc No.", bold: true, alignment: "center" },
+          { text: show(logDoc.sop_number), alignment: "center" },
+        ],
+        [
+          { text: "Derived From", bold: true },
+          { text: show(meta.sourceLabel) },
+          { text: "Effective Date", bold: true, alignment: "center" },
+          { text: show(logDoc.effective_date), alignment: "center" },
+        ],
+      ],
+    },
+    layout: blackGrid,
+    margin: [0, 0, 0, 8],
+  });
+
+  body.push({
+    text: `${meta.rangeLabel ? `${meta.rangeLabel} · ` : ""}${meta.count} entr${meta.count === 1 ? "y" : "ies"} · generated ${format(new Date(), "M/d/yyyy h:mm a")}`,
+    fontSize: 8.5, color: "#555555", margin: [0, 0, 0, 8],
+  });
+  if (truncated) {
+    body.push({
+      text: `Showing the first ${clampCount} of ${headers.length} columns — export the CSV for the full detail.`,
+      fontSize: 8, italics: true, color: "#B45309", margin: [0, 0, 0, 4],
+    });
+  }
+
+  const headerRow: TableCell[] = clampedHeaders.map(h => ({ text: h, bold: true, fontSize: 8, fillColor: "#F5F1E6" }));
+  const dataRows: TableCell[][] = rows.map(r =>
+    r.slice(0, clampCount).map(c => ({ text: c || dash, fontSize: 8 } as TableCell)),
+  );
+  body.push({
+    table: {
+      headerRows: 1,
+      widths: clampedHeaders.map(() => "*"),
+      body: [headerRow, ...(dataRows.length ? dataRows : [clampedHeaders.map(() => ({ text: dash, fontSize: 8 } as TableCell))])],
+    },
+    layout: {
+      hLineColor: () => "#999999",
+      vLineColor: () => "#999999",
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
+    },
+  });
+
+  if (meta.legend && meta.legend.length) {
+    body.push({ text: "Legend", bold: true, fontSize: 9, margin: [0, 10, 0, 2] });
+    for (const line of meta.legend) {
+      body.push({ text: line, fontSize: 8, color: "#555555", margin: [0, 0, 0, 1] });
+    }
+  }
+
+  const docDefinition: TDocumentDefinitions = {
+    pageSize: "LETTER",
+    pageOrientation: "landscape",
+    pageMargins: [40, 36, 40, 70],
+    defaultStyle: { fontSize: 9, lineHeight: 1.15 },
+    content: body,
+    footer: confidentialFooter,
+  };
+
+  const fileName = `${show(logDoc.sop_number)} ${logDoc.title ?? "log"}${meta.rangeLabel ? ` ${meta.rangeLabel}` : ""}.pdf`
+    .replace(/[\\/:*?"<>|]/g, "-");
+  pdfMake.createPdf(docDefinition).download(fileName);
+}

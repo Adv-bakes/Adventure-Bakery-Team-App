@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, ClipboardList, Copy, Download, ListChecks, Trash2 } from "lucide-react";
+import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, ClipboardList, Copy, Download, ListChecks, Trash2, FileBarChart } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -33,7 +33,9 @@ import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
 import { TRAINING_CATEGORY_LABELS, DEPARTMENTS, updateModuleContent, updateModuleRequirements, updateModuleQuizConfig, hasReferenceDocs, hasSopBody, resolveFileUrl, type Attachment } from "@/lib/training";
 import { hasFormSchema, getFormSchema, type FormSchema } from "@/lib/formSchema";
+import { hasReportSchema } from "@/lib/formReport";
 import { FormSchemaBuilder } from "@/components/team/forms/FormSchemaBuilder";
+import { FormReportTab } from "@/components/team/forms/FormReportTab";
 import { FormEntriesTab } from "@/components/team/forms/FormEntriesTab";
 import { SopBodyEditor } from "@/components/team/SopBodyEditor";
 import { generateSopPdf } from "@/lib/sopPdf";
@@ -602,6 +604,9 @@ export default function SopsLibrary() {
                     {hasFormSchema(d) && (
                       <Badge className="bg-[#C89B3C]/15 text-[#9A6F1E] border-[#C89B3C]/30">Fillable</Badge>
                     )}
+                    {hasReportSchema(d.content) && (
+                      <Badge className="bg-[#2A1F0E]/10 text-[#2A1F0E]/70 border-[#2A1F0E]/20">Report</Badge>
+                    )}
                     {hasSopBody(d.content) && (
                       <button
                         onClick={async e => {
@@ -874,7 +879,7 @@ export default function SopsLibrary() {
                 key={selected.id}
                 defaultValue={
                   selected.type === "form"
-                    ? (hasFormSchema(selected) ? "entries" : "form")
+                    ? (hasFormSchema(selected) ? "entries" : hasReportSchema(selected.content) ? "report" : "form")
                     : selected.training_category != null ? "training" : hasSopBody(selected.content) ? "document" : "reference"
                 }
                 className="space-y-3"
@@ -885,6 +890,9 @@ export default function SopsLibrary() {
                   )}
                   {selected.type === "form" && hasFormSchema(selected) && (
                     <TabsTrigger value="entries"><ListChecks className="w-3.5 h-3.5 mr-1.5" />Entries</TabsTrigger>
+                  )}
+                  {selected.type === "form" && (isAdmin || hasReportSchema(selected.content)) && (
+                    <TabsTrigger value="report"><FileBarChart className="w-3.5 h-3.5 mr-1.5" />Report</TabsTrigger>
                   )}
                   <TabsTrigger value="training"><GraduationCap className="w-3.5 h-3.5 mr-1.5" />Training</TabsTrigger>
                   {hasSopBody(selected.content) && (
@@ -925,6 +933,12 @@ export default function SopsLibrary() {
                 {selected.type === "form" && hasFormSchema(selected) && (
                   <TabsContent value="entries">
                     <FormEntriesTab doc={selected} />
+                  </TabsContent>
+                )}
+
+                {selected.type === "form" && (isAdmin || hasReportSchema(selected.content)) && (
+                  <TabsContent value="report">
+                    <FormReportTab doc={selected} isAdmin={isAdmin} onContentChange={saveBody} />
                   </TabsContent>
                 )}
 
