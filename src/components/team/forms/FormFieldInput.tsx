@@ -1,4 +1,5 @@
 import { Controller, type Control } from "react-hook-form";
+import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -128,24 +129,48 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
           case "date":
           case "time":
             input = (
-              <Input
-                type={field.type}
-                value={rhf.value ?? ""}
-                onChange={rhf.onChange}
-                onBlur={rhf.onBlur}
-                disabled={disabled}
-              />
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type={field.type}
+                  value={rhf.value ?? ""}
+                  onChange={rhf.onChange}
+                  onBlur={rhf.onBlur}
+                  disabled={disabled}
+                  className="flex-1"
+                />
+                {field.type === "date" && !disabled && (
+                  <button
+                    type="button"
+                    onClick={() => rhf.onChange(format(new Date(), "yyyy-MM-dd"))}
+                    className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0"
+                  >
+                    Today
+                  </button>
+                )}
+              </div>
             );
             break;
           case "datetime":
             input = (
-              <Input
-                type="datetime-local"
-                value={rhf.value ?? ""}
-                onChange={rhf.onChange}
-                onBlur={rhf.onBlur}
-                disabled={disabled}
-              />
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="datetime-local"
+                  value={rhf.value ?? ""}
+                  onChange={rhf.onChange}
+                  onBlur={rhf.onBlur}
+                  disabled={disabled}
+                  className="flex-1"
+                />
+                {!disabled && (
+                  <button
+                    type="button"
+                    onClick={() => rhf.onChange(format(new Date(), "yyyy-MM-dd'T'HH:mm"))}
+                    className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0"
+                  >
+                    Now
+                  </button>
+                )}
+              </div>
             );
             break;
           case "checkbox":

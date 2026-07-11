@@ -278,6 +278,12 @@ export default function FormEntry() {
         className="sticky bottom-0 -mx-1 px-1 py-3 flex flex-wrap items-center gap-2 border-t backdrop-blur"
         style={{ borderColor: "rgba(200,155,60,0.3)", background: "rgba(42,31,14,0.85)" }}
       >
+        <Link
+          to={`/team/compliance/sops?doc=${doc.id}`}
+          className="inline-flex items-center gap-1 text-xs text-[#C89B3C] hover:underline"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />Back to {doc.sop_number ?? "form"}
+        </Link>
         {canEdit && (
           <>
             <Button type="button" onClick={saveDraft} disabled={saving || submitting} variant="outline">

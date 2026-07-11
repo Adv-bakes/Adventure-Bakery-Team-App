@@ -1,4 +1,5 @@
 import { Controller, useFieldArray, type Control } from "react-hook-form";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,13 +49,24 @@ function GridCell({ column, value, onChange, disabled }: {
     case "date":
     case "time":
       return (
-        <Input
-          type={column.type}
-          className="h-8 text-xs"
-          value={value ?? ""}
-          disabled={disabled}
-          onChange={e => onChange(e.target.value)}
-        />
+        <div className="flex items-center gap-1">
+          <Input
+            type={column.type}
+            className="h-8 text-xs flex-1"
+            value={value ?? ""}
+            disabled={disabled}
+            onChange={e => onChange(e.target.value)}
+          />
+          {column.type === "date" && !disabled && (
+            <button
+              type="button"
+              onClick={() => onChange(format(new Date(), "yyyy-MM-dd"))}
+              className="text-[10px] font-medium text-[#9A6F1E] hover:underline shrink-0 px-0.5"
+            >
+              Today
+            </button>
+          )}
+        </div>
       );
     default:
       return (

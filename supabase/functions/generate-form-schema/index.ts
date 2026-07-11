@@ -27,9 +27,24 @@ const SCALAR_TYPES = new Set([
 ]);
 const GRID_COLUMN_TYPES = new Set(["text", "number", "date", "time", "checkbox", "select", "pass_fail"]);
 
+/**
+ * Coerce one dropdown option to display text. The model is asked for plain
+ * strings but sometimes proposes { label, value } (or similar) objects
+ * instead — String(obj) silently produces the literal text "[object Object]",
+ * so pull a usable string out of common shapes before falling back to that.
+ */
+const toOptionString = (o: any): string => {
+  if (typeof o === "string") return o.trim().slice(0, 120);
+  if (o && typeof o === "object") {
+    const candidate = o.label ?? o.value ?? o.name ?? o.text;
+    if (typeof candidate === "string") return candidate.trim().slice(0, 120);
+  }
+  return String(o ?? "").trim().slice(0, 120);
+};
+
 const SYSTEM_PROMPT = `You convert paper bakery quality-assurance forms into a JSON form schema for a web app. Preserve the paper document's structure faithfully:
 - Every section heading on the paper becomes a section ({ "id", "title", "fields": [] }).
-- Every table becomes a "grid" field with typed columns. Infer column types from headers and cell hints: temperatures/weights/counts -> "number" (set "unit" when the header shows one, e.g. °F, lbs), dates -> "date", times -> "time", checkmark cells -> "checkbox", Pass/Fail or OK/Not-OK or ✓/✗ cells -> "pass_fail", short lists of allowed values -> "select" with "options". Tables with repeated blank rows for the filler -> rows { "mode": "dynamic", "min": 1 }. Tables whose first column pre-lists items (equipment names, areas, days) -> rows { "mode": "fixed", "labels": [...those values...] } and do NOT also make that first column a column.
+- Every table becomes a "grid" field with typed columns. Infer column types from headers and cell hints: temperatures/weights/counts -> "number" (set "unit" when the header shows one, e.g. °F, lbs), dates -> "date", times -> "time", checkmark cells -> "checkbox", Pass/Fail or OK/Not-OK or ✓/✗ cells -> "pass_fail", short lists of allowed values -> "select" with "options" (an array of plain strings, e.g. ["Email", "Signed Document"] — never objects). Tables with repeated blank rows for the filler -> rows { "mode": "dynamic", "min": 1 }. Tables whose first column pre-lists items (equipment names, areas, days) -> rows { "mode": "fixed", "labels": [...those values...] } and do NOT also make that first column a column.
 - Signature / initials / "completed by" / "reviewed by" lines become "signature" fields. Reviewer/verifier/QA-manager/supervisor signatures get "role": "verifier"; the person filling the form gets "role": "filler".
 - Standalone labeled blanks become scalar fields ("text", "number", "date", "time", "checkbox", "select", "pass_fail"). Long remark/comment areas -> "textarea".
 - Instructional paragraphs that the filler only reads become { "type": "info", "id", "label": short name, "text": the instructions }.
@@ -41,6 +56,7 @@ const SYSTEM_PROMPT = `You convert paper bakery quality-assurance forms into a J
 Respond with ONLY this JSON object (no markdown):
 {"schema": {"schemaVersion": 1, "settings": {}, "sections": [{"id": "section_1", "title": "...", "fields": [
   {"id": "supplier_name", "type": "text", "label": "Supplier Name", "required": true, "width": "half"},
+  {"id": "approval_method", "type": "select", "label": "Method of Approval", "options": ["Email", "Signed Document", "Verbal"]},
   {"id": "receiving_log", "type": "grid", "label": "Receiving Log", "columns": [
     {"id": "product", "type": "text", "label": "Product"},
     {"id": "temp", "type": "number", "label": "Temp", "unit": "°F"},
@@ -88,7 +104,7 @@ function sanitizeSchema(raw: any, warnings: string[]) {
 
         if (type === "select") {
           const options = (Array.isArray(field.options) ? field.options : [])
-            .map((o: any) => String(o).trim().slice(0, 120)).filter(Boolean);
+            .map(toOptionString).filter(Boolean);
           if (options.length === 0) {
             warnings.push(`Dropdown "${label}" had no options — converted to text`);
             out.type = "text";
@@ -123,7 +139,7 @@ function sanitizeSchema(raw: any, warnings: string[]) {
               };
               if (colType === "select") {
                 const opts = (Array.isArray(col.options) ? col.options : [])
-                  .map((o: any) => String(o).trim().slice(0, 120)).filter(Boolean);
+                  .map(toOptionString).filter(Boolean);
                 if (opts.length === 0) colOut.type = "text";
                 else colOut.options = opts;
               }
