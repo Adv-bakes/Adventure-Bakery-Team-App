@@ -312,8 +312,18 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   bar next to Save/Submit so returning to the library never requires scrolling to the header);
   **Form Records** page **`/team/compliance/records`** (`Records.tsx`, Compliance nav) = cross-form recent
   entries + per-form flattened answer table with From/To + status filters and CSV/PDF export.
-- **PDF:** `src/lib/formPdf.ts` — `generateFormResponsePdf` (paper-like entry PDF; grids as real tables)
-  and `generateFormReportPdf` (landscape, clamps to 10 columns → "see CSV"); reuses `loadLogoDataUrl`/
+- **Derived reports (log forms):** a `type='form'` doc can carry a **`content.report_schema`** that presents
+  it as a live report projected from *another* form's responses (e.g. **FRM-003 Customer Complaint Log** ←
+  submitted **FRM-002** reports) — a register with **no entries of its own**, so it does NOT duplicate
+  `Records.tsx`. Engine `src/lib/formReport.ts` (declarative column kinds `field/template/map/cases/const`;
+  `loadReportBase` + pure `filterReportRows`, client-side; `buildReportSql` renders the read-only SQL
+  equivalent for the **View SQL** panel). UI: **Report** tab in the drawer (`FormReportTab.tsx` viewer +
+  `ReportSchemaBuilder.tsx` admin authoring, saved via `updateModuleContent` merge) + a "Report" list pill;
+  shown for forms when `isAdmin || hasReportSchema`. **Full runbook + data-model + FRM-003↔FRM-002 mapping
+  in `FORM_REPORTS.md`.**
+- **PDF:** `src/lib/formPdf.ts` — `generateFormResponsePdf` (paper-like entry PDF; grids as real tables),
+  `generateFormReportPdf` (landscape, clamps to 10 columns → "see CSV"), and `generateDerivedReportPdf`
+  (landscape log/register PDF for the derived-report feature above); reuses `loadLogoDataUrl`/
   `confidentialFooter` now exported from `sopPdf.ts`.
 - **AI extraction:** drawer Form tab "Generate with AI" (shown when a source `.docx` is attached) runs
   mammoth client-side (keeps the tables `sopDocxParser` drops), sends HTML to edge function
@@ -511,4 +521,5 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
 | `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns). See "Dynamic Fillable Forms" below |
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse`, `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse`, `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames` |
-| `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF) and `generateFormReportPdf(...)` (landscape report, clamps to 10 columns); reuses `sopPdf.ts`'s logo/footer exports |
+| `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
+| `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
