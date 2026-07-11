@@ -326,7 +326,8 @@ def build(out_path):
             ["sourceStatus", "\"submitted\" | \"all\"", "default submitted; \"all\" includes drafts"],
             ["defaultDateField", "string", "source field the date-range param filters on"],
             ["columns[]", "ReportColumnDef[]", "id + header + source rule (kinds below)"],
-            ["params[]", "ReportParam[]", "run-time filters (types below)"],
+            ["params[]", "ReportParam[]", "user-adjustable run-time filters (types below)"],
+            ["filters[]", "ReportFilter[]", "fixed conditions (always applied) — define the register's universe"],
             ["legend[]", "string[]", "footnote lines printed under the PDF table"],
         ],
         col_widths=[110, 120, CONTENT_W - 230], mono_cols=(0,)))
@@ -382,6 +383,24 @@ def build(out_path):
         "Parameters apply <b>live</b> (client-side) — there is no separate Run button. " +
         m("select") + " options come from " + m("distinctColumnValues()") + " over the unfiltered rows, "
         "so the dropdown never collapses to the value already chosen.", small))
+
+    # ---------------------------------------------------------------- Fixed conditions
+    S.append(Paragraph("Fixed Conditions (filters[])", h2))
+    S.append(Paragraph(
+        "Optional <b>always-applied</b> conditions that define which source entries the register includes "
+        "— <i>not</i> user-adjustable (that is what params are for). They AND together; an " + m("in") +
+        " filter ORs its values. This is how an <b>Approved Supplier Register</b> (FRM-201) lists only "
+        "suppliers whose " + m("supplier_status") + " is Approved or Conditionally Approved. Applied in "
+        + m("loadReportBase") + " (so " + m("select") + "-param dropdowns only ever see eligible rows) and "
+        "rendered into the " + m("buildReportSql") + " WHERE marked " + m("-- fixed") + ".", body))
+    S.append(data_table(
+        ["op", "Matches when", "Config"],
+        [
+            ["in", "the field's value is any of the listed values", "values[]"],
+            ["equals / notEquals", "the field equals / does not equal a value", "value"],
+            ["notEmpty / empty", "the field has / lacks a value", "(none)"],
+        ],
+        col_widths=[110, CONTENT_W - 290, 180], mono_cols=(0,)))
 
     # ---------------------------------------------------------------- Projection
     S.append(PageBreak())
@@ -512,6 +531,7 @@ def build(out_path):
         [
             ["Add a column source kind", "ColumnSource union + resolveReportColumns() + columnSql() in formReport.ts, then the editor in ReportSchemaBuilder.tsx"],
             ["Add a parameter type", "ReportParam + filterReportRows() + buildReportSql() in formReport.ts, then the control in FormReportTab.tsx"],
+            ["Add a fixed-condition op", "FilterOp + matchesFilter() + the filter branch in buildReportSql() in formReport.ts, then FILTER_OP_LABELS for the builder"],
             ["Change how a column projects", "resolveReportColumns() in formReport.ts"],
             ["Change the equivalent SQL", "buildReportSql() / columnSql() in formReport.ts"],
             ["Change the register PDF", "generateDerivedReportPdf() in formPdf.ts"],

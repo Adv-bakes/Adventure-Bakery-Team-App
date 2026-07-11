@@ -48,6 +48,10 @@ datasets; no new SQL/RPC). It reuses `fetchResponses()` and `formatFieldValue()`
     { "id": "customer", "label": "Customer", "type": "text", "field": "customer_name", "op": "contains" },
     { "id": "status", "label": "Status", "type": "select", "column": "status" }
   ],
+  "filters": [                                    // fixed, always-applied — define the register's universe
+    { "field": "supplier_status", "op": "in",
+      "values": [ "APPROVED …", "CONDITIONALLY APPROVED …" ] }
+  ],
   "legend": [ "C / NC — Critical (food safety risk) or Non-Critical (quality concern)." ]
 }
 ```
@@ -63,6 +67,15 @@ The `source.kind` set is **declarative and safe** — no arbitrary JS/SQL ever c
 | `map` | a value → label lookup (e.g. Critical → C) | `field`, `map{}`, optional `fallback` |
 | `cases` | first matching rule wins (`notEmpty` / `empty` / `equals`), else `default` | `cases[]`, `default` |
 | `const` | a fixed literal (or blank — for a column with no source field yet) | `value` |
+
+### Fixed conditions (`filters[]`)
+
+Optional **always-applied** conditions that define which source entries the register includes — *not*
+user-adjustable (that's what `params` are for). They AND together; an `in` filter ORs its values. This is
+how, e.g., an **Approved Supplier Register** only ever lists suppliers whose `supplier_status` is Approved
+or Conditionally Approved. Ops: `in` (`values[]`), `equals` / `notEquals` (`value`), `notEmpty`, `empty`.
+Applied in `loadReportBase` (so `select`-param dropdowns only see eligible rows) and rendered in the
+`buildReportSql` `WHERE` marked `-- fixed`.
 
 ### Parameter types
 

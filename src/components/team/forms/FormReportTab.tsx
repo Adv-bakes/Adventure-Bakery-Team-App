@@ -206,6 +206,7 @@ export function FormReportTab({ doc, isAdmin, onContentChange }: FormReportTabPr
             {filtered.length} row{filtered.length === 1 ? "" : "s"}
             {base?.sourceDoc && <> · derived from <span className="font-medium">{base.sourceDoc.sop_number} {base.sourceDoc.title}</span></>}
             {(schema.sourceStatus ?? "submitted") === "submitted" && <> · submitted entries only</>}
+            {(schema.filters?.length ?? 0) > 0 && <> · {schema.filters!.length} fixed condition{schema.filters!.length === 1 ? "" : "s"}</>}
           </>
         )}
       </p>
