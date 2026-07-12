@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
@@ -11,7 +12,7 @@ import { toast } from "sonner";
 import { updateModuleContent } from "@/lib/training";
 import { getFormSchema, hasFormSchema, slugifyFieldId, valueFields, type FormField } from "@/lib/formSchema";
 import {
-  COLUMN_SOURCE_LABELS, FILTER_OP_LABELS, REPORT_SCHEMA_VERSION, runReport,
+  COLUMN_SOURCE_LABELS, FILTER_OP_LABELS, MULTI_FIELD_OPS, REPORT_SCHEMA_VERSION, runReport,
   type CaseRule, type ColumnSource, type FilterOp, type ReportColumnDef, type ReportFilter,
   type ReportParam, type ReportSchema,
 } from "@/lib/formReport";
@@ -341,10 +342,12 @@ export function ReportSchemaBuilder({ sopId, content, onSaved, onCancel }: Repor
         <p className="text-[11px] text-muted-foreground -mt-1">Always applied — they define which source entries the register includes (e.g. only Approved / Conditionally Approved). Not user-adjustable.</p>
         {(schema.filters ?? []).map((f, i) => (
           <div key={i} className="rounded-md border bg-white p-3 flex flex-wrap items-start gap-2" style={goldBorder}>
-            <div className="w-48">
-              <Label className="text-[10px] text-muted-foreground">Field</Label>
-              {fieldPicker(f.field, v => patchFilter(i, { field: v }))}
-            </div>
+            {!MULTI_FIELD_OPS.has(f.op) && (
+              <div className="w-48">
+                <Label className="text-[10px] text-muted-foreground">Field</Label>
+                {fieldPicker(f.field, v => patchFilter(i, { field: v }))}
+              </div>
+            )}
             <div className="w-32">
               <Label className="text-[10px] text-muted-foreground">Condition</Label>
               <Select value={f.op} onValueChange={v => patchFilter(i, { op: v as FilterOp })}>
@@ -371,6 +374,28 @@ export function ReportSchemaBuilder({ sopId, content, onSaved, onCancel }: Repor
               <div className="flex-1 min-w-56">
                 <Label className="text-[10px] text-muted-foreground">Value</Label>
                 <Input className="h-8 text-xs" value={f.value ?? ""} onChange={e => patchFilter(i, { value: e.target.value })} />
+              </div>
+            )}
+            {f.op === "anyNotEmpty" && (
+              <div className="flex-1 min-w-56">
+                <Label className="text-[10px] text-muted-foreground">Include when ANY of these fields is filled</Label>
+                <div className="rounded border p-2 max-h-40 overflow-y-auto grid grid-cols-2 gap-x-3 gap-y-1" style={goldBorder}>
+                  {sourceFields.length === 0 && <p className="text-[10px] text-muted-foreground col-span-2">Pick a source form first.</p>}
+                  {sourceFields.map(sf => {
+                    const checked = (f.fields ?? []).includes(sf.id);
+                    return (
+                      <label key={sf.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={c => patchFilter(i, {
+                            fields: c ? [...(f.fields ?? []), sf.id] : (f.fields ?? []).filter(x => x !== sf.id),
+                          })}
+                        />
+                        <span className="truncate" title={sf.id}>{sf.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             )}
             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 mt-4" onClick={() => removeFilter(i)}><Trash2 className="w-3.5 h-3.5 text-red-500" /></Button>

@@ -399,6 +399,7 @@ def build(out_path):
             ["in", "the field's value is any of the listed values", "values[]"],
             ["equals / notEquals", "the field equals / does not equal a value", "value"],
             ["notEmpty / empty", "the field has / lacks a value", "(none)"],
+            ["anyNotEmpty", "ANY of several fields is populated (e.g. \"Section 2 has data\")", "fields[]"],
         ],
         col_widths=[110, CONTENT_W - 290, 180], mono_cols=(0,)))
 
