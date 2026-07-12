@@ -216,7 +216,7 @@ export async function generateFormReportPdf(
   });
   if (truncated) {
     body.push({
-      text: `Showing the first ${clamped.length} of ${columns.length} fields — export the CSV for the full detail.`,
+      text: `Showing the first ${clamped.length} of ${columns.length} fields — export the CSV for the full detail. Not shown: ${columns.slice(clamped.length).map(c => c.header).join(", ")}.`,
       fontSize: 8, italics: true, color: "#B45309", margin: [0, 0, 0, 4],
     });
   }
@@ -302,7 +302,7 @@ export async function generateDerivedReportPdf(
   });
   if (truncated) {
     body.push({
-      text: `Showing the first ${clampCount} of ${headers.length} columns — export the CSV for the full detail.`,
+      text: `Showing the first ${clampCount} of ${headers.length} columns — export the CSV for the full detail. Not shown: ${headers.slice(clampCount).join(", ")}.`,
       fontSize: 8, italics: true, color: "#B45309", margin: [0, 0, 0, 4],
     });
   }
