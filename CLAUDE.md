@@ -314,10 +314,11 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   entries + per-form flattened answer table with From/To + status filters and CSV/PDF export.
 - **Derived reports (log forms):** a `type='form'` doc can carry a **`content.report_schema`** that presents
   it as a live report projected from *another* form's responses (e.g. **FRM-003 Customer Complaint Log** ←
-  submitted **FRM-002** reports) — a register with **no entries of its own**, so it does NOT duplicate
-  `Records.tsx`. Engine `src/lib/formReport.ts` (declarative column kinds `field/template/map/cases/const`;
-  `loadReportBase` + pure `filterReportRows`, client-side; `buildReportSql` renders the read-only SQL
-  equivalent for the **View SQL** panel). UI: **Report** tab in the drawer (`FormReportTab.tsx` viewer +
+  **FRM-002** reports, **FRM-201 Approved Supplier Register** ← **FRM-202**) — a register with **no entries
+  of its own**, so it does NOT duplicate `Records.tsx`. Engine `src/lib/formReport.ts` (declarative column
+  kinds `field/template/map/cases/const`; user `params` + always-applied `filters[]` fixed conditions —
+  e.g. `supplier_status in [Approved, Conditionally Approved]`; `loadReportBase` + pure `filterReportRows`,
+  client-side; `buildReportSql` renders the read-only SQL equivalent for the **View SQL** panel). UI: **Report** tab in the drawer (`FormReportTab.tsx` viewer +
   `ReportSchemaBuilder.tsx` admin authoring, saved via `updateModuleContent` merge) + a "Report" list pill;
   shown for forms when `isAdmin || hasReportSchema`. **Full runbook + data-model + FRM-003↔FRM-002 mapping
   in `FORM_REPORTS.md`.**
@@ -522,4 +523,4 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns). See "Dynamic Fillable Forms" below |
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse`, `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse`, `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames` |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
-| `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
+| `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |

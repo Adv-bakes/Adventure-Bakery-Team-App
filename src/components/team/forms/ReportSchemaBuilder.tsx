@@ -11,8 +11,9 @@ import { toast } from "sonner";
 import { updateModuleContent } from "@/lib/training";
 import { getFormSchema, hasFormSchema, slugifyFieldId, valueFields, type FormField } from "@/lib/formSchema";
 import {
-  COLUMN_SOURCE_LABELS, REPORT_SCHEMA_VERSION, runReport,
-  type CaseRule, type ColumnSource, type ReportColumnDef, type ReportParam, type ReportSchema,
+  COLUMN_SOURCE_LABELS, FILTER_OP_LABELS, REPORT_SCHEMA_VERSION, runReport,
+  type CaseRule, type ColumnSource, type FilterOp, type ReportColumnDef, type ReportFilter,
+  type ReportParam, type ReportSchema,
 } from "@/lib/formReport";
 
 const goldBorder = { borderColor: "rgba(200,155,60,0.25)" };
@@ -124,6 +125,13 @@ export function ReportSchemaBuilder({ sopId, content, onSaved, onCancel }: Repor
     setSchema(prev => ({ ...prev, params: prev.params.map((x, j) => (j === i ? { ...x, ...p } : x)) }));
   const removeParam = (i: number) =>
     setSchema(prev => ({ ...prev, params: prev.params.filter((_, j) => j !== i) }));
+
+  const addFilter = () =>
+    setSchema(prev => ({ ...prev, filters: [...(prev.filters ?? []), { field: "", op: "in", values: [] }] }));
+  const patchFilter = (i: number, p: Partial<ReportFilter>) =>
+    setSchema(prev => ({ ...prev, filters: (prev.filters ?? []).map((x, j) => (j === i ? { ...x, ...p } : x)) }));
+  const removeFilter = (i: number) =>
+    setSchema(prev => ({ ...prev, filters: (prev.filters ?? []).filter((_, j) => j !== i) }));
 
   const runPreview = async () => {
     if (!schema.sourceSopNumber) return toast.error("Pick a source form first");
@@ -325,6 +333,50 @@ export function ReportSchemaBuilder({ sopId, content, onSaved, onCancel }: Repor
           </div>
         ))}
         <Button type="button" variant="outline" size="sm" onClick={addParam}><Plus className="w-3.5 h-3.5 mr-1" />Add Parameter</Button>
+      </div>
+
+      {/* Fixed conditions */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium">Fixed conditions{(schema.filters?.length ?? 0) ? ` (${schema.filters!.length})` : ""}</Label>
+        <p className="text-[11px] text-muted-foreground -mt-1">Always applied — they define which source entries the register includes (e.g. only Approved / Conditionally Approved). Not user-adjustable.</p>
+        {(schema.filters ?? []).map((f, i) => (
+          <div key={i} className="rounded-md border bg-white p-3 flex flex-wrap items-start gap-2" style={goldBorder}>
+            <div className="w-48">
+              <Label className="text-[10px] text-muted-foreground">Field</Label>
+              {fieldPicker(f.field, v => patchFilter(i, { field: v }))}
+            </div>
+            <div className="w-32">
+              <Label className="text-[10px] text-muted-foreground">Condition</Label>
+              <Select value={f.op} onValueChange={v => patchFilter(i, { op: v as FilterOp })}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(FILTER_OP_LABELS) as FilterOp[]).map(op => (
+                    <SelectItem key={op} value={op}>{FILTER_OP_LABELS[op]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {f.op === "in" && (
+              <div className="flex-1 min-w-56">
+                <Label className="text-[10px] text-muted-foreground">Allowed values (one per line — must match the stored value exactly)</Label>
+                <Textarea
+                  className="text-xs h-20"
+                  value={(f.values ?? []).join("\n")}
+                  onChange={e => patchFilter(i, { values: e.target.value.split("\n") })}
+                  onBlur={e => patchFilter(i, { values: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) })}
+                />
+              </div>
+            )}
+            {(f.op === "equals" || f.op === "notEquals") && (
+              <div className="flex-1 min-w-56">
+                <Label className="text-[10px] text-muted-foreground">Value</Label>
+                <Input className="h-8 text-xs" value={f.value ?? ""} onChange={e => patchFilter(i, { value: e.target.value })} />
+              </div>
+            )}
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 mt-4" onClick={() => removeFilter(i)}><Trash2 className="w-3.5 h-3.5 text-red-500" /></Button>
+          </div>
+        ))}
+        <Button type="button" variant="outline" size="sm" onClick={addFilter}><Plus className="w-3.5 h-3.5 mr-1" />Add Condition</Button>
       </div>
 
       {/* Legend */}

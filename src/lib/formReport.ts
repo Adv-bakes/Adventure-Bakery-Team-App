@@ -55,6 +55,27 @@ export interface ReportParam {
   column?: string;                   // select: a report column id whose distinct cells populate the dropdown
 }
 
+// ---------- Fixed conditions ----------
+// Always-applied filters that define the report's universe (e.g. an Approved
+// Supplier Register only lists rows whose supplier_status is Approved /
+// Conditionally Approved). Unlike params, these are NOT user-adjustable.
+
+export type FilterOp = "in" | "equals" | "notEquals" | "notEmpty" | "empty";
+export interface ReportFilter {
+  field: string;
+  op: FilterOp;
+  value?: string;     // equals / notEquals
+  values?: string[];  // in
+}
+
+export const FILTER_OP_LABELS: Record<FilterOp, string> = {
+  in: "is any of",
+  equals: "equals",
+  notEquals: "is not",
+  notEmpty: "is not empty",
+  empty: "is empty",
+};
+
 // ---------- Report schema ----------
 
 export interface ReportSchema {
@@ -64,6 +85,7 @@ export interface ReportSchema {
   defaultDateField?: string;         // source field the date-range param filters on
   columns: ReportColumnDef[];
   params: ReportParam[];
+  filters?: ReportFilter[];          // fixed conditions (AND-ed); define the register's universe
   legend?: string[];                 // optional footnote lines rendered under the PDF table
 }
 
@@ -183,6 +205,19 @@ export async function fetchSourceForm(sopNumber: string): Promise<SourceFormDoc 
   return (data as SourceFormDoc) ?? null;
 }
 
+/** Test a fixed condition against a response's flat data. */
+export function matchesFilter(f: ReportFilter, data: Record<string, any>): boolean {
+  const raw = data?.[f.field];
+  switch (f.op) {
+    case "notEmpty": return !isBlank(raw);
+    case "empty": return isBlank(raw);
+    case "equals": return rawString(raw) === (f.value ?? "");
+    case "notEquals": return rawString(raw) !== (f.value ?? "");
+    case "in": return (f.values ?? []).includes(rawString(raw));
+    default: return true;
+  }
+}
+
 const inDateRange = (value: string, from?: string, to?: string): boolean => {
   if (!from && !to) return true;
   if (isBlank(value)) return false;           // a date filter excludes rows with no date
@@ -211,6 +246,9 @@ export async function loadReportBase(schema: ReportSchema): Promise<ReportBase> 
   let responses = await fetchResponses(sourceDoc.id);
   if ((schema.sourceStatus ?? "submitted") === "submitted") {
     responses = responses.filter(r => r.status === "submitted");
+  }
+  if (schema.filters?.length) {
+    responses = responses.filter(r => schema.filters!.every(f => matchesFilter(f, r.data ?? {})));
   }
   const rows = responses.map(r => ({ response: r, cells: columns.map(c => c.cell(r.data ?? {})) }));
   return { sourceDoc, sourceSchema, columns, rows };
@@ -324,6 +362,15 @@ export function buildReportSql(
     where.push(`d.document_id = (select id from sop_documents where sop_number = ${sqlLit(schema.sourceSopNumber)} and type = 'form')`);
   }
   if ((schema.sourceStatus ?? "submitted") === "submitted") where.push(`d.status = 'submitted'`);
+
+  for (const f of schema.filters ?? []) {
+    const field = sqlField(f.field);
+    if (f.op === "notEmpty") where.push(`coalesce(${field}, '') <> ''  -- fixed`);
+    else if (f.op === "empty") where.push(`coalesce(${field}, '') = ''  -- fixed`);
+    else if (f.op === "equals") where.push(`${field} = ${sqlLit(f.value ?? "")}  -- fixed`);
+    else if (f.op === "notEquals") where.push(`${field} is distinct from ${sqlLit(f.value ?? "")}  -- fixed`);
+    else if (f.op === "in") where.push(`${field} in (${(f.values ?? []).map(sqlLit).join(", ")})  -- fixed`);
+  }
 
   for (const param of schema.params) {
     const raw = values[param.id];
