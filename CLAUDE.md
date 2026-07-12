@@ -316,8 +316,9 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   it as a live report projected from *another* form's responses (e.g. **FRM-003 Customer Complaint Log** ←
   **FRM-002** reports, **FRM-201 Approved Supplier Register** ← **FRM-202**) — a register with **no entries
   of its own**, so it does NOT duplicate `Records.tsx`. Engine `src/lib/formReport.ts` (declarative column
-  kinds `field/template/map/cases/const`; user `params` + always-applied `filters[]` fixed conditions —
-  e.g. `supplier_status in [Approved, Conditionally Approved]`; `loadReportBase` + pure `filterReportRows`,
+  kinds `field/template/map/cases/const`; user `params` + always-applied `filters[]` fixed conditions
+  (`in`/`equals`/`notEquals`/`notEmpty`/`empty`/`anyNotEmpty` — e.g. `supplier_status in [Approved, …]`, or
+  FRM-603 Label Change Control Log's `anyNotEmpty` over FRM-601 Section-2 change fields); `loadReportBase` + pure `filterReportRows`,
   client-side; `buildReportSql` renders the read-only SQL equivalent for the **View SQL** panel). UI: **Report** tab in the drawer (`FormReportTab.tsx` viewer +
   `ReportSchemaBuilder.tsx` admin authoring, saved via `updateModuleContent` merge) + a "Report" list pill;
   shown for forms when `isAdmin || hasReportSchema`. **Full runbook + data-model + FRM-003↔FRM-002 mapping

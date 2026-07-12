@@ -60,12 +60,13 @@ export interface ReportParam {
 // Supplier Register only lists rows whose supplier_status is Approved /
 // Conditionally Approved). Unlike params, these are NOT user-adjustable.
 
-export type FilterOp = "in" | "equals" | "notEquals" | "notEmpty" | "empty";
+export type FilterOp = "in" | "equals" | "notEquals" | "notEmpty" | "empty" | "anyNotEmpty";
 export interface ReportFilter {
-  field: string;
+  field: string;      // single-field ops
   op: FilterOp;
   value?: string;     // equals / notEquals
   values?: string[];  // in
+  fields?: string[];  // anyNotEmpty — matches when ANY of these fields is populated
 }
 
 export const FILTER_OP_LABELS: Record<FilterOp, string> = {
@@ -74,7 +75,11 @@ export const FILTER_OP_LABELS: Record<FilterOp, string> = {
   notEquals: "is not",
   notEmpty: "is not empty",
   empty: "is empty",
+  anyNotEmpty: "any of these is not empty",
 };
+
+/** Ops that use the multi-field `fields[]` instead of the single `field`. */
+export const MULTI_FIELD_OPS: ReadonlySet<FilterOp> = new Set(["anyNotEmpty"]);
 
 // ---------- Report schema ----------
 
@@ -214,6 +219,7 @@ export function matchesFilter(f: ReportFilter, data: Record<string, any>): boole
     case "equals": return rawString(raw) === (f.value ?? "");
     case "notEquals": return rawString(raw) !== (f.value ?? "");
     case "in": return (f.values ?? []).includes(rawString(raw));
+    case "anyNotEmpty": return (f.fields ?? []).some(id => !isBlank(data?.[id]));
     default: return true;
   }
 }
@@ -370,6 +376,10 @@ export function buildReportSql(
     else if (f.op === "equals") where.push(`${field} = ${sqlLit(f.value ?? "")}  -- fixed`);
     else if (f.op === "notEquals") where.push(`${field} is distinct from ${sqlLit(f.value ?? "")}  -- fixed`);
     else if (f.op === "in") where.push(`${field} in (${(f.values ?? []).map(sqlLit).join(", ")})  -- fixed`);
+    else if (f.op === "anyNotEmpty") {
+      const parts = (f.fields ?? []).map(id => `coalesce(${sqlField(id)}, '') <> ''`);
+      if (parts.length) where.push(`(${parts.join(" or ")})  -- fixed`);
+    }
   }
 
   for (const param of schema.params) {

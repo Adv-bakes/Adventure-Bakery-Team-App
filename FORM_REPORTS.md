@@ -73,7 +73,9 @@ The `source.kind` set is **declarative and safe** — no arbitrary JS/SQL ever c
 Optional **always-applied** conditions that define which source entries the register includes — *not*
 user-adjustable (that's what `params` are for). They AND together; an `in` filter ORs its values. This is
 how, e.g., an **Approved Supplier Register** only ever lists suppliers whose `supplier_status` is Approved
-or Conditionally Approved. Ops: `in` (`values[]`), `equals` / `notEquals` (`value`), `notEmpty`, `empty`.
+or Conditionally Approved. Ops: `in` (`values[]`), `equals` / `notEquals` (`value`), `notEmpty`, `empty`,
+and `anyNotEmpty` (`fields[]` — matches when **any** of several fields is populated, e.g. "Section 2 of
+FRM-601 has data" → the FRM-603 Label Change Control Log only lists label reviews that recorded a change).
 Applied in `loadReportBase` (so `select`-param dropdowns only see eligible rows) and rendered in the
 `buildReportSql` `WHERE` marked `-- fixed`.
 
