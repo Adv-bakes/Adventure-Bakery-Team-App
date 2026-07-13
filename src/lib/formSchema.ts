@@ -280,6 +280,42 @@ export function answerManifest(schema: FormSchema): FieldManifest[] {
     });
 }
 
+/**
+ * Merge AI photo-fill answers onto the current form values for review. Scalar
+ * fields are overwritten by the extracted value; GRID fields are merged
+ * row-by-row rather than replaced wholesale — the extractor returns rows keyed
+ * by column id only, so a blind spread would drop schema-seeded per-row keys
+ * the model never sees, most importantly a register's `_label` (the fixed
+ * "Location"-style leading column) and any pre-filled default cells. Rows the
+ * model didn't return keep their seeded values; extra rows it did return are
+ * appended. Fixed-row grids rely on the extractor returning rows in rowLabels
+ * order (see extract-form-answers) so this positional merge lines up.
+ */
+export function mergeScanAnswers(
+  schema: FormSchema,
+  current: Record<string, any>,
+  answers: Record<string, any>,
+): Record<string, any> {
+  const gridIds = new Set(valueFields(schema).filter(f => f.type === "grid").map(f => f.id));
+  const merged: Record<string, any> = { ...current };
+  for (const [id, value] of Object.entries(answers)) {
+    if (gridIds.has(id) && Array.isArray(value)) {
+      const seeded: any[] = Array.isArray(current[id]) ? current[id] : [];
+      const n = Math.max(seeded.length, value.length);
+      const rows: any[] = [];
+      for (let i = 0; i < n; i++) {
+        const base = seeded[i] ?? {};
+        const ai = value[i];
+        rows.push(ai && typeof ai === "object" && !Array.isArray(ai) ? { ...base, ...ai } : base);
+      }
+      merged[id] = rows;
+    } else {
+      merged[id] = value;
+    }
+  }
+  return merged;
+}
+
 // ---------- Submit-time validation (zod) ----------
 
 const isBlank = (v: any) =>

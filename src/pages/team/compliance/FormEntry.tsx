@@ -15,7 +15,7 @@ import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, ScanLine, Sa
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  answerManifest, buildZodSchema, emptyValues, instanceTitle, valueFields,
+  answerManifest, buildZodSchema, emptyValues, instanceTitle, mergeScanAnswers, valueFields,
   type FormSchema,
 } from "@/lib/formSchema";
 import {
@@ -198,7 +198,10 @@ export default function FormEntry() {
       const imageUrls = await Promise.all(added.map(a => getResponseAttachmentUrl(a.path)));
       const { answers, warnings } = await extractFormAnswers(answerManifest(schema), imageUrls);
       const count = Object.keys(answers).length;
-      form.reset({ ...emptyValues(schema), ...form.getValues(), ...answers });
+      // Per-row grid merge (not a blind spread): keeps schema-seeded per-row
+      // keys the extractor never returns — e.g. a register's _label/Location.
+      const base = { ...emptyValues(schema), ...form.getValues() };
+      form.reset(mergeScanAnswers(schema, base, answers));
       setScanResult({ count, warnings });
       if (count === 0) toast.warning("No readable field values were found in the photo.");
       else toast.success(`Pre-filled ${count} field${count === 1 ? "" : "s"} — review before saving`);
