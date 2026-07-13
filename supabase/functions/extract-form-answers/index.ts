@@ -45,7 +45,9 @@ Read the handwriting, printed text, checkmarks, and X marks in the photo. Match 
 - "checkbox": boolean true if the box is ticked/checked/Xed, false if clearly empty. If you cannot tell, omit the field.
 - "pass_fail": one of "pass", "fail", "na" (map Yes/OK/✓ -> "pass", No/Not-OK/✗ -> "fail", N/A -> "na").
 - "select": EXACTLY one of the provided "options" strings (match the checked/circled/written choice). If it is a multi-choice, return an array of matching option strings. If nothing on the paper matches an option, omit the field.
-- "grid": an array of row objects. Each row object is keyed by the grid's column ids (from "columns"). Include only rows the filler actually wrote on the paper. For a fixed-row grid ("rowMode":"fixed") the "rowLabels" tell you which pre-listed item each row is; return rows in that order and only for rows that were filled. Each cell follows its column's type using the same rules above.
+- "grid": an array of row objects, each keyed by the grid's column ids (from "columns"). Each cell follows its column's type using the rules above. Do NOT include the row's pre-printed label — the app supplies it.
+  - DYNAMIC grid ("rowMode":"dynamic"): include only the rows the filler actually wrote, top to bottom.
+  - FIXED-row grid ("rowMode":"fixed"): "rowLabels" are the pre-printed row identifiers (e.g. locations) IN ORDER. Return EXACTLY one row object per rowLabel, in the SAME order and SAME count as "rowLabels" — never skip, merge, add, or reorder rows. For a pre-printed row the filler left blank, return an empty object {} in that position so every row still lines up with its label.
 
 CRITICAL RULES:
 - OMIT any field you cannot read confidently. Do NOT guess and do NOT output empty strings/zeros as filler. A missing key is correct when the paper is blank or illegible for that field.
@@ -121,20 +123,31 @@ function sanitizeAnswers(rawAnswers: any, manifest: any[], warnings: string[]) {
       for (const c of Array.isArray(field.columns) ? field.columns : []) {
         if (c && typeof c.id === "string") cols.set(c.id, c);
       }
-      const rows = (Array.isArray(value) ? value : [])
-        .map((row: any) => {
-          if (!row || typeof row !== "object") return null;
-          const cleaned: Record<string, any> = {};
+      const clean = (row: any): Record<string, any> => {
+        const cleaned: Record<string, any> = {};
+        if (row && typeof row === "object" && !Array.isArray(row)) {
           for (const [colId, cellVal] of Object.entries(row)) {
             const col = cols.get(colId);
             if (!col || !GRID_COLUMN_TYPES.has(String(col.type))) continue;
             const coerced = coerceScalar(String(col.type), cellVal, col.options);
             if (coerced !== undefined) cleaned[colId] = coerced;
           }
-          return Object.keys(cleaned).length ? cleaned : null;
-        })
-        .filter((r: any): r is Record<string, any> => r !== null);
-      if (rows.length) out[id] = rows;
+        }
+        return cleaned;
+      };
+      const incoming = Array.isArray(value) ? value : [];
+      if (field.rowMode === "fixed") {
+        // Keep positional alignment with rowLabels so the client can merge each
+        // row onto its seeded row (preserving the schema's _label/defaults).
+        // Blank rows stay as {} placeholders; length is clamped to the schema's
+        // row count. Only emit the field if at least one row was actually read.
+        const nLabels = Array.isArray(field.rowLabels) ? field.rowLabels.length : incoming.length;
+        const rows = Array.from({ length: nLabels }, (_, i) => clean(incoming[i]));
+        if (rows.some(r => Object.keys(r).length > 0)) out[id] = rows;
+      } else {
+        const rows = incoming.map(clean).filter(r => Object.keys(r).length > 0);
+        if (rows.length) out[id] = rows;
+      }
       continue;
     }
 
