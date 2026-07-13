@@ -1,6 +1,6 @@
 import type { UseFormReturn } from "react-hook-form";
 import { cn } from "@/lib/utils";
-import type { FormSchema, FormField as SchemaField, InfoField } from "@/lib/formSchema";
+import type { FormSchema, FormField as SchemaField, InfoField, ReferenceTableField } from "@/lib/formSchema";
 import { FormFieldInput } from "./FormFieldInput";
 import { GridFieldInput } from "./GridFieldInput";
 import type { Signer } from "./SignatureFieldInput";
@@ -26,8 +26,10 @@ interface FormRendererProps {
  */
 export function FormRenderer({ schema, form, readOnly, isAdmin, signer }: FormRendererProps) {
   const renderField = (field: SchemaField) => {
-    // Grids always take the full row regardless of width hint
-    const widthClass = field.type === "grid" ? "md:col-span-6" : WIDTH_CLASS[field.width ?? "full"] ?? "md:col-span-6";
+    // Grids and reference tables always take the full row regardless of width hint
+    const widthClass = field.type === "grid" || field.type === "reference_table"
+      ? "md:col-span-6"
+      : WIDTH_CLASS[field.width ?? "full"] ?? "md:col-span-6";
 
     let el: JSX.Element;
     switch (field.type) {
@@ -48,6 +50,35 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer }: FormRe
       case "grid":
         el = <GridFieldInput field={field} control={form.control} disabled={readOnly} />;
         break;
+      case "reference_table": {
+        const t = field as ReferenceTableField;
+        el = (
+          <div className="space-y-1.5">
+            {field.label && <p className="text-xs font-semibold text-[#2A1F0E]">{field.label}</p>}
+            <div className="rounded-md border overflow-x-auto" style={{ borderColor: "rgba(200,155,60,0.3)" }}>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr style={{ background: "#2A1F0E" }}>
+                    {t.columns.map((c, i) => (
+                      <th key={i} className="text-left font-semibold text-white px-2.5 py-1.5">{c}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {t.rows.map((row, ri) => (
+                    <tr key={ri} className={ri % 2 === 1 ? "bg-[#C89B3C]/8" : ""}>
+                      {row.map((cell, ci) => (
+                        <td key={ci} className="px-2.5 py-1.5 align-top whitespace-pre-wrap text-[#2A1F0E]">{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+        break;
+      }
       default:
         el = (
           <FormFieldInput

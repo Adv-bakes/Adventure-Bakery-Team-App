@@ -166,16 +166,103 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
             </div>
           </div>
         ) : (
-          <div>
-            <Label className="text-[10px] text-muted-foreground">Row labels (one per line, e.g. equipment names)</Label>
-            <Textarea
-              className="text-xs h-20"
-              value={field.rows.labels.join("\n")}
-              onChange={e => onChange({ ...field, rows: { mode: "fixed", labels: e.target.value.split("\n") } })}
-              onBlur={e => onChange({ ...field, rows: { mode: "fixed", labels: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) } })}
-            />
+          <div className="space-y-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Label column header (optional, e.g. "Location")</Label>
+              <Input
+                className="h-8 text-xs w-48"
+                value={field.rows.labelHeader ?? ""}
+                onChange={e => onChange({ ...field, rows: { ...field.rows, mode: "fixed", labelHeader: e.target.value || undefined } })}
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Row labels (one per line, e.g. equipment names)</Label>
+              <Textarea
+                className="text-xs h-20"
+                value={field.rows.labels.join("\n")}
+                onChange={e => onChange({ ...field, rows: { ...field.rows, mode: "fixed", labels: e.target.value.split("\n") } })}
+                onBlur={e => onChange({ ...field, rows: { ...field.rows, mode: "fixed", labels: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) } })}
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                id={`fixed-deletable-${field.id}`}
+                checked={(field.rows as { deletable?: boolean }).deletable ?? false}
+                onCheckedChange={c => onChange({ ...field, rows: { ...field.rows, mode: "fixed", deletable: !!c || undefined } })}
+              />
+              <Label htmlFor={`fixed-deletable-${field.id}`} className="text-[10px] font-normal cursor-pointer">
+                Rows can be renamed and deleted by the filler (register-style; leave unchecked for a checklist that must always list every item)
+              </Label>
+            </div>
+            {field.rows.labels.filter(Boolean).length > 0 && field.columns.length > 0 && (
+              <DefaultValuesEditor field={field} onChange={onChange} />
+            )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Optional per-row default values for a fixed grid — pre-fills known paper
+ * data (e.g. Material, Risk on a glass & brittle-plastic register) while
+ * leaving every cell editable. Only seeds brand-new responses; never
+ * touches entries that already exist.
+ */
+function DefaultValuesEditor({ field, onChange }: { field: GridField; onChange: (field: GridField) => void }) {
+  if (field.rows.mode !== "fixed") return null;
+  const labels = field.rows.labels;
+  const defaults = field.rows.defaultValues ?? [];
+
+  const setDefault = (rowIdx: number, colId: string, value: any) => {
+    const next = labels.map((_, i) => ({ ...(defaults[i] ?? {}) }));
+    next[rowIdx] = { ...next[rowIdx], [colId]: value };
+    onChange({ ...field, rows: { ...field.rows, mode: "fixed", defaultValues: next } });
+  };
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-[10px] text-muted-foreground">
+        Default values (optional) — pre-fills known data per row; the filler can still change or clear it
+      </Label>
+      <div className="overflow-x-auto rounded border bg-white" style={{ borderColor: "rgba(200,155,60,0.2)" }}>
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-[#C89B3C]/8">
+              <th className="text-left px-2 py-1 font-medium">Row</th>
+              {field.columns.map(col => (
+                <th key={col.id} className="text-left px-2 py-1 font-medium whitespace-nowrap">{col.label || col.id}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {labels.map((label, rowIdx) => (
+              <tr key={rowIdx} className="border-t" style={{ borderColor: "rgba(200,155,60,0.15)" }}>
+                <td className="px-2 py-1 align-top text-[#2A1F0E]/70 max-w-40 truncate" title={label}>{label || `Row ${rowIdx + 1}`}</td>
+                {field.columns.map(col => {
+                  const value = defaults[rowIdx]?.[col.id] ?? "";
+                  return (
+                    <td key={col.id} className="px-2 py-1">
+                      {col.type === "select" ? (
+                        <Select value={value || undefined} onValueChange={v => setDefault(rowIdx, col.id, v)}>
+                          <SelectTrigger className="h-7 text-[11px] w-32"><SelectValue placeholder="—" /></SelectTrigger>
+                          <SelectContent>
+                            {(col.options ?? []).map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      ) : col.type === "checkbox" ? (
+                        <Checkbox checked={value === true} onCheckedChange={c => setDefault(rowIdx, col.id, !!c)} />
+                      ) : (
+                        <Input className="h-7 text-[11px] w-28" value={value} onChange={e => setDefault(rowIdx, col.id, e.target.value)} />
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

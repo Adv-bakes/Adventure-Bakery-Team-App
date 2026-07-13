@@ -106,8 +106,14 @@ export async function generateFormResponsePdf(
               bold: true, fontSize: 8.5, fillColor: "#F5F1E6",
             })),
           ];
-          const dataRows: TableCell[][] = (fixed ? fixedLabels : rows.map((_, i) => String(i))).map((label, i) => {
+          // Fixed grids can have extra rows appended beyond fixedLabels (a
+          // filler-added item not on the paper register) — iterate by the
+          // larger of the two counts so those aren't silently dropped, using
+          // the row's own "_label" for the ones past the schema-defined list.
+          const rowCount = fixed ? Math.max(fixedLabels.length, rows.length) : rows.length;
+          const dataRows: TableCell[][] = Array.from({ length: rowCount }, (_, i) => {
             const row = rows[i] ?? {};
+            const label = fixed ? (fixedLabels[i] ?? (row as any)._label ?? "") : String(i);
             return [
               ...(fixed ? [{ text: label, bold: true, fontSize: 8.5, fillColor: "#FBF8F1" } as TableCell] : []),
               ...grid.columns.map(c => ({ text: formatFieldValue(c as any, row[c.id]) || " ", fontSize: 8.5 } as TableCell)),
