@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,16 +11,17 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Download, LockOpen, Save, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, ScanLine, Save, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  buildZodSchema, emptyValues, instanceTitle, valueFields,
+  answerManifest, buildZodSchema, emptyValues, instanceTitle, valueFields,
   type FormSchema,
 } from "@/lib/formSchema";
 import {
-  StaleResponseError, deleteResponse, fetchProfileNames, fetchResponse, reopenResponse,
-  resolveSchemaForResponse, saveResponseAttachments, saveResponseData, shortUserId, submitResponse,
+  StaleResponseError, deleteResponse, extractFormAnswers, fetchProfileNames, fetchResponse,
+  getResponseAttachmentUrl, reopenResponse, resolveSchemaForResponse, saveResponseAttachments,
+  saveResponseData, shortUserId, submitResponse, uploadResponseAttachment,
   type FormResponse, type ResolvedSchema, type ResponseAttachment,
 } from "@/lib/formResponses";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
@@ -47,6 +48,7 @@ type DocRow = {
 export default function FormEntry() {
   const { docId, responseId } = useParams<{ docId: string; responseId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { role } = useUserRole();
   const isAdmin = role === "admin" || role === "owner";
 
@@ -61,6 +63,11 @@ export default function FormEntry() {
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<{ count: number; warnings: string[] } | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const scanInputRef = useRef<HTMLInputElement>(null);
+  const scanConsumed = useRef(false);
 
   const schema: FormSchema | null = resolved?.schema ?? null;
 
@@ -172,6 +179,52 @@ export default function FormEntry() {
     },
   );
 
+  // Photograph the completed paper copy → AI reads it → pre-fill the fields for
+  // review. Photos are kept as entry attachments (the audit source of the
+  // digitized record); nothing is written to the field data until the user
+  // saves. form.reset (not save) mirrors applyResult and re-syncs grid arrays.
+  const scanAndFill = async (files: FileList | File[]) => {
+    if (!response || !schema) return;
+    setScanning(true);
+    setScanResult(null);
+    try {
+      const added: ResponseAttachment[] = [];
+      for (const file of Array.from(files)) {
+        added.push(await uploadResponseAttachment(response.id, file));
+      }
+      const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), ...added]);
+      setResponse(updated); // adopt fresh updated_at; keep photos on record
+
+      const imageUrls = await Promise.all(added.map(a => getResponseAttachmentUrl(a.path)));
+      const { answers, warnings } = await extractFormAnswers(answerManifest(schema), imageUrls);
+      const count = Object.keys(answers).length;
+      form.reset({ ...emptyValues(schema), ...form.getValues(), ...answers });
+      setScanResult({ count, warnings });
+      if (count === 0) toast.warning("No readable field values were found in the photo.");
+      else toast.success(`Pre-filled ${count} field${count === 1 ? "" : "s"} — review before saving`);
+      if (warnings.length) toast.warning(warnings.slice(0, 3).join(" · "));
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to read the form photo");
+    } finally {
+      setScanning(false);
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (scanInputRef.current) scanInputRef.current.value = "";
+    }
+  };
+
+  // "New from Photo" (Entries tab) navigates here carrying the selected page
+  // image(s) in router state; run the scan once the entry has loaded and is
+  // editable, then clear the state so a back/refresh doesn't re-trigger it.
+  useEffect(() => {
+    const files = (location.state as any)?.scanFiles as File[] | undefined;
+    if (!files?.length || scanConsumed.current) return;
+    if (loading || !response || !schema || !canEdit) return;
+    scanConsumed.current = true;
+    navigate(location.pathname, { replace: true, state: {} });
+    scanAndFill(files);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, response, schema, canEdit, location.state]);
+
   const handleAttachmentsChange = async (next: ResponseAttachment[]) => {
     if (!response) return;
     try {
@@ -262,6 +315,61 @@ export default function FormEntry() {
         <Card className="p-3 text-xs border border-amber-400 bg-amber-50 text-amber-800">
           This form has been revised since this entry was created (Rev {resolved.pinnedRevision} → Rev {doc.revision ?? "—"}),
           and the original layout is unavailable — some answers may not line up with the fields shown.
+        </Card>
+      )}
+
+      {/* Fill from a photo of the completed paper copy */}
+      {canEdit && (
+        <Card className="p-3 space-y-2 border" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.4)" }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <ScanLine className="w-4 h-4 text-[#9A6F1E]" />
+            <p className="text-sm font-medium text-[#2A1F0E]">Fill from a photo</p>
+            <p className="text-xs text-[#2A1F0E]/60">
+              Photograph the completed paper copy — AI reads the handwriting/checkboxes and pre-fills the fields
+              below for you to review. Add every page of a multi-page form.
+            </p>
+          </div>
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={e => { if (e.target.files?.length) scanAndFill(e.target.files); }}
+          />
+          <input
+            ref={scanInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={e => { if (e.target.files?.length) scanAndFill(e.target.files); }}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()} disabled={scanning}>
+              {scanning ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Camera className="w-3.5 h-3.5 mr-1.5" />}
+              Take Photo
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => scanInputRef.current?.click()} disabled={scanning}>
+              {scanning ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5 mr-1.5" />}
+              Choose Photo(s)
+            </Button>
+            {scanning && <span className="text-xs text-[#2A1F0E]/60 self-center">Reading the form…</span>}
+          </div>
+          {scanResult && (
+            <div className="text-xs rounded border p-2" style={{ borderColor: "rgba(200,155,60,0.4)", background: "rgba(200,155,60,0.08)" }}>
+              <p className="text-[#2A1F0E]">
+                {scanResult.count > 0
+                  ? `AI pre-filled ${scanResult.count} field${scanResult.count === 1 ? "" : "s"} from your photo — review the values below, then Save Draft or Submit.`
+                  : "No readable values were found. Check the photo is clear and in focus, or fill the fields in manually."}
+              </p>
+              {scanResult.warnings.length > 0 && (
+                <ul className="mt-1 list-disc pl-4 text-[#9A6F1E]">
+                  {scanResult.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
         </Card>
       )}
 

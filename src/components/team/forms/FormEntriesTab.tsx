@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { Camera, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatFieldValue, getFormSchema, instanceTitle, listFields } from "@/lib/formSchema";
@@ -34,6 +34,7 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
   const [names, setNames] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const schema = getFormSchema(doc.content);
   const extraColumns = schema ? listFields(schema) : [];
 
@@ -64,15 +65,53 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
     }
   };
 
+  // "New from Photo": create a fresh entry and hand the selected page image(s)
+  // to the entry editor via router state, which runs the same review-first
+  // scan-and-fill flow there. The picker opens on this click (live user
+  // gesture), so the files are captured before the async create/navigate.
+  const newEntryFromPhoto = async (files: FileList) => {
+    setCreating(true);
+    try {
+      const response = await createResponse(doc);
+      navigate(`/team/compliance/forms/${doc.id}/entries/${response.id}`, {
+        state: { scanFiles: Array.from(files) },
+      });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to create entry");
+    } finally {
+      setCreating(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
           {loading ? "Loading entries…" : `${entries.length} entr${entries.length === 1 ? "y" : "ies"} recorded`}
         </p>
-        <Button type="button" size="sm" onClick={newEntry} disabled={creating || !schema} className="bg-[#C89B3C] hover:bg-[#B8892C]">
-          <Plus className="w-3.5 h-3.5 mr-1" />{creating ? "Creating…" : "New Entry"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={e => { if (e.target.files?.length) newEntryFromPhoto(e.target.files); }}
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => photoInputRef.current?.click()}
+            disabled={creating || !schema}
+          >
+            <Camera className="w-3.5 h-3.5 mr-1" />New from Photo
+          </Button>
+          <Button type="button" size="sm" onClick={newEntry} disabled={creating || !schema} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+            <Plus className="w-3.5 h-3.5 mr-1" />{creating ? "Creating…" : "New Entry"}
+          </Button>
+        </div>
       </div>
 
       {!loading && entries.length === 0 ? (

@@ -5,7 +5,7 @@
 // callers only see the typed wrappers below.
 
 import { supabase } from "@/integrations/supabase/client";
-import { emptyValues, getFormSchema, type FormSchema } from "@/lib/formSchema";
+import { emptyValues, getFormSchema, type FieldManifest, type FormSchema } from "@/lib/formSchema";
 
 export type ResponseStatus = "draft" | "submitted";
 
@@ -218,6 +218,26 @@ export async function uploadResponseAttachment(responseId: string, file: File): 
     uploadedAt: new Date().toISOString(),
     uploadedBy: auth?.user?.id ?? "",
   };
+}
+
+/**
+ * Photograph-to-fill: send a field manifest + signed photo URLs to the
+ * `extract-form-answers` edge function (Gemini vision via the Lovable gateway)
+ * and get back a flat { fieldId: value } map for the fields the model could
+ * read. The server sanitizes/coerces to the manifest, so the caller can merge
+ * the result straight into RHF. Nothing is persisted here — the user reviews
+ * the pre-filled values and saves themselves.
+ */
+export async function extractFormAnswers(
+  manifest: FieldManifest[],
+  imageUrls: string[],
+): Promise<{ answers: Record<string, any>; warnings: string[] }> {
+  const { data, error } = await supabase.functions.invoke("extract-form-answers", {
+    body: { manifest, imageUrls },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return { answers: (data?.answers ?? {}) as Record<string, any>, warnings: (data?.warnings ?? []) as string[] };
 }
 
 /** Best-effort tolerant of an already-missing object is the caller's job (.catch), same as removeSopFile. */

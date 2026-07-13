@@ -235,6 +235,51 @@ export function emptyValues(schema: FormSchema): Record<string, any> {
   return values;
 }
 
+// ---------- AI photo-fill manifest ----------
+
+/**
+ * Compact description of one field for the `extract-form-answers` edge function
+ * (photograph a filled paper form → pre-fill the digital entry). Kept small and
+ * value-only so the model's output is constrained to real field ids/types.
+ */
+export interface ManifestColumn { id: string; label: string; type: GridColumnType; options?: string[]; }
+export interface FieldManifest {
+  id: string;
+  type: FormFieldType;
+  label: string;
+  help?: string;
+  options?: string[];           // select
+  columns?: ManifestColumn[];   // grid
+  rowMode?: "fixed" | "dynamic";
+  rowLabels?: string[];         // grid fixed-mode row labels
+}
+
+/**
+ * Build the field manifest sent to `extract-form-answers`. Value-bearing fields
+ * only (valueFields already drops heading/info/reference_table); signatures are
+ * excluded because they're stamped client-side with the live user identity and
+ * must never be auto-filled from a photo.
+ */
+export function answerManifest(schema: FormSchema): FieldManifest[] {
+  return valueFields(schema)
+    .filter(f => f.type !== "signature")
+    .map(f => {
+      const item: FieldManifest = { id: f.id, type: f.type, label: f.label };
+      if (f.help) item.help = f.help;
+      if (f.type === "select") item.options = (f as SelectField).options;
+      if (f.type === "grid") {
+        const grid = f as GridField;
+        item.columns = grid.columns.map(c => ({
+          id: c.id, label: c.label, type: c.type,
+          ...(c.type === "select" && c.options ? { options: c.options } : {}),
+        }));
+        item.rowMode = grid.rows.mode;
+        if (grid.rows.mode === "fixed") item.rowLabels = grid.rows.labels;
+      }
+      return item;
+    });
+}
+
 // ---------- Submit-time validation (zod) ----------
 
 const isBlank = (v: any) =>
