@@ -3,7 +3,6 @@ import { Controller, useFieldArray, useWatch, type Control } from "react-hook-fo
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Trash2 } from "lucide-react";
 import type { GridColumn, GridField, GridRowValue } from "@/lib/formSchema";
 import { PassFailInput } from "./FormFieldInput";
+import { DictationTextarea } from "./DictationTextarea";
 
 /** Numeric-aware compare with blanks sorted last, for click-to-sort grid columns. */
 function compareCellValues(a: any, b: any): number {
@@ -83,12 +83,13 @@ function GridCell({ column, value, onChange, disabled }: {
       );
     default:
       return (
-        <Textarea
+        <DictationTextarea
           className="min-h-[32px] text-xs py-1.5 px-2 leading-snug resize-y break-words"
           rows={1}
-          value={value ?? ""}
+          value={value}
           disabled={disabled}
-          onChange={e => onChange(e.target.value)}
+          onChange={onChange}
+          compact
         />
       );
   }
