@@ -24,6 +24,17 @@ export interface FormResponse {
   submitted_by: string | null;
   reopened_at: string | null;
   reopened_by: string | null;
+  attachments: ResponseAttachment[];
+}
+
+/** One file/photo attached to a filled entry, stored in the form-attachments bucket. */
+export interface ResponseAttachment {
+  path: string;
+  name: string;
+  contentType?: string;
+  size?: number;
+  uploadedAt: string;
+  uploadedBy: string;
 }
 
 export interface HistorySnapshot {
@@ -170,10 +181,81 @@ export async function reopenResponse(id: string): Promise<FormResponse> {
   return rows[0] as FormResponse;
 }
 
-/** Admin/owner only (RLS-enforced). UI additionally hides delete when settings.deletable === false. */
-export async function deleteResponse(id: string): Promise<void> {
+/**
+ * Admin/owner only (RLS-enforced). UI additionally hides delete when
+ * settings.deletable === false. attachmentPaths (pass response.attachments.map
+ * (a => a.path)) are cleaned up from storage best-effort, after the row is
+ * gone — an orphaned storage file is harmless; a live compliance record with
+ * broken attachment links is not.
+ */
+export async function deleteResponse(id: string, attachmentPaths: string[] = []): Promise<void> {
   const { error } = await table().delete().eq("id", id);
   if (error) throw error;
+  if (attachmentPaths.length > 0) {
+    await supabase.storage.from("form-attachments").remove(attachmentPaths).catch(() => { /* best-effort */ });
+  }
+}
+
+/**
+ * Uploads one file/photo for a response and returns its descriptor. Does NOT
+ * persist the descriptor into the response row — call saveResponseAttachments
+ * with the updated array afterward (same upload/attach split as uploadSopFile
+ * in training.ts).
+ */
+export async function uploadResponseAttachment(responseId: string, file: File): Promise<ResponseAttachment> {
+  const { data: auth } = await supabase.auth.getUser();
+  const safe = file.name.replace(/[^\w.\-]+/g, "_");
+  const path = `${responseId}/${crypto.randomUUID()}-${safe}`;
+  const { error } = await supabase.storage
+    .from("form-attachments")
+    .upload(path, file, { upsert: false, contentType: file.type || undefined });
+  if (error) throw error;
+  return {
+    path,
+    name: file.name,
+    contentType: file.type || undefined,
+    size: file.size,
+    uploadedAt: new Date().toISOString(),
+    uploadedBy: auth?.user?.id ?? "",
+  };
+}
+
+/** Best-effort tolerant of an already-missing object is the caller's job (.catch), same as removeSopFile. */
+export async function removeResponseAttachment(path: string): Promise<void> {
+  const { error } = await supabase.storage.from("form-attachments").remove([path]);
+  if (error) throw error;
+}
+
+/** Signed URL for viewing/downloading an attachment (private bucket, 1-year expiry). */
+export async function getResponseAttachmentUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from("form-attachments")
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+/**
+ * Persists the attachments array. Deliberately no optimistic-concurrency
+ * guard (unlike saveResponseData/submitResponse) — attachments are additive
+ * and orthogonal to the RHF-managed field data, so guarding here would cause
+ * spurious staleness errors whenever a photo upload and a draft save race.
+ * The row's updated_at still bumps via the sop_document_responses_touch
+ * trigger, so callers must apply the returned row to their local state right
+ * away or a subsequent saveResponseData call will see a stale updated_at.
+ */
+export async function saveResponseAttachments(
+  id: string,
+  attachments: ResponseAttachment[],
+): Promise<FormResponse> {
+  const { data: auth } = await supabase.auth.getUser();
+  const { data: rows, error } = await table()
+    .update({ attachments, updated_by: auth?.user?.id ?? null })
+    .eq("id", id)
+    .select("*");
+  if (error) throw error;
+  if (!rows || rows.length === 0) throw new Error("Failed to save attachments.");
+  return rows[0] as FormResponse;
 }
 
 /**

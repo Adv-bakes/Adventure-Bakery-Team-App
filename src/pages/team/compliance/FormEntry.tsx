@@ -20,10 +20,11 @@ import {
 } from "@/lib/formSchema";
 import {
   StaleResponseError, deleteResponse, fetchProfileNames, fetchResponse, reopenResponse,
-  resolveSchemaForResponse, saveResponseData, shortUserId, submitResponse,
-  type FormResponse, type ResolvedSchema,
+  resolveSchemaForResponse, saveResponseAttachments, saveResponseData, shortUserId, submitResponse,
+  type FormResponse, type ResolvedSchema, type ResponseAttachment,
 } from "@/lib/formResponses";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
+import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
 
@@ -119,6 +120,7 @@ export default function FormEntry() {
   const canEdit = !isSubmitted && (isMine || isAdmin);
   const readOnly = !canEdit;
   const deletable = schema?.settings?.deletable !== false;
+  const attachmentsEnabled = schema?.settings?.attachmentsEnabled !== false;
 
   // Answers whose field ids no longer exist in the resolved schema — shown, never dropped.
   const unmapped = useMemo(() => {
@@ -170,6 +172,16 @@ export default function FormEntry() {
     },
   );
 
+  const handleAttachmentsChange = async (next: ResponseAttachment[]) => {
+    if (!response) return;
+    try {
+      const updated = await saveResponseAttachments(response.id, next);
+      setResponse(updated); // not applyResult — no need to form.reset() for an attachments-only change
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to save attachment");
+    }
+  };
+
   const reopen = async () => {
     if (!response) return;
     try {
@@ -185,7 +197,7 @@ export default function FormEntry() {
     if (!response) return;
     setDeleting(true);
     try {
-      await deleteResponse(response.id);
+      await deleteResponse(response.id, (response.attachments ?? []).map(a => a.path));
       toast.success("Entry deleted");
       navigate(`/team/compliance/sops?doc=${docId}`);
     } catch (e: any) {
@@ -255,6 +267,17 @@ export default function FormEntry() {
 
       {/* The form itself */}
       <FormRenderer schema={schema} form={form} readOnly={readOnly} isAdmin={isAdmin} signer={signer} />
+
+      {/* File/photo attachments — always shown if any exist, even if the admin
+          has since disabled the feature; add-controls only when editable and
+          enabled, so uploaded evidence never silently disappears. */}
+      {(attachmentsEnabled || (response.attachments?.length ?? 0) > 0) && (
+        <ResponseAttachments
+          responseId={response.id}
+          attachments={response.attachments ?? []}
+          onChange={canEdit && attachmentsEnabled ? handleAttachmentsChange : undefined}
+        />
+      )}
 
       {/* Answers that no longer map to a field — preserved, never dropped */}
       {unmapped.length > 0 && (

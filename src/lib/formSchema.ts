@@ -120,6 +120,7 @@ export interface FormSettings {
   allowMultipleDrafts?: boolean;   // default true; false = "New Entry" resumes the user's existing draft
   instanceTitleTemplate?: string;  // e.g. "{date} — {supplier_name}"; tokens: {date}, {user}, {<fieldId>}
   requireVerification?: boolean;   // surface the verifier signature prominently on submitted entries
+  attachmentsEnabled?: boolean;    // default true; false = admin disabled file/photo attachments for this form
 }
 
 export interface FormSchema {

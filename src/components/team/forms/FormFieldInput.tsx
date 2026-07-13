@@ -1,7 +1,6 @@
 import { Controller, type Control } from "react-hook-form";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +10,7 @@ import type {
   TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
+import { DictationTextarea } from "./DictationTextarea";
 
 const PASS_FAIL_STYLE: Record<string, string> = {
   pass: "data-[on=true]:bg-green-500/20 data-[on=true]:text-green-700 data-[on=true]:border-green-600/40",
@@ -101,8 +101,8 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
             break;
           case "textarea":
             input = (
-              <Textarea
-                value={rhf.value ?? ""}
+              <DictationTextarea
+                value={rhf.value}
                 onChange={rhf.onChange}
                 onBlur={rhf.onBlur}
                 disabled={disabled}

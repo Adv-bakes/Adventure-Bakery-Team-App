@@ -530,6 +530,16 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                 Requires verification (surface the verifier signature on submitted entries)
               </Label>
             </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                id="set-attachments"
+                checked={schema.settings?.attachmentsEnabled !== false}
+                onCheckedChange={c => patchSettings({ attachmentsEnabled: c ? undefined : false })}
+              />
+              <Label htmlFor="set-attachments" className="text-xs font-normal cursor-pointer">
+                Allow file/photo attachments at the bottom of entries (uncheck to disable for this form)
+              </Label>
+            </div>
             <div>
               <Label className="text-[10px] text-muted-foreground">
                 Entry title template (optional) — tokens: {"{date}"}, {"{user}"}, {"{field_id}"}
