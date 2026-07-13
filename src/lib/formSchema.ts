@@ -19,7 +19,7 @@ export const FORM_SCHEMA_VERSION = 1;
 export type ScalarFieldType =
   | "text" | "textarea" | "number" | "date" | "time" | "datetime"
   | "checkbox" | "select" | "pass_fail" | "signature";
-export type FormFieldType = ScalarFieldType | "grid" | "heading" | "info";
+export type FormFieldType = ScalarFieldType | "grid" | "heading" | "info" | "reference_table";
 
 export interface FieldBase {
   id: string;                 // stable snake_case slug, unique across the form
@@ -54,6 +54,15 @@ export interface SignatureValue { user_id: string; name: string; signed_at: stri
 export interface HeadingField extends FieldBase { type: "heading"; }
 export interface InfoField    extends FieldBase { type: "info"; text: string; }
 
+// A static legend/key table printed on the paper form (e.g. a "Risk Rating
+// Key") — every cell is fixed content, nothing is collected from the filler.
+// Distinct from `grid`, which is a fillable table the filler completes.
+export interface ReferenceTableField extends FieldBase {
+  type: "reference_table";
+  columns: string[];
+  rows: string[][];
+}
+
 export type GridColumnType = "text" | "number" | "date" | "time" | "checkbox" | "select" | "pass_fail";
 export interface GridColumn {
   id: string;
@@ -66,7 +75,25 @@ export interface GridColumn {
 }
 export type GridRows =
   | { mode: "dynamic"; min?: number; max?: number; addLabel?: string }
-  | { mode: "fixed"; labels: string[] }; // labels render as a read-only leading column
+  | {
+      mode: "fixed";
+      labels: string[];        // labels render as a read-only leading column by default
+      addLabel?: string;
+      // When true, EVERY row (not just filler-appended ones) gets an editable
+      // label and a delete button — for registers where known items get
+      // renamed/relocated/removed over time (e.g. a glass & brittle-plastic
+      // register), as opposed to a fixed checklist that must always list
+      // every item (e.g. daily temperature checkpoints).
+      deletable?: boolean;
+      // Known column values printed on the paper form, parallel to `labels`
+      // (defaultValues[i] applies to the row seeded from labels[i]) — pre-
+      // fills e.g. Material/Risk while leaving them editable. Only used when
+      // a brand-new response is created; never touches existing entries.
+      defaultValues?: GridRowValue[];
+      // Header text for the leading label column (e.g. "Location") — purely
+      // cosmetic, blank renders no header text (prior behavior).
+      labelHeader?: string;
+    };
 export interface GridField extends FieldBase {
   type: "grid";
   columns: GridColumn[];
@@ -76,7 +103,8 @@ export type GridRowValue = Record<string, any>;
 
 export type FormField =
   | TextField | TextareaField | NumberField | DateField | CheckboxField
-  | SelectField | PassFailField | SignatureField | HeadingField | InfoField | GridField;
+  | SelectField | PassFailField | SignatureField | HeadingField | InfoField | GridField
+  | ReferenceTableField;
 
 // ---------- Sections / settings / form ----------
 
@@ -104,7 +132,7 @@ export const FIELD_TYPE_LABELS: Record<FormFieldType, string> = {
   text: "Text", textarea: "Multi-line Text", number: "Number", date: "Date",
   time: "Time", datetime: "Date & Time", checkbox: "Checkbox", select: "Dropdown",
   pass_fail: "Pass / Fail", signature: "Signature", grid: "Table / Grid",
-  heading: "Heading", info: "Instructions",
+  heading: "Heading", info: "Instructions", reference_table: "Reference Table",
 };
 
 export const GRID_COLUMN_TYPE_LABELS: Record<GridColumnType, string> = {
@@ -183,7 +211,13 @@ function emptyFieldValue(field: FormField): any {
     case "signature": return null;
     case "grid": {
       const grid = field as GridField;
-      if (grid.rows.mode === "fixed") return grid.rows.labels.map(() => ({}));
+      if (grid.rows.mode === "fixed") {
+        const { labels, defaultValues, deletable } = grid.rows;
+        return labels.map((label, i) => ({
+          ...(deletable ? { _label: label } : {}),
+          ...(defaultValues?.[i] ?? {}),
+        }));
+      }
       const min = grid.rows.min ?? 1;
       return Array.from({ length: Math.max(min, 1) }, () => ({}));
     }
@@ -255,8 +289,11 @@ function scalarZod(field: FormField): z.ZodTypeAny {
 }
 
 function gridZod(field: GridField): z.ZodTypeAny {
+  // "_label" is the filler-entered name for a row appended past a fixed
+  // grid's schema-defined labels — typing one alone still counts as starting
+  // the row, so required columns on it get enforced at submit.
   const rowStarted = (r: GridRowValue) =>
-    field.columns.some(c => !isBlank(r?.[c.id]) && r?.[c.id] !== false);
+    field.columns.some(c => !isBlank(r?.[c.id]) && r?.[c.id] !== false) || !isBlank(r?._label);
 
   // A row whose cells are all blank is treated as intentionally empty —
   // per-column `required` only applies to rows the filler actually started.

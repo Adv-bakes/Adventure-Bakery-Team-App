@@ -12,10 +12,12 @@ import { updateModuleContent } from "@/lib/training";
 import {
   FIELD_TYPE_LABELS, FORM_SCHEMA_VERSION, emptyValues, getFormSchema, slugifyFieldId, valueFields,
   type FormField, type FormFieldType, type FormSchema, type FormSection, type GridField,
-  type InfoField, type NumberField, type SelectField, type SignatureField, type TextareaField,
+  type InfoField, type NumberField, type ReferenceTableField, type SelectField,
+  type SignatureField, type TextareaField,
 } from "@/lib/formSchema";
 import { FormRenderer } from "./FormRenderer";
 import { GridColumnsEditor } from "./GridColumnsEditor";
+import { ReferenceTableEditor } from "./ReferenceTableEditor";
 
 const goldBorder = { borderColor: "rgba(200,155,60,0.25)" };
 
@@ -33,6 +35,10 @@ const newField = (type: FormFieldType, taken: Set<string>): FormField => {
     (base as GridField).rows = { mode: "dynamic", min: 1 };
   }
   if (type === "info") (base as InfoField).text = "";
+  if (type === "reference_table") {
+    (base as ReferenceTableField).columns = [];
+    (base as ReferenceTableField).rows = [];
+  }
   return base;
 };
 
@@ -196,6 +202,11 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
             return toast.error(`Grid "${field.label}" (fixed rows) needs at least one row label`);
           }
         }
+        if (field.type === "reference_table") {
+          const rt = field as ReferenceTableField;
+          if (rt.columns.length === 0) return toast.error(`Reference table "${field.label}" needs at least one column`);
+          if (rt.rows.length === 0) return toast.error(`Reference table "${field.label}" needs at least one row`);
+        }
       }
     }
     const cleaned: FormSchema = {
@@ -324,7 +335,7 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                       <Label className="text-[10px] text-muted-foreground">{field.type === "heading" ? "Heading text" : "Label"}</Label>
                       <Input className="h-8" value={field.label} onChange={e => setFieldLabel(sIdx, fIdx, e.target.value)} />
                     </div>
-                    {field.type !== "heading" && field.type !== "info" && field.type !== "grid" && (
+                    {field.type !== "heading" && field.type !== "info" && field.type !== "grid" && field.type !== "reference_table" && (
                       <div className="w-24">
                         <Label className="text-[10px] text-muted-foreground">Width</Label>
                         <Select value={field.width ?? "full"} onValueChange={v => patchField(sIdx, fIdx, { width: v as FormField["width"] })}>
@@ -337,7 +348,7 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                         </Select>
                       </div>
                     )}
-                    {field.type !== "heading" && field.type !== "info" && (
+                    {field.type !== "heading" && field.type !== "info" && field.type !== "reference_table" && (
                       <div className="flex items-center gap-1.5 pb-2">
                         <Checkbox
                           id={`req-${sIdx}-${fIdx}`}
@@ -347,7 +358,7 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                         <Label htmlFor={`req-${sIdx}-${fIdx}`} className="text-xs font-normal cursor-pointer">Required</Label>
                       </div>
                     )}
-                    {field.type !== "heading" && field.type !== "info" && field.type !== "grid" && (
+                    {field.type !== "heading" && field.type !== "info" && field.type !== "grid" && field.type !== "reference_table" && (
                       <div className="flex items-center gap-1.5 pb-2">
                         <Checkbox
                           id={`list-${sIdx}-${fIdx}`}
@@ -452,7 +463,13 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                       savedIds={savedIds}
                     />
                   )}
-                  {field.type !== "heading" && field.type !== "info" && (
+                  {field.type === "reference_table" && (
+                    <ReferenceTableEditor
+                      field={field as ReferenceTableField}
+                      onChange={f => patchField(sIdx, fIdx, f)}
+                    />
+                  )}
+                  {field.type !== "heading" && field.type !== "info" && field.type !== "reference_table" && (
                     <div>
                       <Label className="text-[10px] text-muted-foreground">Help text (optional)</Label>
                       <Input className="h-8 text-xs" value={field.help ?? ""} onChange={e => patchField(sIdx, fIdx, { help: e.target.value || undefined })} />

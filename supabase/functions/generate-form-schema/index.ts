@@ -23,7 +23,7 @@ const json = (body: unknown, status = 200) =>
 
 const SCALAR_TYPES = new Set([
   "text", "textarea", "number", "date", "time", "datetime",
-  "checkbox", "select", "pass_fail", "signature", "heading", "info",
+  "checkbox", "select", "pass_fail", "signature", "heading", "info", "reference_table",
 ]);
 const GRID_COLUMN_TYPES = new Set(["text", "number", "date", "time", "checkbox", "select", "pass_fail"]);
 
@@ -44,7 +44,9 @@ const toOptionString = (o: any): string => {
 
 const SYSTEM_PROMPT = `You convert paper bakery quality-assurance forms into a JSON form schema for a web app. Preserve the paper document's structure faithfully:
 - Every section heading on the paper becomes a section ({ "id", "title", "fields": [] }).
-- Every table becomes a "grid" field with typed columns. Infer column types from headers and cell hints: temperatures/weights/counts -> "number" (set "unit" when the header shows one, e.g. °F, lbs), dates -> "date", times -> "time", checkmark cells -> "checkbox", Pass/Fail or OK/Not-OK or ✓/✗ cells -> "pass_fail", short lists of allowed values -> "select" with "options" (an array of plain strings, e.g. ["Email", "Signed Document"] — never objects). Tables with repeated blank rows for the filler -> rows { "mode": "dynamic", "min": 1 }. Tables whose first column pre-lists items (equipment names, areas, days) -> rows { "mode": "fixed", "labels": [...those values...] } and do NOT also make that first column a column.
+- Every table where the filler is meant to WRITE something in at least one column becomes a "grid" field with typed columns. Infer column types from headers and cell hints: temperatures/weights/counts -> "number" (set "unit" when the header shows one, e.g. °F, lbs), dates -> "date", times -> "time", checkmark cells -> "checkbox", Pass/Fail or OK/Not-OK or ✓/✗ cells -> "pass_fail", short lists of allowed values -> "select" with "options" (an array of plain strings, e.g. ["Email", "Signed Document"] — never objects). Tables with repeated blank rows for the filler -> rows { "mode": "dynamic", "min": 1 }. Tables whose first column pre-lists items (equipment names, areas, days) -> rows { "mode": "fixed", "labels": [...those values...] } and do NOT also make that first column a column. If the paper gives that first column its own header text (e.g. "Location", "Equipment", "Area"), include it as rows.labelHeader.
+- A register/log where the paper ALREADY prints known values in more than just the first column (e.g. a glass & brittle-plastic register listing Location, Item, and Material for every row, leaving only an inspection-result column blank) still uses rows.mode "fixed", but ALSO set "deletable": true (these known items get relocated/removed over time — unlike a fixed daily checklist that must always list every item) and "defaultValues": one object per row (parallel to "labels"), keyed by the OTHER known columns' ids with the exact printed text/number as the value. Still define every pre-filled column normally in "columns" (so the filler can edit it) — defaultValues just seeds it. Leave truly-blank-for-the-filler columns (inspection result, comments, corrective action) out of defaultValues entirely.
+- A table where EVERY cell is already fixed text printed on the form itself — a legend, key, or rating scale the filler only reads (e.g. "Risk Rating Key": 1 = Slight Risk, 2 = Medium Risk, 3 = Urgent) — is NOT a grid. It becomes { "type": "reference_table", "id", "label": the table's title, "columns": [header strings], "rows": [[cell, cell, ...], ...] } with the exact printed text copied into each cell. Never leave reference_table cells blank for the filler to complete.
 - Signature / initials / "completed by" / "reviewed by" lines become "signature" fields. Reviewer/verifier/QA-manager/supervisor signatures get "role": "verifier"; the person filling the form gets "role": "filler".
 - Standalone labeled blanks become scalar fields ("text", "number", "date", "time", "checkbox", "select", "pass_fail"). Long remark/comment areas -> "textarea".
 - Instructional paragraphs that the filler only reads become { "type": "info", "id", "label": short name, "text": the instructions }.
@@ -62,6 +64,27 @@ Respond with ONLY this JSON object (no markdown):
     {"id": "temp", "type": "number", "label": "Temp", "unit": "°F"},
     {"id": "condition", "type": "pass_fail", "label": "Condition OK"}
   ], "rows": {"mode": "dynamic", "min": 1}},
+  {"id": "glass_register", "type": "grid", "label": "Glass & Brittle Plastic Register", "columns": [
+    {"id": "item", "type": "text", "label": "Item"},
+    {"id": "material", "type": "select", "label": "Material", "options": ["Glass", "Plastic"]},
+    {"id": "intact", "type": "pass_fail", "label": "Intact (Y/N)"},
+    {"id": "risk", "type": "number", "label": "Risk"},
+    {"id": "comments", "type": "text", "label": "Condition / Comments"}
+  ], "rows": {
+    "mode": "fixed",
+    "labels": ["Storage Warehouse", "Processing Room"],
+    "labelHeader": "Location",
+    "deletable": true,
+    "defaultValues": [
+      {"item": "Light bulbs (12)", "material": "Glass", "risk": 2},
+      {"item": "Observation window", "material": "Glass", "risk": 1}
+    ]
+  }},
+  {"id": "risk_rating_key", "type": "reference_table", "label": "Risk Rating Key", "columns": ["Risk", "Rating"], "rows": [
+    ["1", "Slight Risk – no action required."],
+    ["2", "Medium Risk – action when opportunity occurs."],
+    ["3", "Urgent – action or removal of object required."]
+  ]},
   {"id": "completed_by", "type": "signature", "label": "Completed By", "role": "filler"},
   {"id": "verified_by", "type": "signature", "label": "Verified By", "role": "verifier"}
 ]}]}}`;
@@ -125,6 +148,28 @@ function sanitizeSchema(raw: any, warnings: string[]) {
         }
         if (type === "info") out.text = String(field.text ?? label).trim().slice(0, 2000);
 
+        if (type === "reference_table") {
+          const columns = (Array.isArray(field.columns) ? field.columns : [])
+            .map((c: any) => String(c ?? "").trim().slice(0, 120))
+            .filter(Boolean)
+            .slice(0, 10);
+          const rows = (Array.isArray(field.rows) ? field.rows : [])
+            .map((r: any) => (Array.isArray(r) ? r.map((c: any) => String(c ?? "").trim().slice(0, 500)) : null))
+            .filter((r: any): r is string[] => Array.isArray(r) && r.length > 0)
+            .slice(0, 100);
+          if (columns.length === 0 || rows.length === 0) {
+            warnings.push(`Dropped reference table "${label}" — no usable columns/rows`);
+            return null;
+          }
+          // Pad/trim every row to the column count so the renderer's zip never misaligns.
+          out.columns = columns;
+          out.rows = rows.map(r => {
+            const padded = [...r];
+            while (padded.length < columns.length) padded.push("");
+            return padded.slice(0, columns.length);
+          });
+        }
+
         if (type === "grid") {
           const colIds = new Set<string>();
           const columns = (Array.isArray(field.columns) ? field.columns : [])
@@ -158,7 +203,25 @@ function sanitizeSchema(raw: any, warnings: string[]) {
             // Unlike column headers, a fixed row label can be a full review-item
             // block (title + description + target line joined by \n) — 120 chars
             // truncated these mid-sentence.
-            out.rows = { mode: "fixed", labels: rows.labels.map((l: any) => String(l).trim().slice(0, 1000)).filter(Boolean) };
+            const labels: string[] = rows.labels.map((l: any) => String(l).trim().slice(0, 1000)).filter(Boolean);
+            const rowsOut: Record<string, unknown> = { mode: "fixed", labels };
+            if (rows.deletable === true) rowsOut.deletable = true;
+            if (typeof rows.labelHeader === "string" && rows.labelHeader.trim()) {
+              rowsOut.labelHeader = rows.labelHeader.trim().slice(0, 40);
+            }
+            if (Array.isArray(rows.defaultValues)) {
+              const colIds = new Set((columns as any[]).map(c => c.id));
+              rowsOut.defaultValues = rows.defaultValues.slice(0, labels.length).map((rowDefaults: any) => {
+                if (!rowDefaults || typeof rowDefaults !== "object") return {};
+                const cleaned: Record<string, unknown> = {};
+                for (const [k, v] of Object.entries(rowDefaults)) {
+                  if (!colIds.has(k) || v == null) continue;
+                  cleaned[k] = typeof v === "string" ? v.trim().slice(0, 300) : v;
+                }
+                return cleaned;
+              });
+            }
+            out.rows = rowsOut;
           } else {
             const rowsOut: Record<string, unknown> = { mode: "dynamic" };
             if (typeof rows.min === "number" && rows.min >= 0) rowsOut.min = rows.min;
