@@ -5,7 +5,8 @@ import type { SopType } from "@/lib/sopDocxParser";
  *
  * An identifier is `<TYPE>-<NNN>` where:
  *   - TYPE is the document-type prefix that also drives `detectType()` in sopDocxParser
- *     (FRM = form, SOP = procedure, FSQM = Food Safety Quality Manual, POL = policy).
+ *     (FRM = form, SOP = procedure, FSQM = Food Safety Quality Manual, POL = policy,
+ *     TRN = training module).
  *   - NNN is a 3-digit number whose HUNDREDS BLOCK marks the process stage the document
  *     belongs to (receiving = 300s, production = 500s, …). Within a block, increment.
  *
@@ -41,25 +42,33 @@ export const DOC_STAGES: DocStage[] = [
   { rangeStart: 950, rangeEnd: 999, key: "hr-admin", label: "HR / Training / Admin / Records" },
 ];
 
+// The numbering scheme covers one type beyond the parser's SopType: `training`
+// modules (TRN). It's a valid sop_documents.type but isn't produced by the Word
+// parser, so it lives here rather than in SopType.
+export type DocNumberType = SopType | "training";
+
 // Prefix ↔ type. Kept in sync with detectType() in sopDocxParser.ts. `policy` has no
-// established prefix in the source hardcopies, so POL is introduced here for new policies.
-const PREFIX_TO_TYPE: Record<string, SopType> = {
+// established prefix in the source hardcopies, so POL is introduced here for new policies;
+// TRN numbers training modules (typically in the 950–999 HR/Training block).
+const PREFIX_TO_TYPE: Record<string, DocNumberType> = {
   FSQM: "fsqm",
   FRM: "form",
   SOP: "sop",
   POL: "policy",
+  TRN: "training",
 };
 
-const TYPE_TO_PREFIX: Record<SopType, string> = {
+const TYPE_TO_PREFIX: Record<DocNumberType, string> = {
   fsqm: "FSQM",
   form: "FRM",
   sop: "SOP",
   policy: "POL",
+  training: "TRN",
 };
 
 export type ParsedDocNumber = {
   /** Document type inferred from the prefix. */
-  type: SopType;
+  type: DocNumberType;
   /** The stage-block number (e.g. 301). */
   number: number;
   /** The revision suffix if the raw string carried a legacy `-N` (e.g. "1" from FRM-046-1). */
@@ -90,7 +99,7 @@ export function parseDocNumber(input: string | null | undefined): ParsedDocNumbe
 }
 
 /** Canonical identifier for a type + number, zero-padded to 3 digits (e.g. "FRM-301"). */
-export function formatDocNumber(type: SopType, number: number): string {
+export function formatDocNumber(type: DocNumberType, number: number): string {
   return `${TYPE_TO_PREFIX[type]}-${String(number).padStart(3, "0")}`;
 }
 
@@ -102,7 +111,7 @@ export function formatDocNumber(type: SopType, number: number): string {
  */
 export function parseClauseNumber(
   input: string | null | undefined,
-): { type: SopType; clause: string; raw: string } | null {
+): { type: DocNumberType; clause: string; raw: string } | null {
   if (!input) return null;
   const raw = input.trim();
   const m = raw.match(/^([A-Za-z]{2,5})[\s\-_]+(\d+(?:\.\d+)+)\s*$/);
@@ -129,10 +138,14 @@ export function stageForNumber(number: number | null | undefined): DocStage | nu
   return DOC_STAGES.find((s) => number >= s.rangeStart && number <= s.rangeEnd) ?? null;
 }
 
-/** Convenience: the stage for a raw `sop_number` string. */
+/**
+ * Convenience: the stage for a raw `sop_number` string. Training modules (TRN) are
+ * organized by training category, not the process-stage blocks, so they have no stage.
+ */
 export function stageForSopNumber(sopNumber: string | null | undefined): DocStage | null {
   const parsed = parseDocNumber(sopNumber);
-  return parsed ? stageForNumber(parsed.number) : null;
+  if (!parsed || parsed.type === "training") return null;
+  return stageForNumber(parsed.number);
 }
 
 /**
