@@ -53,9 +53,16 @@ export default function TeamMemberDetail() {
 
   const loadData = async () => {
     const [profileRes, roleRes] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, email, employee_id, department, job_title, emergency_contact_name, emergency_contact_phone, preferred_language").eq("id", userId!).single(),
+      supabase.from("profiles").select("id, full_name, email, employee_id, department, job_title, emergency_contact_name, emergency_contact_phone, preferred_language").eq("id", userId!).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", userId!),
     ]);
+
+    // Surface a genuine query failure (RLS/permission, expired session, network)
+    // instead of silently falling through to the misleading "not found" state.
+    if (profileRes.error) {
+      console.error("TeamMemberDetail: profile load failed", profileRes.error);
+      toast.error(`Couldn't load team member: ${profileRes.error.message}`);
+    }
 
     if (profileRes.data) {
       const p = profileRes.data;
