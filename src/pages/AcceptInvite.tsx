@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Eye, EyeOff, CheckCircle, XCircle, Loader2 } from "lucide-react";
@@ -32,6 +33,7 @@ const AcceptInvite = () => {
   const [status, setStatus] = useState<"loading" | "valid" | "expired" | "used" | "invalid">("loading");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [preferSpanish, setPreferSpanish] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -84,6 +86,7 @@ const AcceptInvite = () => {
       const { data } = await supabase.rpc("accept_team_invitation" as any, {
         _token: token,
         _user_id: userId,
+        _preferred_language: preferSpanish ? "es" : "en",
       });
       const granted = typeof data === "string" && data ? data : invitation.role ?? "staff";
       return granted === "auditor" ? "/team/compliance/sops" : "/team/dashboard";
@@ -259,6 +262,25 @@ const AcceptInvite = () => {
                 </button>
               </div>
             </div>
+
+            {isTeam && (
+              <div className="flex items-start gap-2 rounded-md p-3" style={{ backgroundColor: "rgba(200, 155, 60, 0.08)" }}>
+                <Checkbox
+                  id="prefer-spanish"
+                  checked={preferSpanish}
+                  onCheckedChange={(v) => setPreferSpanish(v === true)}
+                  className="mt-0.5"
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="prefer-spanish" className="cursor-pointer" style={{ color: "#2C1810" }}>
+                    Prefiero mi capacitación en español
+                  </Label>
+                  <p className="text-xs" style={{ color: "#8B7355" }}>
+                    I prefer my training in Spanish, where available. You can change this later in your account.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <Button
               type="submit"

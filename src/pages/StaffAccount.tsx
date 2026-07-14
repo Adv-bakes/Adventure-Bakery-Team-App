@@ -27,6 +27,7 @@ interface StaffProfile {
   job_title: string;
   emergency_contact_name: string;
   emergency_contact_phone: string;
+  preferred_language: string;
 }
 
 export default function StaffAccount() {
@@ -42,6 +43,7 @@ export default function StaffAccount() {
     job_title: "",
     emergency_contact_name: "",
     emergency_contact_phone: "",
+    preferred_language: "en",
   });
   // NDA status — check if nda_agreements record exists (table may not exist yet)
   const [ndaSigned, setNdaSigned] = useState<boolean | null>(null);
@@ -64,7 +66,7 @@ export default function StaffAccount() {
 
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, employee_id, department, job_title, emergency_contact_name, emergency_contact_phone")
+      .select("full_name, employee_id, department, job_title, emergency_contact_name, emergency_contact_phone, preferred_language")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -76,6 +78,7 @@ export default function StaffAccount() {
         job_title: data.job_title || "",
         emergency_contact_name: data.emergency_contact_name || "",
         emergency_contact_phone: data.emergency_contact_phone || "",
+        preferred_language: data.preferred_language || "en",
       });
     }
 
@@ -96,6 +99,7 @@ export default function StaffAccount() {
       : {
           emergency_contact_name: profile.emergency_contact_name,
           emergency_contact_phone: profile.emergency_contact_phone,
+          preferred_language: profile.preferred_language,
         };
 
     const { error } = await supabase
@@ -251,6 +255,24 @@ export default function StaffAccount() {
               placeholder="e.g. Production Lead"
               className={!isAdmin ? "bg-muted" : ""}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Training Language</Label>
+            <Select
+              value={profile.preferred_language}
+              onValueChange={(val) => setProfile(p => ({ ...p, preferred_language: val }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Español</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Training is assigned in this language where a translation exists.
+            </p>
           </div>
         </CardContent>
       </Card>

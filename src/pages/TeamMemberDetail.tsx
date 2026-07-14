@@ -32,6 +32,7 @@ interface StaffProfile {
   job_title: string;
   emergency_contact_name: string;
   emergency_contact_phone: string;
+  preferred_language: string;
 }
 
 export default function TeamMemberDetail() {
@@ -52,7 +53,7 @@ export default function TeamMemberDetail() {
 
   const loadData = async () => {
     const [profileRes, roleRes] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, email, employee_id, department, job_title, emergency_contact_name, emergency_contact_phone").eq("id", userId!).single(),
+      supabase.from("profiles").select("id, full_name, email, employee_id, department, job_title, emergency_contact_name, emergency_contact_phone, preferred_language").eq("id", userId!).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId!),
     ]);
 
@@ -66,6 +67,7 @@ export default function TeamMemberDetail() {
         job_title: p.job_title || "",
         emergency_contact_name: p.emergency_contact_name || "",
         emergency_contact_phone: p.emergency_contact_phone || "",
+        preferred_language: p.preferred_language || "en",
       });
     }
 
@@ -94,6 +96,7 @@ export default function TeamMemberDetail() {
         job_title: profile.job_title,
         emergency_contact_name: profile.emergency_contact_name,
         emergency_contact_phone: profile.emergency_contact_phone,
+        preferred_language: profile.preferred_language,
       })
       .eq("id", profile.id);
 
@@ -286,6 +289,24 @@ export default function TeamMemberDetail() {
               onChange={(e) => setProfile(p => p ? { ...p, job_title: e.target.value } : p)}
               placeholder="e.g. Production Lead"
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Training Language</Label>
+            <Select
+              value={profile.preferred_language}
+              onValueChange={(val) => setProfile(p => p ? { ...p, preferred_language: val } : p)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="es">Español</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Not-yet-started training re-assigns in this language where a translation exists.
+            </p>
           </div>
         </CardContent>
       </Card>

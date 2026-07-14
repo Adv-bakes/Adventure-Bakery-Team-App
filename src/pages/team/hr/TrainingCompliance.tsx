@@ -75,16 +75,16 @@ export default function TrainingCompliance() {
     });
 
   const handleAssign = async () => {
-    const empIds = [...selEmployees];
+    const emps = employees.filter((e) => selEmployees.has(e.id));
     const mods = modules.filter((m) => selModules.has(m.id));
-    if (empIds.length === 0 || mods.length === 0) {
+    if (emps.length === 0 || mods.length === 0) {
       toast.error("Pick at least one employee and one module.");
       return;
     }
     setAssigning(true);
     try {
-      const created = await assignModulesToEmployees(empIds, mods, dueDate || null);
-      const skipped = empIds.length * mods.length - created;
+      const created = await assignModulesToEmployees(emps, mods, dueDate || null);
+      const skipped = emps.length * mods.length - created;
       toast.success(
         `Assigned ${created} new module${created === 1 ? "" : "s"}` +
         (skipped > 0 ? ` (${skipped} already assigned, left as-is).` : "."),

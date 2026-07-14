@@ -138,7 +138,7 @@ All are public (anon) Supabase credentials — safe on the client.
 
 | Table | Purpose |
 |-------|---------|
-| `profiles` | User profiles — `full_name`, `department`, `job_title`, `access_granted` |
+| `profiles` | User profiles — `full_name`, `department`, `job_title`, `access_granted`, `preferred_language` (`'en'`/`'es'`, default `'en'` — drives language-aware training assignment; see "Preferred training language" below) |
 | `user_roles` | Role assignments — `user_id`, `role` (owner/admin/staff/user) |
 | `sop_documents` | Training modules & SOPs — `training_category` (int 1–4 = assignable training module; **null = reference doc**), `category` (text, SOPs Library grouping; names mirror the training category labels), `type` (`sop`/`form`/`policy`/`training`/`fsqm` — CHECK constraint `sop_documents_type_check`), `module_number`, `content` (JSON — slides/quiz/`attachments[]`/Word-SOP body), `file_url` (legacy single attachment), `passing_score_pct`, `is_critical`, `required_departments`, `status` |
 | `training_assignments` | Employee ↔ module assignments — `completed_at`, `quiz_score`, `quiz_attempts`, `expires_at`, `recurrence_months`, `signed`/`signed_at` (acknowledgment), `progress` (JSON save/resume state, cleared on completion) |
@@ -166,6 +166,8 @@ All are public (anon) Supabase credentials — safe on the client.
 **Assignment statuses:** `not_started | in_progress | completed | expired`
 
 **Quiz flow:** Admin configures questions + passing score (or marks as critical → requires 100%). Employees take quiz in `TrainingModuleDetail`; `scoreQuiz()` → `submitQuizResult()` records completion and computes `expires_at` via `computeExpiry()`.
+
+**Preferred training language (EN/ES bilingual assignment):** `profiles.preferred_language` (`'en'`/`'es'`, default `'en'`) records which language an employee is trained in. Captured at invite acceptance (Spanish checkbox on `AcceptInvite.tsx` → `_preferred_language` arg on the `accept_team_invitation` RPC), editable later self-service (`StaffAccount.tsx` "Training Language" select) and by admins (`TeamMemberDetail.tsx`). EN and ES modules are **separate `sop_documents` rows sharing a `module_number`** (the ES row's `title` ends with `" (ES)"`); the **EN row is the single assignable unit** (carries `training_category`/`required_departments`), and the ES row is a *content variant substituted at assignment time*. ES rows are never independently auto-assigned (keep their `training_category` null). Resolution rules: an ES-preferring employee gets the active ES sibling where one exists, else EN; an EN-preferring employee only ever gets EN — never both. Implemented in two places: (1) the SQL sync triggers `sync_employee_training`/`sync_module_training` (migration `20260714000009_language_aware_training_sync.sql` — `LEFT JOIN LATERAL` on the ES sibling; the profile trigger also fires on `preferred_language` change), and (2) the manual "Assign Training" dialog via `assignModulesToEmployees()` in `training.ts`. **Changing an employee's language re-languages their not-yet-started assignments** (deletes the wrong-language row, inserts the right one) but never touches `progress`/`completed_at` rows and never creates a duplicate in the other language for a module already started/completed. **Prerequisite:** nothing assigns in Spanish until an ES module row is `status='active'` with the matching `module_number`.
 
 **Slide upload:** Images stored in `training-content` Supabase bucket; paths saved in `sop_documents.content.slides[]`; signed URLs fetched via `getTrainingSlideUrl()`.
 
