@@ -119,6 +119,35 @@ export async function fetchEmployees(): Promise<Employee[]> {
   return (profiles ?? []) as Employee[];
 }
 
+/**
+ * Manually assign one or more modules to one or more employees (admin action,
+ * in addition to the automatic department-driven sync). Idempotent: existing
+ * (employee, module) assignments are left untouched — the unique
+ * (employee_id, sop_id) constraint drives ignoreDuplicates, so re-assigning
+ * never clobbers progress or completion. Returns the number of rows created.
+ */
+export async function assignModulesToEmployees(
+  employeeIds: string[],
+  modules: Pick<TrainingModule, "id" | "is_annual_refresher">[],
+  dueAt: string | null,
+): Promise<number> {
+  const rows = employeeIds.flatMap((employee_id) =>
+    modules.map((m) => ({
+      employee_id,
+      sop_id: m.id,
+      recurrence_months: m.is_annual_refresher ? 12 : null,
+      due_at: dueAt,
+    })),
+  );
+  if (rows.length === 0) return 0;
+  const { data, error } = await (supabase as any)
+    .from("training_assignments")
+    .upsert(rows, { onConflict: "employee_id,sop_id", ignoreDuplicates: true })
+    .select("id");
+  if (error) throw error;
+  return (data ?? []).length;
+}
+
 export async function markAssignmentComplete(assignment: TrainingAssignment): Promise<void> {
   const completedAt = new Date().toISOString();
   const expiresAt = computeExpiry(completedAt, assignment.recurrence_months);

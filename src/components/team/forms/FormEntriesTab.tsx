@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatFieldValue, getFormSchema, instanceTitle, listFields } from "@/lib/formSchema";
 import { createResponse, fetchProfileNames, fetchResponses, shortUserId, type FormResponse } from "@/lib/formResponses";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const statusBadge: Record<string, string> = {
   draft: "bg-[#C89B3C]/20 text-[#9A6F1E] border-[#C89B3C]/40",
@@ -37,6 +38,10 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const schema = getFormSchema(doc.content);
   const extraColumns = schema ? listFields(schema) : [];
+  // Auditors (SQF contractors) are read-only: they can view entries but never
+  // create them. Staff/admin/owner may fill. RLS also blocks auditor inserts.
+  const { hasRole } = useUserRole();
+  const canFill = hasRole("staff") || hasRole("admin") || hasRole("owner");
 
   useEffect(() => {
     let cancelled = false;
@@ -90,33 +95,35 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
         <p className="text-xs text-muted-foreground">
           {loading ? "Loading entries…" : `${entries.length} entr${entries.length === 1 ? "y" : "ies"} recorded`}
         </p>
-        <div className="flex items-center gap-2">
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={e => { if (e.target.files?.length) newEntryFromPhoto(e.target.files); }}
-          />
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => photoInputRef.current?.click()}
-            disabled={creating || !schema}
-          >
-            <Camera className="w-3.5 h-3.5 mr-1" />New from Photo
-          </Button>
-          <Button type="button" size="sm" onClick={newEntry} disabled={creating || !schema} className="bg-[#C89B3C] hover:bg-[#B8892C]">
-            <Plus className="w-3.5 h-3.5 mr-1" />{creating ? "Creating…" : "New Entry"}
-          </Button>
-        </div>
+        {canFill && (
+          <div className="flex items-center gap-2">
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={e => { if (e.target.files?.length) newEntryFromPhoto(e.target.files); }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={creating || !schema}
+            >
+              <Camera className="w-3.5 h-3.5 mr-1" />New from Photo
+            </Button>
+            <Button type="button" size="sm" onClick={newEntry} disabled={creating || !schema} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+              <Plus className="w-3.5 h-3.5 mr-1" />{creating ? "Creating…" : "New Entry"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {!loading && entries.length === 0 ? (
         <div className="rounded-md border border-dashed p-6 text-center text-sm text-[#2A1F0E]/75" style={{ borderColor: "rgba(200,155,60,0.4)" }}>
-          No entries yet. Click New Entry to fill this form out for the first time.
+          {canFill ? "No entries yet. Click New Entry to fill this form out for the first time." : "No entries recorded yet."}
         </div>
       ) : entries.length > 0 && (
         <div className="rounded-md border overflow-hidden" style={{ borderColor: "rgba(200,155,60,0.25)" }}>

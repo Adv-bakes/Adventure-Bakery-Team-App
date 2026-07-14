@@ -9,11 +9,18 @@ import { toast } from "sonner";
 import { Eye, EyeOff, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
+const ROLE_LABEL: Record<string, string> = {
+  owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor (read-only)", user: "Client",
+};
+
 interface Invitation {
   id: string;
   email: string;
   accepted_at: string | null;
   expires_at: string;
+  invite_kind: "client" | "team";
+  role: string | null;
+  department: string | null;
 }
 
 const AcceptInvite = () => {
@@ -43,20 +50,47 @@ const AcceptInvite = () => {
         return;
       }
 
-      const result = data[0];
+      const result = data[0] as {
+        email: string; expired: boolean; invite_kind?: string; role?: string | null; department?: string | null;
+      };
 
       if (result.expired) {
         setStatus("expired");
         return;
       }
 
-      // Store email from RPC for the signup form
-      setInvitation({ id: "", email: result.email, accepted_at: null, expires_at: "" });
+      // Store email + team metadata from RPC for the signup form
+      setInvitation({
+        id: "",
+        email: result.email,
+        accepted_at: null,
+        expires_at: "",
+        invite_kind: result.invite_kind === "team" ? "team" : "client",
+        role: result.role ?? null,
+        department: result.department ?? null,
+      });
       setStatus("valid");
     };
 
     fetchInvitation();
   }, [token]);
+
+  const isTeam = invitation?.invite_kind === "team";
+
+  // Mark the invitation accepted (provisioning role/department for team invites,
+  // brand access for client invites) and return where to send the new user.
+  const acceptAndDestination = async (userId: string): Promise<string> => {
+    if (invitation?.invite_kind === "team") {
+      const { data } = await supabase.rpc("accept_team_invitation" as any, {
+        _token: token,
+        _user_id: userId,
+      });
+      const granted = typeof data === "string" && data ? data : invitation.role ?? "staff";
+      return granted === "auditor" ? "/team/compliance/sops" : "/team/dashboard";
+    }
+    await supabase.rpc("accept_invitation", { _token: token!, _user_id: userId });
+    return "/brand-portal";
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +109,7 @@ const AcceptInvite = () => {
         email: invitation.email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/brand-portal`,
+          emailRedirectTo: `${window.location.origin}${isTeam ? "/team" : "/brand-portal"}`,
         },
       });
 
@@ -94,14 +128,9 @@ const AcceptInvite = () => {
           }
 
           if (signInData.user) {
-            // Use secure RPC to mark invitation accepted and grant access
-            await supabase.rpc("accept_invitation", {
-              _token: token,
-              _user_id: signInData.user.id,
-            });
-
+            const dest = await acceptAndDestination(signInData.user.id);
             toast.success("Welcome! Your access has been activated.");
-            navigate("/brand-portal");
+            navigate(dest);
             return;
           }
         }
@@ -112,22 +141,15 @@ const AcceptInvite = () => {
 
       // 2. If user was created and has a session (auto-confirm enabled)
       if (signUpData?.user?.id && signUpData?.session) {
-        await supabase.rpc("accept_invitation", {
-          _token: token,
-          _user_id: signUpData.user.id,
-        });
-
+        const dest = await acceptAndDestination(signUpData.user.id);
         toast.success("Account created! Welcome to Adventure Bakery.");
-        navigate("/brand-portal");
+        navigate(dest);
       } else if (signUpData?.user && !signUpData?.session) {
-        // Email confirmation required — mark invitation accepted
-        await supabase.rpc("accept_invitation", {
-          _token: token,
-          _user_id: signUpData.user.id,
-        });
-
+        // Email confirmation required — mark invitation accepted now so the
+        // role/department is provisioned; they finish by confirming + logging in.
+        await acceptAndDestination(signUpData.user.id);
         toast.success("Account created! Please check your email to confirm, then sign in.");
-        navigate("/k2f-login");
+        navigate(isTeam ? "/team" : "/k2f-login");
       }
     } catch (error) {
       console.error("Accept invite error:", error);
@@ -257,7 +279,7 @@ const AcceptInvite = () => {
               Already have an account?{" "}
               <button
                 type="button"
-                onClick={() => navigate("/k2f-login")}
+                onClick={() => navigate(isTeam ? "/team" : "/k2f-login")}
                 className="font-medium hover:underline"
                 style={{ color: "#C89B3C" }}
               >
@@ -289,7 +311,11 @@ const AcceptInvite = () => {
             You're Invited
           </CardTitle>
           <CardDescription style={{ color: "#8B7355" }}>
-            Adventure Bakery has invited you to their Brand Portal.
+            {isTeam
+              ? `You've been invited to the Adventure Bakery Team Portal${
+                  invitation?.role ? ` as ${ROLE_LABEL[invitation.role] ?? invitation.role}` : ""
+                }${invitation?.department ? ` · ${invitation.department}` : ""}.`
+              : "Adventure Bakery has invited you to their Brand Portal."}
           </CardDescription>
         </CardHeader>
         <CardContent>{renderContent()}</CardContent>

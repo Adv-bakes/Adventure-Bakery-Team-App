@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAccess = false }: ProtectedRouteProps) => {
-  const { role, loading } = useUserRole();
+  const { roles, role, loading } = useUserRole();
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [accessGranted, setAccessGranted] = useState<boolean | null>(null);
   const [ready, setReady] = useState(false);
@@ -57,10 +57,12 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
       return;
     }
 
-    if (!role || !allowedRoles.includes(role)) {
+    // A user may hold several roles; qualify if ANY held role is allowed (union).
+    if (!roles.some((r) => allowedRoles.includes(r))) {
       const fallback = redirectTo || (
         role === "owner" || role === "admin" ? "/team/dashboard" :
         role === "staff" ? "/team/operations-hub" :
+        role === "auditor" ? "/team/compliance/sops" :
         "/brand-portal"
       );
       window.location.replace(fallback);
@@ -74,7 +76,7 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
     }
 
     setReady(true);
-  }, [loading, authed, role, allowedRoles, redirectTo, accessGranted, requireClientAccess]);
+  }, [loading, authed, roles, role, allowedRoles, redirectTo, accessGranted, requireClientAccess]);
 
   if (!ready) {
     return (
