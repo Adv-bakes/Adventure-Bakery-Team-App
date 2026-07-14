@@ -148,6 +148,16 @@ export async function assignModulesToEmployees(
   return (data ?? []).length;
 }
 
+// Admin-only: remove a training assignment entirely (the counterpart to the
+// grant-only auto-sync, which never deletes). RLS restricts this to admin/owner.
+export async function deleteAssignment(assignmentId: string): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("training_assignments")
+    .delete()
+    .eq("id", assignmentId);
+  if (error) throw error;
+}
+
 export async function markAssignmentComplete(assignment: TrainingAssignment): Promise<void> {
   const completedAt = new Date().toISOString();
   const expiresAt = computeExpiry(completedAt, assignment.recurrence_months);

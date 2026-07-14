@@ -10,7 +10,8 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, AlertTriangle, Clock, CheckCircle2, UserPlus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RefreshCw, AlertTriangle, Clock, CheckCircle2, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -19,7 +20,7 @@ import {
   TrainingModule, TrainingAssignment, Employee,
   AssignmentStatus, getAssignmentStatus, isExpiringSoon, isOverdue,
   fetchTrainingModules, fetchTrainingAssignments, fetchEmployees,
-  assignModulesToEmployees,
+  assignModulesToEmployees, deleteAssignment,
 } from "@/lib/training";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
@@ -96,6 +97,21 @@ export default function TrainingCompliance() {
       toast.error(e.message ?? "Failed to assign training");
     } finally {
       setAssigning(false);
+    }
+  };
+
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const handleUnassign = async (assignment: TrainingAssignment) => {
+    setRemovingId(assignment.id);
+    try {
+      await deleteAssignment(assignment.id);
+      toast.success("Assignment removed.");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to remove assignment");
+    } finally {
+      setRemovingId(null);
     }
   };
 
@@ -274,6 +290,12 @@ export default function TrainingCompliance() {
         </div>
       </div>
 
+      {isAdmin && (
+        <p className="text-xs text-[#F5F1E6]/60 -mb-2">
+          Tip: click any filled status dot to remove that assignment.
+        </p>
+      )}
+
       {/* Compliance matrix */}
       <Card className="border overflow-x-auto" style={cardStyle}>
         <Table>
@@ -319,14 +341,50 @@ export default function TrainingCompliance() {
                   const assignment = assignmentMap.get(`${emp.id}:${m.id}`);
                   const status = getAssignmentStatus(assignment);
                   const isFirstInGroup = idx === 0 || arr[idx - 1].training_category !== m.training_category;
+                  const cellTitle = `${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${status.replace("_", " ")}`;
+                  const dot = <span className={`inline-block w-3 h-3 rounded-full ${STATUS_DOT[status]}`} />;
                   return (
                     <TableCell
                       key={m.id}
                       className="text-center"
                       style={isFirstInGroup ? { borderLeft: "1px solid rgba(200,155,60,0.25)" } : undefined}
-                      title={`${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${status.replace("_", " ")}`}
+                      title={cellTitle}
                     >
-                      <span className={`inline-block w-3 h-3 rounded-full ${STATUS_DOT[status]}`} />
+                      {isAdmin && assignment ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="p-1 rounded hover:bg-[#2A1F0E]/5" aria-label="Assignment actions">
+                              {dot}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 text-sm" align="center">
+                            <p className="font-medium text-[#2A1F0E]">{employeeName(emp)}</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              <span className="font-mono">{m.module_number}</span> {m.title}
+                            </p>
+                            <p className="text-xs mb-3">
+                              Status: <span className="capitalize">{status.replace("_", " ")}</span>
+                              {assignment.due_at ? ` · due ${assignment.due_at}` : ""}
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+                              disabled={removingId === assignment.id}
+                              onClick={() => handleUnassign(assignment)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" />
+                              {removingId === assignment.id ? "Removing…" : "Remove assignment"}
+                            </Button>
+                            <p className="text-[11px] text-muted-foreground mt-2">
+                              Automatic sync may re-add this if the employee's department still
+                              requires the module.
+                            </p>
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        dot
+                      )}
                     </TableCell>
                   );
                 })}
