@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { LogOut, User, Shield, Building2, Phone, FileCheck, Briefcase, Save } from "lucide-react";
+import { LogOut, User, Shield, Building2, Phone, FileCheck, Briefcase, Save, KeyRound } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const DEPARTMENTS = [
@@ -45,6 +45,11 @@ export default function StaffAccount() {
   });
   // NDA status — check if nda_agreements record exists (table may not exist yet)
   const [ndaSigned, setNdaSigned] = useState<boolean | null>(null);
+
+  // Change password
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -103,6 +108,27 @@ export default function StaffAccount() {
       toast.success("Profile updated");
     }
     setSaving(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords don't match.");
+      return;
+    }
+    setChangingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast.error("Failed to update password: " + error.message);
+    } else {
+      toast.success("Password updated.");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setChangingPassword(false);
   };
 
   const handleSignOut = async () => {
@@ -264,6 +290,51 @@ export default function StaffAccount() {
           {saving ? "Saving…" : "Save Changes"}
         </Button>
       </div>
+
+      {/* Change Password */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-5 w-5 text-accent" />
+            Change Password
+          </CardTitle>
+          <CardDescription>Update your sign-in password</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm Password</Label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter new password"
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={handleChangePassword}
+              disabled={changingPassword || !newPassword || !confirmPassword}
+              className="gap-2"
+            >
+              <KeyRound className="h-4 w-4" />
+              {changingPassword ? "Updating…" : "Update Password"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Sign Out */}
       <Card className="border-destructive/50">
