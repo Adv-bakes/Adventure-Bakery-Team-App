@@ -494,6 +494,15 @@ All colors MUST be HSL.
   color: hsl(0 0% 100%) !important;
 }
 
+/* Portal-aware page headers for SHARED pages (Formulas, Ingredients, Costing…)
+   that render in BOTH the light brand portal and the dark team portal. Default
+   to the dark theme text (readable on the brand's light bg); lift to cream only
+   inside the dark team portal. */
+.tp-page-title { color: hsl(var(--foreground)); }
+.tp-page-subtitle { color: hsl(var(--muted-foreground)); }
+.team-portal .tp-page-title { color: #F5F1E6; }
+.team-portal .tp-page-subtitle { color: rgba(245, 241, 230, 0.7); }
+
 /* Subtle ambient gold gradient on the body of the portal */
 .team-portal-bg {
   position: relative;
