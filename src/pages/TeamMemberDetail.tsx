@@ -162,8 +162,8 @@ export default function TeamMemberDetail() {
       </Button>
 
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Edit Team Member</h1>
-        <p className="text-muted-foreground mt-1">Update profile fields for this staff member</p>
+        <h1 className="text-3xl font-bold tracking-tight" style={{ color: "#F5F1E6" }}>Edit Team Member</h1>
+        <p className="mt-1" style={{ color: "rgba(245,241,230,0.7)" }}>Update profile fields for this staff member</p>
       </div>
 
       {/* Identity */}
