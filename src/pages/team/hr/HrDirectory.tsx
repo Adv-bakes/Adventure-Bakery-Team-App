@@ -25,6 +25,7 @@ const NO_DEPT = "__none__";
 interface Member {
   id: string;
   full_name: string;
+  email: string;
   employee_id: string;
   department: string;
   job_title: string;
@@ -132,18 +133,29 @@ export default function HrDirectory() {
 
     const { data: profs, error: pErr } = await supabase
       .from("profiles")
-      .select("id, full_name, employee_id, department, job_title")
+      .select("id, full_name, email, employee_id, department, job_title")
       .in("id", ids);
     if (pErr) { toast.error("Failed to load profiles"); setLoading(false); return; }
 
-    const rows: Member[] = (profs ?? []).map((p: any) => ({
-      id: p.id,
-      full_name: p.full_name || "(no name)",
-      employee_id: p.employee_id || "",
-      department: p.department || "",
-      job_title: p.job_title || "",
-      roles: rolesByUser.get(p.id) ?? [],
-    })).sort((a, b) => a.full_name.localeCompare(b.full_name));
+    const profById = new Map<string, any>((profs ?? []).map((p: any) => [p.id, p]));
+
+    // Drive the list off the ROLE rows (the source of truth for "team member"),
+    // not the profiles query — so a role-holder whose profile row is missing
+    // still appears instead of silently vanishing.
+    const rows: Member[] = ids.map((id) => {
+      const p = profById.get(id) ?? {};
+      return {
+        id,
+        // Fall back to the login email, then a short id, so a member with no
+        // profile name is still identifiable.
+        full_name: p.full_name || p.email || `User ${id.slice(0, 8)}`,
+        email: p.email || "",
+        employee_id: p.employee_id || "",
+        department: p.department || "",
+        job_title: p.job_title || "",
+        roles: rolesByUser.get(id) ?? [],
+      };
+    }).sort((a, b) => a.full_name.localeCompare(b.full_name));
 
     setMembers(rows);
     setLoading(false);
@@ -187,7 +199,7 @@ export default function HrDirectory() {
 
   const filtered = members.filter((m) => {
     if (!q.trim()) return true;
-    const hay = `${m.full_name} ${m.employee_id} ${m.department} ${m.job_title}`.toLowerCase();
+    const hay = `${m.full_name} ${m.email} ${m.employee_id} ${m.department} ${m.job_title}`.toLowerCase();
     return hay.includes(q.toLowerCase());
   });
 
@@ -325,7 +337,13 @@ export default function HrDirectory() {
                     <>
                       <TableCell>
                         <div className="font-medium">{m.full_name}</div>
-                        <div className="text-xs text-muted-foreground">{m.job_title || m.employee_id || "—"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {/* Prefer the email as the secondary identifier; avoid
+                              repeating it when it's already the primary name. */}
+                          {m.email && m.email !== m.full_name
+                            ? m.email
+                            : m.job_title || m.employee_id || "—"}
+                        </div>
                       </TableCell>
                       <TableCell>{m.department || "—"}</TableCell>
                       <TableCell>

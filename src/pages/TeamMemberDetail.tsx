@@ -52,7 +52,7 @@ export default function TeamMemberDetail() {
 
   const loadData = async () => {
     const [profileRes, roleRes] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, employee_id, department, job_title, emergency_contact_name, emergency_contact_phone").eq("id", userId!).single(),
+      supabase.from("profiles").select("id, full_name, email, employee_id, department, job_title, emergency_contact_name, emergency_contact_phone").eq("id", userId!).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId!),
     ]);
 
@@ -75,8 +75,9 @@ export default function TeamMemberDetail() {
       setInitialRoles(list);
     }
 
-    // Get email via admin API — for now show user ID
-    setEmail(userId || "");
+    // Login email is synced onto profiles.email (migration 20260714000004);
+    // fall back to the user id if a legacy row never captured it.
+    setEmail(profileRes.data?.email || userId || "");
     setLoading(false);
   };
 
@@ -174,6 +175,13 @@ export default function TeamMemberDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Login Email</Label>
+            <Input value={email} readOnly disabled className="font-mono text-sm" />
+            <p className="text-xs text-muted-foreground">
+              The account's sign-in email. Managed in Supabase Auth — not editable here.
+            </p>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Full Name</Label>
