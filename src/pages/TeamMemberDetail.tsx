@@ -146,7 +146,7 @@ export default function TeamMemberDetail() {
       <div className="container mx-auto px-4 py-8">
         <p className="text-muted-foreground">Team member not found.</p>
         <Button asChild variant="ghost" className="mt-4">
-          <Link to="/team/dashboard"><ArrowLeft className="h-4 w-4 mr-2" />Back</Link>
+          <Link to="/team/hr/directory"><ArrowLeft className="h-4 w-4 mr-2" />Back to Team Directory</Link>
         </Button>
       </div>
     );
@@ -155,9 +155,9 @@ export default function TeamMemberDetail() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <Button asChild variant="ghost" className="mb-4">
-        <Link to="/team/dashboard">
+        <Link to="/team/hr/directory">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          Back to Team Directory
         </Link>
       </Button>
 
