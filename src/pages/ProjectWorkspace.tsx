@@ -902,8 +902,8 @@ const ConceptView = ({ conceptId, onSave }: { conceptId: number; onSave: () => v
                 concept?.product_image_path ? (
                   <div className="flex justify-center">
                     <div className="w-[300px] h-[200px] border border-[#C7B79A] rounded-lg overflow-hidden bg-white/30">
-                      <img 
-                        src={`https://ztykjygdojeeoldjrglu.supabase.co/storage/v1/object/public/product-spec-sheets/${concept.product_image_path}`}
+                      <img
+                        src={supabase.storage.from("product-spec-sheets").getPublicUrl(concept.product_image_path).data.publicUrl}
                         alt={concept.product_name}
                         className="w-full h-full object-contain"
                       />
@@ -929,9 +929,9 @@ const ConceptView = ({ conceptId, onSave }: { conceptId: number; onSave: () => v
                   {(productImage || concept?.product_image_path) && (
                     <div className="mt-4 w-[300px] h-[200px] border border-[#C7B79A] rounded-lg overflow-hidden bg-white/30">
                       <img 
-                        src={productImage 
+                        src={productImage
                           ? URL.createObjectURL(productImage)
-                          : `https://ztykjygdojeeoldjrglu.supabase.co/storage/v1/object/public/product-spec-sheets/${concept.product_image_path}`
+                          : supabase.storage.from("product-spec-sheets").getPublicUrl(concept.product_image_path).data.publicUrl
                         }
                         alt="Product preview"
                         className="w-full h-full object-contain"
