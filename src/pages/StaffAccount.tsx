@@ -151,8 +151,8 @@ export default function StaffAccount() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">Team Account</h1>
-        <p className="text-muted-foreground mt-2">Adventure Bakery internal team member</p>
+        <h1 className="text-4xl font-bold tracking-tight" style={{ color: "#F5F1E6" }}>Team Account</h1>
+        <p className="mt-2" style={{ color: "rgba(245,241,230,0.7)" }}>Adventure Bakery internal team member</p>
       </div>
 
       {/* Identity & Role */}
