@@ -161,8 +161,8 @@ const FounderDashboard = () => {
       </div>
 
       <div className="relative">
-        <h1 className="text-4xl font-bold tracking-tight">Founder Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-4xl font-bold tracking-tight" style={{ color: "#F5F1E6" }}>Founder Dashboard</h1>
+        <p className="mt-2" style={{ color: "rgba(245,241,230,0.7)" }}>
           Your journey from kitchen to factory - track progress across all modules
         </p>
       </div>

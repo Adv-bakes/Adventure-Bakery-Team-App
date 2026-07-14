@@ -63,11 +63,11 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-accent flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2" style={{ color: "#F5F1E6" }}>
             <Users className="h-7 w-7 text-accent" />
             Customer Management
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1" style={{ color: "rgba(245,241,230,0.7)" }}>
             {clients.length} client{clients.length !== 1 ? "s" : ""} registered
           </p>
         </div>

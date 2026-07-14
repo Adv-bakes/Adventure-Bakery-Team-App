@@ -274,7 +274,7 @@ export default function ClientDetail() {
           <Link to="/team/dashboard"><ArrowLeft className="h-4 w-4 mr-1" /> Back</Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2" style={{ color: "#F5F1E6" }}>
             <Building2 className="h-7 w-7 text-accent" />
             {profile.business_name || "Unnamed Client"}
           </h1>
