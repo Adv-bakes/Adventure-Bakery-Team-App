@@ -10,15 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { LogOut, User, Shield, Building2, Phone, FileCheck, Briefcase, Save, KeyRound, Eye, EyeOff } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
-
-const DEPARTMENTS = [
-  "Production",
-  "Sourcing",
-  "Quality Control",
-  "Admin",
-  "R&D",
-  "Sales",
-];
+import { DEPARTMENTS } from "@/lib/training";
 
 interface StaffProfile {
   full_name: string;

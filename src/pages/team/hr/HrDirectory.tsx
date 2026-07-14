@@ -14,12 +14,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { UserSquare2, Search, ChevronRight, UserPlus, Copy, Check, Clock, Ban } from "lucide-react";
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
+import { DEPARTMENTS } from "@/lib/training";
 
 const TEAM_ROLES: AppRole[] = ["owner", "admin", "staff", "auditor"];
 const ROLE_LABEL: Record<string, string> = {
   owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor", user: "Client",
 };
-const DEPARTMENTS = ["Production", "Sourcing", "Quality Control", "Admin", "R&D", "Sales"];
 const NO_DEPT = "__none__";
 
 interface Member {

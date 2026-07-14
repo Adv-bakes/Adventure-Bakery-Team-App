@@ -11,8 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ArrowLeft, Save, User, Shield, Briefcase, Phone, FileCheck } from "lucide-react";
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
-
-const DEPARTMENTS = ["Production", "Sourcing", "Quality Control", "Admin", "R&D", "Sales"];
+import { DEPARTMENTS } from "@/lib/training";
 
 // Assignable roles. owner/admin are privileged grants — only an owner may set
 // them (mirrors the user_roles RLS escalation guard in 20260714000001).
