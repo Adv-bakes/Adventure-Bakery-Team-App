@@ -15,7 +15,7 @@ import { CoachChat } from "@/components/CoachChat";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface TeamLayoutProps { children: ReactNode; }
-interface NavItem { path: string; icon: React.ElementType; label: string; ownerOnly?: boolean; }
+interface NavItem { path: string; icon: React.ElementType; label: string; ownerOnly?: boolean; auditorOk?: boolean; }
 interface NavSection { title: string; items: NavItem[]; }
 
 const navSections: NavSection[] = [
@@ -34,23 +34,23 @@ const navSections: NavSection[] = [
     { path: "/team/ops/insights", icon: TrendingUp, label: "Insights" },
   ]},
   { title: "Compliance", items: [
-    { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library" },
-    { path: "/team/compliance/register", icon: Database, label: "Document Register" },
-    { path: "/team/compliance/records", icon: ClipboardList, label: "Form Records" },
+    { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library", auditorOk: true },
+    { path: "/team/compliance/register", icon: Database, label: "Document Register", auditorOk: true },
+    { path: "/team/compliance/records", icon: ClipboardList, label: "Form Records", auditorOk: true },
     { path: "/team/compliance/traceability", icon: ClipboardCheck, label: "Traceability" },
-    { path: "/team/compliance/temperature", icon: Thermometer, label: "Temperature Logs" },
+    { path: "/team/compliance/temperature", icon: Thermometer, label: "Temperature Logs", auditorOk: true },
     { path: "/team/compliance/certifications", icon: ShieldCheck, label: "Certifications" },
   ]},
   { title: "HR", items: [
     { path: "/team/hr/directory", icon: UserSquare2, label: "Team Directory" },
-    { path: "/team/hr/trainings", icon: GraduationCap, label: "Training & SOPs" },
-    { path: "/team/hr/traceability", icon: ListTodo, label: "Training Compliance" },
+    { path: "/team/hr/trainings", icon: GraduationCap, label: "Training & SOPs", auditorOk: true },
+    { path: "/team/hr/traceability", icon: ListTodo, label: "Training Compliance", auditorOk: true },
   ]},
   { title: "Internal", items: [
     { path: "/team/internal/email", icon: Inbox, label: "Email Inbox" },
     { path: "/team/internal/finance", icon: DollarSign, label: "Finance", ownerOnly: true },
     { path: "/team/sourcing", icon: Database, label: "Vendor DB" },
-    { path: "/team/account", icon: UserIcon, label: "My Account" },
+    { path: "/team/account", icon: UserIcon, label: "My Account", auditorOk: true },
     { path: "/team/settings", icon: Settings, label: "Settings" },
   ]},
 ];
@@ -60,8 +60,12 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const { role } = useUserRole();
+  const { roles, role } = useUserRole();
   const isOwner = role === "owner";
+  // Auditor (SQF contractor) is read-only and compliance-scoped; when it's the
+  // user's ONLY role, restrict the sidebar to the auditor-visible items. A user
+  // who also holds staff/admin keeps the full nav (roles union additively).
+  const isAuditorOnly = roles.length > 0 && roles.every((r) => r === "auditor");
   const [inboxCount, setInboxCount] = useState(0);
 
   useEffect(() => {
@@ -115,7 +119,11 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
 
         <ScrollArea className="flex-1 py-2">
           {navSections.map((section) => {
-            const items = section.items.filter((i) => !i.ownerOnly || isOwner);
+            const items = section.items.filter((i) => {
+              if (i.ownerOnly && !isOwner) return false;
+              if (isAuditorOnly && !i.auditorOk) return false;
+              return true;
+            });
             if (items.length === 0) return null;
             return (
               <div key={section.title} className="mb-1">

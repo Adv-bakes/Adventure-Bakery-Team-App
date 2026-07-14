@@ -1,15 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
+import { RefreshCw, AlertTriangle, Clock, CheckCircle2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { format, addDays } from "date-fns";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS,
   TrainingModule, TrainingAssignment, Employee,
   AssignmentStatus, getAssignmentStatus, isExpiringSoon, isOverdue,
   fetchTrainingModules, fetchTrainingAssignments, fetchEmployees,
+  assignModulesToEmployees,
 } from "@/lib/training";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
@@ -22,10 +32,19 @@ const STATUS_DOT: Record<AssignmentStatus, string> = {
 };
 
 export default function TrainingCompliance() {
+  const { hasRole } = useUserRole();
+  const isAdmin = hasRole("admin") || hasRole("owner");
   const [modules, setModules] = useState<TrainingModule[]>([]);
   const [assignments, setAssignments] = useState<TrainingAssignment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Manual assignment dialog (in addition to the automatic department sync).
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [selEmployees, setSelEmployees] = useState<Set<string>>(new Set());
+  const [selModules, setSelModules] = useState<Set<string>>(new Set());
+  const [dueDate, setDueDate] = useState(format(addDays(new Date(), 30), "yyyy-MM-dd"));
 
   const load = async () => {
     setLoading(true);
@@ -46,6 +65,39 @@ export default function TrainingCompliance() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const toggle = (set: Dispatch<SetStateAction<Set<string>>>, id: string) =>
+    set((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const handleAssign = async () => {
+    const empIds = [...selEmployees];
+    const mods = modules.filter((m) => selModules.has(m.id));
+    if (empIds.length === 0 || mods.length === 0) {
+      toast.error("Pick at least one employee and one module.");
+      return;
+    }
+    setAssigning(true);
+    try {
+      const created = await assignModulesToEmployees(empIds, mods, dueDate || null);
+      const skipped = empIds.length * mods.length - created;
+      toast.success(
+        `Assigned ${created} new module${created === 1 ? "" : "s"}` +
+        (skipped > 0 ? ` (${skipped} already assigned, left as-is).` : "."),
+      );
+      setAssignOpen(false);
+      setSelEmployees(new Set());
+      setSelModules(new Set());
+      await load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to assign training");
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const assignmentMap = useMemo(() => {
     const map = new Map<string, TrainingAssignment>();
@@ -90,9 +142,81 @@ export default function TrainingCompliance() {
             Who was trained on what, when, and what's coming due.
           </p>
         </div>
-        <Button variant="outline" onClick={load} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} />Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-[#C89B3C] hover:bg-[#B8892C] text-black">
+                  <UserPlus className="w-4 h-4 mr-1" />Assign Training
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Assign Training</DialogTitle>
+                  <DialogDescription>
+                    Hand-pick modules for specific people. This is in addition to automatic
+                    department-based assignment; already-assigned modules are left untouched.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label className="mb-2 block">Employees ({selEmployees.size})</Label>
+                    <ScrollArea className="h-56 rounded-md border p-2">
+                      {employees.length === 0 ? (
+                        <p className="text-sm text-muted-foreground p-2">No employees.</p>
+                      ) : employees.map((e) => (
+                        <label key={e.id} className="flex items-center gap-2 rounded px-1.5 py-1 hover:bg-muted/50 cursor-pointer">
+                          <Checkbox checked={selEmployees.has(e.id)} onCheckedChange={() => toggle(setSelEmployees, e.id)} />
+                          <span className="text-sm">{e.full_name || e.id}{e.department ? ` · ${e.department}` : ""}</span>
+                        </label>
+                      ))}
+                    </ScrollArea>
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">Modules ({selModules.size})</Label>
+                    <ScrollArea className="h-56 rounded-md border p-2">
+                      {modules.length === 0 ? (
+                        <p className="text-sm text-muted-foreground p-2">No active modules.</p>
+                      ) : modules.map((m) => (
+                        <label key={m.id} className="flex items-center gap-2 rounded px-1.5 py-1 hover:bg-muted/50 cursor-pointer">
+                          <Checkbox checked={selModules.has(m.id)} onCheckedChange={() => toggle(setSelModules, m.id)} />
+                          <span className="text-sm">
+                            <span className="font-mono text-xs mr-1">{m.module_number}</span>{m.title}
+                          </span>
+                        </label>
+                      ))}
+                    </ScrollArea>
+                  </div>
+                </div>
+
+                <div className="flex items-end gap-3">
+                  <div>
+                    <Label htmlFor="assign-due" className="mb-1 block">Due date</Label>
+                    <Input id="assign-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-44" />
+                  </div>
+                  <p className="text-xs text-muted-foreground pb-2.5">
+                    Annual-refresher modules recur every 12 months automatically.
+                  </p>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAssignOpen(false)} disabled={assigning}>Cancel</Button>
+                  <Button
+                    onClick={handleAssign}
+                    disabled={assigning || selEmployees.size === 0 || selModules.size === 0}
+                    className="bg-[#C89B3C] hover:bg-[#B8892C] text-black"
+                  >
+                    {assigning ? "Assigning…" : `Assign ${selEmployees.size * selModules.size || ""}`.trim()}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+          <Button variant="outline" onClick={load} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} />Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Alerts */}
