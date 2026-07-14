@@ -59,6 +59,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
+  const [fullName, setFullName] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const { roles, role } = useUserRole();
   const isOwner = role === "owner";
@@ -79,6 +80,19 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Fetch the display name for the sidebar identity chip.
+  useEffect(() => {
+    if (!user?.id) { setFullName(""); return; }
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => { if (!cancelled) setFullName(data?.full_name || ""); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +115,16 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   };
 
   if (!user) return null;
+
+  const ROLE_LABEL: Record<string, string> = {
+    owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor", user: "Client",
+  };
+  const displayName = fullName || user.email || "Signed in";
+  const initials = (fullName
+    ? fullName.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("")
+    : (user.email?.[0] ?? "?")
+  ).toUpperCase();
+  const roleLabel = ROLE_LABEL[role] ?? role;
 
   return (
     <div className={`team-portal team-portal-bg min-h-screen flex ${collapsed ? "" : ""}`}>
@@ -156,6 +180,25 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
         </ScrollArea>
 
         <div className="p-2 space-y-1 shrink-0 border-t border-[hsl(var(--tp-hairline))]">
+          {/* Identity chip — always shows who is signed in. Links to My Account. */}
+          <Link
+            to="/team/account"
+            title={collapsed ? `${displayName} · ${roleLabel}` : undefined}
+            className={`flex items-center gap-2.5 rounded-md px-2 py-2 mb-1 hover:bg-white/5 transition-colors ${collapsed ? "justify-center" : ""}`}
+          >
+            <span
+              className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full text-[11px] font-semibold text-black"
+              style={{ background: "hsl(var(--tp-gold))" }}
+            >
+              {initials}
+            </span>
+            {!collapsed && (
+              <span className="leading-tight min-w-0">
+                <span className="block text-[13px] font-medium text-white truncate">{displayName}</span>
+                <span className="block text-[11px] text-[hsl(44_30%_65%)] truncate">{roleLabel}</span>
+              </span>
+            )}
+          </Link>
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="tp-nav-item w-[calc(100%-16px)] text-left"
