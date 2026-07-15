@@ -84,7 +84,7 @@ function GridCell({ column, value, onChange, disabled }: {
     default:
       return (
         <DictationTextarea
-          className="min-h-[32px] text-xs py-1.5 px-2 leading-snug resize-y break-words"
+          className="min-h-[32px] text-xs py-1.5 px-2 leading-snug break-words"
           rows={1}
           value={value}
           disabled={disabled}

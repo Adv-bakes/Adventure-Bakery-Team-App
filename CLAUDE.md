@@ -364,8 +364,8 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   is fully dynamic.
 - **Dictation & AI cleanup on every filler-facing textarea:** `DictationTextarea.tsx` wraps both the scalar
   `textarea` field type (`FormFieldInput.tsx`) and free-text grid cells (`GridFieldInput.tsx`'s default
-  column type) with a mic button (Web Speech API `SpeechRecognition`, continuous/final-results-only,
-  appends onto the existing value) and a gold Sparkles **AI cleanup** button (edge function
+  column type) with a mic button (Web Speech API `SpeechRecognition`, continuous, appends onto the
+  existing value) and a gold Sparkles **AI cleanup** button (edge function
   `cleanup-form-text` — fixes grammar/punctuation/capitalization/filler words into one clear statement,
   preserving every fact/name/quantity exactly). The mic button only renders when the browser exposes
   `SpeechRecognition` (checked once at module load); the AI button always renders since it's a server call,
@@ -373,6 +373,23 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   successful cleanup a small "AI cleanup applied — **Undo**" chip floats over the textarea's bottom-right
   corner for 8s (or until further edits, which clear it) — clicking Undo restores the pre-cleanup text
   exactly, via a `valueRef` snapshot taken before the AI call.
+  - **Auto-grow (tablet legibility):** the textarea fits its own content instead of clipping — these are
+    filled walking the floor on a tablet, where a value wrapping to a second line is unreadable in a
+    one-row grid cell and the resize grip isn't a usable affordance (so `resize-none`, and `resize-y` is
+    gone from the grid cell's class). `fitToContent()` collapses to `auto` then sets `scrollHeight` +
+    border (border-box counts it, `scrollHeight` excludes it), in a `useLayoutEffect` on value/interim
+    change. Two extra triggers exist because both are invisible to the obvious one: a **`ResizeObserver`
+    gated on width only** (rotation/column resize rewrap the text; reacting to height would loop, since it
+    observes the element whose height it sets), and a **`document.fonts.ready` re-fit** (a web font
+    swapping in after first paint rewraps the text *without* changing the observed box, so nothing else
+    fires — this was a real clipped-cell bug, not a hypothetical). `min-h-*` still floors the height, so
+    empty cells stay compact.
+  - **Interim dictation results:** `interimResults = true`; provisional words render composited into the
+    box (`value` + interim) so the text is confirmable *while speaking* rather than after — the previous
+    final-results-only mode showed nothing until you stopped, into a 32px box you couldn't read. The
+    interim is display-only and never enters the form value: the textarea is `readOnly` while `listening`
+    (a keystroke would otherwise commit the provisional transcript as typed), and interim is cleared on
+    stop/end/error, so stopping mid-phrase discards it and keeps only what finalized.
 - **Entry attachments (files/photos):** every fillable entry gets a built-in **Attachments** section at the
   bottom (`ResponseAttachments.tsx`, wired into `FormEntry.tsx` — not a schema-authored field, nothing to
   drag in via "Add Field"), present by default and admin-toggleable per form via
