@@ -23,13 +23,36 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [prfTpl, setPrfTpl] = useState<ActiveTemplate | null>(null);
+  const [existingLead, setExistingLead] = useState<{ id: string; company_name: string | null; contact_name: string | null } | null>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
 
   useEffect(() => {
     if (open) fetchActiveTemplates().then(t => setPrfTpl(t.prf_template));
   }, [open]);
 
   const reset = () => {
-    setCompany(""); setContact(""); setEmail(""); setProduct(""); setFile(null);
+    setCompany(""); setContact(""); setEmail(""); setProduct(""); setFile(null); setExistingLead(null);
+  };
+
+  // Same client-matching the PRF trigger uses (by email) — surfaced here so
+  // staff see right away that this deal will land on an existing folder
+  // instead of creating a duplicate, and so we don't blank out good data
+  // already on file.
+  const checkExistingClient = async () => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) { setExistingLead(null); return; }
+    setCheckingEmail(true);
+    const { data } = await (supabase as any)
+      .from("sales_leads")
+      .select("id, company_name, contact_name")
+      .ilike("email", trimmed)
+      .maybeSingle();
+    setCheckingEmail(false);
+    setExistingLead(data || null);
+    if (data) {
+      if (!company.trim() && data.company_name) setCompany(data.company_name);
+      if (!contact.trim() && data.contact_name) setContact(data.contact_name);
+    }
   };
 
   const submit = async () => {
@@ -38,9 +61,11 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
 
     setBusy(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-
       // Insert PRF submission first to get id
+      // owner_user_id intentionally left null here — this is a staff member
+      // manually logging a deal, not a real client portal account. Stamping
+      // the staff member's own id would make sales_leads.profile_id collide
+      // with every other deal that staffer manually adds.
       const { data: prf, error: prfErr } = await (supabase as any)
         .from("prf_submissions")
         .insert({
@@ -53,7 +78,7 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
           sales_stage: "Lead In",
           sales_stage_updated_at: new Date().toISOString(),
           submitted_at: new Date().toISOString(),
-          owner_user_id: user?.id ?? null,
+          owner_user_id: null,
         })
         .select("id")
         .single();
@@ -108,10 +133,26 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
               <Input id="ad-contact" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="Jane Doe" />
             </div>
           </div>
+          {checkingEmail && (
+            <p className="text-xs text-muted-foreground">Checking for an existing client…</p>
+          )}
+          {existingLead && (
+            <p className="text-xs rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
+              Existing client found{existingLead.company_name ? ` — ${existingLead.company_name}` : ""}
+              {existingLead.contact_name ? ` (${existingLead.contact_name})` : ""}. This deal will be added to their folder, not a new one.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="ad-email">Email *</Label>
-              <Input id="ad-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@acme.com" />
+              <Input
+                id="ad-email"
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setExistingLead(null); }}
+                onBlur={checkExistingClient}
+                placeholder="jane@acme.com"
+              />
             </div>
             <div>
               <Label htmlFor="ad-product">Product name</Label>

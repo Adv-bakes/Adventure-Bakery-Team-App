@@ -46,12 +46,13 @@ Deno.serve(async (req) => {
       .upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
     if (upErr) console.warn("PSS PDF upload failed:", upErr.message);
 
-    // Insert client_documents row. user_id is text in this table; use lead_id for keying.
-    const ownerUserId = row.profile_id || row.lead_id;
+    // Key by lead_id (always present, always unique) rather than profile_id
+    // (only meaningful once the client has a real portal account).
     const documentId = crypto.randomUUID();
     await admin.from("client_documents").insert({
       id: documentId,
-      user_id: ownerUserId,
+      lead_id: row.lead_id,
+      user_id: row.profile_id || null,
       document_type: "pss",
       file_name: fileName,
       file_path: filePath,

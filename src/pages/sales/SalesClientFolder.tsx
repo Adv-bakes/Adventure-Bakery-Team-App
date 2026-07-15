@@ -662,11 +662,11 @@ const SalesClientFolder = () => {
     setProjects(all.filter(p => !isApproved(p)));
     setProducts(all.filter(isApproved));
 
-    if (l?.profile_id) {
-      const { data: d } = await supabase
+    if (l?.id) {
+      const { data: d } = await (supabase as any)
         .from("client_documents")
         .select("*")
-        .eq("user_id", l.profile_id)
+        .eq("lead_id", l.id)
         .order("uploaded_at", { ascending: false });
       setDocs(d ?? []);
     } else {

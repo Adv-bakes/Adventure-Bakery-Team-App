@@ -34,9 +34,9 @@ const SalesDocumentsInbox = () => {
         .select("id, product_name, company_name, founder_name, email, phone, status, created_at")
         .in("status", ["new", "reviewing"])
         .order("created_at", { ascending: false }),
-      supabase
+      (supabase as any)
         .from("client_documents")
-        .select("id, document_type, file_name, file_path, uploaded_at, user_id, review_status, review_notes")
+        .select("id, document_type, file_name, file_path, uploaded_at, user_id, lead_id, review_status, review_notes")
         .or("document_type.eq.nda,document_type.eq.NDA,document_type.eq.pss,document_type.eq.PSS")
         .in("review_status", ["pending", "ai_passed", "ai_flagged"])
         .order("uploaded_at", { ascending: false }),
@@ -46,16 +46,16 @@ const SalesDocumentsInbox = () => {
 
     // Enrich docs with lead/company info
     const docs = docRes.data || [];
-    const userIds = Array.from(new Set(docs.map((d) => d.user_id).filter(Boolean)));
+    const leadIds = Array.from(new Set(docs.map((d: any) => d.lead_id).filter(Boolean)));
     let leadMap: Record<string, any> = {};
-    if (userIds.length > 0) {
+    if (leadIds.length > 0) {
       const { data: leads } = await (supabase as any)
         .from("sales_leads")
-        .select("profile_id, company_name, contact_name, email")
-        .in("profile_id", userIds);
-      leadMap = Object.fromEntries((leads || []).map((l: any) => [l.profile_id, l]));
+        .select("id, company_name, contact_name, email")
+        .in("id", leadIds);
+      leadMap = Object.fromEntries((leads || []).map((l: any) => [l.id, l]));
     }
-    setDocRows(docs.map((d) => ({ ...d, lead: leadMap[d.user_id || ""] || null })));
+    setDocRows(docs.map((d: any) => ({ ...d, lead: leadMap[d.lead_id || ""] || null })));
     setLoading(false);
   };
 

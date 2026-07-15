@@ -168,6 +168,36 @@ export type Database = {
           },
         ]
       }
+      batch_measuring_sessions_bak: {
+        Row: {
+          batch_ids: string[] | null
+          batch_sheet_id: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          order_id: string | null
+          session_date: string | null
+        }
+        Insert: {
+          batch_ids?: string[] | null
+          batch_sheet_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          order_id?: string | null
+          session_date?: string | null
+        }
+        Update: {
+          batch_ids?: string[] | null
+          batch_sheet_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string | null
+          order_id?: string | null
+          session_date?: string | null
+        }
+        Relationships: []
+      }
       batch_sheets: {
         Row: {
           client_user_id: string | null
@@ -221,6 +251,63 @@ export type Database = {
           superseded_by_version?: number | null
           updated_at?: string
           version?: number
+          xlsx_path?: string | null
+        }
+        Relationships: []
+      }
+      batch_sheets_bak: {
+        Row: {
+          client_user_id: string | null
+          concept_id: number | null
+          created_at: string | null
+          data_json: Json | null
+          generated_from: string | null
+          id: string | null
+          last_edited_by: string | null
+          lead_id: string | null
+          pss_document_id: string | null
+          source_change: string | null
+          status: string | null
+          superseded_at: string | null
+          superseded_by_version: number | null
+          updated_at: string | null
+          version: number | null
+          xlsx_path: string | null
+        }
+        Insert: {
+          client_user_id?: string | null
+          concept_id?: number | null
+          created_at?: string | null
+          data_json?: Json | null
+          generated_from?: string | null
+          id?: string | null
+          last_edited_by?: string | null
+          lead_id?: string | null
+          pss_document_id?: string | null
+          source_change?: string | null
+          status?: string | null
+          superseded_at?: string | null
+          superseded_by_version?: number | null
+          updated_at?: string | null
+          version?: number | null
+          xlsx_path?: string | null
+        }
+        Update: {
+          client_user_id?: string | null
+          concept_id?: number | null
+          created_at?: string | null
+          data_json?: Json | null
+          generated_from?: string | null
+          id?: string | null
+          last_edited_by?: string | null
+          lead_id?: string | null
+          pss_document_id?: string | null
+          source_change?: string | null
+          status?: string | null
+          superseded_at?: string | null
+          superseded_by_version?: number | null
+          updated_at?: string | null
+          version?: number | null
           xlsx_path?: string | null
         }
         Relationships: []
@@ -288,6 +375,7 @@ export type Database = {
           file_name: string | null
           file_path: string | null
           id: string | null
+          lead_id: string | null
           notes: string | null
           review_notes: Json | null
           review_status: string | null
@@ -302,6 +390,7 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           id?: string | null
+          lead_id?: string | null
           notes?: string | null
           review_notes?: Json | null
           review_status?: string | null
@@ -316,6 +405,7 @@ export type Database = {
           file_name?: string | null
           file_path?: string | null
           id?: string | null
+          lead_id?: string | null
           notes?: string | null
           review_notes?: Json | null
           review_status?: string | null
@@ -325,7 +415,15 @@ export type Database = {
           uploaded_by?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sales_leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_invitations: {
         Row: {
@@ -1342,6 +1440,36 @@ export type Database = {
           },
         ]
       }
+      order_stage_events_bak: {
+        Row: {
+          completed_by: string | null
+          created_at: string | null
+          entered_at: string | null
+          exited_at: string | null
+          id: string | null
+          order_id: string | null
+          stage: string | null
+        }
+        Insert: {
+          completed_by?: string | null
+          created_at?: string | null
+          entered_at?: string | null
+          exited_at?: string | null
+          id?: string | null
+          order_id?: string | null
+          stage?: string | null
+        }
+        Update: {
+          completed_by?: string | null
+          created_at?: string | null
+          entered_at?: string | null
+          exited_at?: string | null
+          id?: string | null
+          order_id?: string | null
+          stage?: string | null
+        }
+        Relationships: []
+      }
       order_station_logs: {
         Row: {
           completed_at: string | null
@@ -1382,6 +1510,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      order_station_logs_bak: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string | null
+          inputs: Json | null
+          order_id: string | null
+          started_at: string | null
+          station: string | null
+          worker_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          inputs?: Json | null
+          order_id?: string | null
+          started_at?: string | null
+          station?: string | null
+          worker_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string | null
+          inputs?: Json | null
+          order_id?: string | null
+          started_at?: string | null
+          station?: string | null
+          worker_id?: string | null
+        }
+        Relationships: []
       }
       packaging: {
         Row: {
@@ -2073,6 +2234,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      production_orders_bak: {
+        Row: {
+          batch_count: number | null
+          batch_size_lbs: number | null
+          case_count: number | null
+          client_id: string | null
+          created_at: string | null
+          created_by: string | null
+          deposit_confirmed_at: string | null
+          deposit_confirmed_by: string | null
+          id: string | null
+          items: Json | null
+          material_calc_json: Json | null
+          notes: string | null
+          order_number: string | null
+          order_type: string | null
+          payment_status: string | null
+          product_id: string | null
+          qb_estimate_accepted_at: string | null
+          qb_estimate_sent_at: string | null
+          schedule_confirmed: boolean | null
+          scheduled_date: string | null
+          ship_to_kind: string | null
+          ship_to_warehouse_id: string | null
+          status: string | null
+          target_completion_date: string | null
+          waste_pct: number | null
+        }
+        Insert: {
+          batch_count?: number | null
+          batch_size_lbs?: number | null
+          case_count?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deposit_confirmed_at?: string | null
+          deposit_confirmed_by?: string | null
+          id?: string | null
+          items?: Json | null
+          material_calc_json?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          order_type?: string | null
+          payment_status?: string | null
+          product_id?: string | null
+          qb_estimate_accepted_at?: string | null
+          qb_estimate_sent_at?: string | null
+          schedule_confirmed?: boolean | null
+          scheduled_date?: string | null
+          ship_to_kind?: string | null
+          ship_to_warehouse_id?: string | null
+          status?: string | null
+          target_completion_date?: string | null
+          waste_pct?: number | null
+        }
+        Update: {
+          batch_count?: number | null
+          batch_size_lbs?: number | null
+          case_count?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deposit_confirmed_at?: string | null
+          deposit_confirmed_by?: string | null
+          id?: string | null
+          items?: Json | null
+          material_calc_json?: Json | null
+          notes?: string | null
+          order_number?: string | null
+          order_type?: string | null
+          payment_status?: string | null
+          product_id?: string | null
+          qb_estimate_accepted_at?: string | null
+          qb_estimate_sent_at?: string | null
+          schedule_confirmed?: boolean | null
+          scheduled_date?: string | null
+          ship_to_kind?: string | null
+          ship_to_warehouse_id?: string | null
+          status?: string | null
+          target_completion_date?: string | null
+          waste_pct?: number | null
+        }
+        Relationships: []
       }
       products: {
         Row: {

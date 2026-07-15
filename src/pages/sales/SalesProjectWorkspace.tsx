@@ -75,11 +75,11 @@ const SalesProjectWorkspace = () => {
       setPrf(prfRes.data);
       setLead(leadRes.data);
 
-      if (leadRes.data?.profile_id) {
-        const { data: docs } = await supabase
+      if (leadId) {
+        const { data: docs } = await (supabase as any)
           .from("client_documents")
           .select("*")
-          .eq("user_id", leadRes.data.profile_id)
+          .eq("lead_id", leadId)
           .order("uploaded_at", { ascending: false });
         const pssDoc = (docs || []).find((d) => (d.document_type || "").toLowerCase() === "pss" && d.review_status === "approved")
           || (docs || []).find((d) => (d.document_type || "").toLowerCase() === "pss");
@@ -107,11 +107,11 @@ const SalesProjectWorkspace = () => {
   useEffect(() => { fetchActiveTemplates().then(setTemplates); }, []);
 
   const refreshDocs = async () => {
-    if (!lead?.profile_id) return;
-    const { data: docs } = await supabase
+    if (!lead?.id) return;
+    const { data: docs } = await (supabase as any)
       .from("client_documents")
       .select("*")
-      .eq("user_id", lead.profile_id)
+      .eq("lead_id", lead.id)
       .order("uploaded_at", { ascending: false });
     const pssDoc = (docs || []).find((d) => (d.document_type || "").toLowerCase() === "pss" && d.review_status === "approved")
       || (docs || []).find((d) => (d.document_type || "").toLowerCase() === "pss");
@@ -122,11 +122,11 @@ const SalesProjectWorkspace = () => {
   };
 
   const uploadDoc = async (kind: "pss" | "nda", file: File) => {
-    if (!lead?.profile_id) return toast.error("This lead has no client profile yet — cannot attach documents.");
+    if (!lead?.id) return toast.error("Lead not found — cannot attach documents.");
     setUploadingKind(kind);
     try {
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${lead.profile_id}/${kind}/${Date.now()}-${safe}`;
+      const path = `${lead.profile_id || lead.id}/${kind}/${Date.now()}-${safe}`;
       const { error: upErr } = await supabase.storage
         .from("product-spec-sheets")
         .upload(path, file, { contentType: file.type || undefined, upsert: false });
@@ -134,7 +134,8 @@ const SalesProjectWorkspace = () => {
       const { data: u } = await supabase.auth.getUser();
       const { error: insErr } = await (supabase as any).from("client_documents").insert({
         id: crypto.randomUUID(),
-        user_id: lead.profile_id,
+        lead_id: lead.id,
+        user_id: lead.profile_id || null,
         uploaded_by: u.user?.id || null,
         document_type: kind,
         file_path: path,

@@ -31,7 +31,7 @@ const SalesPipeline = () => {
     if (error) toast.error(error.message);
 
     const emails = (leads || []).map((l: any) => l.email.toLowerCase());
-    const profileIds = (leads || []).map((l: any) => l.profile_id).filter(Boolean);
+    const leadIds = (leads || []).map((l: any) => l.id).filter(Boolean);
 
     let prfMap: Record<string, boolean> = {};
     let docMap: Record<string, { nda: boolean; pss: boolean }> = {};
@@ -43,13 +43,14 @@ const SalesPipeline = () => {
         .in("email", emails);
       (prfs || []).forEach((p: any) => { if (p.email) prfMap[p.email.toLowerCase()] = true; });
     }
-    if (profileIds.length) {
-      const { data: docs } = await supabase
+    if (leadIds.length) {
+      const { data: docs } = await (supabase as any)
         .from("client_documents")
-        .select("user_id, document_type")
-        .in("user_id", profileIds as any);
+        .select("lead_id, document_type")
+        .in("lead_id", leadIds);
       (docs || []).forEach((d: any) => {
-        const m = (docMap[d.user_id] ||= { nda: false, pss: false });
+        if (!d.lead_id) return;
+        const m = (docMap[d.lead_id] ||= { nda: false, pss: false });
         const t = (d.document_type || "").toLowerCase();
         if (t.includes("nda")) m.nda = true;
         if (t.includes("pss") || t.includes("spec")) m.pss = true;
@@ -64,8 +65,8 @@ const SalesPipeline = () => {
       stage: l.stage,
       stage_updated_at: l.stage_updated_at,
       has_prf: prfMap[l.email.toLowerCase()] || false,
-      has_nda: l.profile_id ? docMap[l.profile_id]?.nda || false : false,
-      has_pss: l.profile_id ? docMap[l.profile_id]?.pss || false : false,
+      has_nda: docMap[l.id]?.nda || false,
+      has_pss: docMap[l.id]?.pss || false,
     })));
 
     const { count } = await supabase

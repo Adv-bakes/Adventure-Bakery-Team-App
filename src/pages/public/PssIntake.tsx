@@ -87,7 +87,7 @@ const PssIntake = () => {
       if (upErr) throw upErr;
       const { error: insErr } = await (supabase as any).from("client_documents").insert({
         id: crypto.randomUUID(),
-        user_id: info.lead_id,
+        lead_id: info.lead_id,
         document_type: "nda",
         file_name: file.name,
         file_path: path,

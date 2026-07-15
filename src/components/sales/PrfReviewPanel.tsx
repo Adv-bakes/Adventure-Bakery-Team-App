@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { X } from "lucide-react";
+import { generatePrfPdf } from "@/lib/prfPdf";
 
 interface Props {
   prfId: string | null;
@@ -27,15 +28,16 @@ export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
 
   if (!prfId) return null;
 
-  const downloadJson = () => {
-    if (!prf) return;
-    const blob = new Blob([JSON.stringify(prf, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `prf-${prf.company_name || prf.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const [downloading, setDownloading] = useState(false);
+
+  const downloadPdf = async () => {
+    if (!prf || downloading) return;
+    setDownloading(true);
+    try {
+      await generatePrfPdf(prf);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const Field = ({ label, value }: { label: string; value: any }) => {
@@ -64,7 +66,9 @@ export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={downloadJson} className="tp-btn">Download</button>
+            <button onClick={downloadPdf} disabled={downloading} className="tp-btn">
+              {downloading ? "Preparing…" : "Download"}
+            </button>
             <button onClick={onClose} className="tp-btn" aria-label="Close"><X className="w-4 h-4" /></button>
           </div>
         </div>
