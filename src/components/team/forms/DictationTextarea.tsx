@@ -21,6 +21,7 @@ interface DictationTextareaProps {
   disabled?: boolean;
   rows?: number;
   className?: string;
+  placeholder?: string;
   /** Smaller icons/inset for grid cells. */
   compact?: boolean;
 }
@@ -41,7 +42,7 @@ interface DictationTextareaProps {
  * affordance. Dictation shows interim results as they are recognized, so the
  * text can be confirmed while speaking rather than after.
  */
-export function DictationTextarea({ value, onChange, onBlur, disabled, rows, className, compact }: DictationTextareaProps) {
+export function DictationTextarea({ value, onChange, onBlur, disabled, rows, className, placeholder, compact }: DictationTextareaProps) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [cleaning, setCleaning] = useState(false);
@@ -197,6 +198,7 @@ export function DictationTextarea({ value, onChange, onBlur, disabled, rows, cla
         onBlur={onBlur}
         disabled={disabled}
         rows={rows}
+        placeholder={placeholder}
         className={cn(
           "resize-none overflow-hidden",
           (showMic || showAi) && (compact ? "pr-11" : "pr-14"),

@@ -35,6 +35,8 @@ export interface ResponseAttachment {
   size?: number;
   uploadedAt: string;
   uploadedBy: string;
+  /** What the photo/file shows — a camera filename says nothing on its own. */
+  note?: string;
 }
 
 export interface HistorySnapshot {

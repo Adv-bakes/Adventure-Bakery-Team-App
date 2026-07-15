@@ -10,7 +10,7 @@ import {
   formatFieldValue,
   type FormSchema, type GridField, type GridRowValue, type InfoField, type ReportColumn,
 } from "@/lib/formSchema";
-import type { FormResponse } from "@/lib/formResponses";
+import { getResponseAttachmentUrl, type FormResponse, type ResponseAttachment } from "@/lib/formResponses";
 
 const dash = "—";
 const show = (v?: string | null) => (v && String(v).trim() ? String(v).trim() : dash);
@@ -32,6 +32,89 @@ interface FormPdfDoc {
   revision?: string | null;
   effective_date?: string | null;
   approved_by?: string | null;
+}
+
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|heic|heif)$/i;
+
+const isImageAttachment = (a: ResponseAttachment) =>
+  a.contentType ? a.contentType.startsWith("image/") : IMAGE_EXT.test(a.name);
+
+// A phone photo is ~4000px wide; embedding the original bytes turns a
+// five-photo entry into a PDF too large to email. 1000px still resolves
+// handwriting and a damaged seal at the printed size below.
+const MAX_IMAGE_PX = 1000;
+const IMAGE_QUALITY = 0.75;
+/** Printed bounds in points — fits within the 504pt content width. */
+const IMAGE_FIT: [number, number] = [420, 300];
+
+/**
+ * Signed URL → downscaled JPEG data URL for pdfmake. Returns null on any
+ * failure (expired URL, network, or a format the browser cannot decode —
+ * iPhone HEIC being the common one), so a photo that will not embed degrades
+ * to its caption rather than losing the whole export.
+ *
+ * Decoding via fetch+createImageBitmap (not <img src>) keeps the canvas
+ * untainted, so toDataURL is allowed on the cross-origin storage bytes.
+ */
+async function loadAttachmentImage(path: string): Promise<string | null> {
+  let bitmap: ImageBitmap | undefined;
+  try {
+    const res = await fetch(await getResponseAttachmentUrl(path));
+    if (!res.ok) return null;
+    bitmap = await createImageBitmap(await res.blob());
+    const scale = Math.min(1, MAX_IMAGE_PX / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", IMAGE_QUALITY);
+  } catch {
+    return null;
+  } finally {
+    bitmap?.close();
+  }
+}
+
+/**
+ * "Attachments" section for the entry PDF: each photo embedded under its
+ * filename, upload time, and note. Non-images (a supplier CofA PDF) and
+ * images that would not decode are listed by caption only — the record still
+ * states what was attached. Each item is unbreakable so a photo never splits
+ * from the note explaining it.
+ */
+async function attachmentsSection(attachments: ResponseAttachment[]): Promise<Content[]> {
+  if (!attachments.length) return [];
+
+  const images = await Promise.all(
+    attachments.map(a => (isImageAttachment(a) ? loadAttachmentImage(a.path) : Promise.resolve(null))),
+  );
+
+  const out: Content[] = [{
+    text: `Attachments (${attachments.length})`,
+    bold: true, color: PDF_GOLD, fontSize: 11, margin: [0, 12, 0, 4],
+  }];
+
+  attachments.forEach((a, i) => {
+    const image = images[i];
+    const stack: Content[] = [
+      { text: a.name, bold: true, fontSize: 9 },
+      { text: `Attached ${fmtDate(a.uploadedAt)}`, fontSize: 8, color: "#555555" },
+    ];
+    if (a.note) stack.push({ text: a.note, fontSize: 9, margin: [0, 2, 0, 0] });
+    if (image) {
+      stack.push({ image, fit: IMAGE_FIT, margin: [0, 4, 0, 0] });
+    } else if (isImageAttachment(a)) {
+      stack.push({
+        text: "(image could not be embedded — see the entry in the app)",
+        fontSize: 8, italics: true, color: "#B45309", margin: [0, 2, 0, 0],
+      });
+    }
+    out.push({ stack, unbreakable: true, margin: [0, 0, 0, 10] });
+  });
+
+  return out;
 }
 
 /**
@@ -158,6 +241,8 @@ export async function generateFormResponsePdf(
       }
     }
   }
+
+  body.push(...(await attachmentsSection(response.attachments ?? [])));
 
   // Closing audit line.
   body.push({
