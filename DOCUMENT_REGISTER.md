@@ -35,9 +35,16 @@ convention fixes both.
 ### Exception: SOPs are numbered by SQF clause (on purpose)
 
 Standard Operating Procedures use a **second, deliberate scheme**: the number is the SQF clause the
-procedure implements — `SOP-2.3.1` (New Product & Specification), `SOP-11.7.5` (Glass & Brittle
+procedure implements — `SOP-2.3.1` (New Product & Specification), `SOP-11.7.3` (Glass & Brittle
 Plastic), etc. This is kept intentionally so an auditor can jump from a clause straight to the SOP
 that satisfies it. The trade-off (clause numbers shift between SQF editions) is accepted for SOPs.
+
+The flip side of that trade-off: a wrong number points the auditor at a clause that doesn't exist.
+Glass & Brittle Plastic was `SOP-11.7.5` until 2026-07-15, but glass sits at **11.7.3** in Edition 9
+(11.7.4 is Detection of Foreign Objects; there is no 11.7.5) — renumbered to `SOP-11.7.3` in
+migration `20260715000001…`, prior id preserved in `legacy_sop_number`. When adding or renumbering a
+clause-scheme SOP, verify the clause actually exists in `src/lib/sqfFoodClauses.ts` /
+`src/lib/sqfClauses.ts` first, and keep it consistent with the row's own `sqf_reference`.
 Tooling recognizes this scheme: `parseClauseNumber()` in `docNumber.ts` validates it (no format
 warning), and the Document Register lists these SOPs under **"SOPs (numbered by SQF clause)"** rather
 than by process stage. **Forms, manuals (FSQM), and policies use the stage-block scheme above.**
