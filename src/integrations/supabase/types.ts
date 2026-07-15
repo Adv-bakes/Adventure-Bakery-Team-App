@@ -1,4 +1,3 @@
-Initialising login role...
 export type Json =
   | string
   | number
@@ -2399,6 +2398,7 @@ export type Database = {
           job_title: string | null
           location: string | null
           phone: string | null
+          preferred_language: string | null
           product_type: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           sales_stage: string | null
@@ -2427,6 +2427,7 @@ export type Database = {
           job_title?: string | null
           location?: string | null
           phone?: string | null
+          preferred_language?: string | null
           product_type?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           sales_stage?: string | null
@@ -2455,6 +2456,7 @@ export type Database = {
           job_title?: string | null
           location?: string | null
           phone?: string | null
+          preferred_language?: string | null
           product_type?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           sales_stage?: string | null

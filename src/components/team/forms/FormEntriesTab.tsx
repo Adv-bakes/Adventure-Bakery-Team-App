@@ -1,0 +1,176 @@
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Camera, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { formatFieldValue, getFormSchema, instanceTitle, listFields } from "@/lib/formSchema";
+import { createResponse, fetchProfileNames, fetchResponses, shortUserId, type FormResponse } from "@/lib/formResponses";
+import { useUserRole } from "@/hooks/useUserRole";
+
+const statusBadge: Record<string, string> = {
+  draft: "bg-[#C89B3C]/20 text-[#9A6F1E] border-[#C89B3C]/40",
+  submitted: "bg-green-500/20 text-green-700",
+};
+
+interface FormEntriesTabProps {
+  doc: {
+    id: string;
+    sop_number: string | null;
+    revision: string | null;
+    content: any;
+  };
+}
+
+/**
+ * The drawer's Entries tab: this form's filled instances plus "New Entry".
+ * Row click opens the dedicated entry editor route (view/edit happens there;
+ * deletion too — some forms are non-deletable per settings.deletable).
+ */
+export function FormEntriesTab({ doc }: FormEntriesTabProps) {
+  const navigate = useNavigate();
+  const [entries, setEntries] = useState<FormResponse[]>([]);
+  const [names, setNames] = useState<Map<string, string>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const schema = getFormSchema(doc.content);
+  const extraColumns = schema ? listFields(schema) : [];
+  // Auditors (SQF contractors) are read-only: they can view entries but never
+  // create them. Staff/admin/owner may fill. RLS also blocks auditor inserts.
+  const { hasRole } = useUserRole();
+  const canFill = hasRole("staff") || hasRole("admin") || hasRole("owner");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchResponses(doc.id)
+      .then(async rows => {
+        if (cancelled) return;
+        setEntries(rows);
+        const map = await fetchProfileNames(rows.map(r => r.created_by));
+        if (!cancelled) setNames(map);
+      })
+      .catch((e: any) => toast.error(e.message ?? "Failed to load entries"))
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [doc.id]);
+
+  const newEntry = async () => {
+    setCreating(true);
+    try {
+      const response = await createResponse(doc);
+      navigate(`/team/compliance/forms/${doc.id}/entries/${response.id}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to create entry");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // "New from Photo": create a fresh entry and hand the selected page image(s)
+  // to the entry editor via router state, which runs the same review-first
+  // scan-and-fill flow there. The picker opens on this click (live user
+  // gesture), so the files are captured before the async create/navigate.
+  const newEntryFromPhoto = async (files: FileList) => {
+    setCreating(true);
+    try {
+      const response = await createResponse(doc);
+      navigate(`/team/compliance/forms/${doc.id}/entries/${response.id}`, {
+        state: { scanFiles: Array.from(files) },
+      });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to create entry");
+    } finally {
+      setCreating(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {loading ? "Loading entries…" : `${entries.length} entr${entries.length === 1 ? "y" : "ies"} recorded`}
+        </p>
+        {canFill && (
+          <div className="flex items-center gap-2">
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={e => { if (e.target.files?.length) newEntryFromPhoto(e.target.files); }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={creating || !schema}
+            >
+              <Camera className="w-3.5 h-3.5 mr-1" />New from Photo
+            </Button>
+            <Button type="button" size="sm" onClick={newEntry} disabled={creating || !schema} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+              <Plus className="w-3.5 h-3.5 mr-1" />{creating ? "Creating…" : "New Entry"}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {!loading && entries.length === 0 ? (
+        <div className="rounded-md border border-dashed p-6 text-center text-sm text-[#2A1F0E]/75" style={{ borderColor: "rgba(200,155,60,0.4)" }}>
+          {canFill ? "No entries yet. Click New Entry to fill this form out for the first time." : "No entries recorded yet."}
+        </div>
+      ) : entries.length > 0 && (
+        <div className="rounded-md border overflow-hidden" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
+          <Table className="[&_td]:py-2 [&_th]:h-9">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-[#2A1F0E]/80">Entry</TableHead>
+                {extraColumns.map(f => (
+                  <TableHead key={f.id} className="text-[#2A1F0E]/80">{f.label}</TableHead>
+                ))}
+                <TableHead className="text-[#2A1F0E]/80">Filled by</TableHead>
+                <TableHead className="text-[#2A1F0E]/80">Status</TableHead>
+                <TableHead className="text-[#2A1F0E]/80">Updated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {entries.map(entry => {
+                const filler = names.get(entry.created_by) || shortUserId(entry.created_by);
+                return (
+                  <TableRow
+                    key={entry.id}
+                    className="cursor-pointer hover:bg-[#C89B3C]/5"
+                    onClick={() => navigate(`/team/compliance/forms/${doc.id}/entries/${entry.id}`)}
+                  >
+                    <TableCell className="font-medium">
+                      {instanceTitle(schema, entry, filler)}
+                      {entry.form_revision && entry.form_revision !== doc.revision && (
+                        <span className="ml-1.5 text-[10px] text-[#2A1F0E]/40">Rev {entry.form_revision}</span>
+                      )}
+                    </TableCell>
+                    {extraColumns.map(f => (
+                      <TableCell key={f.id} className="text-xs text-[#2A1F0E]/85">
+                        {formatFieldValue(f, entry.data?.[f.id]) || <span className="text-[#2A1F0E]/35">—</span>}
+                      </TableCell>
+                    ))}
+                    <TableCell>{filler}</TableCell>
+                    <TableCell><Badge className={statusBadge[entry.status]}>{entry.status}</Badge></TableCell>
+                    <TableCell className="text-xs text-[#2A1F0E]/80">
+                      {format(new Date(entry.updated_at), "M/d/yyyy h:mm a")}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}

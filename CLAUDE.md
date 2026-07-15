@@ -21,6 +21,7 @@ A B2B SaaS platform supporting end-to-end bakery product development. It has two
 | Charts | Recharts |
 | Date utils | date-fns |
 | DOCX parsing | Mammoth + JSZip |
+| XLSX parsing/export | ExcelJS (tolling inventory import/count sheets) |
 | PDF generation | pdfmake (client-side SOP export) |
 | Dark mode | next-themes |
 
@@ -137,7 +138,7 @@ All are public (anon) Supabase credentials — safe on the client.
 
 | Table | Purpose |
 |-------|---------|
-| `profiles` | User profiles — `full_name`, `department`, `job_title`, `access_granted` |
+| `profiles` | User profiles — `full_name`, `department`, `job_title`, `access_granted`, `preferred_language` (`'en'`/`'es'`, default `'en'` — drives language-aware training assignment; see "Preferred training language" below) |
 | `user_roles` | Role assignments — `user_id`, `role` (owner/admin/staff/user) |
 | `sop_documents` | Training modules & SOPs — `training_category` (int 1–4 = assignable training module; **null = reference doc**), `category` (text, SOPs Library grouping; names mirror the training category labels), `type` (`sop`/`form`/`policy`/`training`/`fsqm` — CHECK constraint `sop_documents_type_check`), `module_number`, `content` (JSON — slides/quiz/`attachments[]`/Word-SOP body), `file_url` (legacy single attachment), `passing_score_pct`, `is_critical`, `required_departments`, `status` |
 | `training_assignments` | Employee ↔ module assignments — `completed_at`, `quiz_score`, `quiz_attempts`, `expires_at`, `recurrence_months`, `signed`/`signed_at` (acknowledgment), `progress` (JSON save/resume state, cleared on completion) |
@@ -147,7 +148,10 @@ All are public (anon) Supabase credentials — safe on the client.
 | `document_templates` | NDA/PSS/PRF file templates — `kind`, `is_active`, `file_path` |
 | `chat_history` | CoachChat messages — `user_id`, `project_id`, `section`, `role`, `content` |
 | `ab_warehouses` | Inventory locations |
+| `inventory_tolling` | Per-client tolling inventory — `client_id`, `ingredient_name`, `qty_on_hand`, `unit`, `lot_code`, `expiry_date`, `category` (`ingredient`/`packaging`/`finished_good`). **Not in generated `types.ts`** — query with `supabase.from("inventory_tolling" as any)`. Powers the Sales client folder's Tolling Inventory tab (see below). |
 | `temperature_logs` | YoLink sensor readings (ingested by a Hostinger VPS) — `created_at`, `device_id`, `equipment_name`, `temperature_celsius`, `temperature_fahrenheit`, `humidity`, `battery_level` (1 low – 4 full), `low_battery_alarm`. **Not in generated `types.ts`** — query with `supabase.from("temperature_logs" as any)`. Powers the Temperature Monitoring report (see below). |
+| `sop_document_responses` | Filled instances of a fillable `sop_documents` form — `document_id` (FK, `ON DELETE RESTRICT`), `form_number`/`form_revision` (pinned at creation), `data` (flat JSON `{fieldId: value}`), `attachments` (JSON array of `{path, name, contentType, size, uploadedAt, uploadedBy}` — files/photos attached to the entry, storage in the `form-attachments` bucket; independent of `data`/the optimistic-concurrency guard), `status` (`draft`/`submitted`), `created_by`/`submitted_by`/`reopened_by`, `updated_at` (optimistic-concurrency token). **Not in generated `types.ts`** — query with `supabase.from("sop_document_responses" as any)`. See "Dynamic Fillable Forms" below. |
+| `sop_document_history` | Auto-snapshot (`SECURITY DEFINER` trigger, no direct INSERT/UPDATE/DELETE policies) of a published `sop_documents` row whenever a watched field or `content.form_schema` changes — `document_id`, `revision`, `changed_fields[]`, `snapshot` (full prior row as JSON). **Not in generated `types.ts`** — query with `supabase.from("sop_document_history" as any)`. See "Dynamic Fillable Forms" below. |
 
 ---
 
@@ -162,6 +166,8 @@ All are public (anon) Supabase credentials — safe on the client.
 **Assignment statuses:** `not_started | in_progress | completed | expired`
 
 **Quiz flow:** Admin configures questions + passing score (or marks as critical → requires 100%). Employees take quiz in `TrainingModuleDetail`; `scoreQuiz()` → `submitQuizResult()` records completion and computes `expires_at` via `computeExpiry()`.
+
+**Preferred training language (EN/ES bilingual assignment):** `profiles.preferred_language` (`'en'`/`'es'`, default `'en'`) records which language an employee is trained in. Captured at invite acceptance (Spanish checkbox on `AcceptInvite.tsx` → `_preferred_language` arg on the `accept_team_invitation` RPC), editable later self-service (`StaffAccount.tsx` "Training Language" select) and by admins (`TeamMemberDetail.tsx`). EN and ES modules are **separate `sop_documents` rows sharing a `module_number`** (the ES row's `title` ends with `" (ES)"`); the **EN row is the single assignable unit** (carries `training_category`/`required_departments`), and the ES row is a *content variant substituted at assignment time*. ES rows are never independently auto-assigned (keep their `training_category` null). Resolution rules: an ES-preferring employee gets the active ES sibling where one exists, else EN; an EN-preferring employee only ever gets EN — never both. Implemented in two places: (1) the SQL sync triggers `sync_employee_training`/`sync_module_training` (migration `20260714000009_language_aware_training_sync.sql` — `LEFT JOIN LATERAL` on the ES sibling; the profile trigger also fires on `preferred_language` change), and (2) the manual "Assign Training" dialog via `assignModulesToEmployees()` in `training.ts`. **Changing an employee's language re-languages their not-yet-started assignments** (deletes the wrong-language row, inserts the right one) but never touches `progress`/`completed_at` rows and never creates a duplicate in the other language for a module already started/completed. **Prerequisite:** nothing assigns in Spanish until an ES module row is `status='active'` with the matching `module_number`.
 
 **Slide upload:** Images stored in `training-content` Supabase bucket; paths saved in `sop_documents.content.slides[]`; signed URLs fetched via `getTrainingSlideUrl()`.
 
@@ -237,6 +243,174 @@ Component in `src/components/team/`, rendered below the Content section in the S
 - **Default active tab:** `training_category != null ? "training" : hasSopBody ? "document" : "reference"`.
 - A record can hold training material, a document body, AND reference attachments simultaneously; nothing is removed except by an explicit per-item Delete.
 
+**SQF Ref column / drawer — `SqfReference.tsx`:** the comma-delimited `sqf_reference` value (list category view + drawer read-only display) renders each clause number as a gold hover-card chip showing the clause text, with a **"View in {code} (p.N)"** link that opens the matching code PDF at the right page (`#page=N`). **Two code PDFs are hosted**, each with its own auto-generated clause map; a token resolves against the Quality Code first, then the Food Manufacturing code (so 2.x prefers Quality, 11.x falls to Food Mfg), and the matched code decides which PDF the link opens and the link label ("SQF Code" vs "Food Mfg Code"):
+- **Quality Code** — `public/sqf-quality-code.pdf` → `src/lib/sqfClauses.ts` (`lookupSqfClause`, `sqfPdfHref`, exports the shared `SqfClause` type), generated by `python scripts/generate-sqf-clauses.py`.
+- **Food Safety Code: Food Manufacturing** (Module 11 GMPs + System Elements) — `public/sqf-food-manufacturing-code.pdf` → `src/lib/sqfFoodClauses.ts` (`lookupSqfFoodClause`, `sqfFoodPdfHref`, `SQF_FOOD_CLAUSES`), generated by `python scripts/generate-sqf-food-clauses.py` (reuses the base parser's `parse()`/`extract_text()` with a Food-Manufacturing-specific NOISE filter).
+
+Unmapped numbers fall back to plain text. Both generators key physical==printed page (verified). Full runbook for refreshing either edition in `UPDATING_SQF_CODE.md`.
+
+---
+
+## Document Numbering Convention — `lib/docNumber.ts`
+
+**Forms, manuals (FSQM), and policies** (`sop_documents.sop_number`) follow **`<TYPE>-<NNN>`**: a type prefix (`FRM`/`FSQM`/`POL` — same prefixes `detectType()` reads) plus a **3-digit number whose hundreds block = the process stage** (receiving 300s, production 500s, …; low number = early in the flow). The identifier is **stable for the document's life — the revision lives in the `revision` field, never baked into the number** (the old `FRM-046-1` style did the latter, the inconsistency this fixes). SQF clause numbers stay **decoupled** from these IDs (SQF renumbers between editions) — cross-reference via the existing `sqf_reference` field/chips. **SOPs are the deliberate exception:** they're numbered by the SQF clause they implement (`SOP-2.3.1`, `SOP-11.7.5`) so auditors can jump clause→SOP; `parseClauseNumber()` recognizes this so it isn't flagged, and the register groups them under "SOPs (numbered by SQF clause)".
+
+- **`src/lib/docNumber.ts`** is the single source of truth: `DOC_STAGES` (the block→stage map), `parseDocNumber` (tolerant; strips a legacy `-N` suffix and returns it), `stageForNumber`/`stageForSopNumber`, `formatDocNumber` (canonical `FRM-301`), `docNumberIssue`/`isValidDocNumber` (advisory, non-blocking).
+- **`DocNumberHint`** (`components/team/DocNumberHint.tsx`) renders the derived stage + a non-blocking warning under the `sop_number` inputs in `SopImportDialog` and the SOPs Library drawer.
+- **Document Register** (`pages/team/compliance/DocumentRegister.tsx`, `/team/compliance/register`, Compliance nav): read-only, groups every doc by stage block; unparseable/legacy numbers fall into an **"Unassigned"** worklist; rows deep-link into the SOPs Library drawer via `?doc=<id>`.
+- **Legacy IDs:** `sop_documents.legacy_sop_number` (migration `20260708000001…`) preserves the pre-convention number when a row is renumbered. Renumbering existing live rows is a reviewed data migration (crosswalk → id-keyed UPDATEs). Full runbook + stage table in **`DOCUMENT_REGISTER.md`**.
+
+---
+
+## Dynamic Fillable Forms — `lib/formSchema.ts` + `components/team/forms/`
+
+FRM documents (`sop_documents.type='form'`) can carry a **fillable form schema** at `content.form_schema`
+(sections → typed fields incl. `grid` for paper log tables, `signature` for typed acknowledgment stamps,
+`pass_fail` QC checks); filled instances live in **`sop_document_responses`** (draft → submitted lifecycle),
+and **`sop_document_history`** auto-snapshots the prior `sop_documents` row (DB trigger, migration
+`20260709000001…`) whenever a *published* (active) doc's watched fields change — `revision, sop_number,
+title, effective_date, approved_by, status`, and `content->'form_schema'` only (slide/quiz/attachment
+churn does NOT snapshot). The trigger's `changed := changed || 'literal'` lines were rewritten to
+`array_append(changed, 'literal')` in migration `20260710000001_fix_snapshot_trigger_array_append.sql` —
+the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was parsing the literal as
+`{...}` array syntax, throwing "malformed array literal" on every publish-time save.
+
+- **`src/lib/formSchema.ts`** — schema types + pure helpers: `getFormSchema`/`hasFormSchema`,
+  `buildZodSchema` (submit-time validation only; drafts save anything; per-field/per-grid-column
+  `required`), `emptyValues`, `formatFieldValue`, `flattenForReport` (grid → one report column per grid
+  column, rows `" | "`-joined), `instanceTitle` (`settings.instanceTitleTemplate` tokens `{date}`,
+  `{user}`, `{<fieldId>}`), `slugifyFieldId`, `listFields` (fields flagged `showInList: true` — surfaced
+  as extra columns in the drawer's Entries table, see below). Field ids are stable snake_case, **locked
+  after first save** (answers key on them); response `data` is flat `{ [fieldId]: value }` — sections
+  are presentation-only. `GridColumn.width` is a relative weight (default 1) authored per-column in
+  `GridColumnsEditor`; `GridFieldInput` sums the row's column weights and gives the read-only fixed-row
+  label column `1.4×` the average column's share so it doesn't collapse to near-zero under
+  `table-fixed` (labels can be full review-item sentences).
+- **`src/lib/formResponses.ts`** — all supabase access (tables not in generated types → `as any` confined
+  here): create (pins `form_number`/`form_revision`; honors `settings.allowMultipleDrafts=false` by
+  resuming the user's draft), save/submit with **optimistic concurrency** (`.eq("updated_at", loaded)` →
+  `StaleResponseError`), admin reopen/delete, `resolveSchemaForResponse` (live → revision-matched history
+  snapshot → live-with-fallback-banner; renderer tolerates unmatched ids and shows an "Unmapped answers"
+  block).
+- **Components** (`src/components/team/forms/`): `FormRenderer` (schema + external RHF instance; shadcn
+  form primitives; width hints on a 6-col grid), `FormFieldInput`/`GridFieldInput`/`SignatureFieldInput`
+  (verifier-role signatures admin-only), `DictationTextarea` (mic + AI-cleanup wrapper shared by both),
+  `FormSchemaBuilder` + `GridColumnsEditor` + `ReferenceTableEditor` (admin authoring — incl. per-field
+  **"Show in Entries list"** checkbox, per-grid-column **Width**, register `deletable`/`defaultValues`/
+  `labelHeader`, live Preview, saves via `updateModuleContent` **merge**), `FormEntriesTab` (drawer Entries
+  list + New Entry; renders one extra `TableHead`/`TableCell` per `listFields(schema)` field, e.g. Complaint
+  No./Customer on FRM-002), `ResponseAttachments` (entry-level file/photo attachments, see below).
+  - `date`/`datetime` scalar fields (`FormFieldInput.tsx`) and `date` grid columns (`GridFieldInput.tsx`)
+    render a **"Today"/"Now" shortcut link** beside the native picker (`format(new Date(), "yyyy-MM-dd")`
+    / `"yyyy-MM-dd'T'HH:mm"`) so common dates don't require opening the calendar.
+  - Grid text cells use a wrapping `Textarea` (not `Input`) under `table-fixed` layout so long entries
+    are readable without horizontal scroll; a fixed-row label can carry a `\n`-joined title +
+    description + `Target: …` line (the AI extractor's convention for a paper review-item cell) —
+    `FixedRowLabel` in `GridFieldInput.tsx` splits on `\n` and renders title (bold) / description
+    (italic) / target (gold) instead of one flat run-on line.
+- **Surfaces:** SOPs Library drawer gains **Form** + **Entries** tabs for `type='form'` docs (default tab:
+  entries if fillable, else form) and a gold "Fillable" pill in the list; entry editor is a dedicated route
+  **`/team/compliance/forms/:docId/entries/:responseId`** (`FormEntry.tsx`, `max-w-7xl` — Save Draft /
+  Submit (confirm + validation) / admin Reopen / Download PDF / admin Delete, hidden when
+  `settings.deletable === false`; the "Back to FRM-###" link is duplicated into the sticky bottom action
+  bar next to Save/Submit so returning to the library never requires scrolling to the header);
+  **Form Records** page **`/team/compliance/records`** (`Records.tsx`, Compliance nav) = cross-form recent
+  entries + per-form flattened answer table with From/To + status filters and CSV/PDF export.
+- **Derived reports (log forms):** a `type='form'` doc can carry a **`content.report_schema`** that presents
+  it as a live report projected from *another* form's responses (e.g. **FRM-003 Customer Complaint Log** ←
+  **FRM-002** reports, **FRM-201 Approved Supplier Register** ← **FRM-202**) — a register with **no entries
+  of its own**, so it does NOT duplicate `Records.tsx`. Engine `src/lib/formReport.ts` (declarative column
+  kinds `field/template/map/cases/const`; user `params` + always-applied `filters[]` fixed conditions
+  (`in`/`equals`/`notEquals`/`notEmpty`/`empty`/`anyNotEmpty` — e.g. `supplier_status in [Approved, …]`, or
+  FRM-603 Label Change Control Log's `anyNotEmpty` over FRM-601 Section-2 change fields); `loadReportBase` + pure `filterReportRows`,
+  client-side; `buildReportSql` renders the read-only SQL equivalent for the **View SQL** panel). UI: **Report** tab in the drawer (`FormReportTab.tsx` viewer +
+  `ReportSchemaBuilder.tsx` admin authoring, saved via `updateModuleContent` merge) + a "Report" list pill;
+  shown for forms when `isAdmin || hasReportSchema`. **Full runbook + data-model + FRM-003↔FRM-002 mapping
+  in `FORM_REPORTS.md`.**
+- **PDF:** `src/lib/formPdf.ts` — `generateFormResponsePdf` (paper-like entry PDF; grids as real tables),
+  `generateFormReportPdf` (landscape, clamps to 10 columns → "see CSV"), and `generateDerivedReportPdf`
+  (landscape log/register PDF for the derived-report feature above); reuses `loadLogoDataUrl`/
+  `confidentialFooter` now exported from `sopPdf.ts`.
+- **AI extraction:** drawer Form tab "Generate with AI" (shown when a source `.docx` is attached) runs
+  mammoth client-side (keeps the tables `sopDocxParser` drops), sends HTML to edge function
+  **`generate-form-schema`** (Gemini via Lovable gateway; server-side whitelist/sanitize; also accepts
+  `pdf_images` for a future scanned-PDF path) — result loads into the builder as an **unsaved proposal**.
+  Select options go through a `toOptionString()` coercion (label/value/name/text → string, not a blind
+  `String(o)`) since the model sometimes proposes `{label,value}`-shaped objects instead of plain strings
+  — without it, dropdowns render the literal text `"[object Object]"`. Fixed-row `rows.labels[]` are
+  capped at 1000 chars (not 120 — column headers are short but review-item title+description+target
+  blocks are not). **Known unresolved issue:** regenerating an already-large schema (seen on FRM-001) can
+  hit a `SyntaxError: Expected ',' or ']'...` — the model occasionally emits a raw unescaped newline
+  inside a JSON string; not yet fixed.
+- **Retention:** `sop_document_responses.document_id` is `ON DELETE RESTRICT` — hard-deleting a form with
+  entries fails (code 23503 → "archive instead" toast). Response RLS: staff read all / insert own / update
+  own **drafts** only; admin-or-owner (`has_role('admin') OR is_owner()`) update/delete anything.
+  Dormant scaffold tables `sop_versions`/`form_templates`/`form_submissions` (20260608000001) are unused
+  and deliberately not reused.
+- **Static reference tables & register grids:** a `reference_table` field type (columns + rows of plain
+  strings, no value/no `required`/no width control) renders a fixed printed table the filler only reads —
+  for a paper form's static legend/key (e.g. a "Risk Rating Key"), as opposed to `grid` which is for
+  filler-written tables. Authored via `ReferenceTableEditor.tsx`; AI extraction (`generate-form-schema`)
+  distinguishes the two by whether the paper table's cells are fixed/printed vs. blank-for-filler. Separately,
+  a fixed-mode `grid` can be a **register** — `GridRows` (fixed) gains `deletable` (every row gets an
+  editable label + delete button, for registers where items can be renamed/removed over time),
+  `defaultValues` (per-row known column values, parallel to `labels`, so e.g. Location/Item/Material/Risk
+  pre-populate but stay editable), and `labelHeader` (header text for the leading label column, e.g.
+  "Location"). "Add Item" lets the filler append rows past the schema-defined list (label editable, delete
+  enabled) regardless of `deletable`. **Click-to-sort** on grid columns is safety-gated —
+  `sortable = !fixed || fixedDeletable` — because a classic non-deletable fixed checklist derives its label
+  from schema *position* (`fixedLabels[rowIdx]`); reordering would desync the label/data pairing, so sorting
+  only activates when the label lives in the row's own data (`_label`, i.e. `deletable: true`) or the grid
+  is fully dynamic.
+- **Dictation & AI cleanup on every filler-facing textarea:** `DictationTextarea.tsx` wraps both the scalar
+  `textarea` field type (`FormFieldInput.tsx`) and free-text grid cells (`GridFieldInput.tsx`'s default
+  column type) with a mic button (Web Speech API `SpeechRecognition`, continuous, appends onto the
+  existing value) and a gold Sparkles **AI cleanup** button (edge function
+  `cleanup-form-text` — fixes grammar/punctuation/capitalization/filler words into one clear statement,
+  preserving every fact/name/quantity exactly). The mic button only renders when the browser exposes
+  `SpeechRecognition` (checked once at module load); the AI button always renders since it's a server call,
+  disabled when the field is empty and while the request is in flight (Sparkles → spinning `Loader2`). On a
+  successful cleanup a small "AI cleanup applied — **Undo**" chip floats over the textarea's bottom-right
+  corner for 8s (or until further edits, which clear it) — clicking Undo restores the pre-cleanup text
+  exactly, via a `valueRef` snapshot taken before the AI call.
+  - **Auto-grow (tablet legibility):** the textarea fits its own content instead of clipping — these are
+    filled walking the floor on a tablet, where a value wrapping to a second line is unreadable in a
+    one-row grid cell and the resize grip isn't a usable affordance (so `resize-none`, and `resize-y` is
+    gone from the grid cell's class). `fitToContent()` collapses to `auto` then sets `scrollHeight` +
+    border (border-box counts it, `scrollHeight` excludes it), in a `useLayoutEffect` on value/interim
+    change. Two extra triggers exist because both are invisible to the obvious one: a **`ResizeObserver`
+    gated on width only** (rotation/column resize rewrap the text; reacting to height would loop, since it
+    observes the element whose height it sets), and a **`document.fonts.ready` re-fit** (a web font
+    swapping in after first paint rewraps the text *without* changing the observed box, so nothing else
+    fires — this was a real clipped-cell bug, not a hypothetical). `min-h-*` still floors the height, so
+    empty cells stay compact.
+  - **Interim dictation results:** `interimResults = true`; provisional words render composited into the
+    box (`value` + interim) so the text is confirmable *while speaking* rather than after — the previous
+    final-results-only mode showed nothing until you stopped, into a 32px box you couldn't read. The
+    interim is display-only and never enters the form value: the textarea is `readOnly` while `listening`
+    (a keystroke would otherwise commit the provisional transcript as typed), and interim is cleared on
+    stop/end/error, so stopping mid-phrase discards it and keeps only what finalized.
+- **Entry attachments (files/photos):** every fillable entry gets a built-in **Attachments** section at the
+  bottom (`ResponseAttachments.tsx`, wired into `FormEntry.tsx` — not a schema-authored field, nothing to
+  drag in via "Add Field"), present by default and admin-toggleable per form via
+  `schema.settings.attachmentsEnabled` (default enabled/`undefined`; `false` disables new uploads but never
+  hides files already attached). Two upload controls: **"Take Photo"** (`<input type="file" accept="image/*"
+  capture="environment">` — opens the device camera on mobile, degrades to the normal file picker on
+  desktop/no-camera with no feature-detection needed) and **"Attach File"** (plain multi-select picker,
+  `image/*,.pdf,.doc,.docx,.xls,.xlsx`). Stored in the dedicated **`form-attachments`** Supabase Storage
+  bucket (private; `is_staff_or_admin`-gated policies, same pattern as `training-content`) — a *separate*
+  bucket from `training-content` because response attachments are keyed per-response
+  (`${responseId}/${uuid}-${name}`, many photos × many responses) rather than per-document, and need bulk
+  cleanup on entry deletion rather than individual management. Persisted on a dedicated
+  `sop_document_responses.attachments` column (not folded into `data`, so it's never mistaken for a stray
+  field in the "Unmapped answers" block) via `saveResponseAttachments()` in `formResponses.ts` — deliberately
+  **no optimistic-concurrency guard** (unlike `saveResponseData`/`submitResponse`) since attachments are
+  additive/orthogonal to the RHF-managed field answers; the row's `updated_at` still bumps via the
+  `sop_document_responses_touch` trigger, so `FormEntry.tsx` applies the returned row via `setResponse`
+  immediately to avoid a stale-`updated_at` false positive on the next draft save. `deleteResponse(id,
+  attachmentPaths)` deletes the DB row first, then best-effort removes the storage objects (an orphaned file
+  is harmless; a live record with broken links is not).
+
 ---
 
 ## Document Attachments — `DocumentAttachment.tsx`
@@ -296,6 +470,30 @@ no DB view/RPC yet (a later phase will roll up summaries + purge old rows). Disp
   surfaces a gold link to it (opens a fresh signed URL via `resolveFileUrl()`) **only when data
   looks wrong** — empty range (missing) or latest reading > 6h old (stale). Renders as plain text
   if the doc isn't found (graceful).
+
+---
+
+## Tolling Inventory — `pages/sales/SalesClientFolder.tsx` + `components/sales/TollingInventoryTools.tsx`
+
+A **Tolling Inventory** tab (staff-only) on the Sales client folder tracks each client's
+customer-owned (tolling) stock in `inventory_tolling`. The tab (`TollingInventoryTab` in
+`SalesClientFolder.tsx`) groups rows into collapsible **Ingredients / Packaging / Finished Goods**
+sections (`category` enum), with inline add/edit/delete and an available = `qty_on_hand − reserved`
+display. On load it **merges** ingredient names pulled from the client's batch sheets with existing
+`inventory_tolling` rows; batch-sheet provenance (`batchSheetIds`) is kept so a merge can rename the
+ingredient inside the source recipe (otherwise a merged-away row reappears on next load).
+
+`TollingInventoryTools.tsx` holds the supporting dialogs/helpers:
+- **`TollingExcelImportDialog`** — imports a client's spreadsheet via **ExcelJS**; `matchHeaderKey()`
+  does keyword-based (not exact-string) header matching so messy real-world sheets still parse
+  (`normalizeHeader`, `normalizeCategory`).
+- **`downloadCountSheet`** — exports an ExcelJS count sheet for a physical recount.
+- **`TollingRecountDialog`** — applies a physical recount back to inventory.
+- **`AdjustmentHistoryPopover`** — per-row adjustment history.
+- **`findDuplicateCandidates` + `TollingDuplicateReviewDialog` + `TollingManualMergeDialog`** —
+  detect and merge duplicate ingredient names (auto-suggested + manual).
+
+`inventory_tolling` is **not in generated `types.ts`** — query via `supabase.from("inventory_tolling" as any)`.
 
 ---
 
@@ -361,6 +559,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `generate-narration` | Accepts `{imageUrl}`; sends signed PNG URL to Gemini 2.5 Flash vision; returns `{text}` — 2–4 sentence trainer narration |
 | `generate-quiz` | Accepts `{title, narrations[], count}`; returns `{questions[]}` — MCQ with 4 options, hint, rationale |
 | `cleanup-narration` | Accepts `{text}`; returns `{text}` — grammar/style cleanup via Gemini |
+| `cleanup-form-text` | Accepts `{text}`; returns `{text}` — same shape as `cleanup-narration` but prompted for compliance-form free-text answers (incident reports, root-cause notes): fixes grammar/punctuation/capitalization/filler words into one clear statement, preserves every fact/name/quantity exactly. Powers the AI-cleanup Sparkles button in `DictationTextarea.tsx`. |
 | `tts-elevenlabs` | Accepts `{text, voiceId?, lang?}`; calls ElevenLabs (`eleven_multilingual_v2`) and returns the MP3 bytes. **Returns `Content-Type: application/octet-stream`** (not `audio/mpeg`) so `supabase.functions.invoke` hands back a real `Blob` — any other type makes invoke run `response.text()` and corrupt the binary. Multilingual model auto-detects language, so one voice covers EN + ES. |
 
 **Required secrets (set via Supabase dashboard → Settings → Edge Functions):**
@@ -387,5 +586,10 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
 | `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP/FSQM data from a .docx upload (scanned-hardcopy robust: merged-header splitting, running-header/noise filtering, list-rendered headings, trailing revision-history table, `Compass Blending`→`Adventure Bakery` rebrand); exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`) and `SopType` (`sop`/`form`/`policy`/`fsqm`) |
 | `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |
-| `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. See "SOP PDF Export" above |
+| `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. Also exports `loadLogoDataUrl`, `confidentialFooter`, `DISCLAIMER`, `PDF_GOLD` for reuse by `formPdf.ts`. See "SOP PDF Export" above |
+| `docNumber.ts` | Document numbering convention: `DOC_STAGES`, `parseDocNumber`, `stageForNumber`/`stageForSopNumber`, `formatDocNumber`, `docNumberIssue`/`isValidDocNumber`; `parseClauseNumber`/`compareClauseIds` (the deliberate SQF-clause SOP scheme). See "Document Numbering Convention" above |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
+| `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns). See "Dynamic Fillable Forms" below |
+| `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse`, `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
+| `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
+| `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |

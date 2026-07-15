@@ -14,6 +14,10 @@ export default function Resources() {
 
   const shelfLifeTitles = shelfLifeSubResources.map(r => r.title);
 
+  // Some resource links are still unset placeholders (e.g. .../your-workbook-id/edit).
+  // Render these as a disabled "Coming soon" state so clients never hit a dead link.
+  const isPlaceholderLink = (link?: string) => !!link && /your-[a-z-]*id/i.test(link);
+
   const resources = [
     {
       title: "Shelf Life",
@@ -158,6 +162,10 @@ export default function Resources() {
                       </a>
                     ))}
                   </div>
+                ) : isPlaceholderLink(resource.link) ? (
+                  <Button variant="outline" className="w-full" disabled>
+                    Coming soon
+                  </Button>
                 ) : (
                   <Button variant="outline" className="w-full group-hover:bg-accent/10 group-hover:border-accent/60" asChild>
                     <a href={resource.link} target="_blank" rel="noopener noreferrer">

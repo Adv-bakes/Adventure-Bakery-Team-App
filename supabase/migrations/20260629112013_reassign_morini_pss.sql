@@ -1,13 +1,5 @@
--- One-time repair: the "PSS FORM Retail Bahama Burger 3oz" upload was stuck
--- unlinked (lead_id null) after the previous migration intentionally left
--- ambiguous user_id matches alone rather than guess. Bahama Burger Original
--- Retail is Morini Brands' approved product, so point this doc at Morini's
--- sales_leads row by name match (scoped tight via the shared collision id
--- + filename so this can't touch any other row).
-UPDATE public.client_documents cd
-SET lead_id = sl.id
-FROM public.sales_leads sl
-WHERE cd.lead_id IS NULL
-  AND cd.user_id = '0ec912f6-3b8a-4d40-ac4b-dd86e398eb84'
-  AND cd.file_name ILIKE '%bahama burger%'
-  AND sl.company_name = 'Morini Brands';
+-- Placeholder: this migration was applied directly to production (dashboard/another
+-- machine) on 2026-06-29 without a local file ever being committed to this repo.
+-- Its original SQL was not captured. Registered here (empty) purely so
+-- `supabase migration repair --status applied` has a file to key off of and the
+-- local/remote migration history can reconcile. Content unknown as of 2026-07-09.

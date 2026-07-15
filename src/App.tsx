@@ -83,11 +83,14 @@ import PssIntake from "./pages/public/PssIntake";
 import {
   OpsPipeline, OpsSchedule, OpsFloorExecution, OpsInsights,
   ComplianceTraceability, ComplianceCertifications,
-  HrDirectory,
   InternalEmail, InternalFinance,
 } from "./pages/sections";
+import HrDirectory from "./pages/team/hr/HrDirectory";
 import SopsLibrary from "./pages/team/compliance/SopsLibrary";
+import DocumentRegister from "./pages/team/compliance/DocumentRegister";
 import TemperatureReport from "./pages/team/compliance/TemperatureReport";
+import FormEntry from "./pages/team/compliance/FormEntry";
+import FormRecords from "./pages/team/compliance/Records";
 import TrainingSops from "./pages/team/hr/TrainingSops";
 import TrainingCompliance from "./pages/team/hr/TrainingCompliance";
 import TrainingModuleDetail from "./pages/team/hr/TrainingModuleDetail";
@@ -301,7 +304,7 @@ const App = () => (
             </ProtectedRoute>
           } />
           <Route path="/team/account" element={
-            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><StaffAccount /></TeamLayout>
             </ProtectedRoute>
           } />
@@ -420,29 +423,51 @@ const App = () => (
 
           {/* SOPs Library */}
           <Route path="/team/compliance/sops" element={
-            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><SopsLibrary /></TeamLayout>
             </ProtectedRoute>
           } />
+          <Route path="/team/compliance/register" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
+              <TeamLayout><DocumentRegister /></TeamLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/team/compliance/temperature" element={
-            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><TemperatureReport /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/compliance/records" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
+              <TeamLayout><FormRecords /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/compliance/forms/:docId/entries/:responseId" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
+              <TeamLayout><FormEntry /></TeamLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Team Directory (role + department administration) */}
+          <Route path="/team/hr/directory" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><HrDirectory /></TeamLayout>
             </ProtectedRoute>
           } />
 
           {/* Training & SOPs / Training Compliance */}
           <Route path="/team/hr/trainings" element={
-            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><TrainingSops /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/hr/trainings/:moduleId" element={
-            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><TrainingModuleDetail /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/hr/traceability" element={
-            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><TrainingCompliance /></TeamLayout>
             </ProtectedRoute>
           } />
@@ -455,7 +480,6 @@ const App = () => (
             ["/team/ops/insights", OpsInsights],
             ["/team/compliance/traceability", ComplianceTraceability],
             ["/team/compliance/certifications", ComplianceCertifications],
-            ["/team/hr/directory", HrDirectory],
             ["/team/internal/email", InternalEmail],
           ].map(([path, Comp]: any) => (
             <Route key={path} path={path} element={

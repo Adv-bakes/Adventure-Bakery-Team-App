@@ -88,11 +88,11 @@ const Costing = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3">
+          <h1 className="text-4xl font-bold tracking-tight flex items-center gap-3 tp-page-title">
             <DollarSign className="h-10 w-10 text-primary" />
             Costing & Pricing
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="mt-2 tp-page-subtitle">
             Calculate production costs and set profitable prices
           </p>
         </div>

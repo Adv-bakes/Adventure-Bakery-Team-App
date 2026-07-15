@@ -1,15 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RefreshCw, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RefreshCw, AlertTriangle, Clock, CheckCircle2, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { format, addDays } from "date-fns";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS,
   TrainingModule, TrainingAssignment, Employee,
   AssignmentStatus, getAssignmentStatus, isExpiringSoon, isOverdue,
   fetchTrainingModules, fetchTrainingAssignments, fetchEmployees,
+  assignModulesToEmployees, deleteAssignment,
 } from "@/lib/training";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
@@ -22,10 +33,19 @@ const STATUS_DOT: Record<AssignmentStatus, string> = {
 };
 
 export default function TrainingCompliance() {
+  const { hasRole } = useUserRole();
+  const isAdmin = hasRole("admin") || hasRole("owner");
   const [modules, setModules] = useState<TrainingModule[]>([]);
   const [assignments, setAssignments] = useState<TrainingAssignment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Manual assignment dialog (in addition to the automatic department sync).
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [selEmployees, setSelEmployees] = useState<Set<string>>(new Set());
+  const [selModules, setSelModules] = useState<Set<string>>(new Set());
+  const [dueDate, setDueDate] = useState(format(addDays(new Date(), 30), "yyyy-MM-dd"));
 
   const load = async () => {
     setLoading(true);
@@ -46,6 +66,54 @@ export default function TrainingCompliance() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const toggle = (set: Dispatch<SetStateAction<Set<string>>>, id: string) =>
+    set((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const handleAssign = async () => {
+    const emps = employees.filter((e) => selEmployees.has(e.id));
+    const mods = modules.filter((m) => selModules.has(m.id));
+    if (emps.length === 0 || mods.length === 0) {
+      toast.error("Pick at least one employee and one module.");
+      return;
+    }
+    setAssigning(true);
+    try {
+      const created = await assignModulesToEmployees(emps, mods, dueDate || null);
+      const skipped = emps.length * mods.length - created;
+      toast.success(
+        `Assigned ${created} new module${created === 1 ? "" : "s"}` +
+        (skipped > 0 ? ` (${skipped} already assigned, left as-is).` : "."),
+      );
+      setAssignOpen(false);
+      setSelEmployees(new Set());
+      setSelModules(new Set());
+      await load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to assign training");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const handleUnassign = async (assignment: TrainingAssignment) => {
+    setRemovingId(assignment.id);
+    try {
+      await deleteAssignment(assignment.id);
+      toast.success("Assignment removed.");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to remove assignment");
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   const assignmentMap = useMemo(() => {
     const map = new Map<string, TrainingAssignment>();
@@ -90,9 +158,81 @@ export default function TrainingCompliance() {
             Who was trained on what, when, and what's coming due.
           </p>
         </div>
-        <Button variant="outline" onClick={load} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} />Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-[#C89B3C] hover:bg-[#B8892C] text-black">
+                  <UserPlus className="w-4 h-4 mr-1" />Assign Training
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Assign Training</DialogTitle>
+                  <DialogDescription>
+                    Hand-pick modules for specific people. This is in addition to automatic
+                    department-based assignment; already-assigned modules are left untouched.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label className="mb-2 block">Employees ({selEmployees.size})</Label>
+                    <ScrollArea className="h-56 rounded-md border p-2">
+                      {employees.length === 0 ? (
+                        <p className="text-sm text-muted-foreground p-2">No employees.</p>
+                      ) : employees.map((e) => (
+                        <label key={e.id} className="flex items-center gap-2 rounded px-1.5 py-1 hover:bg-muted/50 cursor-pointer">
+                          <Checkbox checked={selEmployees.has(e.id)} onCheckedChange={() => toggle(setSelEmployees, e.id)} />
+                          <span className="text-sm">{e.full_name || e.id}{e.department ? ` · ${e.department}` : ""}</span>
+                        </label>
+                      ))}
+                    </ScrollArea>
+                  </div>
+                  <div>
+                    <Label className="mb-2 block">Modules ({selModules.size})</Label>
+                    <ScrollArea className="h-56 rounded-md border p-2">
+                      {modules.length === 0 ? (
+                        <p className="text-sm text-muted-foreground p-2">No active modules.</p>
+                      ) : modules.map((m) => (
+                        <label key={m.id} className="flex items-center gap-2 rounded px-1.5 py-1 hover:bg-muted/50 cursor-pointer">
+                          <Checkbox checked={selModules.has(m.id)} onCheckedChange={() => toggle(setSelModules, m.id)} />
+                          <span className="text-sm">
+                            <span className="font-mono text-xs mr-1">{m.module_number}</span>{m.title}
+                          </span>
+                        </label>
+                      ))}
+                    </ScrollArea>
+                  </div>
+                </div>
+
+                <div className="flex items-end gap-3">
+                  <div>
+                    <Label htmlFor="assign-due" className="mb-1 block">Due date</Label>
+                    <Input id="assign-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-44" />
+                  </div>
+                  <p className="text-xs text-muted-foreground pb-2.5">
+                    Annual-refresher modules recur every 12 months automatically.
+                  </p>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAssignOpen(false)} disabled={assigning}>Cancel</Button>
+                  <Button
+                    onClick={handleAssign}
+                    disabled={assigning || selEmployees.size === 0 || selModules.size === 0}
+                    className="bg-[#C89B3C] hover:bg-[#B8892C] text-black"
+                  >
+                    {assigning ? "Assigning…" : `Assign ${selEmployees.size * selModules.size || ""}`.trim()}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+          <Button variant="outline" onClick={load} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} />Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Alerts */}
@@ -150,6 +290,12 @@ export default function TrainingCompliance() {
         </div>
       </div>
 
+      {isAdmin && (
+        <p className="text-xs text-[#F5F1E6]/60 -mb-2">
+          Tip: click any filled status dot to remove that assignment.
+        </p>
+      )}
+
       {/* Compliance matrix */}
       <Card className="border overflow-x-auto" style={cardStyle}>
         <Table>
@@ -195,14 +341,50 @@ export default function TrainingCompliance() {
                   const assignment = assignmentMap.get(`${emp.id}:${m.id}`);
                   const status = getAssignmentStatus(assignment);
                   const isFirstInGroup = idx === 0 || arr[idx - 1].training_category !== m.training_category;
+                  const cellTitle = `${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${status.replace("_", " ")}`;
+                  const dot = <span className={`inline-block w-3 h-3 rounded-full ${STATUS_DOT[status]}`} />;
                   return (
                     <TableCell
                       key={m.id}
                       className="text-center"
                       style={isFirstInGroup ? { borderLeft: "1px solid rgba(200,155,60,0.25)" } : undefined}
-                      title={`${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${status.replace("_", " ")}`}
+                      title={cellTitle}
                     >
-                      <span className={`inline-block w-3 h-3 rounded-full ${STATUS_DOT[status]}`} />
+                      {isAdmin && assignment ? (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="p-1 rounded hover:bg-[#2A1F0E]/5" aria-label="Assignment actions">
+                              {dot}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 text-sm" align="center">
+                            <p className="font-medium text-[#2A1F0E]">{employeeName(emp)}</p>
+                            <p className="text-xs text-muted-foreground mb-1">
+                              <span className="font-mono">{m.module_number}</span> {m.title}
+                            </p>
+                            <p className="text-xs mb-3">
+                              Status: <span className="capitalize">{status.replace("_", " ")}</span>
+                              {assignment.due_at ? ` · due ${assignment.due_at}` : ""}
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+                              disabled={removingId === assignment.id}
+                              onClick={() => handleUnassign(assignment)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" />
+                              {removingId === assignment.id ? "Removing…" : "Remove assignment"}
+                            </Button>
+                            <p className="text-[11px] text-muted-foreground mt-2">
+                              Automatic sync may re-add this if the employee's department still
+                              requires the module.
+                            </p>
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        dot
+                      )}
                     </TableCell>
                   );
                 })}

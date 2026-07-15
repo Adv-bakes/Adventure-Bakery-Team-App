@@ -309,8 +309,8 @@ const Formulas = ({ conceptId }: FormulasProps = {}) => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Formula Calculator</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-4xl font-bold tracking-tight tp-page-title">Formula Calculator</h1>
+          <p className="mt-2 tp-page-subtitle">
             Build and calculate your recipe formula with automatic percentage calculations
           </p>
         </div>

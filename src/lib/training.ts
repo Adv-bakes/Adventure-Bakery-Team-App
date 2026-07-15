@@ -64,6 +64,7 @@ export type Employee = {
   employee_id: string | null;
   department: string | null;
   job_title: string | null;
+  preferred_language: string | null;
 };
 
 export type AssignmentStatus = "not_started" | "in_progress" | "completed" | "expired";
@@ -112,11 +113,79 @@ export async function fetchEmployees(): Promise<Employee[]> {
 
   const { data: profiles, error: profilesError } = await (supabase as any)
     .from("profiles")
-    .select("id, full_name, employee_id, department, job_title")
+    .select("id, full_name, employee_id, department, job_title, preferred_language")
     .in("id", ids);
   if (profilesError) throw profilesError;
 
   return (profiles ?? []) as Employee[];
+}
+
+/**
+ * Manually assign one or more modules to one or more employees (admin action,
+ * in addition to the automatic department-driven sync). Language-aware: an
+ * employee whose preferred_language is 'es' receives the Spanish variant of a
+ * module when an active translation exists (matched by module_number), otherwise
+ * English. Idempotent: existing (employee, module) assignments are left
+ * untouched — the unique (employee_id, sop_id) constraint drives
+ * ignoreDuplicates, so re-assigning never clobbers progress or completion.
+ * Returns the number of rows created.
+ */
+export async function assignModulesToEmployees(
+  employees: { id: string; preferred_language?: string | null }[],
+  modules: Pick<TrainingModule, "id" | "module_number" | "is_annual_refresher">[],
+  dueAt: string | null,
+): Promise<number> {
+  if (employees.length === 0 || modules.length === 0) return 0;
+
+  // Look up active Spanish siblings for the selected modules (by module_number).
+  // ES rows carry no training_category, so they aren't in fetchTrainingModules().
+  const moduleNumbers = Array.from(
+    new Set(modules.map((m) => m.module_number).filter((n): n is string => !!n)),
+  );
+  const esByModuleNumber = new Map<string, string>();
+  if (moduleNumbers.length > 0) {
+    const { data: esRows, error: esErr } = await (supabase as any)
+      .from("sop_documents")
+      .select("id, module_number, title")
+      .in("module_number", moduleNumbers)
+      .eq("status", "active")
+      .like("title", "%(ES)%");
+    if (esErr) throw esErr;
+    for (const r of esRows ?? []) {
+      if (r.module_number && !esByModuleNumber.has(r.module_number)) {
+        esByModuleNumber.set(r.module_number, r.id);
+      }
+    }
+  }
+
+  const rows = employees.flatMap((emp) =>
+    modules.map((m) => {
+      const esId = m.module_number ? esByModuleNumber.get(m.module_number) : undefined;
+      const sop_id = emp.preferred_language === "es" && esId ? esId : m.id;
+      return {
+        employee_id: emp.id,
+        sop_id,
+        recurrence_months: m.is_annual_refresher ? 12 : null,
+        due_at: dueAt,
+      };
+    }),
+  );
+  const { data, error } = await (supabase as any)
+    .from("training_assignments")
+    .upsert(rows, { onConflict: "employee_id,sop_id", ignoreDuplicates: true })
+    .select("id");
+  if (error) throw error;
+  return (data ?? []).length;
+}
+
+// Admin-only: remove a training assignment entirely (the counterpart to the
+// grant-only auto-sync, which never deletes). RLS restricts this to admin/owner.
+export async function deleteAssignment(assignmentId: string): Promise<void> {
+  const { error } = await (supabase as any)
+    .from("training_assignments")
+    .delete()
+    .eq("id", assignmentId);
+  if (error) throw error;
 }
 
 export async function markAssignmentComplete(assignment: TrainingAssignment): Promise<void> {

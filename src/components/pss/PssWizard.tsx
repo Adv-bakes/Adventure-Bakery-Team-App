@@ -238,12 +238,10 @@ export function PssWizard(props: {
       });
       if (error || !ok) throw new Error(error?.message || "Submission failed");
 
-      // Trigger finalize (PDF + email + advance stage).
-      const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co/finalize-pss-submission`;
-      await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: props.id, token: props.token }),
+      // Trigger finalize (PDF + email + advance stage). Uses the client's
+      // configured project URL so it works in prod without a build-time env var.
+      await supabase.functions.invoke("finalize-pss-submission", {
+        body: { id: props.id, token: props.token },
       });
       toast.success("PSS submitted — a copy is on its way to your inbox");
       props.onSubmitted();

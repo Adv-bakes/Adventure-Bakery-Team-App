@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, Copy, Download, Trash2 } from "lucide-react";
+import { Plus, FileUp, ShieldCheck, Presentation, ChevronDown, FileText, GraduationCap, BookOpen, ArrowUp, ArrowDown, ChevronsUpDown, ClipboardList, Copy, Download, ListChecks, Trash2, FileBarChart } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -30,11 +31,18 @@ import { SlideContentEditor } from "@/components/team/SlideContentEditor";
 import { DocumentAttachment } from "@/components/team/DocumentAttachment";
 import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
-import { TRAINING_CATEGORY_LABELS, DEPARTMENTS, updateModuleContent, updateModuleRequirements, updateModuleQuizConfig, hasReferenceDocs, hasSopBody, type Attachment } from "@/lib/training";
+import { TRAINING_CATEGORY_LABELS, DEPARTMENTS, updateModuleContent, updateModuleRequirements, updateModuleQuizConfig, hasReferenceDocs, hasSopBody, resolveFileUrl, type Attachment } from "@/lib/training";
+import { hasFormSchema, getFormSchema, type FormSchema } from "@/lib/formSchema";
+import { hasReportSchema } from "@/lib/formReport";
+import { FormSchemaBuilder } from "@/components/team/forms/FormSchemaBuilder";
+import { FormReportTab } from "@/components/team/forms/FormReportTab";
+import { FormEntriesTab } from "@/components/team/forms/FormEntriesTab";
 import { SopBodyEditor } from "@/components/team/SopBodyEditor";
 import { generateSopPdf } from "@/lib/sopPdf";
 import { CategorySelect } from "@/components/team/CategorySelect";
 import { SpanishFlag } from "@/components/team/SpanishFlag";
+import { SqfReference } from "@/components/team/SqfReference";
+import { DocNumberHint } from "@/components/team/DocNumberHint";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Map a SOPs Library category name back to its HR training category number
@@ -157,6 +165,20 @@ export default function SopsLibrary() {
     setDocs((data ?? []) as SopDocument[]);
   };
   useEffect(() => { load(); }, []);
+
+  // Deep-link support: the Document Register links here with ?doc=<id> to open a doc's drawer.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const docId = searchParams.get("doc");
+    if (!docId || docs.length === 0) return;
+    const match = docs.find(d => d.id === docId);
+    if (match) {
+      setSelected(match);
+      // Consume the param so re-renders / closing the drawer don't re-open it.
+      searchParams.delete("doc");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [docs, searchParams, setSearchParams]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -320,7 +342,7 @@ export default function SopsLibrary() {
   const saveFileUrl = async (file_url: string | null) => {
     if (!selected) return;
     const { error } = await (supabase as any).from("sop_documents").update({ file_url }).eq("id", selected.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     const updated = { ...selected, file_url } as SopDocument;
     setSelected(updated);
     setDetail(prev => ({ ...prev, file_url }));
@@ -342,11 +364,50 @@ export default function SopsLibrary() {
     try {
       await updateModuleContent(selected.id, content);
     } catch (e: any) {
-      return toast.error(e.message ?? "Failed to save attachments");
+      toast.error(e.message ?? "Failed to save attachments");
+      return;
     }
     const updated = { ...selected, content } as SopDocument;
     setSelected(updated);
     setDocs(prev => prev.map(d => d.id === selected.id ? updated : d));
+  };
+
+  // The uploaded original a form's field schema can be AI-extracted from
+  // (.docx only for now — the Word import stores it in content.attachments).
+  const findFormSource = (doc: SopDocument): Attachment | null => {
+    const attachments: Attachment[] = Array.isArray(doc.content?.attachments) ? doc.content.attachments : [];
+    return attachments.find(a => a.path && /\.docx$/i.test(a.path)) ?? null;
+  };
+
+  // AI schema extraction: mammoth keeps the docx tables that sopDocxParser drops,
+  // so the edge function sees the real form layout. The result is only a proposal —
+  // FormSchemaBuilder holds it unsaved until the admin reviews and clicks Save Form.
+  const generateFormSchemaAi = async (): Promise<FormSchema | null> => {
+    if (!selected) return null;
+    const source = findFormSource(selected);
+    if (!source?.path) {
+      toast.error("Attach the form's original .docx in Reference Documents first.");
+      return null;
+    }
+    const url = await resolveFileUrl(source.path);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Could not download the source document");
+    const arrayBuffer = await res.arrayBuffer();
+    const mammoth = await import("mammoth");
+    const { value: html } = await mammoth.convertToHtml({ arrayBuffer });
+    const { data, error } = await supabase.functions.invoke("generate-form-schema", {
+      body: {
+        title: selected.title,
+        formNumber: selected.sop_number,
+        source: { kind: "html", html: html.slice(0, 60000) },
+      },
+    });
+    if (error) throw error;
+    if (!data?.schema) throw new Error(data?.error ?? "No schema returned");
+    if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+      toast(`AI extraction notes: ${data.warnings.slice(0, 3).join("; ")}${data.warnings.length > 3 ? "…" : ""}`);
+    }
+    return data.schema as FormSchema;
   };
 
   // Creates a reference document (no slides/quiz; training_category null) and opens its
@@ -418,7 +479,13 @@ export default function SopsLibrary() {
       if (selected?.id === id) setSelected(null);
       toast.success("Document permanently deleted");
     } catch (e: any) {
-      toast.error(e.message ?? "Failed to delete document");
+      // FK RESTRICT from sop_document_responses: records retention says filled
+      // entries must survive, so the form can only be archived.
+      if (e?.code === "23503") {
+        toast.error("This form has filled entries — archive it instead of deleting.");
+      } else {
+        toast.error(e.message ?? "Failed to delete document");
+      }
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -534,6 +601,12 @@ export default function SopsLibrary() {
                 <TableCell>
                   <span className="inline-flex items-center gap-1.5">
                     <Badge variant="outline">{TYPE_LABELS[d.type]}</Badge>
+                    {hasFormSchema(d) && (
+                      <Badge className="bg-[#C89B3C]/15 text-[#9A6F1E] border-[#C89B3C]/30">Fillable</Badge>
+                    )}
+                    {hasReportSchema(d.content) && (
+                      <Badge className="bg-[#2A1F0E]/10 text-[#2A1F0E]/70 border-[#2A1F0E]/20">Report</Badge>
+                    )}
                     {hasSopBody(d.content) && (
                       <button
                         onClick={async e => {
@@ -552,7 +625,7 @@ export default function SopsLibrary() {
                 <TableCell>{d.revision ?? "—"}</TableCell>
                 <TableCell>{d.effective_date ?? "—"}</TableCell>
                 <TableCell><Badge className={statusColors[d.status]}>{d.status}</Badge></TableCell>
-                {viewMode === "category" && <TableCell className="text-xs text-[#2A1F0E]/60">{d.sqf_reference ?? "—"}</TableCell>}
+                {viewMode === "category" && <TableCell className="text-xs text-[#2A1F0E]/60"><SqfReference value={d.sqf_reference} /></TableCell>}
               </TableRow>
             );
           })}
@@ -746,7 +819,7 @@ export default function SopsLibrary() {
                 <div className="space-y-3">
                   <div><Label className="text-xs text-muted-foreground">Title *</Label><Input value={detail.title ?? ""} onChange={e => setDetail({ ...detail, title: e.target.value })} /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs text-muted-foreground">SOP #</Label><Input value={detail.sop_number ?? ""} onChange={e => setDetail({ ...detail, sop_number: e.target.value })} /></div>
+                    <div><Label className="text-xs text-muted-foreground">SOP #</Label><Input value={detail.sop_number ?? ""} onChange={e => setDetail({ ...detail, sop_number: e.target.value })} /><DocNumberHint value={detail.sop_number} /></div>
                     <div><Label className="text-xs text-muted-foreground">Revision</Label><Input value={detail.revision ?? ""} onChange={e => setDetail({ ...detail, revision: e.target.value })} /></div>
                     <div><Label className="text-xs text-muted-foreground">Effective Date</Label><Input type="date" value={detail.effective_date ?? ""} onChange={e => setDetail({ ...detail, effective_date: e.target.value })} /></div>
                     <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><Input value={detail.sqf_reference ?? ""} onChange={e => setDetail({ ...detail, sqf_reference: e.target.value })} /></div>
@@ -797,19 +870,77 @@ export default function SopsLibrary() {
                   <div><Label className="text-xs text-muted-foreground">SOP #</Label><p>{selected.sop_number ?? "—"}</p></div>
                   <div><Label className="text-xs text-muted-foreground">Revision</Label><p>{selected.revision ?? "—"}</p></div>
                   <div><Label className="text-xs text-muted-foreground">Effective Date</Label><p>{selected.effective_date ?? "—"}</p></div>
-                  <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><p>{selected.sqf_reference ?? "—"}</p></div>
+                  <div><Label className="text-xs text-muted-foreground">SQF Reference</Label><p><SqfReference value={selected.sqf_reference} /></p></div>
                   <div><Label className="text-xs text-muted-foreground">Approved By</Label><p>{selected.approved_by ?? "—"}</p></div>
                 </div>
               )}
               {/* Coexisting regions — pure view toggle, no data is changed by switching. */}
-              <Tabs defaultValue={selected.training_category != null ? "training" : hasSopBody(selected.content) ? "document" : "reference"} className="space-y-3">
+              <Tabs
+                key={selected.id}
+                defaultValue={
+                  selected.type === "form"
+                    ? (hasFormSchema(selected) ? "entries" : hasReportSchema(selected.content) ? "report" : "form")
+                    : selected.training_category != null ? "training" : hasSopBody(selected.content) ? "document" : "reference"
+                }
+                className="space-y-3"
+              >
                 <TabsList>
+                  {selected.type === "form" && (
+                    <TabsTrigger value="form"><ClipboardList className="w-3.5 h-3.5 mr-1.5" />Form</TabsTrigger>
+                  )}
+                  {selected.type === "form" && hasFormSchema(selected) && (
+                    <TabsTrigger value="entries"><ListChecks className="w-3.5 h-3.5 mr-1.5" />Entries</TabsTrigger>
+                  )}
+                  {selected.type === "form" && (isAdmin || hasReportSchema(selected.content)) && (
+                    <TabsTrigger value="report"><FileBarChart className="w-3.5 h-3.5 mr-1.5" />Report</TabsTrigger>
+                  )}
                   <TabsTrigger value="training"><GraduationCap className="w-3.5 h-3.5 mr-1.5" />Training</TabsTrigger>
                   {hasSopBody(selected.content) && (
                     <TabsTrigger value="document"><FileText className="w-3.5 h-3.5 mr-1.5" />Document</TabsTrigger>
                   )}
                   <TabsTrigger value="reference"><BookOpen className="w-3.5 h-3.5 mr-1.5" />Reference Documents</TabsTrigger>
                 </TabsList>
+
+                {selected.type === "form" && (
+                  <TabsContent value="form">
+                    {isAdmin ? (
+                      <FormSchemaBuilder
+                        key={selected.id}
+                        sopId={selected.id}
+                        content={selected.content}
+                        onContentChange={saveBody}
+                        onGenerateAi={findFormSource(selected) ? generateFormSchemaAi : undefined}
+                      />
+                    ) : hasFormSchema(selected) ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          This form is fillable in the app — open the Entries tab to record or review entries.
+                        </p>
+                        <ul className="text-sm list-disc pl-5 space-y-0.5">
+                          {(getFormSchema(selected.content)?.sections ?? []).flatMap(s => s.fields)
+                            .filter(f => f.type !== "heading" && f.type !== "info")
+                            .map(f => <li key={f.id}>{f.label}{f.required ? " *" : ""}</li>)}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        This form isn't fillable in the app yet — an admin needs to define its fields.
+                      </p>
+                    )}
+                  </TabsContent>
+                )}
+
+                {selected.type === "form" && hasFormSchema(selected) && (
+                  <TabsContent value="entries">
+                    <FormEntriesTab doc={selected} />
+                  </TabsContent>
+                )}
+
+                {selected.type === "form" && (isAdmin || hasReportSchema(selected.content)) && (
+                  <TabsContent value="report">
+                    <FormReportTab doc={selected} isAdmin={isAdmin} onContentChange={saveBody} />
+                  </TabsContent>
+                )}
 
                 {hasSopBody(selected.content) && (
                   <TabsContent value="document">

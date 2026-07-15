@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Home, Users, FileText, Kanban, Boxes, TrendingUp, Factory, BarChart2,
-  ClipboardCheck, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
+  ClipboardCheck, ClipboardList, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
   ListTodo, Inbox, DollarSign, Database, Settings, User as UserIcon,
   LogOut, PanelLeftClose, PanelLeft, Thermometer,
 } from "lucide-react";
@@ -15,7 +15,7 @@ import { CoachChat } from "@/components/CoachChat";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface TeamLayoutProps { children: ReactNode; }
-interface NavItem { path: string; icon: React.ElementType; label: string; ownerOnly?: boolean; }
+interface NavItem { path: string; icon: React.ElementType; label: string; ownerOnly?: boolean; auditorOk?: boolean; }
 interface NavSection { title: string; items: NavItem[]; }
 
 const navSections: NavSection[] = [
@@ -34,21 +34,23 @@ const navSections: NavSection[] = [
     { path: "/team/ops/insights", icon: TrendingUp, label: "Insights" },
   ]},
   { title: "Compliance", items: [
-    { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library" },
+    { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library", auditorOk: true },
+    { path: "/team/compliance/register", icon: Database, label: "Document Register", auditorOk: true },
+    { path: "/team/compliance/records", icon: ClipboardList, label: "Form Records", auditorOk: true },
     { path: "/team/compliance/traceability", icon: ClipboardCheck, label: "Traceability" },
-    { path: "/team/compliance/temperature", icon: Thermometer, label: "Temperature Logs" },
+    { path: "/team/compliance/temperature", icon: Thermometer, label: "Temperature Logs", auditorOk: true },
     { path: "/team/compliance/certifications", icon: ShieldCheck, label: "Certifications" },
   ]},
   { title: "HR", items: [
     { path: "/team/hr/directory", icon: UserSquare2, label: "Team Directory" },
-    { path: "/team/hr/trainings", icon: GraduationCap, label: "Training & SOPs" },
-    { path: "/team/hr/traceability", icon: ListTodo, label: "Training Compliance" },
+    { path: "/team/hr/trainings", icon: GraduationCap, label: "Training & SOPs", auditorOk: true },
+    { path: "/team/hr/traceability", icon: ListTodo, label: "Training Compliance", auditorOk: true },
   ]},
   { title: "Internal", items: [
     { path: "/team/internal/email", icon: Inbox, label: "Email Inbox" },
     { path: "/team/internal/finance", icon: DollarSign, label: "Finance", ownerOnly: true },
     { path: "/team/sourcing", icon: Database, label: "Vendor DB" },
-    { path: "/team/account", icon: UserIcon, label: "My Account" },
+    { path: "/team/account", icon: UserIcon, label: "My Account", auditorOk: true },
     { path: "/team/settings", icon: Settings, label: "Settings" },
   ]},
 ];
@@ -57,9 +59,14 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
+  const [fullName, setFullName] = useState("");
   const [collapsed, setCollapsed] = useState(false);
-  const { role } = useUserRole();
+  const { roles, role } = useUserRole();
   const isOwner = role === "owner";
+  // Auditor (SQF contractor) is read-only and compliance-scoped; when it's the
+  // user's ONLY role, restrict the sidebar to the auditor-visible items. A user
+  // who also holds staff/admin keeps the full nav (roles union additively).
+  const isAuditorOnly = roles.length > 0 && roles.every((r) => r === "auditor");
   const [inboxCount, setInboxCount] = useState(0);
 
   useEffect(() => {
@@ -73,6 +80,19 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Fetch the display name for the sidebar identity chip.
+  useEffect(() => {
+    if (!user?.id) { setFullName(""); return; }
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => { if (!cancelled) setFullName(data?.full_name || ""); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +116,16 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
 
   if (!user) return null;
 
+  const ROLE_LABEL: Record<string, string> = {
+    owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor", user: "Client",
+  };
+  const displayName = fullName || user.email || "Signed in";
+  const initials = (fullName
+    ? fullName.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("")
+    : (user.email?.[0] ?? "?")
+  ).toUpperCase();
+  const roleLabel = ROLE_LABEL[role] ?? role;
+
   return (
     <div className={`team-portal team-portal-bg min-h-screen flex ${collapsed ? "" : ""}`}>
       <aside
@@ -113,7 +143,11 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
 
         <ScrollArea className="flex-1 py-2">
           {navSections.map((section) => {
-            const items = section.items.filter((i) => !i.ownerOnly || isOwner);
+            const items = section.items.filter((i) => {
+              if (i.ownerOnly && !isOwner) return false;
+              if (isAuditorOnly && !i.auditorOk) return false;
+              return true;
+            });
             if (items.length === 0) return null;
             return (
               <div key={section.title} className="mb-1">
@@ -146,6 +180,25 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
         </ScrollArea>
 
         <div className="p-2 space-y-1 shrink-0 border-t border-[hsl(var(--tp-hairline))]">
+          {/* Identity chip — always shows who is signed in. Links to My Account. */}
+          <Link
+            to="/team/account"
+            title={collapsed ? `${displayName} · ${roleLabel}` : undefined}
+            className={`flex items-center gap-2.5 rounded-md px-2 py-2 mb-1 hover:bg-white/5 transition-colors ${collapsed ? "justify-center" : ""}`}
+          >
+            <span
+              className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full text-[11px] font-semibold text-black"
+              style={{ background: "hsl(var(--tp-gold))" }}
+            >
+              {initials}
+            </span>
+            {!collapsed && (
+              <span className="leading-tight min-w-0">
+                <span className="block text-[13px] font-medium text-white truncate">{displayName}</span>
+                <span className="block text-[11px] text-[hsl(44_30%_65%)] truncate">{roleLabel}</span>
+              </span>
+            )}
+          </Link>
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="tp-nav-item w-[calc(100%-16px)] text-left"
