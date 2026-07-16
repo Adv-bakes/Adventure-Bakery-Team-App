@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Save, User, Shield, Briefcase, Phone, FileCheck } from "lucide-react";
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
 import { DEPARTMENTS } from "@/lib/training";
+import AccountAccessCard from "@/components/team/AccountAccessCard";
 
 // Assignable roles. owner/admin are privileged grants — only an owner may set
 // them (mirrors the user_roles RLS escalation guard in 20260714000001).
@@ -262,6 +263,18 @@ export default function TeamMemberDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Account Access — password actions fire immediately and are NOT covered
+          by the shared Save Changes button below. Keyed on initialRoles (the
+          persisted roles) rather than the in-flight checkbox state, so the lock
+          matches what the edge function will actually enforce. */}
+      {viewerIsAdmin && (
+        <AccountAccessCard
+          userId={profile.id}
+          targetRoles={initialRoles}
+          viewerIsOwner={viewerIsOwner}
+        />
+      )}
 
       {/* Position */}
       <Card className="mb-6">

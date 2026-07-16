@@ -14,6 +14,9 @@ const ROLE_LABEL: Record<string, string> = {
   owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor (read-only)", user: "Client",
 };
 
+// Kept in step with the accept-invitation edge function, which re-checks it.
+const MIN_PASSWORD_LENGTH = 8;
+
 interface Invitation {
   id: string;
   email: string;
@@ -79,81 +82,61 @@ const AcceptInvite = () => {
 
   const isTeam = invitation?.invite_kind === "team";
 
-  // Mark the invitation accepted (provisioning role/department for team invites,
-  // brand access for client invites) and return where to send the new user.
-  const acceptAndDestination = async (userId: string): Promise<string> => {
-    if (invitation?.invite_kind === "team") {
-      const { data } = await supabase.rpc("accept_team_invitation" as any, {
-        _token: token,
-        _user_id: userId,
-        _preferred_language: preferSpanish ? "es" : "en",
-      });
-      const granted = typeof data === "string" && data ? data : invitation.role ?? "staff";
-      return granted === "auditor" ? "/team/compliance/sops" : "/team/dashboard";
-    }
-    await supabase.rpc("accept_invitation", { _token: token!, _user_id: userId });
-    return "/brand-portal";
-  };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!invitation || !token) return;
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      toast.error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // 1. Sign up the user
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: invitation.email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}${isTeam ? "/team" : "/brand-portal"}`,
-        },
+      // Provision the account server-side. Client-side signUp() cannot be used
+      // here: when an auth user already exists, GoTrue returns a fake user and
+      // no error, so the password silently never gets stored.
+      const { data, error } = await supabase.functions.invoke("accept-invitation", {
+        body: { token, password, preferSpanish },
       });
 
-      if (signUpError) {
-        // If user already exists, try signing them in
-        if (signUpError.message.includes("already registered") || signUpError.status === 422) {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: invitation.email,
-            password,
-          });
-
-          if (signInError) {
-            toast.error("An account with this email already exists. Please sign in at the login page.");
-            setIsSubmitting(false);
-            return;
-          }
-
-          if (signInData.user) {
-            const dest = await acceptAndDestination(signInData.user.id);
-            toast.success("Welcome! Your access has been activated.");
-            navigate(dest);
-            return;
-          }
+      if (error) {
+        // Non-2xx arrives as FunctionsHttpError with a generic message; the real
+        // reason is on the response body.
+        let detail = "We couldn't set up your account. Please try again.";
+        let code: string | undefined;
+        const res = (error as { context?: Response }).context;
+        if (res) {
+          try {
+            const body = await res.clone().json();
+            detail = body?.error ?? detail;
+            code = body?.code;
+          } catch { /* keep the generic message */ }
         }
-        toast.error(signUpError.message);
+        toast.error(detail);
+        if (code === "used") setStatus("used");
+        else if (code === "expired") setStatus("expired");
+        else if (code === "invalid") setStatus("invalid");
         setIsSubmitting(false);
         return;
       }
 
-      // 2. If user was created and has a session (auto-confirm enabled)
-      if (signUpData?.user?.id && signUpData?.session) {
-        const dest = await acceptAndDestination(signUpData.user.id);
-        toast.success("Account created! Welcome to Adventure Bakery.");
-        navigate(dest);
-      } else if (signUpData?.user && !signUpData?.session) {
-        // Email confirmation required — mark invitation accepted now so the
-        // role/department is provisioned; they finish by confirming + logging in.
-        await acceptAndDestination(signUpData.user.id);
-        toast.success("Account created! Please check your email to confirm, then sign in.");
-        navigate(isTeam ? "/team" : "/k2f-login");
+      // The account is created and confirmed server-side, so this establishes
+      // the session directly — no email-confirmation round trip.
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email ?? invitation.email,
+        password,
+      });
+
+      if (signInError) {
+        toast.success("Account created! Please sign in to continue.");
+        navigate(isTeam ? "/team" : "/brand");
+        return;
       }
+
+      toast.success("Account created! Welcome to Adventure Bakery.");
+      navigate(data.destination ?? (isTeam ? "/team/dashboard" : "/brand-portal"));
     } catch (error) {
       console.error("Accept invite error:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -215,7 +198,7 @@ const AcceptInvite = () => {
               This invitation has already been used. You can sign in to your account.
             </p>
             <Button
-              onClick={() => navigate("/k2f-login")}
+              onClick={() => navigate(isTeam ? "/team" : "/brand")}
               className="bg-gradient-to-r from-[#C89B3C] to-[#D4A855] text-white"
             >
               Sign In
@@ -246,11 +229,11 @@ const AcceptInvite = () => {
                 <Input
                   id="invite-password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="At least 6 characters"
+                  placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={MIN_PASSWORD_LENGTH}
                   className="pr-10"
                 />
                 <button
@@ -301,7 +284,7 @@ const AcceptInvite = () => {
               Already have an account?{" "}
               <button
                 type="button"
-                onClick={() => navigate(isTeam ? "/team" : "/k2f-login")}
+                onClick={() => navigate(isTeam ? "/team" : "/brand")}
                 className="font-medium hover:underline"
                 style={{ color: "#C89B3C" }}
               >

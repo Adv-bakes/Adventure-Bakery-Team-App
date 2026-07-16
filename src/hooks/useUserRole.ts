@@ -6,9 +6,14 @@ export type AppRole = "owner" | "admin" | "staff" | "auditor" | "user";
 // Highest-privilege wins when deriving the single back-compat `role`.
 // A user may hold several roles at once (user_roles is keyed UNIQUE(user_id, role));
 // permissions union additively at the DB layer via has_role()/is_staff_or_admin().
-const ROLE_PRIORITY: AppRole[] = ["owner", "admin", "staff", "user", "auditor"];
+export const ROLE_PRIORITY: AppRole[] = ["owner", "admin", "staff", "user", "auditor"];
 
-function highestRole(roles: AppRole[]): AppRole | null {
+/**
+ * The single role that should drive UI decisions for a multi-role user.
+ * Exported for callers that read user_roles directly and cannot use the hook —
+ * notably TeamAuth, which runs before any role context exists.
+ */
+export function highestRole(roles: AppRole[]): AppRole | null {
   for (const r of ROLE_PRIORITY) {
     if (roles.includes(r)) return r;
   }
