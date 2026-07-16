@@ -9,6 +9,21 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { toast } from "sonner";
 import { Eye, EyeOff, Shield } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { highestRole, type AppRole } from "@/hooks/useUserRole";
+
+// Roles admitted to the Team Portal. "auditor" is a read-only SQF contractor —
+// they belong here (their SOPs/training routes live under /team), not in the
+// Brand Portal the rejection toast points at.
+const TEAM_PORTAL_ROLES: AppRole[] = ["owner", "admin", "staff", "auditor"];
+
+// Where each role lands. Keyed by highest-privilege role held; mirrors the
+// destination convention in AcceptInvite.
+const LANDING_BY_ROLE: Partial<Record<AppRole, string>> = {
+  owner: "/team/dashboard",
+  admin: "/team/dashboard",
+  staff: "/team/operations-hub",
+  auditor: "/team/compliance/sops",
+};
 
 const TeamAuth = () => {
   const navigate = useNavigate();
@@ -21,17 +36,21 @@ const TeamAuth = () => {
 
   const redirectByRole = async (userId: string) => {
     try {
+      // Read every role: a user may hold several (UNIQUE(user_id, role)), so
+      // taking an arbitrary single row could pick one that fails the allowlist.
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", userId)
-        .limit(1)
-        .maybeSingle();
+        .eq("user_id", userId);
 
       if (error) throw error;
 
-      const role = data?.role || "user";
-      if (role !== "admin" && role !== "owner" && role !== "staff") {
+      const roles = (data ?? []).map((r) => r.role as AppRole);
+      // Rank only the roles that grant Team Portal access. Ranking all of them
+      // would send an auditor who is also a brand "user" to the staff landing
+      // page, which they cannot open — "user" outranks "auditor" in ROLE_PRIORITY.
+      const teamRoles = roles.filter((r) => TEAM_PORTAL_ROLES.includes(r));
+      if (teamRoles.length === 0) {
         toast.error("You don't have access to the Team Portal. Please use the Brand Portal login.");
         await supabase.auth.signOut();
         return;
@@ -44,8 +63,7 @@ const TeamAuth = () => {
         return;
       }
 
-      if (role === "admin" || role === "owner") navigate("/team/dashboard");
-      else navigate("/team/operations-hub");
+      navigate(LANDING_BY_ROLE[highestRole(teamRoles) ?? "staff"] ?? "/team/operations-hub");
     } catch (err) {
       console.error("redirectByRole failed:", err);
       toast.error("Couldn't load your account role. Please try signing in again.");

@@ -413,6 +413,42 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
 
 ---
 
+## Account Access & Invitations (auth provisioning)
+
+**Account Access card** — `components/team/AccountAccessCard.tsx`, rendered in `TeamMemberDetail.tsx`
+(`/team/member/:userId`, already `["admin","owner"]`-gated) between Identity and Position. Shows the
+account's real sign-in state (confirmed / last signed in / never signed in) and offers **Send Reset Link**
+(copyable — `generateLink` mints but does **not** send mail) and **Set Temporary Password** (break-glass;
+the admin then knows the password, which weakens non-repudiation for training/form signatures, so the
+dialog says so). Both route through the `admin-user-account` edge fn — the service-role key never reaches
+the browser. Actions fire immediately and are **not** covered by the page's shared Save Changes button.
+The card keys its owner/admin lock on **`initialRoles`** (persisted) not the in-flight checkbox state, so
+the UI lock matches what the function enforces. Every mutating action writes `admin_account_actions`
+(migration `20260715000003`) — RLS-readable by admin/owner, **no INSERT/UPDATE/DELETE policies at all**, so
+the service-role function can write but no client can tamper: an append-only audit log. Passwords are never
+logged.
+
+**Invitations must be provisioned server-side.** `AcceptInvite.tsx` calls the `accept-invitation` edge fn —
+it must **never** go back to client-side `supabase.auth.signUp`. When an auth user already exists for the
+email, GoTrue's anti-enumeration behavior returns a **fake user object with a random UUID and no error**,
+so `signUpError` never fires: the invitee is told "Account created!" while the password was never stored
+and the accept RPC receives a phantom user id. That was a real bug. The function validates the token first
+(unused + unexpired), reads the email **from the token's row and never from the request body**, then
+creates-or-updates the auth user with `email_confirm: true` (the invite, delivered to that mailbox, is the
+proof of ownership), and **checks the accept RPC's error** rather than swallowing it.
+
+**Login role gates are a separate allowlist.** Adding a role to `AppRole` + `ProtectedRoute` is not enough —
+`TeamAuth.tsx`'s `redirectByRole` has its own post-signin allowlist (`TEAM_PORTAL_ROLES`) and will sign a
+valid user straight back out if the role is missing from it. It ranks **only team-portal roles** when
+choosing a landing page, because `ROLE_PRIORITY` in `useUserRole.ts` puts `user` above `auditor` — an
+auditor who is also a brand `user` would otherwise be sent to the staff page they cannot open.
+
+⚠️ **`bootstrap-admin` was deleted** (2026-07-15) — it was deployed with `verify_jwt=false` and **no caller
+authentication**, letting any anonymous request set the password on a hardcoded account and grant it admin.
+Do not model new admin functions on it; copy `create-client-account`'s skeleton and tighten the role check.
+
+---
+
 ## Document Attachments — `DocumentAttachment.tsx`
 
 Component in `src/components/team/`, rendered in the SOPs Library drawer's **Reference Documents** tab and the HR Training & SOPs Reference Library drawer. Manages a list of reference items stored in `content.attachments[]` (`Attachment = { name; path?; url? }`):
@@ -560,6 +596,8 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `generate-quiz` | Accepts `{title, narrations[], count}`; returns `{questions[]}` — MCQ with 4 options, hint, rationale |
 | `cleanup-narration` | Accepts `{text}`; returns `{text}` — grammar/style cleanup via Gemini |
 | `cleanup-form-text` | Accepts `{text}`; returns `{text}` — same shape as `cleanup-narration` but prompted for compliance-form free-text answers (incident reports, root-cause notes): fixes grammar/punctuation/capitalization/filler words into one clear statement, preserves every fact/name/quantity exactly. Powers the AI-cleanup Sparkles button in `DictationTextarea.tsx`. |
+| `admin-user-account` | Accepts `{action, userId, password?, redirectTo?}` — `status` / `set_password` / `reset_link`. Admin-only account management; see "Account Access" below. Caller gate is `has_role('admin') OR is_owner()` — deliberately **not** `is_staff_or_admin` (that helper includes staff). |
+| `accept-invitation` | Accepts `{token, password, preferSpanish}`; provisions the invited auth user server-side via `auth.admin.createUser({email_confirm:true})`, then calls the accept RPC. `verify_jwt=false` — the caller has no account yet; the invite token is the credential. See "Invitations" below. |
 | `tts-elevenlabs` | Accepts `{text, voiceId?, lang?}`; calls ElevenLabs (`eleven_multilingual_v2`) and returns the MP3 bytes. **Returns `Content-Type: application/octet-stream`** (not `audio/mpeg`) so `supabase.functions.invoke` hands back a real `Blob` — any other type makes invoke run `response.text()` and corrupt the binary. Multilingual model auto-detects language, so one voice covers EN + ES. |
 
 **Required secrets (set via Supabase dashboard → Settings → Edge Functions):**
