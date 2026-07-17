@@ -1,6 +1,9 @@
 // Auto-sends NDA + PSS magic link to a prospect after PRF acceptance.
 // Called from SalesDocumentsInbox.accept() — caller must be staff.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logEmailSend } from "../_shared/emailLog.ts";
+
+const EMAIL_TEMPLATE = "client-documents";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -108,7 +111,9 @@ Deno.serve(async (req) => {
     });
 
     const body: Record<string, unknown> = {
-      from: "Adventure Bakery <scale@adventurebakery.info>",
+      // from must be on the Resend-verified sending domain; replies/cc still
+      // route to the monitored scale@adventurebakery.info inbox below.
+      from: "Adventure Bakery <scale@mail.adventurebakery.info>",
       to: [prospectEmail],
       cc: ["scale@adventurebakery.info"],
       subject: "Next step with Adventure Bakery — your NDA + product spec sheet",
@@ -136,6 +141,14 @@ Deno.serve(async (req) => {
       console.error("Resend fetch failed", e);
       emailError = String((e as any)?.message ?? e);
     }
+
+    // Durable audit of the send outcome (survives the ~24h edge-log window).
+    await logEmailSend(EMAIL_TEMPLATE, emailError ? "failed" : "sent", {
+      recipient: prospectEmail,
+      messageId: resendId,
+      error: emailError,
+      metadata: { leadId: lead.id },
+    });
 
     // Advance lead to Send Documents regardless of email outcome — staff has the magic link.
     await admin

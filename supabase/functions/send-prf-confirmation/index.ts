@@ -1,4 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logEmailSend } from "../_shared/emailLog.ts";
+
+const TEMPLATE = "prf-confirmation";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,8 +24,15 @@ serve(async (req) => {
       );
     }
 
+    const logMeta = { productName: productName ?? null, companyName: companyName ?? null };
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
+      await logEmailSend(TEMPLATE, "not_configured", {
+        recipient: recipientEmail,
+        error: "RESEND_API_KEY not set",
+        metadata: logMeta,
+      });
       return new Response(
         JSON.stringify({ error: "Email service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -127,7 +137,9 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Adventure Bakery <scale@adventurebakery.info>",
+        // from must be on the Resend-verified sending domain; replies/cc still
+        // route to the monitored scale@adventurebakery.info inbox below.
+        from: "Adventure Bakery <scale@mail.adventurebakery.info>",
         to: [recipientEmail],
         cc: ["scale@adventurebakery.info"],
         subject: `PRF Received — ${displayProduct}`,
@@ -140,12 +152,22 @@ serve(async (req) => {
 
     if (!resendRes.ok) {
       console.error("Resend error:", resendData);
+      await logEmailSend(TEMPLATE, "failed", {
+        recipient: recipientEmail,
+        error: JSON.stringify(resendData),
+        metadata: logMeta,
+      });
       return new Response(
         JSON.stringify({ error: "Failed to send email", details: resendData }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    await logEmailSend(TEMPLATE, "sent", {
+      recipient: recipientEmail,
+      messageId: resendData.id,
+      metadata: logMeta,
+    });
     return new Response(
       JSON.stringify({ success: true, id: resendData.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
