@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { UserSquare2, Search, ChevronRight, UserPlus, Copy, Check, Clock, Ban } from "lucide-react";
+import { UserSquare2, Search, ChevronRight, UserPlus, Copy, Check, Clock, Ban, MailCheck, MailX } from "lucide-react";
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
 import { DEPARTMENTS } from "@/lib/training";
 
@@ -59,6 +59,7 @@ export default function HrDirectory() {
   const [inviteDept, setInviteDept] = useState<string>(NO_DEPT);
   const [inviting, setInviting] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [emailStatus, setEmailStatus] = useState<"sent" | "failed" | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Owner can invite any role; admin can invite staff/auditor only (matches RLS).
@@ -66,7 +67,7 @@ export default function HrDirectory() {
 
   const resetInvite = () => {
     setInviteEmail(""); setInviteRole("staff"); setInviteDept(NO_DEPT);
-    setInviteLink(null); setCopied(false);
+    setInviteLink(null); setCopied(false); setEmailStatus(null);
   };
 
   const handleInvite = async () => {
@@ -91,14 +92,32 @@ export default function HrDirectory() {
       const link = `${window.location.origin}/accept-invite?token=${token}`;
       setInviteLink(link);
 
-      // Best-effort email delivery; the copyable link is the reliable fallback.
+      // The copyable link is the reliable fallback, but we still await delivery
+      // so the admin learns whether the email actually went out. This used to be
+      // fire-and-forget with the error swallowed, so a failed send was invisible
+      // (and left no durable trace once the 24h edge logs expired).
       const { data: { user } } = await supabase.auth.getUser();
-      supabase.functions.invoke("send-invitation-email", {
-        body: { email, inviteUrl: link, invitedByEmail: user?.email },
-      }).catch(() => {/* non-fatal — admin shares the link manually */});
+      let sent = false;
+      try {
+        const { data: sendData, error: sendError } = await supabase.functions.invoke(
+          "send-invitation-email",
+          { body: { email, inviteUrl: link, invitedByEmail: user?.email, role: inviteRole } },
+        );
+        if (sendError) throw sendError;
+        sent = (sendData as any)?.success === true;
+      } catch {
+        sent = false; // edge function logs the failure server-side to email_send_log
+      }
+      setEmailStatus(sent ? "sent" : "failed");
 
       try { await navigator.clipboard.writeText(link); setCopied(true); } catch { /* clipboard may be blocked */ }
-      toast.success("Invitation created — link copied. Email sent if delivery is configured.");
+      if (sent) {
+        toast.success(`Invitation created and emailed to ${email}. Link also copied.`);
+      } else {
+        toast.warning(
+          "Invitation created, but the email couldn't be sent. Copy the link below and send it to them directly.",
+        );
+      }
       loadInvites();
     } catch (e: any) {
       toast.error(e.message ?? "Failed to create invitation");
@@ -244,6 +263,16 @@ export default function HrDirectory() {
                       {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
+                  {emailStatus === "sent" && (
+                    <p className="flex items-center gap-1.5 text-xs text-green-600">
+                      <MailCheck className="h-3.5 w-3.5" /> Email sent to {inviteEmail}.
+                    </p>
+                  )}
+                  {emailStatus === "failed" && (
+                    <p className="flex items-center gap-1.5 text-xs text-amber-600">
+                      <MailX className="h-3.5 w-3.5" /> Email didn't send — share the link above manually.
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">Link expires in 7 days.</p>
                 </div>
               ) : (

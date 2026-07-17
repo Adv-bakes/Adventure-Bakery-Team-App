@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logEmailSend } from "../_shared/emailLog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,13 +7,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const TEMPLATE = "team-invitation";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { email, inviteUrl, invitedByEmail } = await req.json();
+    const { email, inviteUrl, invitedByEmail, role } = await req.json();
 
     if (!email || !inviteUrl) {
       return new Response(
@@ -21,8 +24,15 @@ serve(async (req) => {
       );
     }
 
+    const logMeta = { role: role ?? null, invitedByEmail: invitedByEmail ?? null };
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
+      await logEmailSend(TEMPLATE, "not_configured", {
+        recipient: email,
+        error: "RESEND_API_KEY not set",
+        metadata: logMeta,
+      });
       return new Response(
         JSON.stringify({ error: "Email service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -101,7 +111,10 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Adventure Bakery <noreply@notify.adventurebakery.info>",
+        // Send from the Resend-verified mail.adventurebakery.info subdomain
+        // (DKIM at resend._domainkey.mail + SES SPF are set; the root domain and
+        // notify. subdomain were never verified and 403'd on every send).
+        from: "Adventure Bakery <noreply@mail.adventurebakery.info>",
         to: [email],
         subject: "You're Invited to Adventure Bakery Brand Portal",
         html: htmlBody,
@@ -112,12 +125,22 @@ serve(async (req) => {
 
     if (!resendRes.ok) {
       console.error("Resend error:", resendData);
+      await logEmailSend(TEMPLATE, "failed", {
+        recipient: email,
+        error: JSON.stringify(resendData),
+        metadata: logMeta,
+      });
       return new Response(
         JSON.stringify({ error: "Failed to send email", details: resendData }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    await logEmailSend(TEMPLATE, "sent", {
+      recipient: email,
+      messageId: resendData.id,
+      metadata: logMeta,
+    });
     return new Response(
       JSON.stringify({ success: true, id: resendData.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

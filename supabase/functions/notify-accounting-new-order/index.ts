@@ -1,4 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logEmailSend } from "../_shared/emailLog.ts";
+
+const TEMPLATE = "accounting-new-order";
+const ACCOUNTING_RECIPIENT = "Accounting@AdventureBakes.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,8 +34,15 @@ serve(async (req) => {
     const payload: Payload = await req.json();
     const { orderId, orderNumber, clientName, clientEmail, items, shipToKind, notes, createdAt } = payload;
 
+    const logMeta = { orderId, orderNumber: orderNumber ?? null, clientName };
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
+      await logEmailSend(TEMPLATE, "not_configured", {
+        recipient: ACCOUNTING_RECIPIENT,
+        error: "RESEND_API_KEY not set",
+        metadata: logMeta,
+      });
       return new Response(JSON.stringify({ error: "Email service not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -111,7 +122,9 @@ serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({
-        from: "AB Team App <scale@adventurebakery.info>",
+        // from must be on the Resend-verified sending domain; replies still
+        // route to the monitored scale@adventurebakery.info inbox below.
+        from: "AB Team App <scale@mail.adventurebakery.info>",
         to: ["Accounting@AdventureBakes.com"],
         reply_to: "scale@adventurebakery.info",
         subject: `New Order — ${clientName} · ${items.length} product${items.length !== 1 ? "s" : ""}`,
@@ -122,11 +135,21 @@ serve(async (req) => {
     const data = await res.json();
     if (!res.ok) {
       console.error("Resend error:", data);
+      await logEmailSend(TEMPLATE, "failed", {
+        recipient: ACCOUNTING_RECIPIENT,
+        error: JSON.stringify(data),
+        metadata: logMeta,
+      });
       return new Response(JSON.stringify({ error: "Email failed", details: data }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    await logEmailSend(TEMPLATE, "sent", {
+      recipient: ACCOUNTING_RECIPIENT,
+      messageId: data.id ?? null,
+      metadata: logMeta,
+    });
     return new Response(JSON.stringify({ success: true }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -3,6 +3,9 @@
 // inserts client_documents row, emails the prospect + sales team, advances stage.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
+import { logEmailSend } from "../_shared/emailLog.ts";
+
+const EMAIL_TEMPLATE = "pss-confirmation";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,23 +70,49 @@ Deno.serve(async (req) => {
     });
 
     // Email PDF copy to prospect + sales.
+    const emailMeta = { pssSubmissionId: row.id, leadId: row.lead_id, productLabel: row.product_label ?? null };
     if (RESEND_API_KEY) {
       const b64 = btoa(String.fromCharCode(...pdfBytes));
       const html = `<p>Hi ${(lead?.contact_name || "there").split(" ")[0]},</p>
 <p>Thanks — we've received your Product Spec Sheet${row.product_label ? ` for <strong>${escapeHtml(row.product_label)}</strong>` : ""}. A copy is attached for your records. Our team will review and reach out with next steps.</p>
 <p style="color:#888;font-size:12px;">— Adventure Bakery</p>`;
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-        body: JSON.stringify({
-          from: "Adventure Bakery <noreply@notify.adventurebakery.info>",
-          to: [row.prospect_email],
-          cc: ["scale@adventurebakery.info"],
-          subject: `PSS received — ${row.product_label || lead?.company_name || "your product"}`,
-          html,
-          reply_to: "scale@adventurebakery.info",
-          attachments: [{ filename: fileName, content: b64 }],
-        }),
+      try {
+        const emailRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+          body: JSON.stringify({
+            // Send from the Resend-verified mail.adventurebakery.info subdomain
+            // (DKIM at resend._domainkey.mail + SES SPF are set; the root domain and
+            // notify. subdomain were never verified and 403'd on every send).
+            from: "Adventure Bakery <noreply@mail.adventurebakery.info>",
+            to: [row.prospect_email],
+            cc: ["scale@adventurebakery.info"],
+            subject: `PSS received — ${row.product_label || lead?.company_name || "your product"}`,
+            html,
+            reply_to: "scale@adventurebakery.info",
+            attachments: [{ filename: fileName, content: b64 }],
+          }),
+        });
+        const emailData = await emailRes.json();
+        if (!emailRes.ok) {
+          console.error("Resend error:", emailData);
+          await logEmailSend(EMAIL_TEMPLATE, "failed", {
+            recipient: row.prospect_email, error: JSON.stringify(emailData), metadata: emailMeta,
+          });
+        } else {
+          await logEmailSend(EMAIL_TEMPLATE, "sent", {
+            recipient: row.prospect_email, messageId: emailData.id ?? null, metadata: emailMeta,
+          });
+        }
+      } catch (e) {
+        console.error("Resend fetch failed:", e);
+        await logEmailSend(EMAIL_TEMPLATE, "failed", {
+          recipient: row.prospect_email, error: String((e as any)?.message ?? e), metadata: emailMeta,
+        });
+      }
+    } else {
+      await logEmailSend(EMAIL_TEMPLATE, "not_configured", {
+        recipient: row.prospect_email, error: "RESEND_API_KEY not set", metadata: emailMeta,
       });
     }
 
