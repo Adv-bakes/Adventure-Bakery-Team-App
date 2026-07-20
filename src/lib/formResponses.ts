@@ -198,25 +198,73 @@ export async function deleteResponse(id: string, attachmentPaths: string[] = [])
   }
 }
 
+/** Longest-edge cap + JPEG quality for on-upload photo compression. 1600px
+ * stays sharp enough to read a label or run the photo-fill OCR, while a 3MB
+ * tablet photo lands around 300–500KB. */
+const UPLOAD_IMAGE_MAX_PX = 1600;
+const UPLOAD_IMAGE_QUALITY = 0.8;
+
+interface CompressedImage { blob: Blob; name: string; contentType: string; }
+
 /**
- * Uploads one file/photo for a response and returns its descriptor. Does NOT
- * persist the descriptor into the response row — call saveResponseAttachments
- * with the updated array afterward (same upload/attach split as uploadSopFile
- * in training.ts).
+ * Downscale + re-encode a photo before upload so tablet shots don't cost 3MB
+ * in storage and on every load. Images only; returns null (upload the original
+ * untouched) for non-images, for anything the browser cannot decode — iPhone/
+ * iPad HEIC being the common one — and when the re-encode would not actually be
+ * smaller (an already-optimized image). EXIF orientation is baked in so a photo
+ * taken sideways is not stored sideways.
+ */
+async function compressImageForUpload(file: File): Promise<CompressedImage | null> {
+  if (!file.type.startsWith("image/")) return null;
+  let bitmap: ImageBitmap | undefined;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const scale = Math.min(1, UPLOAD_IMAGE_MAX_PX / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob: Blob | null = await new Promise(resolve =>
+      canvas.toBlob(resolve, "image/jpeg", UPLOAD_IMAGE_QUALITY));
+    // A tiny or already-JPEG-optimized source can come out larger; keep the
+    // original in that case rather than trading quality for nothing.
+    if (!blob || blob.size >= file.size) return null;
+    const name = file.name.replace(/\.(png|jpe?g|gif|webp|heic|heif|bmp|tiff?)$/i, "") + ".jpg";
+    return { blob, name, contentType: "image/jpeg" };
+  } catch {
+    return null; // undecodable (e.g. HEIC in Chrome) — caller uploads original
+  } finally {
+    bitmap?.close();
+  }
+}
+
+/**
+ * Uploads one file/photo for a response and returns its descriptor. Photos are
+ * downscaled/re-encoded first (see compressImageForUpload); non-images and
+ * undecodable formats upload as-is. Does NOT persist the descriptor into the
+ * response row — call saveResponseAttachments with the updated array afterward
+ * (same upload/attach split as uploadSopFile in training.ts).
  */
 export async function uploadResponseAttachment(responseId: string, file: File): Promise<ResponseAttachment> {
   const { data: auth } = await supabase.auth.getUser();
-  const safe = file.name.replace(/[^\w.\-]+/g, "_");
+  const compressed = await compressImageForUpload(file);
+  const body: Blob = compressed?.blob ?? file;
+  const name = compressed?.name ?? file.name;
+  const contentType = compressed?.contentType ?? (file.type || undefined);
+
+  const safe = name.replace(/[^\w.\-]+/g, "_");
   const path = `${responseId}/${crypto.randomUUID()}-${safe}`;
   const { error } = await supabase.storage
     .from("form-attachments")
-    .upload(path, file, { upsert: false, contentType: file.type || undefined });
+    .upload(path, body, { upsert: false, contentType });
   if (error) throw error;
   return {
     path,
-    name: file.name,
-    contentType: file.type || undefined,
-    size: file.size,
+    name,
+    contentType,
+    size: body.size,
     uploadedAt: new Date().toISOString(),
     uploadedBy: auth?.user?.id ?? "",
   };
