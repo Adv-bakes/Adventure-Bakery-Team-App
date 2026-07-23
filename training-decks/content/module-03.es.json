@@ -120,16 +120,16 @@
         "items": [
           "Los pasteles de ron que fabricamos — contienen trigo, huevo y leche",
           "Los biscotti que fabricamos — contienen trigo y huevo, y pueden contener frutos secos",
-          "Las hamburguesas vegetales que fabricamos — a base de proteína de guisante, etiquetadas libres de los 9 alérgenos principales"
+          "El producto libre de alérgenos que fabricamos — etiquetado libre de los 9 alérgenos principales"
         ]
       },
-      "notes": "Este es el mapa de alérgenos de lo que realmente fabricamos. Los pasteles de ron que fabricamos contienen trigo, huevo y leche. Los biscotti que fabricamos contienen trigo y huevo, y pueden contener frutos secos. Y las hamburguesas vegetales que fabricamos son a base de proteína de guisante y están etiquetadas como libres de los nueve alérgenos principales. Antes de trabajar en una línea, necesitas saber cuál de estos está corriendo, porque el mismo edificio fabrica tanto productos con alérgenos como un producto cuyo argumento de venta es justamente que no tiene ninguno."
+      "notes": "Este es el mapa de alérgenos de lo que realmente fabricamos. Los pasteles de ron que fabricamos contienen trigo, huevo y leche. Los biscotti que fabricamos contienen trigo y huevo, y pueden contener frutos secos. Y el producto libre de alérgenos que fabricamos está etiquetado como libre de los nueve alérgenos principales. Antes de trabajar en una línea, necesitas saber cuál de estos está corriendo, porque el mismo edificio fabrica tanto productos con alérgenos como un producto cuyo argumento de venta es justamente que no tiene ninguno."
     },
     {
       "title": "Lo que nos hace diferentes",
       "kicker": "LA DECLARACIÓN",
       "lead": "Etiquetada libre de los 9 — hecha junto a ellos.",
-      "photo": "FOTO: producto vegetal en la línea de producción",
+      "photo": "FOTO: producto libre de alérgenos en la línea de producción",
       "visual": {
         "type": "workers",
         "body": [
@@ -139,7 +139,7 @@
         ],
         "chip": "Proteger la declaración es tarea de todos"
       },
-      "notes": "Esto es lo que distingue a nuestra planta de una panadería común. La hamburguesa vegetal que fabricamos está etiquetada como libre de los nueve alérgenos principales: esa es la promesa impresa en el empaque y la razón por la que los clientes confían en ella. Pero aquí está el reto: se fabrica en el mismo edificio que corre productos con trigo, huevo, leche y frutos secos, en equipos compartidos y con personal rotativo. Si apenas una traza de esos alérgenos llega a la hamburguesa, la declaración se vuelve falsa y un consumidor que confió en esa etiqueta puede salir gravemente herido. Proteger esa declaración no es tarea de una sola persona: es de todos."
+      "notes": "Esto es lo que distingue a nuestra planta de una panadería común. El producto libre de alérgenos que fabricamos está etiquetado como libre de los nueve alérgenos principales: esa es la promesa impresa en el empaque y la razón por la que los clientes confían en ella. Pero aquí está el reto: se fabrica en el mismo edificio que corre productos con trigo, huevo, leche y frutos secos, en equipos compartidos y con personal rotativo. Si apenas una traza de esos alérgenos llega al producto, la declaración se vuelve falsa y un consumidor que confió en esa etiqueta puede salir gravemente herido. Proteger esa declaración no es tarea de una sola persona: es de todos."
     },
     {
       "title": "Lo que cuesta un error con alérgenos",
@@ -181,11 +181,11 @@
         "items": [
           "Sabe qué productos y alérgenos corren en tu línea cada turno",
           "Lee la etiqueta y nunca asumas que un producto es libre de alérgenos",
-          "Trata la línea de la hamburguesa libre como el trabajo de mayor cuidado",
+          "Trata la línea del producto libre como el trabajo de mayor cuidado",
           "Reporta cualquier derrame, confusión o duda antes de que el producto avance"
         ]
       },
-      "notes": "Antes de llegar a los procedimientos, la conciencia misma es un control. Sabe qué productos y alérgenos corren en tu línea cada turno. Lee la etiqueta y nunca asumas sin más que un producto es libre de alérgenos: confírmalo. Trata la línea de la hamburguesa libre como el trabajo de mayor cuidado del edificio, porque lo es. Y si ves un derrame, una confusión, o simplemente no estás seguro, detente y repórtalo antes de que el producto avance. Hablar a tiempo siempre es más barato que un retiro."
+      "notes": "Antes de llegar a los procedimientos, la conciencia misma es un control. Sabe qué productos y alérgenos corren en tu línea cada turno. Lee la etiqueta y nunca asumas sin más que un producto es libre de alérgenos: confírmalo. Trata la línea del producto libre como el trabajo de mayor cuidado del edificio, porque lo es. Y si ves un derrame, una confusión, o simplemente no estás seguro, detente y repórtalo antes de que el producto avance. Hablar a tiempo siempre es más barato que un retiro."
     },
     {
       "title": "Resumen",
@@ -195,12 +195,12 @@
         "items": [
           "Un alérgeno es una proteína que puede causar una reacción grave, incluso mortal, desde una traza",
           "Conoce los 9 principales — cuatro de ellos ya corren en nuestra planta",
-          "La hamburguesa que fabricamos está etiquetada libre de los 9, hecha junto a productos con alérgenos",
+          "El producto libre de alérgenos que fabricamos está etiquetado libre de los 9, hecho junto a productos con alérgenos",
           "Conocer el riesgo y reportarlo es la primera tarea de todos"
         ],
         "next": "Sigue: Alérgenos Parte 2 — Proteger la Declaración"
       },
-      "notes": "Repasemos la Parte 1. Un alérgeno es una proteína común de un alimento que, en una persona alérgica, puede desencadenar una reacción repentina e incluso mortal a partir de apenas una traza. Hay nueve alérgenos principales que debes conocer, y cuatro de ellos —trigo, huevo, leche y soya— ya corren en nuestra planta. La hamburguesa vegetal que fabricamos está etiquetada como libre de los nueve aunque se fabrica justo al lado de productos con alérgenos, y por eso proteger esa declaración es tarea de todos. Conocer el riesgo y reportar cualquier cosa que se vea mal es tu primera responsabilidad. A continuación, la Parte 2: cómo protegemos la declaración en el piso. Excelente trabajo."
+      "notes": "Repasemos la Parte 1. Un alérgeno es una proteína común de un alimento que, en una persona alérgica, puede desencadenar una reacción repentina e incluso mortal a partir de apenas una traza. Hay nueve alérgenos principales que debes conocer, y cuatro de ellos —trigo, huevo, leche y soya— ya corren en nuestra planta. El producto libre de alérgenos que fabricamos está etiquetado como libre de los nueve aunque se fabrica justo al lado de productos con alérgenos, y por eso proteger esa declaración es tarea de todos. Conocer el riesgo y reportar cualquier cosa que se vea mal es tu primera responsabilidad. A continuación, la Parte 2: cómo protegemos la declaración en el piso. Excelente trabajo."
     }
   ],
   "quiz": [
@@ -265,16 +265,16 @@
       "rationale": "Los pasteles de ron que fabricamos contienen trigo, huevo y leche; los biscotti que fabricamos contienen trigo y huevo y pueden contener frutos secos. La soya también está presente en la planta."
     },
     {
-      "question": "¿Qué hace que la hamburguesa vegetal que fabricamos sea diferente y de alto riesgo?",
+      "question": "¿Qué hace que el producto libre de alérgenos que fabricamos sea diferente y de alto riesgo?",
       "options": [
-        "Etiquetada libre de los 9 alérgenos, pero hecha junto a ellos",
+        "Etiquetado libre de los 9 alérgenos, pero hecho junto a ellos",
         "Es por mucho el producto más caro que fabricamos",
         "En realidad contiene todos y cada uno de los alérgenos",
         "Se fabrica en una instalación separada y dedicada, sin otros productos"
       ],
       "correct": 0,
       "hint": "El riesgo es la declaración más el edificio compartido.",
-      "rationale": "La hamburguesa está etiquetada libre de los 9 alérgenos principales, pero se produce en el mismo edificio, con equipo compartido y personal rotativo, que los productos con trigo, huevo, leche y frutos secos, así que cualquier contacto cruzado vuelve falsa la declaración."
+      "rationale": "El producto está etiquetado libre de los 9 alérgenos principales, pero se produce en el mismo edificio, con equipo compartido y personal rotativo, que los productos con trigo, huevo, leche y frutos secos, así que cualquier contacto cruzado vuelve falsa la declaración."
     },
     {
       "question": "¿Cuál de estos es un ejemplo de contacto cruzado de alérgenos?",
@@ -289,7 +289,7 @@
       "rationale": "El contacto cruzado incluye polvo en el aire, equipo o utensilios compartidos sin limpiar, residuo en manos o guantes, y mezclar reproceso en el lote equivocado."
     },
     {
-      "question": "No estás seguro de si la línea se limpió por completo antes de correr la hamburguesa libre. ¿Qué debes hacer?",
+      "question": "No estás seguro de si la línea se limpió por completo antes de correr el producto libre. ¿Qué debes hacer?",
       "options": [
         "Iniciar la corrida de inmediato; probablemente todo esté bien",
         "Detente y repórtalo antes de que el producto avance",
