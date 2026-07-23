@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "settings": {
+    "deletable": false,
+    "allowMultipleDrafts": true,
+    "requireVerification": true,
+    "attachmentsEnabled": true,
+    "instanceTitleTemplate": "{clean_date} — Mixer clean"
+  },
+  "sections": [
+    {
+      "id": "entry",
+      "fields": [
+        {
+          "id": "clean_date",
+          "type": "date",
+          "label": "Date",
+          "required": true,
+          "defaultToday": true,
+          "width": "third",
+          "showInList": true
+        },
+        {
+          "id": "product_run",
+          "type": "text",
+          "label": "Product run",
+          "width": "third",
+          "showInList": true
+        },
+        {
+          "id": "allergen_change",
+          "type": "checkbox",
+          "label": "Allergen changeover",
+          "width": "third",
+          "help": "Tick if the next product has different allergens"
+        }
+      ]
+    },
+    {
+      "id": "cleaning",
+      "title": "Cleaning",
+      "fields": [
+        {
+          "id": "steps",
+          "type": "grid",
+          "label": "Steps",
+          "columns": [
+            { "id": "done", "label": "Done", "type": "pass_fail", "required": true, "width": 1 },
+            { "id": "notes", "label": "Notes", "type": "text", "width": 3 }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labelHeader": "Step",
+            "labels": [
+              "Bowl lowered and power unplugged",
+              "Machine dry wiped — top, levers, down to the footers",
+              "Machine wet wiped, detergent wiped off, left to air dry",
+              "Drip cup clean and dry — no oil",
+              "Bowl broken down, residue removed, rinsed warm, scrubbed with detergent",
+              "Bowl run through the pan washer on the high-temperature cycle",
+              "Paddle / whip / dough arm — detergent, rinse, sanitizer, drying rack",
+              "Allergen changeover: every food contact surface checked under good light (changeover only)"
+            ]
+          }
+        },
+        {
+          "id": "sanitizer_ppm",
+          "type": "number",
+          "label": "Sanitizer strength (test strip)",
+          "unit": "ppm",
+          "required": true,
+          "width": "half",
+          "showInList": true
+        },
+        {
+          "id": "cleaned_by",
+          "type": "signature",
+          "role": "filler",
+          "label": "Cleaned by",
+          "required": true,
+          "statement": "I cleaned the mixer as described in SOP-901.",
+          "width": "half"
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "title": "Check Before Next Run",
+      "fields": [
+        {
+          "id": "preop_ok",
+          "type": "pass_fail",
+          "label": "Mixer, bowl and agitator clean and dry; drip cup clear; nothing left on the machine",
+          "required": true,
+          "width": "full",
+          "showInList": true
+        },
+        {
+          "id": "issue",
+          "type": "textarea",
+          "label": "Anything wrong, and what was done about it",
+          "rows": 2,
+          "width": "full",
+          "help": "Leave blank if nothing. If something failed, it gets re-cleaned and re-checked."
+        },
+        {
+          "id": "released_by",
+          "type": "signature",
+          "role": "verifier",
+          "label": "Checked and released by",
+          "statement": "I checked the mixer after cleaning and release it for production.",
+          "width": "half"
+        }
+      ]
+    }
+  ]
+}
