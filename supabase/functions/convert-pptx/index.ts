@@ -100,8 +100,13 @@ Deno.serve(async (req) => {
       slides.push(path);
     }
 
-    // Clean up the uploaded source deck
-    await supabase.storage.from("training-content").remove([sourcePath]);
+    // The source deck is deliberately RETAINED at `${sopId}/source.pptx` (it used to be
+    // deleted here). It backs the "Download source PowerPoint" button in the SOPs Library
+    // Reference Documents tab (`getSourceDeckUrl()` in lib/training.ts) so auditors can get
+    // the deck a module was built from. One slot per module — each import upserts over it,
+    // so this is "the current deck", not a revision history; keep named copies in
+    // `content.attachments[]` for that. Purged with the rest of the folder on hard-delete
+    // (SopsLibrary.tsx already lists `${id}/source.pptx` among the paths it removes).
 
     return json({ slides });
   } catch (e) {
