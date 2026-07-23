@@ -120,16 +120,16 @@
         "items": [
           "The rum cakes we make — contain wheat, egg, and milk",
           "The biscotti we make — contain wheat and egg, and may contain tree nuts",
-          "The plant-based burgers we make — pea-protein based, and labeled free of the top 9 allergens"
+          "The allergen-free product we make — labeled free of all top 9 allergens"
         ]
       },
-      "notes": "Here is the allergen map of what we actually make. The rum cakes we make contain wheat, egg, and milk. The biscotti we make contain wheat and egg and may contain tree nuts. And the plant-based burgers we make are pea-protein based and are labeled free of all top nine allergens. Before you work a line, you need to know which of these is running, because the same building makes both allergen-containing products and a product whose whole selling point is that it has none."
+      "notes": "Here is the allergen map of what we actually make. The rum cakes we make contain wheat, egg, and milk. The biscotti we make contain wheat and egg and may contain tree nuts. And the allergen-free product we make is labeled free of all top nine allergens. Before you work a line, you need to know which of these is running, because the same building makes both allergen-containing products and a product whose whole selling point is that it has none."
     },
     {
       "title": "The claim that makes us different",
       "kicker": "THE CLAIM",
       "lead": "Labeled free of all 9 — made beside them.",
-      "photo": "PHOTO: plant-based product on the production line",
+      "photo": "PHOTO: allergen-free product on the production line",
       "visual": {
         "type": "workers",
         "body": [
@@ -139,7 +139,7 @@
         ],
         "chip": "Protecting the claim is everyone's job"
       },
-      "notes": "This is what sets our plant apart from an ordinary bakery. The plant-based burger we make is labeled free of all top nine allergens — that is the promise printed on the package and the reason customers trust it. But here's the challenge: it's made in the same building that runs wheat, egg, milk, and tree-nut products, on shared equipment and rotating staff. If even a trace of those allergens reaches the burger, the claim becomes false and a consumer who trusted that label can be seriously hurt. Protecting that claim is not one person's job — it's everyone's."
+      "notes": "This is what sets our plant apart from an ordinary bakery. The allergen-free product we make is labeled free of all top nine allergens — that is the promise printed on the package and the reason customers trust it. But here's the challenge: it's made in the same building that runs wheat, egg, milk, and tree-nut products, on shared equipment and rotating staff. If even a trace of those allergens reaches the product, the claim becomes false and a consumer who trusted that label can be seriously hurt. Protecting that claim is not one person's job — it's everyone's."
     },
     {
       "title": "What an allergen mistake costs",
@@ -181,11 +181,11 @@
         "items": [
           "Know which products and allergens run on your line each shift",
           "Read the label and never assume a product is allergen-free",
-          "Treat the free-from burger line as the highest-care job in the plant",
+          "Treat the free-from product line as the highest-care job in the plant",
           "Report any spill, mix-up, or uncertainty before product moves"
         ]
       },
-      "notes": "Before we ever get to procedures, awareness itself is a control. Know which products and allergens are running on your line each shift. Read the label and never just assume a product is allergen-free — confirm it. Treat the free-from burger line as the highest-care job in the building, because it is. And if you see a spill, a mix-up, or you're simply not sure, stop and report it before the product moves. Speaking up early is always cheaper than a recall."
+      "notes": "Before we ever get to procedures, awareness itself is a control. Know which products and allergens are running on your line each shift. Read the label and never just assume a product is allergen-free — confirm it. Treat the free-from product line as the highest-care job in the building, because it is. And if you see a spill, a mix-up, or you're simply not sure, stop and report it before the product moves. Speaking up early is always cheaper than a recall."
     },
     {
       "title": "Summary",
@@ -195,12 +195,12 @@
         "items": [
           "An allergen is a protein that can trigger a severe, even fatal reaction from a trace",
           "Know the top 9 — four of them already run in our plant",
-          "The burger we make is labeled free of all 9, made beside allergen products",
+          "The allergen-free product we make is labeled free of all 9, made beside allergen products",
           "Knowing the risk and reporting it is everyone's first job"
         ],
         "next": "Next: Allergens Part 2 — Protecting the Claim"
       },
-      "notes": "Let's recap Part 1. An allergen is an ordinary food protein that, in an allergic person, can trigger a sudden and even fatal reaction from just a trace. There are nine major allergens to know, and four of them — wheat, egg, milk, and soy — already run in our plant. The plant-based burger we make is labeled free of all nine even though it's made right beside allergen-containing products, which is why protecting that claim is everyone's job. Knowing the risk and reporting anything that looks wrong is your first responsibility. Up next, Part 2: how we actually protect the claim on the floor. Great work."
+      "notes": "Let's recap Part 1. An allergen is an ordinary food protein that, in an allergic person, can trigger a sudden and even fatal reaction from just a trace. There are nine major allergens to know, and four of them — wheat, egg, milk, and soy — already run in our plant. The allergen-free product we make is labeled free of all nine even though it's made right beside allergen-containing products, which is why protecting that claim is everyone's job. Knowing the risk and reporting anything that looks wrong is your first responsibility. Up next, Part 2: how we actually protect the claim on the floor. Great work."
     }
   ],
   "quiz": [
@@ -265,7 +265,7 @@
       "rationale": "The rum cakes we make contain wheat, egg, and milk; the biscotti we make contain wheat and egg and may contain tree nuts. Soy is also present in the plant."
     },
     {
-      "question": "What makes the plant-based burger we make different and high-risk?",
+      "question": "What makes the allergen-free product we make different and high-risk?",
       "options": [
         "It is labeled free of the 9 allergens yet made beside them",
         "It is by far the most expensive product we make",
@@ -274,7 +274,7 @@
       ],
       "correct": 0,
       "hint": "The risk is the claim plus the shared building.",
-      "rationale": "The burger is labeled free of all top 9 allergens yet is produced in the same building, on shared equipment and rotating staff, as wheat/egg/milk/tree-nut products — so any cross-contact makes the claim false."
+      "rationale": "The product is labeled free of all top 9 allergens yet is produced in the same building, on shared equipment and rotating staff, as wheat/egg/milk/tree-nut products — so any cross-contact makes the claim false."
     },
     {
       "question": "Which of these is an example of allergen cross-contact?",
@@ -289,7 +289,7 @@
       "rationale": "Cross-contact includes airborne powder, un-cleaned shared equipment/utensils, residue on hands or gloves, and mixing rework into the wrong batch."
     },
     {
-      "question": "You're not sure whether the line was fully cleaned before the free-from burger run. What should you do?",
+      "question": "You're not sure whether the line was fully cleaned before the free-from product run. What should you do?",
       "options": [
         "Start the run; it's probably fine",
         "Stop and report it before product moves",
