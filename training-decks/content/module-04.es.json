@@ -11,10 +11,10 @@
       "kind": "title",
       "title": "Módulo 4 — Alérgenos Parte 2: Proteger la Declaración",
       "subtitle": "Capacitación SQF en Seguridad Alimentaria",
-      "photo": "FOTO: utensilios codificados por color / línea limpia lista para el cambio",
+      "photo": "FOTO: línea limpia lista para el cambio; utensilios dedicados",
       "photoCaption": "CONTROL DE ALÉRGENOS · PROTEGER LA DECLARACIÓN",
       "intro": "La Parte 1 cubrió qué son los alérgenos y por qué importa nuestra declaración libre de alérgenos. La Parte 2 es el cómo: programación, segregación, limpieza validada, control de etiquetas y reproceso — los controles diarios que mantienen un alérgeno fuera de un producto que debe estar libre de él.",
-      "notes": "Bienvenido al Módulo 4. En la Parte 1 aprendimos qué son los alérgenos, cuáles están presentes en nuestra planta, y por qué la declaración libre de alérgenos en la hamburguesa de origen vegetal que fabricamos es tan importante. Ahora llegamos al cómo. Este módulo trata de los controles que protegen esa declaración en cada turno: cómo programamos las corridas, cómo mantenemos separados los utensilios y las zonas, cómo limpiamos y verificamos entre productos, cómo controlamos las etiquetas y cómo manejamos el reproceso. Estos son los hábitos que mantienen un alérgeno fuera de un producto que se supone debe estar libre de él."
+      "notes": "Bienvenido al Módulo 4. En la Parte 1 aprendimos qué son los alérgenos, cuáles están presentes en nuestra planta, y por qué la declaración libre de alérgenos en el producto libre de alérgenos que fabricamos es tan importante. Ahora llegamos al cómo. Este módulo trata de los controles que protegen esa declaración en cada turno: cómo programamos las corridas, cómo mantenemos separados los utensilios y las zonas, cómo limpiamos y verificamos entre productos, cómo controlamos las etiquetas y cómo manejamos el reproceso. Estos son los hábitos que mantienen un alérgeno fuera de un producto que se supone debe estar libre de él."
     },
     {
       "title": "Objetivos de aprendizaje",
@@ -24,7 +24,7 @@
         "type": "cards",
         "items": [
           "Ejecutar la programación en el orden correcto para proteger los productos libres de alérgenos",
-          "Usar utensilios dedicados y codificados por color, y mantener las zonas separadas",
+          "Mantener separados los utensilios y las zonas con y sin alérgenos",
           "Limpiar y verificar un cambio para que no quede ningún alérgeno",
           "Controlar etiquetas y reproceso para que el empaque siempre diga la verdad"
         ],
@@ -35,7 +35,7 @@
           "iconTruck"
         ]
       },
-      "notes": "Esto es lo que podrás hacer al terminar. Ejecutar la programación de producción en el orden correcto para que los productos libres de alérgenos queden protegidos. Usar utensilios dedicados y codificados por color, y mantener separadas las zonas con y sin alérgenos. Limpiar y luego verificar un cambio para que no quede residuo de alérgeno. Y controlar las etiquetas y el reproceso para que el empaque siempre diga la verdad sobre lo que contiene. Estos son los cuatro pilares que recorreremos."
+      "notes": "Esto es lo que podrás hacer al terminar. Ejecutar la programación de producción en el orden correcto para que los productos libres de alérgenos queden protegidos. Mantener separados los utensilios y las zonas con y sin alérgenos — ya sea dedicando utensilios a una zona o limpiando, sanitizando y verificando un utensilio compartido antes de que toque un producto libre de alérgenos. Limpiar y luego verificar un cambio para que no quede residuo de alérgeno. Y controlar las etiquetas y el reproceso para que el empaque siempre diga la verdad sobre lo que contiene. Estos son los cuatro pilares que recorreremos."
     },
     {
       "title": "Cuatro pilares de protección",
@@ -45,12 +45,12 @@
         "type": "cards",
         "items": [
           "Secuenciar — programar las corridas de libre de alérgenos a mayor carga alergénica",
-          "Segregar — utensilios dedicados y codificados por color, y zonas separadas",
+          "Segregar — mantener separados los utensilios y las zonas con y sin alérgenos",
           "Limpiar y verificar — cambio validado, y luego comprobarlo",
           "Etiquetas y reproceso — etiqueta correcta, producto correcto, solo igual con igual"
         ]
       },
-      "notes": "Protegemos la declaración con cuatro pilares que se respaldan entre sí — ningún paso funciona solo. Primero, secuenciar: programamos las corridas desde los productos libres de alérgenos hacia los de mayor carga alergénica. Segundo, segregar: utensilios dedicados y codificados por color, y zonas separadas. Tercero, limpiar y verificar: una limpieza de cambio validada, y luego comprobamos que funcionó. Y cuarto, etiquetas y reproceso: la etiqueta correcta en el producto correcto, y el reproceso siempre va solo igual con igual. Veremos cada uno por separado."
+      "notes": "Protegemos la declaración con cuatro pilares que se respaldan entre sí — ningún paso funciona solo. Primero, secuenciar: programamos las corridas desde los productos libres de alérgenos hacia los de mayor carga alergénica. Segundo, segregar: mantener separados los utensilios y las zonas con y sin alérgenos — un utensilio solo es seguro para un producto libre de alérgenos si está dedicado a esa zona o si ha sido limpiado, sanitizado y verificado. Tercero, limpiar y verificar: una limpieza de cambio validada, y luego comprobamos que funcionó. Y cuarto, etiquetas y reproceso: la etiqueta correcta en el producto correcto, y el reproceso siempre va solo igual con igual. Veremos cada uno por separado."
     },
     {
       "title": "Secuenciar la programación",
@@ -66,19 +66,19 @@
         ],
         "highlight": 0
       },
-      "notes": "El orden en que corremos los productos es en sí mismo un control. Corremos primero los productos libres de alérgenos, en una línea que se ha verificado limpia. Luego pasamos a los productos con menos alérgenos, y después a los de más alérgenos — yendo de limpio hacia sucio a lo largo del día. Nunca corremos un producto libre de alérgenos después de un producto con alérgenos sin una limpieza de cambio completa de por medio. Programar así significa que las hamburguesas libres de alérgenos se fabrican cuando el riesgo de arrastre es más bajo."
+      "notes": "El orden en que corremos los productos es en sí mismo un control. Corremos primero los productos libres de alérgenos, en una línea que se ha verificado limpia. Luego pasamos a los productos con menos alérgenos, y después a los de más alérgenos — yendo de limpio hacia sucio a lo largo del día. Nunca corremos un producto libre de alérgenos después de un producto con alérgenos sin una limpieza de cambio completa de por medio. Programar así significa que el producto libre de alérgenos se fabrica cuando el riesgo de arrastre es más bajo."
     },
     {
-      "title": "Segregar y codificar por color",
+      "title": "Segregar utensilios y zonas",
       "lead": "Evita que los utensilios con y sin alérgenos se mezclen alguna vez.",
       "kicker": "SEGREGAR",
       "visual": {
         "type": "split",
         "left": {
-          "header": "Dedicado y codificado por color",
+          "header": "Segregar o limpiar y verificar",
           "items": [
-            "Utensilios, herramientas y recipientes asignados por color a una zona",
-            "Almacenamiento dedicado — nunca compartas cucharones ni recipientes",
+            "Dedica utensilios a una zona, o limpia y verifica los compartidos primero",
+            "Guarda por separado los utensilios con y sin alérgenos",
             "Delantales y guantes se cambian al cruzar de zona"
           ],
           "color": "green"
@@ -86,15 +86,15 @@
         "right": {
           "header": "Nunca hagas esto",
           "items": [
-            "Tomar el utensilio más cercano sin importar el color",
-            "Llevar un utensilio con alérgeno a la zona libre de alérgenos",
+            "Usar un utensilio que no está dedicado ni verificado-limpio",
+            "Llevar un utensilio con alérgeno sin limpiar a la zona libre de alérgenos",
             "Apoyar producto sobre una superficie compartida sin limpiar"
           ],
           "color": "amber"
         },
-        "chip": "Color correcto, zona correcta — siempre"
+        "chip": "Segregado o verificado-limpio — siempre"
       },
-      "notes": "La codificación por color es la forma en que evitamos que los utensilios con y sin alérgenos se mezclen alguna vez. Los utensilios, herramientas y recipientes se asignan por color a una zona de producto, y tienen almacenamiento dedicado — nunca compartimos cucharones ni recipientes entre zonas. Cuando cruzas de una zona a otra, cambia tu delantal y tus guantes. Lo que nunca hacemos: tomar el utensilio más cercano sin importar el color, llevar un utensilio con alérgeno a la zona libre de alérgenos, o apoyar producto sobre una superficie compartida sin limpiar. Color correcto, zona correcta, siempre."
+      "notes": "El objetivo es evitar que los utensilios con y sin alérgenos se mezclen alguna vez, y hay dos formas aceptables de lograrlo. Puedes dedicar utensilios, herramientas y recipientes a una sola zona de producto y guardarlos por separado. O puedes tomar un utensilio compartido y limpiarlo, sanitizarlo y verificarlo antes de usarlo en un producto libre de alérgenos. La codificación por color es una forma útil de ordenar los utensilios dedicados, pero no es obligatoria — un utensilio bien limpio y verificado es igual de seguro. Lo que nunca hacemos: usar un utensilio en un producto libre de alérgenos sin confirmar que está dedicado o verificado-limpio, llevar un utensilio con alérgeno sin limpiar a la zona libre de alérgenos, o apoyar producto sobre una superficie compartida sin limpiar. Cuando cruzas de zona, cambia tu delantal y tus guantes."
     },
     {
       "title": "Limpiar bien el cambio",
@@ -193,13 +193,13 @@
         "type": "checklist",
         "items": [
           "Secuencia: libre de alérgenos primero, alérgenos después, limpieza de por medio",
-          "Usa utensilios dedicados y codificados por color; mantén zonas y almacenamiento separados",
+          "Mantén segregados los utensilios, el almacenamiento y las zonas con y sin alérgenos",
           "La limpieza húmeda validada elimina la proteína del alérgeno — luego verifica y regístralo",
           "Etiqueta correcta, producto correcto; reproceso solo igual con igual"
         ],
         "next": "Sigue: HACCP y tus Puntos Críticos de Control"
       },
-      "notes": "Repasemos cómo protegemos la declaración. Secuenciamos la programación para correr primero los libres de alérgenos y los alérgenos después, con una limpieza completa de por medio. Usamos utensilios dedicados y codificados por color y mantenemos separados las zonas y el almacenamiento. Una limpieza húmeda validada elimina la proteína del alérgeno, no solo las migas — y luego la verificamos con hisopos y registramos el resultado. Y controlamos la etiqueta y el reproceso para que el empaque siempre diga la verdad, con el reproceso yendo solo igual con igual. Proteger la declaración es tarea de todos, en cada turno. A continuación, pasamos a HACCP y los puntos críticos de control en tu línea. Excelente trabajo al terminar la Parte 2."
+      "notes": "Repasemos cómo protegemos la declaración. Secuenciamos la programación para correr primero los libres de alérgenos y los alérgenos después, con una limpieza completa de por medio. Mantenemos segregados los utensilios, el almacenamiento y las zonas con y sin alérgenos, y verificamos que un utensilio compartido esté limpio antes de reutilizarlo. Una limpieza húmeda validada elimina la proteína del alérgeno, no solo las migas — y luego la verificamos con hisopos y registramos el resultado. Y controlamos la etiqueta y el reproceso para que el empaque siempre diga la verdad, con el reproceso yendo solo igual con igual. Proteger la declaración es tarea de todos, en cada turno. A continuación, pasamos a HACCP y los puntos críticos de control en tu línea. Excelente trabajo al terminar la Parte 2."
     }
   ],
   "quiz": [
@@ -216,16 +216,16 @@
       "rationale": "Correr primero los productos libres de alérgenos — en una línea verificada limpia, antes de cualquier producto con alérgenos — significa que se fabrican cuando el riesgo de arrastre es más bajo."
     },
     {
-      "question": "¿Cuál es el propósito de los utensilios codificados por color?",
+      "question": "¿Cómo evitamos que los utensilios con y sin alérgenos se contaminen entre sí?",
       "options": [
-        "Evitar que los utensilios con y sin alérgenos se mezclen",
+        "Dedicar utensilios a una zona, o limpiar, sanitizar y verificar un utensilio compartido antes de usarlo en producto libre de alérgenos",
         "Verse ordenados y organizados para los auditores que visitan",
-        "Combinar con los colores de los uniformes del equipo",
+        "Confiar solo en la codificación por color; un utensilio compartido limpio nunca es aceptable",
         "Solo rastrear qué trabajador usó cada utensilio"
       ],
       "correct": 0,
-      "hint": "Se trata de evitar que las zonas se contaminen entre sí.",
-      "rationale": "La codificación por color asigna utensilios a una zona de producto para que los utensilios con y sin alérgenos nunca se mezclen; tienen almacenamiento dedicado y nunca se comparten entre zonas."
+      "hint": "Segregación o una limpieza validada — ambas son aceptables.",
+      "rationale": "Mantenemos separados los utensilios con y sin alérgenos dedicándolos a una zona, o limpiando, sanitizando y verificando un utensilio compartido antes de usarlo en un producto libre de alérgenos. La codificación por color es una forma útil de ordenar los utensilios dedicados, pero no es obligatoria — un utensilio bien limpio y verificado es igual de seguro."
     },
     {
       "question": "¿Por qué no basta con quitar las migas en un cambio por alérgenos?",

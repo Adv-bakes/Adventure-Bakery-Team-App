@@ -11,10 +11,10 @@
       "kind": "title",
       "title": "Module 4 — Allergens Part 2: Protecting the Claim",
       "subtitle": "SQF Food Safety Training",
-      "photo": "PHOTO: color-coded utensils / cleaned line ready for changeover",
+      "photo": "PHOTO: cleaned line ready for changeover; dedicated utensils",
       "photoCaption": "ALLERGEN CONTROL · PROTECTING THE CLAIM",
       "intro": "Part 1 covered what allergens are and why our free-from claim matters. Part 2 is the how: scheduling, segregation, validated cleaning, label control, and rework — the daily controls that keep an allergen out of a product meant to be free of it.",
-      "notes": "Welcome to Module 4. In Part 1 we learned what allergens are, which ones run in our plant, and why the free-from claim on the plant-based burger we make is so important. Now we get to the how. This module is about the controls that protect that claim every shift: how we schedule runs, keep tools and zones separate, clean and verify between products, check labels, and handle rework. These are the habits that keep an allergen out of a product that's supposed to be free of it."
+      "notes": "Welcome to Module 4. In Part 1 we learned what allergens are, which ones run in our plant, and why the free-from claim on the allergen-free product we make is so important. Now we get to the how. This module is about the controls that protect that claim every shift: how we schedule runs, keep tools and zones separate, clean and verify between products, check labels, and handle rework. These are the habits that keep an allergen out of a product that's supposed to be free of it."
     },
     {
       "title": "Learning Objectives",
@@ -24,7 +24,7 @@
         "type": "cards",
         "items": [
           "Run the schedule in the right order to protect free-from products",
-          "Use dedicated, color-coded tools and keep zones separate",
+          "Keep allergen and free-from tools and zones separate",
           "Clean and verify a changeover so no allergen is left behind",
           "Control labels and rework so the package always tells the truth"
         ],
@@ -35,7 +35,7 @@
           "iconTruck"
         ]
       },
-      "notes": "Here is what you will be able to do by the end. Run the production schedule in the right order so free-from products are protected. Use dedicated, color-coded tools and keep allergen and non-allergen zones separate. Clean and then verify a changeover so no allergen residue is left behind. And control labels and rework so the package always tells the truth about what's inside. These are the four pillars we'll walk through."
+      "notes": "Here is what you will be able to do by the end. Run the production schedule in the right order so free-from products are protected. Keep allergen and non-allergen tools and zones separate — either by dedicating tools to a zone or by cleaning, sanitizing, and verifying a shared tool before it touches a free-from product. Clean and then verify a changeover so no allergen residue is left behind. And control labels and rework so the package always tells the truth about what's inside. These are the four pillars we'll walk through."
     },
     {
       "title": "Four pillars of protection",
@@ -45,12 +45,12 @@
         "type": "cards",
         "items": [
           "Sequence — schedule runs from free-from to highest allergen",
-          "Segregate — dedicated, color-coded tools and separate zones",
+          "Segregate — keep allergen and free-from tools and zones apart",
           "Clean & verify — validated changeover, then prove it",
           "Labels & rework — right label, right product, like-into-like only"
         ]
       },
-      "notes": "We protect the claim with four pillars that back each other up — no single step stands alone. First, sequence: we schedule runs from free-from toward the highest allergen load. Second, segregate: dedicated, color-coded tools and separate zones. Third, clean and verify: a validated changeover cleaning, and then we prove it worked. And fourth, labels and rework: the right label on the right product, and rework only ever goes like-into-like. We'll take these one at a time."
+      "notes": "We protect the claim with four pillars that back each other up — no single step stands alone. First, sequence: we schedule runs from free-from toward the highest allergen load. Second, segregate: keep allergen and free-from tools and zones apart — a tool is only safe for a free-from product if it is dedicated to that zone or has been cleaned, sanitized, and verified. Third, clean and verify: a validated changeover cleaning, and then we prove it worked. And fourth, labels and rework: the right label on the right product, and rework only ever goes like-into-like. We'll take these one at a time."
     },
     {
       "title": "Sequence the schedule",
@@ -66,19 +66,19 @@
         ],
         "highlight": 0
       },
-      "notes": "The order we run products in is itself a control. We run free-from products first, on a line that's been verified clean. Then we move to lower-allergen products, and then to higher-allergen ones — going from clean toward dirty across the day. We never run a free-from product after an allergen product without a full changeover clean in between. Scheduling this way means the free-from burgers are made when the risk of carryover is lowest."
+      "notes": "The order we run products in is itself a control. We run free-from products first, on a line that's been verified clean. Then we move to lower-allergen products, and then to higher-allergen ones — going from clean toward dirty across the day. We never run a free-from product after an allergen product without a full changeover clean in between. Scheduling this way means the allergen-free product is made when the risk of carryover is lowest."
     },
     {
-      "title": "Segregate and color-code",
+      "title": "Segregate tools and zones",
       "lead": "Keep allergen and free-from tools from ever mixing.",
       "kicker": "SEGREGATE",
       "visual": {
         "type": "split",
         "left": {
-          "header": "Dedicated & color-coded",
+          "header": "Segregate or verify-clean",
           "items": [
-            "Tools, utensils, and bins assigned by color to a product zone",
-            "Dedicated storage — never share scoops or containers",
+            "Dedicate tools to a zone, or clean and verify shared tools first",
+            "Store allergen and free-from tools separately",
             "Aprons and gloves changed when crossing zones"
           ],
           "color": "green"
@@ -86,15 +86,15 @@
         "right": {
           "header": "Never do this",
           "items": [
-            "Grab the nearest tool regardless of color",
-            "Carry an allergen utensil into the free-from area",
+            "Use a tool that is not dedicated or verified-clean",
+            "Carry an uncleaned allergen utensil into free-from",
             "Set product down on an uncleaned shared surface"
           ],
           "color": "amber"
         },
-        "chip": "Right color, right zone — every time"
+        "chip": "Segregated or verified-clean — every time"
       },
-      "notes": "Color-coding is how we keep allergen and free-from tools from ever mixing. Tools, utensils, and bins are assigned by color to a product zone, and they have dedicated storage — we never share scoops or containers between zones. When you cross from one zone to another, change your apron and gloves. What we never do: grab the nearest tool regardless of color, carry an allergen utensil into the free-from area, or set product down on an uncleaned shared surface. Right color, right zone, every time."
+      "notes": "The goal is to keep allergen and free-from tools from ever mixing, and there are two acceptable ways to do that. You can dedicate tools, utensils, and bins to a single product zone and store them separately. Or you can take a shared tool and clean, sanitize, and verify it before using it on an allergen-free product. Color-coding is one helpful way to keep dedicated tools sorted, but it is not required — a properly cleaned and verified tool is just as safe. What we never do: use a tool on a free-from product without confirming it is dedicated or verified-clean, carry an uncleaned allergen utensil into the free-from area, or set product down on an uncleaned shared surface. When you cross zones, change your apron and gloves."
     },
     {
       "title": "Clean the changeover right",
@@ -193,13 +193,13 @@
         "type": "checklist",
         "items": [
           "Sequence runs free-from first, allergens later, clean in between",
-          "Use dedicated color-coded tools; keep zones and storage separate",
+          "Keep allergen and free-from tools, storage, and zones segregated",
           "Validated wet-clean removes allergen protein — then verify and record it",
           "Right label, right product; rework only like-into-like"
         ],
         "next": "Next: HACCP & Your Critical Control Points"
       },
-      "notes": "Let's recap how we protect the claim. We sequence the schedule to run free-from first and allergens later, with a full clean in between. We use dedicated, color-coded tools and keep zones and storage separate. A validated wet-clean removes allergen protein, not just crumbs — and then we verify it with swabs and record the result. And we control the label and rework so the package always tells the truth, with rework going only like-into-like. Protecting the claim is everyone's job, every shift. Up next, we move into HACCP and the critical control points on your line. Great work finishing Part 2."
+      "notes": "Let's recap how we protect the claim. We sequence the schedule to run free-from first and allergens later, with a full clean in between. We keep allergen and free-from tools, storage, and zones segregated, and we verify a shared tool is clean before reusing it. A validated wet-clean removes allergen protein, not just crumbs — and then we verify it with swabs and record the result. And we control the label and rework so the package always tells the truth, with rework going only like-into-like. Protecting the claim is everyone's job, every shift. Up next, we move into HACCP and the critical control points on your line. Great work finishing Part 2."
     }
   ],
   "quiz": [
@@ -216,16 +216,16 @@
       "rationale": "Running free-from products first — on a verified-clean line, before any allergen products — means they're made when the risk of carryover is lowest."
     },
     {
-      "question": "What is the purpose of color-coded tools and utensils?",
+      "question": "How do we keep allergen and free-from tools from cross-contaminating each other?",
       "options": [
-        "To keep allergen and free-from tools from ever mixing",
-        "To look neat and organized for visiting auditors",
-        "To match the colors of the team uniforms",
-        "Only to track which worker used each tool"
+        "Dedicate tools to a zone, or clean, sanitize, and verify a shared tool before free-from use",
+        "Keep them neat and organized for visiting auditors",
+        "Rely on color-coding alone; a cleaned shared tool is never acceptable",
+        "Only track which worker used each tool"
       ],
       "correct": 0,
-      "hint": "It's about keeping zones from cross-contaminating each other.",
-      "rationale": "Color-coding assigns tools to a product zone so allergen and free-from utensils never mix; tools have dedicated storage and are never shared across zones."
+      "hint": "Segregation or a validated clean — both are acceptable.",
+      "rationale": "We keep allergen and free-from tools apart by dedicating them to a zone, or by cleaning, sanitizing, and verifying a shared tool before it touches a free-from product. Color-coding is one helpful way to sort dedicated tools, but it is not required — a properly cleaned and verified tool is just as safe."
     },
     {
       "question": "Why isn't wiping off crumbs enough for an allergen changeover?",
