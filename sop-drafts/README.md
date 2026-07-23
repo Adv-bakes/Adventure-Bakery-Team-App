@@ -6,26 +6,28 @@ system. Nothing in this folder is controlled — a document is only controlled o
 
 ## Current drafts — Hobart V-1401 Planetary Mixer
 
-| Draft | Proposed number | Type | Purpose |
-|-------|-----------------|------|---------|
+| Draft | Number | Type | Purpose |
+|-------|--------|------|---------|
 | [SOP-501](SOP-501-hobart-v1401-mixer-operation.md) | `SOP-501` | sop | Safe operation of the mixer |
 | [SOP-901](SOP-901-hobart-v1401-mixer-ssop.md) | `SOP-901` | sop | Sanitation (SSOP) — cleaning & sanitizing |
-| [FRM-901](FRM-901-mixer-sanitation-log.md) | `FRM-901` | form | Cleaning & pre-use record |
+| [FRM-909](FRM-909-mixer-sanitation-log.md) | `FRM-909` | form | **Held, not adopted** — see below |
 
 ### Write to the process that's actually performed
 
-SOP-901 and FRM-901 were rewritten at Rev B to document the cleaning the floor actually does —
-machine wiped down dry then wet, bowl scrubbed and run through the pan washer, agitators washed and
-sanitized in the sink — rather than a generic full-plant sanitation program. A procedure nobody
-follows is worse than no procedure: it fails an audit *and* it teaches staff that the documents are
-theatre. Keep new equipment SSOPs to one page and to the real steps.
+SOP-901 was rewritten at Rev B to document the cleaning the floor actually does — machine wiped down
+dry then wet, bowl scrubbed and run through the pan washer, agitators washed and sanitized in the
+sink — rather than a generic full-plant sanitation program. A procedure nobody follows is worse than
+no procedure: it fails an audit *and* it teaches staff that the documents are theatre. Keep new
+equipment SSOPs to one page and to the real steps.
 
-### ⚠️ Numbers are proposed, not verified
+### Numbers — checked against the live register 2026-07-23
 
-They follow the stage-block scheme in [DOCUMENT_REGISTER.md](../DOCUMENT_REGISTER.md) — 500s
-Production & Batching, 900s Sanitation & GMP — but **have not been checked against the live
-register for collisions.** Confirm at `/team/compliance/register` (or a prod read) before these are
-imported, and renumber here if taken.
+`SOP-501` and `SOP-901` are **free**; no `SOP-5xx` or `SOP-9xx` exists.
+
+`FRM-901` was **taken** — it is the live *Master Sanitation Schedule*. The whole 900 form block is in
+use (901 Master Sanitation Schedule · 902 Sanitation Verification Log · 903 GMP Pre-Operation
+Inspection · 904 GMP Daily Operation Check · 905/906 Visitor · 907/908 Glass), so the draft form was
+renumbered to the next free slot, **`FRM-909`**.
 
 Note the deliberate choice **not** to use the SQF-clause SOP scheme (`SOP-11.2.5`) for these two.
 That scheme allows exactly one SOP per clause; every piece of equipment in the plant needs its own
@@ -33,10 +35,32 @@ sanitation procedure, so they would all collide on `11.2.5`. Equipment procedure
 stage-block scheme, and cross-refer to SQF through the `sqf_reference` field instead. This matches
 how the register already treats forms and manuals.
 
-## Two findings that need an owner decision
+### Records use the existing sanitation forms
 
-These came out of writing the procedures. Neither is fixed by the drafts — both are decisions above
-the level of a procedure, and both are called out in the documents themselves.
+SOP-901 does **not** introduce a mixer-specific log. The register already carries the three forms it
+needs, so the mixer is folded into them:
+
+| What | Form |
+|------|------|
+| Cleaning frequency | `FRM-901` Master Sanitation Schedule — add the mixer as a line |
+| The clean, incl. sanitizer ppm | `FRM-902` Sanitation Verification Log |
+| Check before the next run | `FRM-903` GMP Pre-Operation Inspection |
+| Allergen changeover | `SOP-204` Allergen Cleaning Procedure |
+
+`FRM-909` is kept as a **held draft** in case the shared forms turn out not to fit. Adopting it means
+running a per-machine log — and then one per piece of equipment. It is a decision, not a default.
+
+### SOP-501 has an existing home — don't create a second record
+
+`The Mixing Station` already exists in the register: active, type `sop`, category Job-Specific
+Operations, **unnumbered**, and holding only the Hobart V1401 manual PDF and a mixer video link — an
+empty shell around the manual. Assign it `SOP-501` and write the SOP-501 body into it. Creating a
+new record would leave two active mixer documents and no way for staff to tell which governs.
+
+## Findings that need an owner decision
+
+These came out of writing the procedures. None is fixed by the drafts — all are decisions above the
+level of a procedure, and the first two are called out in the documents themselves.
 
 ### 1. The mixer has no bowl guard (OSHA 1910.212)
 
@@ -70,6 +94,19 @@ non-conformance.
 **Decision needed:** cross-reference an H1 equivalent for the planetary at minimum, via Hobart Service
 or the lubricant supplier, and update the maintenance schedule and approved-chemicals list. Until
 then, treat drip-cup inspection as a food safety check rather than housekeeping — SOP-901 does.
+
+### 3. Two broken references in the existing `SOP-204` (spotted in passing)
+
+Not part of this work, but found while checking the register on 2026-07-23. `SOP-204 Allergen
+Cleaning Procedure` (draft) is the document SOP-901 now cross-refers to for allergen changeover, so
+it is worth correcting before either goes active:
+
+- Its Form References point to *"FRM-204 Allergen Changeover Log"* — but `FRM-204` in the live
+  register is the **Annual Supplier Performance Evaluation Checklist**. The changeover log it means
+  either has a different number or does not exist.
+- Its Governing Reference cites **SQF 11.2.3** as "Allergen Management". In Edition 9, 11.2.3 is
+  **Calibration**; allergen management is **2.8.1**. A wrong clause sends an auditor to the wrong
+  page — the same class of defect as the `SOP-11.7.5` → `SOP-11.7.3` renumber.
 
 ## Source material
 
