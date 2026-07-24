@@ -35,20 +35,27 @@ sanitation procedure, so they would all collide on `11.2.5`. Equipment procedure
 stage-block scheme, and cross-refer to SQF through the `sqf_reference` field instead. This matches
 how the register already treats forms and manuals.
 
-### Records use the existing sanitation forms
+### Records — FRM-909 (adopted 2026-07-24)
 
-SOP-901 does **not** introduce a mixer-specific log. The register already carries the three forms it
-needs, so the mixer is folded into them:
+We first folded the mixer's records into the existing plant forms, then found none of them could
+actually take it:
 
-| What | Form |
-|------|------|
-| Cleaning frequency | `FRM-901` Master Sanitation Schedule — add the mixer as a line |
-| The clean, incl. sanitizer ppm | `FRM-902` Sanitation Verification Log |
-| Check before the next run | `FRM-903` GMP Pre-Operation Inspection |
-| Allergen changeover | `SOP-204` Allergen Cleaning Procedure |
+| Form | Blocker |
+|------|---------|
+| `FRM-901` Master Sanitation Schedule | Word-document attachment — not fillable in the app |
+| `FRM-902` Sanitation Verification Log | Same — a Word-document attachment |
+| `FRM-903` GMP Pre-Operation Inspection | Fillable, but scoped to the glass dial cover / MIG thermometer check (SQF 11.7.3.4), not sanitation release |
 
-`FRM-909` is kept as a **held draft** in case the shared forms turn out not to fit. Adopting it means
-running a per-machine log — and then one per piece of equipment. It is a decision, not a default.
+So **`FRM-909` was adopted** as the mixer's single fillable record — the clean *and* its pre-use
+release. This accepts a per-machine log; a bakery this size will want to watch that it doesn't become
+one form per piece of equipment, but there was no working alternative in-app today.
+
+The mixer should still be listed on `FRM-901` for its cleaning **frequency** (that's a Word doc the
+owner edits), and allergen changeover still routes through `SOP-204`.
+
+`FRM-909` is seeded as a **draft** `sop_documents` row by
+[`20260724000001_frm909_mixer_sanitation_log.sql`](../supabase/migrations/20260724000001_frm909_mixer_sanitation_log.sql).
+Activating it, SOP-501 and SOP-901 is an approval decision, not part of the migration.
 
 ### SOP-501 has an existing home — don't create a second record
 

@@ -44,7 +44,7 @@ Cleaning is **SOP-901**. Lubrication, agitator clearance, and repairs are Mainte
 
 Check, with the machine stopped:
 
-- FRM-903 is signed for this shift — if it isn't, the mixer hasn't been released for production
+- FRM-909 is signed for this shift — if it isn't, the mixer hasn't been released for production
 - Drip cup is in place, clean, and **dry — no oil**
 - Bowl and agitator are clean and undamaged; no cracks, no loose whip wires
 - Available aprons and covers are on; controls and buttons work; oil gauge is between the middle and
@@ -133,14 +133,13 @@ load wrecks the transmission.
 ## Form References
 
 - Batch sheet for the product (governs agitator, speed, time, batch size)
-- **FRM-903** — GMP Pre-Operation Inspection *(the mixer's release before a run)*
-- **FRM-902** — Sanitation Verification Log *(the record of the clean)*
+- **FRM-909** — Mixer Cleaning & Pre-Use Check Log *(the mixer's clean and its release before a run)*
 - **SOP-901** — Mixer Sanitation
 
 ## Records
 
-Mixing parameters go on the **batch sheet**. The clean is recorded on **FRM-902** and released on
-**FRM-903**. Operator training sign-off is held in the training record. All retained per the record
+Mixing parameters go on the **batch sheet**. The clean and the pre-use release are recorded on
+**FRM-909**. Operator training sign-off is held in the training record. All retained per the record
 retention policy.
 
 ## Governing Reference

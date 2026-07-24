@@ -27,13 +27,15 @@ Operating the mixer is **SOP-501**. Lubrication and repairs are Maintenance, not
 
 ## Responsibility
 
-- **Sanitation / Production staff** — perform the cleaning and record it on **FRM-902**.
-- **Supervisor** — checks the machine before the next run and signs **FRM-903**.
+- **Sanitation / Production staff** — perform the cleaning and record it on **FRM-909**.
+- **Supervisor** — checks the machine before the next run and signs the release on **FRM-909**.
 
-> **Which form goes where.** This procedure uses the sanitation forms already in the quality system
-> rather than a form of its own: the mixer is a line on the **FRM-901 Master Sanitation Schedule**,
-> the clean is recorded on the **FRM-902 Sanitation Verification Log**, and the check before the next
-> run is part of the **FRM-903 GMP Pre-Operation Inspection**.
+> **Why a dedicated form.** The plant sanitation forms that would otherwise hold this — FRM-901
+> Master Sanitation Schedule and FRM-902 Sanitation Verification Log — are Word-document attachments,
+> not fillable in the app, and FRM-903 (GMP Pre-Operation Inspection) is scoped to the glass dial
+> cover / MIG thermometer check, not sanitation release. So the mixer clean and its pre-use release
+> are recorded on **FRM-909**, a single fillable form. The mixer should still be listed on the
+> **FRM-901 Master Sanitation Schedule** for its cleaning frequency.
 
 ## Procedure
 
@@ -79,7 +81,7 @@ Washed in the sink:
 3. **Sanitizing solution** at label strength.
 4. Onto the **drying rack** — let them air dry. Don't towel them off; that undoes the sanitizing.
 
-Check the sanitizer strength with a test strip and write the reading on **FRM-902**.
+Check the sanitizer strength with a test strip and write the reading on **FRM-909**.
 
 ### 4. Changing between products with different allergens
 
@@ -92,27 +94,26 @@ and the shank, and the agitator shaft. Anything you can see, re-clean.
 
 ### 5. Before the next run
 
-The mixer is part of the Supervisor's **FRM-903 GMP Pre-Operation Inspection**:
+The Supervisor checks and signs the release on **FRM-909**:
 
 - Bowl, agitator and machine clean and dry
 - Drip cup clean, no oil
 - No cloths, tools or anything else left on the machine
-- Sanitizer strength recorded on FRM-902
+- Sanitizer strength recorded
 
-**The mixer isn't ready for production until FRM-903 is signed.**
+**The mixer isn't ready for production until FRM-909 is signed.**
 
 ## Form References
 
-- **FRM-901** — Master Sanitation Schedule *(mixer listed as a line; sets the frequency)*
-- **FRM-902** — Sanitation Verification Log *(the clean is recorded here, with the sanitizer ppm)*
-- **FRM-903** — GMP Pre-Operation Inspection *(the check before the next run)*
+- **FRM-909** — Mixer Cleaning & Pre-Use Check Log *(the clean and its pre-use release)*
+- **FRM-901** — Master Sanitation Schedule *(list the mixer as a line to set its cleaning frequency)*
 - **SOP-204** — Allergen Cleaning Procedure *(governs changeover between different allergens)*
 - **SOP-501** — Operating the Hobart V-1401 Mixer
 
 ## Records
 
-The clean is recorded on **FRM-902** and released on **FRM-903**, both retained per the record
-retention policy. No mixer-specific form is used — see the note under Responsibility.
+The clean and its pre-use release are recorded on **FRM-909**, retained per the record retention
+policy.
 
 ## Governing Reference
 
@@ -129,3 +130,4 @@ retention policy. No mixer-specific form is used — see the note under Responsi
 | Draft A | 2026-07-23 | Initial draft. | — |
 | Draft B | 2026-07-23 | Rewritten to match the process actually performed on the floor; cut to one page. | — |
 | Draft C | 2026-07-23 | Records folded into the existing FRM-901/902/903 rather than a mixer-specific form; allergen changeover cross-referred to SOP-204. | — |
+| Draft D | 2026-07-24 | Records moved back to FRM-909: FRM-901/902 are Word attachments (not fillable) and FRM-903 is a glass check, so none could receive the mixer's records. FRM-909 adopted as the fillable log. | — |

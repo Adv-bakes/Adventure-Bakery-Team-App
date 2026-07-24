@@ -5,34 +5,37 @@
 | **Document No.** | FRM-909 |
 | **Title** | Mixer Cleaning & Pre-Use Check Log |
 | **Type** | form |
-| **Status** | **Draft — held, not adopted** |
-| **Revision** | Draft C |
-| **Effective Date** | — |
-| **Approved By** | — |
+| **Status** | **Draft** *(pending approval to activate)* |
+| **Revision** | Draft D |
+| **Effective Date** | *(pending approval)* |
+| **Approved By** | *(pending)* |
 | **SQF Reference** | 11.2.5.1, 11.2.5.3, 11.2.5.7 |
 | **Category** | Sanitation & GMP |
+| **Parent procedure** | [SOP-901](SOP-901-hobart-v1401-mixer-ssop.md) |
 
 ---
 
-## ⚠️ This form is not in use
+## This is the mixer's sanitation record
 
-**SOP-901 does not reference it.** The mixer's records were folded into the sanitation forms that
-already exist:
+SOP-901 records the clean **and** its pre-use release on this one form. It's used rather than the
+existing plant forms because none of them could take the record:
 
-| What | Form |
-|------|------|
-| Cleaning frequency | **FRM-901** Master Sanitation Schedule *(mixer listed as a line)* |
-| The clean, incl. sanitizer ppm | **FRM-902** Sanitation Verification Log |
-| Check before the next run | **FRM-903** GMP Pre-Operation Inspection |
+| Form | Why not |
+|------|---------|
+| FRM-901 Master Sanitation Schedule | A Word-document attachment — not fillable in the app |
+| FRM-902 Sanitation Verification Log | Same — a Word-document attachment |
+| FRM-903 GMP Pre-Operation Inspection | Fillable, but scoped to the glass dial cover / MIG thermometer check (SQF 11.7.3.4), not sanitation release |
 
-This draft is kept because it may still be the better answer if the shared forms turn out not to fit —
-but adopting it means running a per-machine log, and a bakery this size would then need one per piece
-of equipment. **Decide before adopting; don't drift into it.**
+The mixer should still be listed on the **FRM-901 Master Sanitation Schedule** for its cleaning
+*frequency* — that's a plant-wide schedule and belongs there — but the per-clean record and the
+release live here.
 
-`FRM-909` is the next free number in the 900 block (901–908 are all taken). It is reserved here and
-should not be handed to anything else while this draft is open.
+`FRM-909` is the next free number in the 900 block (901–908 are all taken).
 
-## What it would be
+**Status stays `draft`.** Activating it (and SOP-501/SOP-901 with it) is an approval decision, not
+something the migration does.
+
+## What it is
 
 **9 fields, 3 sections** — about a minute to fill in.
 
@@ -61,19 +64,23 @@ The 8 checklist steps are SOP-901's procedure in the order it's performed:
 - **The drip cup row** — the planetary sits over the open bowl, so oil there reaches product. The one
   line on this form about food safety rather than housekeeping.
 
-## Implementation, if it is ever adopted
+## Implementation
 
 Schema: **[`FRM-909-form-schema.json`](FRM-909-form-schema.json)** — validated against
 `src/lib/formSchema.ts`.
 
-Either build it in the Form tab's schema builder, or set `content.form_schema` in a migration
-following [`20260715000002_frm903_preop_schema.sql`](../supabase/migrations/20260715000002_frm903_preop_schema.sql).
+Seeded by migration
+[`20260724000001_frm909_mixer_sanitation_log.sql`](../supabase/migrations/20260724000001_frm909_mixer_sanitation_log.sql),
+which **inserts** the `sop_documents` row (FRM-909 doesn't exist yet) as `status='draft'` with the
+schema on `content.form_schema`. Modelled on
+[`20260715000002_frm903_preop_schema.sql`](../supabase/migrations/20260715000002_frm903_preop_schema.sql),
+which merged a schema into an existing row.
 
 Field ids lock once the first entry is saved, so read them first. `deletable` is `false` — sanitation
 records are evidence, and a deleted one looks the same as one that never existed.
 
-Before adopting, set the sanitizer target: the form captures a ppm reading but states no target. Add
-your sanitizer's label figure so staff have something to read against.
+Before **activating**, set the sanitizer target: the form captures a ppm reading but states no target.
+Add your sanitizer's label figure so staff have something to read against.
 
 ## Revision History
 
@@ -81,4 +88,5 @@ your sanitizer's label figure so staff have something to read against.
 |-----|------|-------------|-------------|
 | Draft A | 2026-07-23 | Initial draft — 32 fields, numbered FRM-901. | — |
 | Draft B | 2026-07-23 | Cut to 9 fields to match the simplified SOP-901. | — |
-| Draft C | 2026-07-23 | Renumbered FRM-901 → FRM-909 (FRM-901 is the live Master Sanitation Schedule). Held unadopted: SOP-901 now uses FRM-901/902/903. | — |
+| Draft C | 2026-07-23 | Renumbered FRM-901 → FRM-909 (FRM-901 is the live Master Sanitation Schedule). Held unadopted: SOP-901 then used FRM-901/902/903. | — |
+| Draft D | 2026-07-24 | Adopted as the mixer's sanitation record — FRM-901/902 are Word attachments (not fillable) and FRM-903 is a glass check, so none could hold it. SOP-901 references it again. Insert migration written; status stays draft pending approval. | — |
