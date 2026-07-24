@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "settings": {
+    "deletable": false,
+    "allowMultipleDrafts": true,
+    "requireVerification": true,
+    "attachmentsEnabled": true,
+    "instanceTitleTemplate": "{clean_date} — Depositor clean"
+  },
+  "sections": [
+    {
+      "id": "entry",
+      "fields": [
+        {
+          "id": "clean_date",
+          "type": "date",
+          "label": "Date",
+          "required": true,
+          "defaultToday": true,
+          "width": "third",
+          "showInList": true
+        },
+        {
+          "id": "product_run",
+          "type": "text",
+          "label": "Product run",
+          "width": "third",
+          "showInList": true
+        },
+        {
+          "id": "allergen_change",
+          "type": "checkbox",
+          "label": "Allergen changeover",
+          "width": "third",
+          "help": "Tick if the next product has different allergens"
+        }
+      ]
+    },
+    {
+      "id": "cleaning",
+      "title": "Cleaning",
+      "fields": [
+        {
+          "id": "steps",
+          "type": "grid",
+          "label": "Steps",
+          "columns": [
+            { "id": "done", "label": "Done", "type": "pass_fail", "required": true, "width": 1 },
+            { "id": "notes", "label": "Notes", "type": "text", "width": 3 }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labelHeader": "Step",
+            "labels": [
+              "Wire clear of the die, machine unplugged; guards opened",
+              "Hopper, feed rollers, die and scrapers removed",
+              "Cut-off wire and support fingers wiped clean in place (not removed)",
+              "Head interior, die slot, cabinet and belts dry-then-damp wiped (no water on the panel)",
+              "Hopper, feed rollers, die and scrapers washed in the sink — detergent, rinse, sanitizer at label strength, drying rack",
+              "Cut-off wire whole and accounted for — no missing pieces",
+              "Reassembled: die finger-tight in a clean slot, a finger in each die slot, guards locked",
+              "Allergen changeover: every food contact surface checked under good light (changeover only)"
+            ]
+          }
+        },
+        {
+          "id": "sanitizer_ppm",
+          "type": "number",
+          "label": "Sanitizer strength (test strip)",
+          "unit": "ppm",
+          "required": true,
+          "width": "half",
+          "showInList": true
+        },
+        {
+          "id": "cleaned_by",
+          "type": "signature",
+          "role": "filler",
+          "label": "Cleaned by",
+          "required": true,
+          "statement": "I cleaned the depositor as described in SOP-902.",
+          "width": "half"
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "title": "Check Before Next Run",
+      "fields": [
+        {
+          "id": "preop_ok",
+          "type": "pass_fail",
+          "label": "Hopper, rollers, die and scrapers clean and dry; wire and fingers wiped clean and wire accounted for; guards locked; nothing left on the machine",
+          "required": true,
+          "width": "full",
+          "showInList": true
+        },
+        {
+          "id": "issue",
+          "type": "textarea",
+          "label": "Anything wrong, and what was done about it",
+          "rows": 2,
+          "width": "full",
+          "help": "Leave blank if nothing. If something failed, it gets re-cleaned and re-checked."
+        },
+        {
+          "id": "released_by",
+          "type": "signature",
+          "role": "verifier",
+          "label": "Checked and released by",
+          "statement": "I checked the depositor after cleaning and release it for production.",
+          "width": "half"
+        }
+      ]
+    }
+  ]
+}
