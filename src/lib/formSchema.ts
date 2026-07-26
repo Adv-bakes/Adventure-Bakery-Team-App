@@ -29,6 +29,7 @@ export interface FieldBase {
   required?: boolean;         // enforced at SUBMIT time only; drafts save anything
   width?: "full" | "half" | "third";
   showInList?: boolean;       // surface this field as its own column in the drawer's Entries list
+  defaultValue?: string | number | boolean; // pre-fill for a NEW entry (scalar fields); still editable
 }
 
 export interface TextField     extends FieldBase { type: "text";     maxLength?: number; placeholder?: string; }
@@ -206,9 +207,10 @@ const todayValue = (type: string): string => {
 };
 
 function emptyFieldValue(field: FormField): any {
+  const dv = field.defaultValue; // pre-fill for scalar fields (?? keeps a legit 0/false)
   switch (field.type) {
-    case "checkbox": return false;
-    case "select": return (field as SelectField).multiple ? [] : "";
+    case "checkbox": return typeof dv === "boolean" ? dv : false;
+    case "select": return (field as SelectField).multiple ? [] : (dv ?? "");
     case "signature": return null;
     case "grid": {
       const grid = field as GridField;
@@ -223,8 +225,8 @@ function emptyFieldValue(field: FormField): any {
       return Array.from({ length: Math.max(min, 1) }, () => ({}));
     }
     case "date": case "time": case "datetime":
-      return (field as DateField).defaultToday ? todayValue(field.type) : "";
-    default: return "";
+      return (field as DateField).defaultToday ? todayValue(field.type) : (dv ?? "");
+    default: return dv ?? ""; // text / textarea / number
   }
 }
 

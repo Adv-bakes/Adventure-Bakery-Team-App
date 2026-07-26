@@ -82,7 +82,8 @@
           "required": true,
           "width": "half",
           "showInList": true,
-          "help": "Noble Sani-512 (quat), food-contact mix 1:512 (1 oz per 4 gal)."
+          "help": "Noble Sani-512 (quat), food-contact mix 1:512 (1 oz per 4 gal).",
+          "defaultValue": 200
         },
         {
           "id": "cleaned_by",
