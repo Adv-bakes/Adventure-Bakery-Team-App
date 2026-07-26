@@ -1,3 +1,24 @@
+-- Correct the Groen kettle power-off wording: "shut off power at the breaker" -> "unplug".
+--
+-- Per the owner, the kettle is plug-connected and unplugging is sufficient before cleaning; requiring a
+-- breaker shut-off was overkill. Two touch points, both on now-active docs:
+--   * SOP-904 procedure step 1 (content->'procedure'->0) — the "Two rules before you start" text.
+--   * FRM-912 cleaning grid step 1 ("...power isolated" -> "...unplugged") via content->'form_schema'.
+--
+-- SOP-904's procedure is NOT a snapshot-watched field, so that UPDATE won't create a history row.
+-- FRM-912's form_schema IS watched, so its UPDATE fires a sop_document_history snapshot (audit trail).
+-- (SOP-504's troubleshooting "check the circuit breaker" is a diagnostic reference — intentionally left.)
+--
+-- content merged with jsonb_set / || so nothing else changes. Guarded so each is idempotent.
+
+begin;
+
+update public.sop_documents
+set content = jsonb_set(content, '{procedure,0}', to_jsonb($p$Two rules before you start: (1) turn the thermostat to OFF and unplug it before cleaning; let the kettle cool enough to work safely — but clean while still warm, not cold, so residue lifts easily. (2) Keep water and cleaning solutions out of the controls and electrical parts, and never use a high-pressure hose on the kettle; the outside is washed with warm water only.$p$::text))
+where sop_number = 'SOP-904' and content#>>'{procedure,0}' like '%breaker%';
+
+update public.sop_documents
+set content = content || jsonb_build_object('form_schema', $s912$
 {
   "schemaVersion": 1,
   "settings": {
@@ -127,3 +148,7 @@
     }
   ]
 }
+$s912$::jsonb)
+where sop_number = 'FRM-912' and content->>'form_schema' like '%power isolated%';
+
+commit;

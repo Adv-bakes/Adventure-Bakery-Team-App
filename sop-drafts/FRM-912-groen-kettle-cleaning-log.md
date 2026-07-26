@@ -23,7 +23,7 @@ allergens differ).
 
 **Cleaning** — a 7-step checklist (Done + Notes per step):
 
-1. Kettle switched off and power isolated; cooled enough to clean safely (cleaned while still warm)
+1. Kettle switched off and unplugged; cooled enough to clean safely (cleaned while still warm)
 2. Large food residues scraped and flushed out — non-abrasive brushes only, no metal tools or steel wool
 3. Inside and outside washed with detergent at label strength; burned-on soaked, not gouged
 4. Rim, pouring lip, cover underside and any baskets/strainers washed; controls and housing wiped (no water in controls)

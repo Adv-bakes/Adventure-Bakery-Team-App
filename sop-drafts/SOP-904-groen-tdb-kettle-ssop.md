@@ -46,8 +46,8 @@ sanitation.
 
 ### Two rules before you start
 
-1. Turn the **thermostat to OFF** and **shut off power** at the breaker before cleaning. Let the
-   kettle cool enough to work safely — but clean while still warm, not cold, so residue lifts easily.
+1. Turn the **thermostat to OFF** and **unplug the kettle** before cleaning. Let the kettle cool
+   enough to work safely — but clean while still warm, not cold, so residue lifts easily.
 2. **Keep water and cleaning solutions out of the controls and electrical parts**, and **never use a
    high-pressure hose** on the kettle. The outside is washed with warm water only.
 
