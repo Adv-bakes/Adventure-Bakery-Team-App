@@ -65,12 +65,12 @@
         {
           "id": "sanitizer_ppm",
           "type": "number",
-          "label": "Sanitizer strength (test strip)",
+          "label": "Sanitizer strength",
           "unit": "ppm",
           "required": true,
           "width": "half",
           "showInList": true,
-          "help": "Noble Sani-512 (quat), food-contact mix 1:512 (1 oz per 4 gal). Confirm with a quat test strip per the Sani-512 label."
+          "help": "Noble Sani-512 (quat), food-contact mix 1:512 (1 oz per 4 gal)."
         },
         {
           "id": "cleaned_by",

@@ -31,8 +31,8 @@ allergens differ).
 6. Sanitized with Noble Sani-512 at 1:512 (1 oz per 4 gal); every surface wet at least 1 min and air-dried — no-rinse
 7. Allergen changeover: every food-contact surface checked under good light *(changeover only)*
 
-Then **Sanitizer strength (ppm)** from a quat test strip (help text notes Sani-512's 1:512
-food-contact mix) and **Cleaned by** (typed signature).
+Then **Sanitizer strength (ppm)** (help text notes Sani-512's 1:512 food-contact mix) and **Cleaned
+by** (typed signature).
 
 **Check Before Next Run** — a single pass/fail release check (kettle clean inside and out; rim,
 pouring lip, cover and baskets clean; no cleaner or sanitizer residue; sanitized just before use;
@@ -51,8 +51,8 @@ and **Checked and released by** (Supervisor verifier signature).
 Confirmed: the site uses **Noble Chemical Sani-512** (a quaternary sanitizer). For **food-contact
 surfaces** it's mixed **1:512 — 1 fl oz per 4 gallons (0.25 oz per gallon)** and is **no-rinse**: wet
 the surface for at least 1 minute and let it air dry (do **not** rinse it off, and none of the
-chlorine "≤30 min on stainless / rinse off" cautions apply). The `sanitizer_ppm` field is verified
-with a **quat test strip** per the Sani-512 label.
+chlorine "≤30 min on stainless / rinse off" cautions apply). The `sanitizer_ppm` field records the
+Sani-512 strength (food-contact mix 1:512).
 
 *(This likely resolves the standing sanitizer-target open item on the depositor forms too — if
 Sani-512 is the house sanitizer, FRM-909/910/911 can be updated to the same 1:512 quat guidance.

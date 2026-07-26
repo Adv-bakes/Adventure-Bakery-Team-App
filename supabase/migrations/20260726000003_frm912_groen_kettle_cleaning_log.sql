@@ -13,9 +13,9 @@
 --
 -- REVIEW BEFORE ACTIVATING (this migration deliberately does NOT do these):
 --   * status stays 'draft'. Activating FRM-912, SOP-504 and SOP-904 together is an approval decision.
---   * sanitizer_ppm is verified with a quat test strip per the Sani-512 label; the field carries the
---     1:512 food-contact mix as help text. (Sani-512 likely resolves the same open item on FRM-909/
---     910/911 if it's the house sanitizer — left for confirmation.)
+--   * sanitizer_ppm records the Sani-512 strength; the field carries the 1:512 food-contact mix as
+--     help text. (Sani-512 likely resolves the same open item on FRM-909/910/911 if it's the house
+--     sanitizer — left for confirmation.)
 --   * category is 'Module 11' so it groups with the other sanitation forms (FRM-901...911).
 --   * Field ids lock once the first entry is saved — they key the response data. Read them first.
 --
@@ -99,12 +99,12 @@ select
         {
           "id": "sanitizer_ppm",
           "type": "number",
-          "label": "Sanitizer strength (test strip)",
+          "label": "Sanitizer strength",
           "unit": "ppm",
           "required": true,
           "width": "half",
           "showInList": true,
-          "help": "Noble Sani-512 (quat), food-contact mix 1:512 (1 oz per 4 gal). Confirm with a quat test strip per the Sani-512 label."
+          "help": "Noble Sani-512 (quat), food-contact mix 1:512 (1 oz per 4 gal)."
         },
         {
           "id": "cleaned_by",

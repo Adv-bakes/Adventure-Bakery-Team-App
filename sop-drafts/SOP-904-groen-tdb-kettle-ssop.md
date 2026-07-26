@@ -72,7 +72,7 @@ mineral deposit is left, use a de-liming agent per its label.
    mixed for **food-contact use at 1:512 — 1 fl oz per 4 gallons of water (0.25 oz per gallon).**
 2. **Wet every food-contact surface and leave it for at least 1 minute, then let it air dry. Sani-512
    is a no-rinse sanitizer at this dilution — do not rinse it off.**
-3. **Check the strength with a quat test strip and record the reading on FRM-912.**
+3. **Record the sanitizer strength on FRM-912.**
 4. **Sanitize again just before the next use** (the release step).
 
 ### 4. Changing between products with different allergens
