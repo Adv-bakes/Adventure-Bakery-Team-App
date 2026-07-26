@@ -26,13 +26,13 @@ allergens differ).
 1. Machine and air supply off; air line disconnected and pressure bled
 2. Depositor fully disassembled — nozzle, hopper, rotation cylinder, hopper block, product cylinder, piston
 3. All seals / O-rings removed from every part
-4. Product-contact parts and seals washed in the sink — detergent, rinse, sanitizer at label strength, drying rack
+4. Product-contact parts and seals washed in the sink — detergent, rinse, Sani-512 (1:512, no-rinse), drying rack
 5. Machine body and air cylinders wiped only — not submerged
 6. Every seal inspected for wear; worn or damaged seals replaced
 7. Reassembled — seals greased with food-approved grease, clamps tight, correct nozzle fitted
 8. Allergen changeover: every food-contact surface checked under good light *(changeover only)*
 
-Then **Sanitizer strength (ppm)** from a test strip, and **Cleaned by** (typed signature).
+Then **Sanitizer strength (ppm)** (Sani-512, food-contact mix 1:512), and **Cleaned by** (typed signature).
 
 **Check Before Next Run** — a single pass/fail release check (parts clean and dry, seals inspected /
 worn ones replaced / none torn or missing a piece, clamps tight, correct nozzle fitted, nothing left
