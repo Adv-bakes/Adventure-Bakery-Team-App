@@ -27,12 +27,12 @@ allergens differ).
 2. Hopper, feed rollers, die and scrapers removed
 3. Cut-off wire and support fingers wiped clean in place (not removed)
 4. Head interior, die slot, cabinet and belts dry-then-damp wiped (no water on the panel)
-5. Hopper, feed rollers, die and scrapers washed in the sink — detergent, rinse, sanitizer at label strength, drying rack
+5. Hopper, feed rollers, die and scrapers washed in the sink — detergent, rinse, Sani-512 (1:512, no-rinse), drying rack
 6. Cut-off wire whole and accounted for — no missing pieces
 7. Reassembled: die finger-tight in a clean slot, a finger in each die slot, guards locked
 8. Allergen changeover: every food-contact surface checked under good light *(changeover only)*
 
-Then **Sanitizer strength (ppm)** from a test strip, and **Cleaned by** (typed signature).
+Then **Sanitizer strength (ppm)** (Sani-512, food-contact mix 1:512), and **Cleaned by** (typed signature).
 
 **Check Before Next Run** — a single pass/fail release check (parts clean and dry, wire whole and
 accounted for, guards locked, nothing left on the machine), a free-text box for anything wrong and

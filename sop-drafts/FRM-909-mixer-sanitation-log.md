@@ -53,7 +53,7 @@ The 8 checklist steps are SOP-901's procedure in the order it's performed:
 4. Drip cup clean and dry — no oil
 5. Bowl broken down, residue removed, rinsed warm, scrubbed with detergent
 6. Bowl run through the pan washer on the high-temperature cycle
-7. Paddle / whip / dough arm — detergent, rinse, sanitizer, drying rack
+7. Paddle / whip / dough arm — detergent, rinse, Sani-512 (1:512, no-rinse), drying rack
 8. Allergen changeover: every food contact surface checked under good light *(changeover only)*
 
 ### Three things kept deliberately
