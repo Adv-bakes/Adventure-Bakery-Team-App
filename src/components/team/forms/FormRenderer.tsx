@@ -2,7 +2,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import type { FormSchema, FormField as SchemaField, InfoField, ReferenceTableField } from "@/lib/formSchema";
 import { FormFieldInput } from "./FormFieldInput";
-import { GridFieldInput } from "./GridFieldInput";
+import { GridFieldInput, type GridFieldInputProps } from "./GridFieldInput";
 import type { Signer } from "./SignatureFieldInput";
 
 const WIDTH_CLASS: Record<string, string> = {
@@ -17,6 +17,8 @@ interface FormRendererProps {
   readOnly?: boolean;
   isAdmin?: boolean;
   signer?: Signer;
+  /** Fill a grid row from a photographed package label; omitted in the builder Preview. */
+  onScanLabel?: GridFieldInputProps["onScanLabel"];
 }
 
 /**
@@ -24,7 +26,7 @@ interface FormRendererProps {
  * instance (the caller decides defaultValues, resolver, and what save/submit
  * mean — the entry editor and the builder Preview both reuse this).
  */
-export function FormRenderer({ schema, form, readOnly, isAdmin, signer }: FormRendererProps) {
+export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLabel }: FormRendererProps) {
   const renderField = (field: SchemaField) => {
     // Grids and reference tables always take the full row regardless of width hint
     const widthClass = field.type === "grid" || field.type === "reference_table"
@@ -48,7 +50,14 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer }: FormRe
         );
         break;
       case "grid":
-        el = <GridFieldInput field={field} control={form.control} disabled={readOnly} />;
+        el = (
+          <GridFieldInput
+            field={field}
+            control={form.control}
+            disabled={readOnly}
+            onScanLabel={onScanLabel}
+          />
+        );
         break;
       case "reference_table": {
         const t = field as ReferenceTableField;

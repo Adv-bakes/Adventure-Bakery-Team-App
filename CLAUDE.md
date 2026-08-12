@@ -331,6 +331,29 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   `generateFormReportPdf` (landscape, clamps to 10 columns → "see CSV"), and `generateDerivedReportPdf`
   (landscape log/register PDF for the derived-report feature above); reuses `loadLogoDataUrl`/
   `confidentialFooter` now exported from `sopPdf.ts`.
+- **Package-label scan (fill ONE grid row from a photo of an ingredient pack):** a grid opted in via
+  `GridField.scanLabel` gets a **camera button on every row**; the filler photographs the bag/case and
+  `extract-package-label` reads the printed identity into that row. Distinct from the whole-form photo
+  scan above — that reads a completed *paper form* and fills the *whole entry*; this reads a *product
+  package* and fills *one row*. Facts are a closed set (`LABEL_FACTS` in `formSchema.ts`:
+  `product_name, brand, lot_code, best_by, item_code, net_weight, pack_size, plant_code, barcode`) —
+  **no allergen key by design**, since an allergen declaration must come off the spec sheet, not off
+  whatever fraction of an ingredient panel is in frame. Column mapping is `resolveScanFact` =
+  admin-pinned `GridColumn.scanFact` (incl. `"none"` to opt a column out) → else `inferScanFact`
+  keyword match on the column label, so an existing grid scans with zero setup
+  (Supplier→brand, Lot / Batch #→lot_code, Ingredient→product_name, Notes→overflow). Facts no column
+  claims are **appended** (never replacing) to the notes column — `scanNotesColumnId`, else the
+  notes-looking text column; dropped when the grid has neither. `scanWantedFacts` narrows the ask to
+  what the grid can actually hold. **Lot codes are the point and the risk:** the prompt teaches the
+  model that a lot is *variable-applied* (ink-jet/laser/stamped) and that pre-printed item numbers and
+  barcode digits are **never** the lot — those come back in `alternates.lot_code` and render as
+  click-to-apply chips in the Undo strip. `applyLabelScan` (pure, in `formSchema.ts`) overwrites
+  non-empty cells deliberately and the caller snapshots the whole prior row, so one **Undo** restores
+  it exactly; a half-applied scan would be worse than either. The photo is kept as an entry attachment
+  auto-noted `"Label photo — <grid> row N"` — it's the evidence behind the lot number now on the
+  record. Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
+  `onScanLabel` ← `FormEntry.tsx` (upload → attach → signed URL → invoke); admin toggle + per-column
+  mapping live in `GridColumnsEditor`.
 - **AI extraction:** drawer Form tab "Generate with AI" (shown when a source `.docx` is attached) runs
   mammoth client-side (keeps the tables `sopDocxParser` drops), sends HTML to edge function
   **`generate-form-schema`** (Gemini via Lovable gateway; server-side whitelist/sanitize; also accepts
@@ -595,6 +618,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `generate-narration` | Accepts `{imageUrl}`; sends signed PNG URL to Gemini 2.5 Flash vision; returns `{text}` — 2–4 sentence trainer narration |
 | `generate-quiz` | Accepts `{title, narrations[], count}`; returns `{questions[]}` — MCQ with 4 options, hint, rationale |
 | `cleanup-narration` | Accepts `{text}`; returns `{text}` — grammar/style cleanup via Gemini |
+| `extract-package-label` | Accepts `{imageUrls[], wanted[]}`; reads a photographed **ingredient package** and returns `{facts, alternates:{lot_code[]}, extras[], warnings[]}` for filling one grid row. Closed fact whitelist server-side (no allergen key); prompted to distinguish a variable-applied lot code from pre-printed item/barcode numbers. See "Package-label scan" above |
 | `cleanup-form-text` | Accepts `{text}`; returns `{text}` — same shape as `cleanup-narration` but prompted for compliance-form free-text answers (incident reports, root-cause notes): fixes grammar/punctuation/capitalization/filler words into one clear statement, preserves every fact/name/quantity exactly. Powers the AI-cleanup Sparkles button in `DictationTextarea.tsx`. |
 | `admin-user-account` | Accepts `{action, userId, password?, redirectTo?}` — `status` / `set_password` / `reset_link`. Admin-only account management; see "Account Access" below. Caller gate is `has_role('admin') OR is_owner()` — deliberately **not** `is_staff_or_admin` (that helper includes staff). |
 | `accept-invitation` | Accepts `{token, password, preferSpanish}`; provisions the invited auth user server-side via `auth.admin.createUser({email_confirm:true})`, then calls the accept RPC. `verify_jwt=false` — the caller has no account yet; the invite token is the credential. See "Invitations" below. |
@@ -627,7 +651,7 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. Also exports `loadLogoDataUrl`, `confidentialFooter`, `DISCLAIMER`, `PDF_GOLD` for reuse by `formPdf.ts`. See "SOP PDF Export" above |
 | `docNumber.ts` | Document numbering convention: `DOC_STAGES`, `parseDocNumber`, `stageForNumber`/`stageForSopNumber`, `formatDocNumber`, `docNumberIssue`/`isValidDocNumber`; `parseClauseNumber`/`compareClauseIds` (the deliberate SQF-clause SOP scheme). See "Document Numbering Convention" above |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
-| `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns). See "Dynamic Fillable Forms" below |
-| `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse`, `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
+| `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns); package-label scan helpers `LABEL_FACTS`/`LABEL_FACT_LABELS`, `inferScanFact`/`resolveScanFact`, `scanWantedFacts`, `applyLabelScan`. See "Dynamic Fillable Forms" below |
+| `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse`, `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
 | `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |

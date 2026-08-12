@@ -6,9 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import {
-  GRID_COLUMN_TYPE_LABELS, slugifyFieldId,
-  type GridColumn, type GridColumnType, type GridField,
+  GRID_COLUMN_TYPE_LABELS, LABEL_FACTS, LABEL_FACT_LABELS, inferScanFact, slugifyFieldId,
+  type GridColumn, type GridColumnType, type GridField, type LabelFact,
 } from "@/lib/formSchema";
+
+/** What inferScanFact would pick for this column, for the "Auto" option's hint. */
+function autoScanLabel(col: GridColumn): string {
+  const guess = inferScanFact(col);
+  if (!guess) return "Auto — nothing";
+  return `Auto — ${guess === "notes" ? "Notes (overflow)" : LABEL_FACT_LABELS[guess]}`;
+}
 
 interface GridColumnsEditorProps {
   field: GridField;
@@ -111,6 +118,25 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
                 />
               </div>
             )}
+            {field.scanLabel && (
+              <div className="w-44">
+                <Label className="text-[10px] text-muted-foreground">Fill from label</Label>
+                <Select
+                  value={col.scanFact ?? "auto"}
+                  onValueChange={v => updateColumn(idx, { scanFact: v === "auto" ? undefined : v as GridColumn["scanFact"] })}
+                >
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">{autoScanLabel(col)}</SelectItem>
+                    <SelectItem value="none">Never fill</SelectItem>
+                    {LABEL_FACTS.map((f: LabelFact) => (
+                      <SelectItem key={f} value={f}>{LABEL_FACT_LABELS[f]}</SelectItem>
+                    ))}
+                    <SelectItem value="notes">Notes (overflow)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="flex items-center gap-1.5 pb-1.5">
               <Checkbox
                 id={`col-req-${field.id}-${idx}`}
@@ -136,6 +162,45 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
       <Button type="button" variant="outline" size="sm" onClick={addColumn}>
         <Plus className="w-3.5 h-3.5 mr-1" />Add Column
       </Button>
+
+      {/* Photograph an ingredient pack to fill a row. Off by default — a
+          sanitation checklist has no package to scan. */}
+      <div className="space-y-2 border-t pt-2" style={{ borderColor: "rgba(200,155,60,0.2)" }}>
+        <div className="flex items-start gap-1.5">
+          <Checkbox
+            id={`grid-scan-${field.id}`}
+            className="mt-0.5"
+            checked={field.scanLabel ?? false}
+            onCheckedChange={c => onChange({ ...field, scanLabel: !!c || undefined })}
+          />
+          <div>
+            <Label htmlFor={`grid-scan-${field.id}`} className="text-xs font-normal cursor-pointer">
+              Scan package labels into rows
+            </Label>
+            <p className="text-[10px] text-muted-foreground">
+              Adds a camera button to each row. The filler photographs the ingredient pack and AI reads the
+              brand, lot code and dates into that row for them to check.
+            </p>
+          </div>
+        </div>
+        {field.scanLabel && (
+          <div className="w-64">
+            <Label className="text-[10px] text-muted-foreground">Put unmatched label details in</Label>
+            <Select
+              value={field.scanNotesColumnId ?? "auto"}
+              onValueChange={v => onChange({ ...field, scanNotesColumnId: v === "auto" ? undefined : v })}
+            >
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Auto — a column named "Notes"</SelectItem>
+                {field.columns.filter(c => c.type === "text").map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.label || c.id}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-2 border-t pt-2" style={{ borderColor: "rgba(200,155,60,0.2)" }}>
         <Label className="text-xs font-medium">Rows</Label>
