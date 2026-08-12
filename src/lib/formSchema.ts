@@ -109,6 +109,13 @@ export interface GridField extends FieldBase {
   // Where label details that no column claims are appended. Falls back to a
   // column whose name looks like notes; dropped when the grid has neither.
   scanNotesColumnId?: string;
+  // Keep each scan photo as an entry attachment. OFF by default: the scanned
+  // values land in visible cells that get reviewed, so for most forms the image
+  // is redundant and a 20-ingredient entry would accumulate 20 photos. Worth
+  // turning on only where the image itself is the evidence — i.e. a lot code an
+  // auditor could challenge later. Without it the upload is transient and the
+  // file is removed once the model has read it.
+  scanKeepPhoto?: boolean;
 }
 export type GridRowValue = Record<string, any>;
 

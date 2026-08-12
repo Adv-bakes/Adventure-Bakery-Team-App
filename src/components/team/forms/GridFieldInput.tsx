@@ -142,7 +142,7 @@ export interface GridFieldInputProps {
    */
   onScanLabel?: (
     file: File,
-    ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[] },
+    ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[]; keepPhoto: boolean },
   ) => Promise<LabelScanResult | null>;
 }
 
@@ -237,6 +237,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
         gridLabel: field.label,
         rowIndex,
         wanted: scanWantedFacts(field), // only ask for facts a column (or the notes overflow) can hold
+        keepPhoto: !!field.scanKeepPhoto,
       });
       if (!result) return; // the caller already surfaced the failure
       const prev = rowsRef.current[rowIndex] ?? {};

@@ -349,9 +349,12 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   barcode digits are **never** the lot — those come back in `alternates.lot_code` and render as
   click-to-apply chips in the Undo strip. `applyLabelScan` (pure, in `formSchema.ts`) overwrites
   non-empty cells deliberately and the caller snapshots the whole prior row, so one **Undo** restores
-  it exactly; a half-applied scan would be worse than either. The photo is kept as an entry attachment
-  auto-noted `"Label photo — <grid> row N"` — it's the evidence behind the lot number now on the
-  record. Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
+  it exactly; a half-applied scan would be worse than either. The model needs a fetchable URL so the
+  photo is always uploaded, but it only **stays** as an entry attachment (auto-noted
+  `"Label photo — <grid> row N"`) when the grid sets `scanKeepPhoto` — **off by default**, since the
+  scanned values land in reviewed cells and a 20-ingredient entry would otherwise accumulate 20
+  redundant images; otherwise the upload is transient and removed in a `finally` (best-effort, like
+  `deleteResponse` — an orphaned object is harmless, a failed scan is not). Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
   `onScanLabel` ← `FormEntry.tsx` (upload → attach → signed URL → invoke); admin toggle + per-column
   mapping live in `GridColumnsEditor`.
 - **AI extraction:** drawer Form tab "Generate with AI" (shown when a source `.docx` is attached) runs
