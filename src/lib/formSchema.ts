@@ -73,6 +73,10 @@ export interface GridColumn {
   unit?: string;        // number
   required?: boolean;
   width?: number;       // relative flex weight
+  // Which fact off a photographed package label fills this column. Admin-pinned
+  // override; when absent the label is matched by keyword (see inferScanFact),
+  // and "none" opts the column out of scanning entirely.
+  scanFact?: LabelFact | "notes" | "none";
 }
 export type GridRows =
   | { mode: "dynamic"; min?: number; max?: number; addLabel?: string }
@@ -99,6 +103,12 @@ export interface GridField extends FieldBase {
   type: "grid";
   columns: GridColumn[];
   rows: GridRows;
+  // Per-row "scan a package label" camera button (see applyLabelScan). Off by
+  // default so checklist/QC grids don't grow a control they'd never use.
+  scanLabel?: boolean;
+  // Where label details that no column claims are appended. Falls back to a
+  // column whose name looks like notes; dropped when the grid has neither.
+  scanNotesColumnId?: string;
 }
 export type GridRowValue = Record<string, any>;
 
@@ -316,6 +326,166 @@ export function mergeScanAnswers(
     }
   }
   return merged;
+}
+
+// ---------- Package-label scan (photograph an ingredient bag → fill ONE row) ----------
+//
+// Distinct from the whole-form scan above: that reads a photo of a filled-out
+// PAPER FORM and pre-fills the entire entry; this reads a photo of a PRODUCT
+// PACKAGE and fills a single grid row (supplier/lot/etc.), which is what a
+// worker actually does while staging ingredients for a batch.
+
+export const LABEL_FACTS = [
+  "product_name", "brand", "lot_code", "best_by",
+  "item_code", "net_weight", "pack_size", "plant_code", "barcode",
+] as const;
+export type LabelFact = (typeof LABEL_FACTS)[number];
+
+/** Human names — also the prefix used when a fact spills into the notes column. */
+export const LABEL_FACT_LABELS: Record<LabelFact, string> = {
+  product_name: "Product name",
+  brand: "Brand / manufacturer",
+  lot_code: "Lot / batch code",
+  best_by: "Best-by date",
+  item_code: "Vendor item code",
+  net_weight: "Net weight",
+  pack_size: "Pack size",
+  plant_code: "Plant code",
+  barcode: "Barcode / GTIN",
+};
+
+/** What `extract-package-label` returns (already whitelisted server-side). */
+export interface LabelScanResult {
+  facts: Partial<Record<LabelFact, string>>;
+  /** Other numbers on the pack that could plausibly be the lot — never auto-filled. */
+  alternates?: { lot_code?: string[] };
+  /** Readable details with no fact key of their own; destined for the notes column. */
+  extras?: { label: string; value: string }[];
+  warnings?: string[];
+}
+
+// Order matters — the first pattern that matches a column label wins. Codes are
+// tested before brand so "Vendor Item #" resolves to item_code, not brand, while
+// a plain "Vendor"/"Supplier" column still lands on brand.
+const FACT_PATTERNS: ReadonlyArray<[RegExp, LabelFact | "notes"]> = [
+  [/\b(lot|batch)\b/i, "lot_code"],
+  [/best.?by|expir|use.?by|shelf.?life/i, "best_by"],
+  [/gtin|upc|barcode|bar code/i, "barcode"],
+  [/\bsku\b|\b(item|part|product)\b[^a-z0-9]*(no\.?|num(ber)?|#|code|id)\b/i, "item_code"],
+  [/supplier|vendor|manufactur|\bbrand\b|\bmaker\b/i, "brand"],
+  [/net\s*w(ei)?(gh)?t|\bweight\b/i, "net_weight"],
+  [/pack\s*size|case\s*size|\bpack\b/i, "pack_size"],
+  [/plant|facility/i, "plant_code"],
+  [/ingredient|material|\bproduct\b|description|component|\bitem\b/i, "product_name"],
+  [/\bnotes?\b|comment|remark/i, "notes"],
+];
+
+/** Keyword fallback so an existing grid scans with zero per-column setup. */
+export function inferScanFact(column: GridColumn): LabelFact | "notes" | undefined {
+  const label = column.label ?? "";
+  for (const [pattern, fact] of FACT_PATTERNS) if (pattern.test(label)) return fact;
+  return undefined;
+}
+
+/** Admin-pinned mapping wins over the keyword guess; "none" opts out. */
+export function resolveScanFact(column: GridColumn): LabelFact | "notes" | undefined {
+  if (column.scanFact === "none") return undefined;
+  return column.scanFact ?? inferScanFact(column);
+}
+
+/** The overflow column: explicitly chosen, else the first notes-looking text column. */
+function notesColumn(grid: GridField): GridColumn | undefined {
+  const explicit = grid.columns.find(c => c.id === grid.scanNotesColumnId);
+  const col = explicit ?? grid.columns.find(c => resolveScanFact(c) === "notes");
+  return col?.type === "text" ? col : undefined;
+}
+
+/**
+ * Facts worth asking the model for. With a notes column present everything is
+ * usable (unmatched details spill there); without one, only facts some column
+ * can actually receive — no point paying to read a weight nothing will hold.
+ */
+export function scanWantedFacts(grid: GridField): LabelFact[] {
+  if (notesColumn(grid)) return [...LABEL_FACTS];
+  const wanted = new Set<LabelFact>();
+  for (const col of grid.columns) {
+    const fact = resolveScanFact(col);
+    if (fact && fact !== "notes") wanted.add(fact);
+  }
+  return LABEL_FACTS.filter(f => wanted.has(f));
+}
+
+/** Coerce a scanned string to a column's type; undefined = don't write it. */
+function coerceToColumn(column: GridColumn, raw: string | undefined): any {
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (!value) return undefined;
+  switch (column.type) {
+    case "number": {
+      const n = Number(value.replace(/[^0-9.\-]/g, ""));
+      return Number.isFinite(n) ? n : undefined;
+    }
+    case "date":
+      // The extractor normalizes to YYYY-MM-DD; anything else would render blank
+      // in a native date input, so leave the cell alone instead.
+      return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+    case "time":
+      return /^\d{2}:\d{2}$/.test(value) ? value : undefined;
+    case "select":
+      return (column.options ?? []).find(o => o.toLowerCase() === value.toLowerCase());
+    case "checkbox": case "pass_fail":
+      return undefined; // nothing on a package label decides a check or a QC verdict
+    default:
+      return value.slice(0, 500);
+  }
+}
+
+/**
+ * Merge a label scan into one grid row. Pure — the caller owns the RHF write and
+ * keeps the returned `filled` list for the Undo chip.
+ *
+ * Cells that already hold a value ARE overwritten: a worker who taps scan on a
+ * row wants the label to win, and the caller snapshots the whole prior row so
+ * the action stays reversible (a half-applied scan would be worse than either).
+ */
+export function applyLabelScan(
+  grid: GridField,
+  row: GridRowValue,
+  result: LabelScanResult,
+): { next: GridRowValue; filled: string[] } {
+  const next: GridRowValue = { ...row };
+  const filled: string[] = [];
+  const used = new Set<LabelFact>();
+  const notes = notesColumn(grid);
+
+  for (const col of grid.columns) {
+    const fact = resolveScanFact(col);
+    if (!fact || fact === "notes" || used.has(fact)) continue; // 1st column claiming a fact wins
+    const value = coerceToColumn(col, result.facts?.[fact]);
+    if (value === undefined) continue;
+    next[col.id] = value;
+    filled.push(col.label);
+    used.add(fact);
+  }
+
+  // Whatever was read but had nowhere to go, appended (never replacing) so a
+  // note the worker already typed survives.
+  if (notes) {
+    const leftovers = [
+      ...LABEL_FACTS
+        .filter(f => !used.has(f) && result.facts?.[f])
+        .map(f => `${LABEL_FACT_LABELS[f]}: ${result.facts![f]}`),
+      ...(result.extras ?? [])
+        .filter(e => e?.value)
+        .map(e => (e.label ? `${e.label}: ${e.value}` : String(e.value))),
+    ];
+    if (leftovers.length) {
+      const prior = typeof next[notes.id] === "string" ? next[notes.id].trim() : "";
+      next[notes.id] = [prior, ...leftovers].filter(Boolean).join("\n");
+      filled.push(notes.label);
+    }
+  }
+
+  return { next, filled };
 }
 
 // ---------- Submit-time validation (zod) ----------

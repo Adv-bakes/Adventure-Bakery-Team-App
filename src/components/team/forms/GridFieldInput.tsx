@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useFieldArray, useWatch, type Control } from "react-hook-form";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Trash2 } from "lucide-react";
-import type { GridColumn, GridField, GridRowValue } from "@/lib/formSchema";
+import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+  applyLabelScan, resolveScanFact, scanWantedFacts,
+  type GridColumn, type GridField, type GridRowValue, type LabelFact, type LabelScanResult,
+} from "@/lib/formSchema";
 import { PassFailInput } from "./FormFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
+
+/** How long the "label scan filled …" chip stays up before fading out. */
+const SCAN_UNDO_MS = 12000;
 
 /** Numeric-aware compare with blanks sorted last, for click-to-sort grid columns. */
 function compareCellValues(a: any, b: any): number {
@@ -124,10 +130,29 @@ function FixedRowLabel({ label }: { label: string }) {
   );
 }
 
-interface GridFieldInputProps {
+export interface GridFieldInputProps {
   field: GridField;
   control: Control<Record<string, any>>;
   disabled?: boolean;
+  /**
+   * Read a photographed ingredient package into this row. Callback-shaped so
+   * the grid stays free of supabase/storage concerns — the entry page owns the
+   * upload, the attachment record, and the edge-function call. Resolve to null
+   * when the scan failed (the caller has already told the user why).
+   */
+  onScanLabel?: (
+    file: File,
+    ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[] },
+  ) => Promise<LabelScanResult | null>;
+}
+
+/** State of the most recent scan, kept so it can be undone in one tap. */
+interface ScanOutcome {
+  rowIndex: number;
+  prev: GridRowValue;
+  filled: string[];
+  alternates: string[];
+  warnings: string[];
 }
 
 /**
@@ -135,8 +160,8 @@ interface GridFieldInputProps {
  * removes rows (respecting min/max); fixed mode renders one row per configured
  * label with a read-only leading label column.
  */
-export function GridFieldInput({ field, control, disabled }: GridFieldInputProps) {
-  const { fields: rows, append, remove, replace } = useFieldArray({ control, name: field.id });
+export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFieldInputProps) {
+  const { fields: rows, append, remove, replace, update } = useFieldArray({ control, name: field.id });
   const fixed = field.rows.mode === "fixed";
   const fixedLabels = fixed ? (field.rows as { labels: string[] }).labels : [];
   // Registers where known items can be renamed/removed over time (as opposed
@@ -183,6 +208,69 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
     return sort.dir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
   };
 
+  // ---- Scan a package label into a row ----
+  const scanEnabled = !!field.scanLabel && !disabled && !!onScanLabel;
+  const scanInputRef = useRef<HTMLInputElement>(null);
+  const scanTargetRef = useRef<number | null>(null);   // which row opened the camera
+  const [scanningRow, setScanningRow] = useState<number | null>(null);
+  const [scan, setScan] = useState<ScanOutcome | null>(null);
+  // useFieldArray's `fields` holds mount-time defaults, so read the row being
+  // scanned off the live watched values instead. Mirrored into a ref because
+  // the async handler would otherwise close over a stale render's copy.
+  const rowsRef = useRef<GridRowValue[]>([]);
+  rowsRef.current = Array.isArray(watchedRows) ? watchedRows : [];
+  const lotColumn = field.columns.find(c => resolveScanFact(c) === "lot_code");
+
+  useEffect(() => {
+    if (!scan) return;
+    const timer = window.setTimeout(() => setScan(null), SCAN_UNDO_MS);
+    return () => window.clearTimeout(timer);
+  }, [scan]);
+
+  const runScan = async (file: File) => {
+    const rowIndex = scanTargetRef.current;
+    if (rowIndex == null || !onScanLabel) return;
+    setScanningRow(rowIndex);
+    setScan(null);
+    try {
+      const result = await onScanLabel(file, {
+        gridLabel: field.label,
+        rowIndex,
+        wanted: scanWantedFacts(field), // only ask for facts a column (or the notes overflow) can hold
+      });
+      if (!result) return; // the caller already surfaced the failure
+      const prev = rowsRef.current[rowIndex] ?? {};
+      const { next, filled } = applyLabelScan(field, prev, result);
+      if (filled.length) update(rowIndex, next);
+      setScan({
+        rowIndex,
+        prev,
+        filled,
+        alternates: result.alternates?.lot_code ?? [],
+        warnings: result.warnings ?? [],
+      });
+    } catch {
+      /* the caller owns error messaging; just drop the spinner */
+    } finally {
+      setScanningRow(null);
+      scanTargetRef.current = null;
+      if (scanInputRef.current) scanInputRef.current.value = "";
+    }
+  };
+
+  const undoScan = () => {
+    if (!scan) return;
+    update(scan.rowIndex, scan.prev);
+    setScan(null);
+  };
+
+  /** Swap in one of the other codes the model saw on the pack. */
+  const useAlternateLot = (code: string) => {
+    if (!scan || !lotColumn) return;
+    const current = rowsRef.current[scan.rowIndex] ?? {};
+    update(scan.rowIndex, { ...current, [lotColumn.id]: code });
+  };
+
   return (
     <Controller
       control={control}
@@ -197,6 +285,7 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
             <Table className="[&_td]:py-1.5 [&_td]:px-2 [&_th]:h-8 [&_th]:px-2 table-fixed w-full">
               <TableHeader>
                 <TableRow className="bg-[#C89B3C]/8">
+                  {scanEnabled && <TableHead className="w-10" />}
                   {fixed && (
                     <TableHead
                       className="text-[#2A1F0E]/80 text-xs font-semibold"
@@ -247,6 +336,28 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
                   const rowEditable = fixed && (fixedDeletable || rowIdx >= fixedLabels.length);
                   return (
                   <TableRow key={row.id}>
+                    {/* Leading scan cell — the label photo is where filling the
+                        row STARTS, so it reads left-to-right with the work. */}
+                    {scanEnabled && (
+                      <TableCell className="w-10 align-top">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          disabled={scanningRow != null}
+                          onClick={() => {
+                            scanTargetRef.current = rowIdx;
+                            scanInputRef.current?.click();
+                          }}
+                          title="Photograph the package label to fill this row"
+                        >
+                          {scanningRow === rowIdx
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9A6F1E]" />
+                            : <Camera className="w-3.5 h-3.5 text-[#9A6F1E]" />}
+                        </Button>
+                      </TableCell>
+                    )}
                     {fixed && (
                       <TableCell className="align-top whitespace-normal bg-[#C89B3C]/8">
                         {rowEditable ? (
@@ -307,6 +418,73 @@ export function GridFieldInput({ field, control, disabled }: GridFieldInputProps
               </TableBody>
             </Table>
           </div>
+          {scanEnabled && (
+            <input
+              ref={scanInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={e => { const file = e.target.files?.[0]; if (file) runScan(file); }}
+            />
+          )}
+
+          {/* What the label scan did, and how to take it back. Values land in the
+              visible cells above — this only names them so nothing changes silently. */}
+          {scan && (
+            <div
+              className="rounded-md border px-2.5 py-2 text-xs space-y-1.5"
+              style={{ borderColor: "rgba(200,155,60,0.45)", background: "rgba(200,155,60,0.1)" }}
+            >
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                {scan.filled.length > 0 ? (
+                  <>
+                    <span className="text-[#2A1F0E]">
+                      Label scan filled <strong>{scan.filled.join(", ")}</strong> in row {scan.rowIndex + 1} — check it against the pack.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={undoScan}
+                      className="font-medium text-[#9A6F1E] hover:underline"
+                    >
+                      Undo
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-[#2A1F0E]">
+                    Nothing readable on that photo — row {scan.rowIndex + 1} is unchanged. Try again in better light, or type it in.
+                  </span>
+                )}
+              </div>
+
+              {/* The pack usually carries several numbers; if the wrong one was
+                  picked as the lot, swapping it should not mean retyping it. */}
+              {lotColumn && scan.alternates.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[#2A1F0E]/70">Other codes on the pack:</span>
+                  {scan.alternates.map(code => (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => useAlternateLot(code)}
+                      title={`Use as ${lotColumn.label}`}
+                      className="rounded border px-1.5 py-0.5 font-mono text-[11px] text-[#2A1F0E] bg-white hover:bg-[#C89B3C]/15"
+                      style={{ borderColor: "rgba(200,155,60,0.5)" }}
+                    >
+                      {code}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {scan.warnings.length > 0 && (
+                <ul className="list-disc pl-4 text-[#9A6F1E]">
+                  {scan.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
           {!disabled && (
             <Button
               type="button"

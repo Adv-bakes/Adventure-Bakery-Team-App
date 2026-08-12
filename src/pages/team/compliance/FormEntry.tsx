@@ -16,12 +16,12 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import {
   answerManifest, buildZodSchema, emptyValues, instanceTitle, mergeScanAnswers, valueFields,
-  type FormSchema,
+  type FormSchema, type LabelFact, type LabelScanResult,
 } from "@/lib/formSchema";
 import {
-  StaleResponseError, deleteResponse, extractFormAnswers, fetchProfileNames, fetchResponse,
-  getResponseAttachmentUrl, reopenResponse, resolveSchemaForResponse, saveResponseAttachments,
-  saveResponseData, shortUserId, submitResponse, uploadResponseAttachment,
+  StaleResponseError, deleteResponse, extractFormAnswers, extractPackageLabel, fetchProfileNames,
+  fetchResponse, getResponseAttachmentUrl, reopenResponse, resolveSchemaForResponse,
+  saveResponseAttachments, saveResponseData, shortUserId, submitResponse, uploadResponseAttachment,
   type FormResponse, type ResolvedSchema, type ResponseAttachment,
 } from "@/lib/formResponses";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
@@ -215,6 +215,42 @@ export default function FormEntry() {
     }
   };
 
+  // Photograph ONE ingredient package → fill the grid row it was scanned from
+  // (supplier, lot code, …). Distinct from scanAndFill above, which reads a
+  // photo of the completed PAPER FORM and pre-fills the whole entry.
+  //
+  // The photo is kept as an entry attachment because it is the evidence behind
+  // the lot number now on the record — a scanned lot with no image to check it
+  // against is worth less than a hand-typed one. The grid owns applying the
+  // values and the Undo; this only fetches them.
+  const scanLabelIntoRow = async (
+    file: File,
+    ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[] },
+  ): Promise<LabelScanResult | null> => {
+    if (!response) return null;
+    try {
+      const uploaded = await uploadResponseAttachment(response.id, file);
+      const photo: ResponseAttachment = {
+        ...uploaded,
+        note: `Label photo — ${ctx.gridLabel} row ${ctx.rowIndex + 1}`,
+      };
+      // Adopt the returned row (fresh updated_at) exactly as scanAndFill does,
+      // or the next Save Draft trips the optimistic-concurrency guard.
+      const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), photo]);
+      setResponse(updated);
+
+      const url = await getResponseAttachmentUrl(photo.path);
+      const result = await extractPackageLabel([url], ctx.wanted);
+      if (Object.keys(result.facts).length === 0) {
+        toast.warning("Nothing readable on that label photo — the row was left as it was.");
+      }
+      return result;
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to read the label photo");
+      return null;
+    }
+  };
+
   // "New from Photo" (Entries tab) navigates here carrying the selected page
   // image(s) in router state; run the scan once the entry has loaded and is
   // editable, then clear the state so a back/refresh doesn't re-trigger it.
@@ -377,7 +413,14 @@ export default function FormEntry() {
       )}
 
       {/* The form itself */}
-      <FormRenderer schema={schema} form={form} readOnly={readOnly} isAdmin={isAdmin} signer={signer} />
+      <FormRenderer
+        schema={schema}
+        form={form}
+        readOnly={readOnly}
+        isAdmin={isAdmin}
+        signer={signer}
+        onScanLabel={canEdit ? scanLabelIntoRow : undefined}
+      />
 
       {/* File/photo attachments — always shown if any exist, even if the admin
           has since disabled the feature; add-controls only when editable and

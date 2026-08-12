@@ -5,7 +5,10 @@
 // callers only see the typed wrappers below.
 
 import { supabase } from "@/integrations/supabase/client";
-import { emptyValues, getFormSchema, type FieldManifest, type FormSchema } from "@/lib/formSchema";
+import {
+  emptyValues, getFormSchema,
+  type FieldManifest, type FormSchema, type LabelFact, type LabelScanResult,
+} from "@/lib/formSchema";
 
 export type ResponseStatus = "draft" | "submitted";
 
@@ -288,6 +291,27 @@ export async function extractFormAnswers(
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
   return { answers: (data?.answers ?? {}) as Record<string, any>, warnings: (data?.warnings ?? []) as string[] };
+}
+
+/**
+ * Read one photographed ingredient package → the facts printed on it, for
+ * filling a single grid row. Sibling of extractFormAnswers (whole paper form).
+ */
+export async function extractPackageLabel(
+  imageUrls: string[],
+  wanted: LabelFact[],
+): Promise<LabelScanResult> {
+  const { data, error } = await supabase.functions.invoke("extract-package-label", {
+    body: { imageUrls, wanted },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return {
+    facts: (data?.facts ?? {}) as LabelScanResult["facts"],
+    alternates: { lot_code: (data?.alternates?.lot_code ?? []) as string[] },
+    extras: (data?.extras ?? []) as { label: string; value: string }[],
+    warnings: (data?.warnings ?? []) as string[],
+  };
 }
 
 /** Best-effort tolerant of an already-missing object is the caller's job (.catch), same as removeSopFile. */
