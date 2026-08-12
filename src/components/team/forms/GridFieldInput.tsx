@@ -412,9 +412,17 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
-                            disabled={!fixed && rows.length <= Math.max(minRows, 1)}
+                            // Only floor at one row, so the grid can't be left
+                            // empty and unusable. `min` is a SUBMIT-time rule —
+                            // gridZod already reports "needs at least N rows"
+                            // with a message the filler can act on. Using it to
+                            // block deletion instead silently locks every row on
+                            // a form whose min was authored from the paper's
+                            // printed line count (15 blank ingredient lines is a
+                            // page layout, not a minimum ingredient count).
+                            disabled={!fixed && rows.length <= 1}
                             onClick={() => remove(rowIdx)}
-                            title="Remove row"
+                            title={!fixed && rows.length <= 1 ? "A grid keeps at least one row" : "Remove row"}
                           >
                             <Trash2 className="w-3.5 h-3.5 text-[#2A1F0E]/40" />
                           </Button>
