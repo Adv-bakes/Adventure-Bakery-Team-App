@@ -364,6 +364,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
                           <Controller
                             control={control}
                             name={`${field.id}.${rowIdx}._label`}
+                            defaultValue=""  // same positional-defaults trap as the cells below
                             render={({ field: cell }) => (
                               <Input
                                 className="h-8 text-xs"
@@ -384,6 +385,14 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
                         <Controller
                           control={control}
                           name={`${field.id}.${rowIdx}.${col.id}`}
+                          // Cell names are positional, so when a row is removed
+                          // the rows below shift into indexes whose entry in the
+                          // form's defaultValues still describes the OLD
+                          // occupant. Without an explicit fallback here, any cell
+                          // that is blank at its new index silently inherits the
+                          // deleted row's value — on a formulation grid that
+                          // reassigns a lot code to the wrong ingredient.
+                          defaultValue={col.type === "checkbox" ? false : ""}
                           render={({ field: cell, fieldState: cellState }) => (
                             <div>
                               <GridCell column={col} value={cell.value} onChange={cell.onChange} disabled={disabled} />
