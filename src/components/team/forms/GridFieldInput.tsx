@@ -364,6 +364,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
                           <Controller
                             control={control}
                             name={`${field.id}.${rowIdx}._label`}
+                            defaultValue=""  // same positional-defaults trap as the cells below
                             render={({ field: cell }) => (
                               <Input
                                 className="h-8 text-xs"
@@ -384,6 +385,14 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
                         <Controller
                           control={control}
                           name={`${field.id}.${rowIdx}.${col.id}`}
+                          // Cell names are positional, so when a row is removed
+                          // the rows below shift into indexes whose entry in the
+                          // form's defaultValues still describes the OLD
+                          // occupant. Without an explicit fallback here, any cell
+                          // that is blank at its new index silently inherits the
+                          // deleted row's value — on a formulation grid that
+                          // reassigns a lot code to the wrong ingredient.
+                          defaultValue={col.type === "checkbox" ? false : ""}
                           render={({ field: cell, fieldState: cellState }) => (
                             <div>
                               <GridCell column={col} value={cell.value} onChange={cell.onChange} disabled={disabled} />
@@ -403,9 +412,17 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
-                            disabled={!fixed && rows.length <= Math.max(minRows, 1)}
+                            // Only floor at one row, so the grid can't be left
+                            // empty and unusable. `min` is a SUBMIT-time rule —
+                            // gridZod already reports "needs at least N rows"
+                            // with a message the filler can act on. Using it to
+                            // block deletion instead silently locks every row on
+                            // a form whose min was authored from the paper's
+                            // printed line count (15 blank ingredient lines is a
+                            // page layout, not a minimum ingredient count).
+                            disabled={!fixed && rows.length <= 1}
                             onClick={() => remove(rowIdx)}
-                            title="Remove row"
+                            title={!fixed && rows.length <= 1 ? "A grid keeps at least one row" : "Remove row"}
                           >
                             <Trash2 className="w-3.5 h-3.5 text-[#2A1F0E]/40" />
                           </Button>
