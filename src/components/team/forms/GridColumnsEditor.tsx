@@ -184,6 +184,25 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
           </div>
         </div>
         {field.scanLabel && (
+          <div className="flex items-start gap-1.5">
+            <Checkbox
+              id={`grid-scan-keep-${field.id}`}
+              className="mt-0.5"
+              checked={field.scanKeepPhoto ?? false}
+              onCheckedChange={c => onChange({ ...field, scanKeepPhoto: !!c || undefined })}
+            />
+            <div>
+              <Label htmlFor={`grid-scan-keep-${field.id}`} className="text-xs font-normal cursor-pointer">
+                Keep each label photo with the entry
+              </Label>
+              <p className="text-[10px] text-muted-foreground">
+                Off by default — the scanned values are already on the entry for review. Turn this on only where
+                the photo itself is the evidence, e.g. a lot code an auditor could question later.
+              </p>
+            </div>
+          </div>
+        )}
+        {field.scanLabel && (
           <div className="w-64">
             <Label className="text-[10px] text-muted-foreground">Put unmatched label details in</Label>
             <Select

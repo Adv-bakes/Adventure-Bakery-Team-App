@@ -20,8 +20,9 @@ import {
 } from "@/lib/formSchema";
 import {
   StaleResponseError, deleteResponse, extractFormAnswers, extractPackageLabel, fetchProfileNames,
-  fetchResponse, getResponseAttachmentUrl, reopenResponse, resolveSchemaForResponse,
-  saveResponseAttachments, saveResponseData, shortUserId, submitResponse, uploadResponseAttachment,
+  fetchResponse, getResponseAttachmentUrl, removeResponseAttachment, reopenResponse,
+  resolveSchemaForResponse, saveResponseAttachments, saveResponseData, shortUserId, submitResponse,
+  uploadResponseAttachment,
   type FormResponse, type ResolvedSchema, type ResponseAttachment,
 } from "@/lib/formResponses";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
@@ -219,27 +220,36 @@ export default function FormEntry() {
   // (supplier, lot code, …). Distinct from scanAndFill above, which reads a
   // photo of the completed PAPER FORM and pre-fills the whole entry.
   //
-  // The photo is kept as an entry attachment because it is the evidence behind
-  // the lot number now on the record — a scanned lot with no image to check it
-  // against is worth less than a hand-typed one. The grid owns applying the
-  // values and the Undo; this only fetches them.
+  // The model needs a URL it can fetch, so the photo is always uploaded — but
+  // it only becomes part of the record when the grid opts in via scanKeepPhoto.
+  // Otherwise the upload is transient and the file is removed once read: the
+  // scanned values land in visible cells that get reviewed, so keeping every
+  // image would bury a 20-ingredient entry in redundant photos.
+  //
+  // The grid owns applying the values and the Undo; this only fetches them.
   const scanLabelIntoRow = async (
     file: File,
-    ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[] },
+    ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[]; keepPhoto: boolean },
   ): Promise<LabelScanResult | null> => {
     if (!response) return null;
+    let transientPath: string | null = null;
     try {
       const uploaded = await uploadResponseAttachment(response.id, file);
-      const photo: ResponseAttachment = {
-        ...uploaded,
-        note: `Label photo — ${ctx.gridLabel} row ${ctx.rowIndex + 1}`,
-      };
-      // Adopt the returned row (fresh updated_at) exactly as scanAndFill does,
-      // or the next Save Draft trips the optimistic-concurrency guard.
-      const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), photo]);
-      setResponse(updated);
+      transientPath = uploaded.path;
 
-      const url = await getResponseAttachmentUrl(photo.path);
+      if (ctx.keepPhoto) {
+        const photo: ResponseAttachment = {
+          ...uploaded,
+          note: `Label photo — ${ctx.gridLabel} row ${ctx.rowIndex + 1}`,
+        };
+        // Adopt the returned row (fresh updated_at) exactly as scanAndFill does,
+        // or the next Save Draft trips the optimistic-concurrency guard.
+        const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), photo]);
+        setResponse(updated);
+        transientPath = null; // now part of the record — must survive the finally
+      }
+
+      const url = await getResponseAttachmentUrl(uploaded.path);
       const result = await extractPackageLabel([url], ctx.wanted);
       if (Object.keys(result.facts).length === 0) {
         toast.warning("Nothing readable on that label photo — the row was left as it was.");
@@ -248,6 +258,10 @@ export default function FormEntry() {
     } catch (e: any) {
       toast.error(e.message ?? "Failed to read the label photo");
       return null;
+    } finally {
+      // Best-effort, like deleteResponse: an orphaned file is harmless, and
+      // failing the scan over a stray object would not be.
+      if (transientPath) await removeResponseAttachment(transientPath).catch(() => { /* orphan */ });
     }
   };
 
