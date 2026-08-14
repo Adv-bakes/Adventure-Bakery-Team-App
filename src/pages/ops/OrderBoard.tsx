@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamPage, KpiTile } from "@/components/team/TeamPage";
@@ -660,8 +661,12 @@ export default function OrderBoard() {
 
       <NewOrderDialog open={dialogOpen} onOpenChange={setDialogOpen} onCreated={load} />
 
-      {/* Confirmation Dialog */}
-      {confirmDraft && (
+      {/* Confirmation Dialog. Portalled to <body>: TeamPage wraps this page in
+          `.tp-fade-up`, whose animation keeps a transform (fill-mode: both), and
+          a transformed ancestor becomes the containing block for
+          `position: fixed` — which would clip this to the page wrapper and
+          off-center the dialog. */}
+      {confirmDraft && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="tp-surface rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--tp-hairline))]">
@@ -736,7 +741,8 @@ export default function OrderBoard() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </TeamPage>
   );

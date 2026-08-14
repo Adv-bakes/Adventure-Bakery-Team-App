@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 import {
   Home, Users, FileText, Kanban, Boxes, TrendingUp, Factory, BarChart2,
   ClipboardCheck, ClipboardList, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
@@ -214,7 +215,9 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 px-6 lg:px-10 py-8">{children}</main>
+        <main className="flex-1 px-6 lg:px-10 py-8">
+          <RouteErrorBoundary>{children}</RouteErrorBoundary>
+        </main>
       </div>
 
       <CoachChat progress={0} currentSection="Concept" />

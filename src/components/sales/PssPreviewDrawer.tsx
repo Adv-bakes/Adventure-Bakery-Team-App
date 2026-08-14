@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X, Save, Download, RefreshCw, Plus, Trash2 } from "lucide-react";
@@ -301,8 +302,17 @@ export function PssPreviewDrawer({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 team-portal" onClick={onClose}>
+  // Portalled to <body>: TeamPage wraps pages in `.tp-fade-up`, whose animation
+  // keeps a transform (fill-mode: both), and a transformed ancestor becomes the
+  // containing block for `position: fixed` — which would clip this to the page
+  // wrapper. `team-portal` stays for the --tp-* vars; its near-black background
+  // is overridden so the translucent scrim below is what dims the page.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 team-portal"
+      style={{ background: "transparent" }}
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         onClick={(e) => e.stopPropagation()}
@@ -589,7 +599,8 @@ export function PssPreviewDrawer({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

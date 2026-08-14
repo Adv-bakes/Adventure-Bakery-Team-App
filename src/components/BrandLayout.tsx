@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -189,7 +190,9 @@ const BrandLayout = ({ children }: BrandLayoutProps) => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-6 lg:p-8">
+          <RouteErrorBoundary>{children}</RouteErrorBoundary>
+        </main>
       </div>
 
       <CoachChat progress={0} currentSection="Concept" />

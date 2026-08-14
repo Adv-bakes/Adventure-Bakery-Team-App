@@ -1,25 +1,73 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { X } from "lucide-react";
+import { X, Download, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { generatePrfPdf } from "@/lib/prfPdf";
+import { buildPrfSections, prfAttachment, type PrfRelated } from "@/lib/prfFields";
 
 interface Props {
   prfId: string | null;
   onClose: () => void;
 }
 
+const Field = ({ label, value, block, mono }: { label: string; value: string; block?: boolean; mono?: boolean }) => (
+  <div className="grid grid-cols-3 gap-3 py-2 border-b border-[hsl(var(--tp-hairline))]">
+    <p className="text-[11px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">{label}</p>
+    <p
+      className={`col-span-2 text-sm break-words whitespace-pre-line ${
+        mono ? "font-mono text-xs text-[hsl(var(--tp-text-dim))]" : "text-[hsl(var(--tp-text))]"
+      } ${block ? "leading-relaxed" : ""}`}
+    >
+      {value}
+    </p>
+  </div>
+);
+
 export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
   const [prf, setPrf] = useState<any>(null);
+  const [related, setRelated] = useState<PrfRelated>({});
   const [loading, setLoading] = useState(false);
+  // Must stay above the `if (!prfId) return null` below — declaring it after that
+  // early return changes the hook count when the panel opens, which crashes React.
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    if (!prfId) { setPrf(null); return; }
+    if (!prfId) { setPrf(null); setRelated({}); return; }
     setLoading(true);
     (async () => {
-      const { data } = await supabase.from("prf_submissions").select("*").eq("id", prfId).maybeSingle();
-      setPrf(data);
+      // One round trip: the related rows come back embedded. This relies on the
+      // foreign keys added in migration 20260814000001 — PostgREST resolves
+      // embeds from declared FKs, and without them this request fails outright
+      // with PGRST200 ("could not find a relationship"), it does not silently
+      // degrade. Each embed is many-to-one, so it returns an object or null.
+      const { data, error } = await (supabase as any)
+        .from("prf_submissions")
+        .select(
+          "*," +
+          "sales_leads(id, company_name, contact_name, email, phone, archived_at)," +
+          "profiles(id, full_name, email)," +
+          "concepts(id, product_name, status)"
+        )
+        .eq("id", prfId)
+        .maybeSingle();
+
+      if (error || !data) {
+        if (error) console.error("[PrfReviewPanel] load failed", error);
+        setPrf(null);
+        setRelated({});
+        setLoading(false);
+        return;
+      }
+
+      // Keep the embedded rows out of `prf` so the row stays a clean
+      // prf_submissions record for buildPrfSections().
+      const { sales_leads, profiles, concepts, ...row } = data;
+      setPrf(row);
+      setRelated({ lead: sales_leads ?? null, owner: profiles ?? null, concept: concepts ?? null });
+
       // mark as 'reviewing' if currently 'new'
-      if (data && data.status === "new") {
+      if (row.status === "new") {
         await supabase.from("prf_submissions").update({ status: "reviewing" }).eq("id", prfId);
       }
       setLoading(false);
@@ -28,31 +76,44 @@ export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
 
   if (!prfId) return null;
 
-  const [downloading, setDownloading] = useState(false);
-
   const downloadPdf = async () => {
     if (!prf || downloading) return;
     setDownloading(true);
     try {
-      await generatePrfPdf(prf);
+      await generatePrfPdf(prf, related);
     } finally {
       setDownloading(false);
     }
   };
 
-  const Field = ({ label, value }: { label: string; value: any }) => {
-    if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) return null;
-    const display = Array.isArray(value) ? value.join(", ") : typeof value === "object" ? JSON.stringify(value) : String(value);
-    return (
-      <div className="grid grid-cols-3 gap-3 py-2 border-b border-[hsl(var(--tp-hairline))]">
-        <p className="text-[11px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">{label}</p>
-        <p className="col-span-2 text-sm text-[hsl(var(--tp-text))] break-words">{display}</p>
-      </div>
-    );
+  /** The original PRF document uploaded with the deal (data_json.prf_file). */
+  const attachment = prf ? prfAttachment(prf) : null;
+  const openAttachment = async () => {
+    if (!attachment) return;
+    const { data, error } = await supabase.storage
+      .from("prf-uploads")
+      .createSignedUrl(attachment.path, 60);
+    if (error || !data?.signedUrl) {
+      toast.error("Could not open the attached file");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
-  return (
-    <div className="fixed inset-0 z-50 team-portal" onClick={onClose}>
+  const sections = prf ? buildPrfSections(prf, related) : [];
+
+  // Portalled to <body> on purpose: TeamPage wraps every page in `.tp-fade-up`,
+  // whose animation has `fill-mode: both` and so retains a transform. A
+  // transformed ancestor becomes the containing block for `position: fixed`
+  // descendants, which would clip this overlay to the page wrapper instead of
+  // the viewport. `team-portal` stays for the --tp-* vars, but its near-black
+  // background is overridden — the translucent scrim below is the backdrop.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 team-portal"
+      style={{ background: "transparent" }}
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         onClick={(e) => e.stopPropagation()}
@@ -66,47 +127,46 @@ export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={downloadPdf} disabled={downloading} className="tp-btn">
+            <button onClick={downloadPdf} disabled={downloading || !prf} className="tp-btn">
+              <Download className="w-3.5 h-3.5" />
               {downloading ? "Preparing…" : "Download"}
             </button>
             <button onClick={onClose} className="tp-btn" aria-label="Close"><X className="w-4 h-4" /></button>
           </div>
         </div>
-        <div className="p-6 space-y-1">
+        <div className="p-6">
           {loading && <p className="text-sm text-[hsl(var(--tp-text-dim))]">Loading…</p>}
-          {prf && (
-            <>
-              <Field label="Company" value={prf.company_name} />
-              <Field label="Stage" value={prf.company_stage} />
-              <Field label="Founder" value={prf.founder_name} />
-              <Field label="Email" value={prf.email} />
-              <Field label="Phone" value={prf.phone} />
-              <Field label="Product" value={prf.product_name} />
-              <Field label="Project type" value={prf.project_type} />
-              <Field label="Approach" value={prf.development_approach} />
-              <Field label="Finished form" value={prf.finished_form} />
-              <Field label="Flavor type" value={prf.flavor_type} />
-              <Field label="Application" value={prf.intended_application} />
-              <Field label="Requirements" value={prf.additional_requirements} />
-              <Field label="Packaging readiness" value={prf.packaging_readiness} />
-              <Field label="Primary packaging" value={prf.primary_packaging_vessel} />
-              <Field label="Weight per unit" value={prf.weight_per_unit && `${prf.weight_per_unit} ${prf.weight_per_unit_unit || ""}`} />
-              <Field label="Units per pack" value={prf.units_per_primary_pack} />
-              <Field label="Secondary packaging" value={prf.secondary_packaging} />
-              <Field label="Artwork" value={prf.artwork_readiness} />
-              <Field label="Label responsibility" value={prf.label_responsibility} />
-              <Field label="Pallets required" value={prf.pallets_required} />
-              <Field label="Target date" value={prf.target_date} />
-              <Field label="Price target / unit" value={prf.price_target_per_unit} />
-              <Field label="Annual volume" value={prf.annual_volume} />
-              <Field label="Order quantity" value={prf.order_quantity} />
-              <Field label="Order frequency" value={prf.order_frequency} />
-              <Field label="Warehousing" value={prf.warehousing_needs} />
-              <Field label="Notes" value={prf.additional_project_info} />
-            </>
+
+          {!loading && prf && attachment && (
+            <button
+              onClick={openAttachment}
+              className="tp-btn w-full justify-start mb-5"
+              title={attachment.name}
+            >
+              <FileText className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Open attached PRF — {attachment.name}</span>
+            </button>
+          )}
+
+          {!loading && prf && sections.map((sec) => (
+            <section key={sec.heading} className="mb-6 last:mb-0">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-[hsl(var(--tp-gold))] mb-1.5">
+                {sec.heading}
+              </p>
+              {sec.rows.map((row) => (
+                <Field key={row.label} label={row.label} value={row.value} block={row.block} mono={row.mono} />
+              ))}
+            </section>
+          ))}
+
+          {!loading && !prf && (
+            <p className="text-sm text-[hsl(var(--tp-text-dim))]">
+              This PRF could not be loaded. It may have been deleted.
+            </p>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

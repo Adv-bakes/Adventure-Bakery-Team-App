@@ -835,7 +835,8 @@ const SalesClientFolder = () => {
               <ul className="divide-y divide-[hsl(var(--tp-hairline))]">
                 {projects.map(p => (
                   <li key={p.id}>
-                    <Link to={`/team/sales/clients/${lead.id}/products/${p.id}`} className="flex items-center justify-between py-2.5 hover:opacity-80">
+                    {/* Not yet approved → the project workspace, matching SalesDashboard. */}
+                    <Link to={`/team/sales/clients/${lead.id}/projects/${p.id}`} className="flex items-center justify-between py-2.5 hover:opacity-80">
                       <div>
                         <p className="text-sm font-medium text-[hsl(var(--tp-text))] truncate">{p.product_name || "(unnamed)"}</p>
                         <p className="text-[11px] text-[hsl(var(--tp-text-dim))]">{p.sales_stage || "Lead In"} · {new Date(p.created_at).toLocaleDateString()}</p>
