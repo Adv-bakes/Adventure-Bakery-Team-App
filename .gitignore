@@ -47,3 +47,11 @@ __pycache__/
 # Listed by name rather than a *.pdf glob — some PDFs are tracked assets
 # (public/sqf-*.pdf are served by the app; ROLES_AND_USER_ADMINISTRATION.pdf).
 /Hostinger-Hosting-Guide.pdf
+
+# Word/PDF renderings of the SOP and FRM drafts. These are working documents —
+# regenerated and renamed constantly, and large binaries that diff as noise.
+# Scoped to sop-drafts/ deliberately (not a repo-wide *.pdf glob) for the same
+# reason as above. The authored sources next to them — the .md drafts and the
+# .json form schemas — stay tracked; only the rendered output is ignored.
+sop-drafts/*.docx
+sop-drafts/*.pdf
