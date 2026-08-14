@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { X } from "lucide-react";
 import { generatePrfPdf } from "@/lib/prfPdf";
@@ -8,9 +9,23 @@ interface Props {
   onClose: () => void;
 }
 
+const Field = ({ label, value }: { label: string; value: any }) => {
+  if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) return null;
+  const display = Array.isArray(value) ? value.join(", ") : typeof value === "object" ? JSON.stringify(value) : String(value);
+  return (
+    <div className="grid grid-cols-3 gap-3 py-2 border-b border-[hsl(var(--tp-hairline))]">
+      <p className="text-[11px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">{label}</p>
+      <p className="col-span-2 text-sm text-[hsl(var(--tp-text))] break-words">{display}</p>
+    </div>
+  );
+};
+
 export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
   const [prf, setPrf] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  // Must stay above the `if (!prfId) return null` below — declaring it after that
+  // early return changes the hook count when the panel opens, which crashes React.
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!prfId) { setPrf(null); return; }
@@ -28,8 +43,6 @@ export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
 
   if (!prfId) return null;
 
-  const [downloading, setDownloading] = useState(false);
-
   const downloadPdf = async () => {
     if (!prf || downloading) return;
     setDownloading(true);
@@ -40,19 +53,18 @@ export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
     }
   };
 
-  const Field = ({ label, value }: { label: string; value: any }) => {
-    if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) return null;
-    const display = Array.isArray(value) ? value.join(", ") : typeof value === "object" ? JSON.stringify(value) : String(value);
-    return (
-      <div className="grid grid-cols-3 gap-3 py-2 border-b border-[hsl(var(--tp-hairline))]">
-        <p className="text-[11px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">{label}</p>
-        <p className="col-span-2 text-sm text-[hsl(var(--tp-text))] break-words">{display}</p>
-      </div>
-    );
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 team-portal" onClick={onClose}>
+  // Portalled to <body> on purpose: TeamPage wraps every page in `.tp-fade-up`,
+  // whose animation has `fill-mode: both` and so retains a transform. A
+  // transformed ancestor becomes the containing block for `position: fixed`
+  // descendants, which would clip this overlay to the page wrapper instead of
+  // the viewport. `team-portal` stays for the --tp-* vars, but its near-black
+  // background is overridden — the translucent scrim below is the backdrop.
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 team-portal"
+      style={{ background: "transparent" }}
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         onClick={(e) => e.stopPropagation()}
@@ -107,6 +119,7 @@ export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

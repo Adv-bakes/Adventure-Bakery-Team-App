@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { RouteErrorBoundary } from "@/components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BrandLayout from "./components/BrandLayout";
 import TeamLayout from "./components/TeamLayout";
@@ -103,6 +104,10 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        {/* Last-resort net for routes that render without a layout (auth, 404,
+            invite) and for crashes inside ProtectedRoute itself. Must sit inside
+            BrowserRouter — RouteErrorBoundary calls useLocation(). */}
+        <RouteErrorBoundary>
         <Routes>
           {/* ========== PUBLIC / GATEWAY ========== */}
           <Route path="/apply" element={<Navigate to="/team" replace />} />
@@ -496,6 +501,7 @@ const App = () => (
 
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </RouteErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

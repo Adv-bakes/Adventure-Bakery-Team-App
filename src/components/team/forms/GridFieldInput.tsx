@@ -266,7 +266,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
   };
 
   /** Swap in one of the other codes the model saw on the pack. */
-  const useAlternateLot = (code: string) => {
+  const applyAlternateLot = (code: string) => {
     if (!scan || !lotColumn) return;
     const current = rowsRef.current[scan.rowIndex] ?? {};
     update(scan.rowIndex, { ...current, [lotColumn.id]: code });
@@ -484,7 +484,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
                     <button
                       key={code}
                       type="button"
-                      onClick={() => useAlternateLot(code)}
+                      onClick={() => applyAlternateLot(code)}
                       title={`Use as ${lotColumn.label}`}
                       className="rounded border px-1.5 py-0.5 font-mono text-[11px] text-[#2A1F0E] bg-white hover:bg-[#C89B3C]/15"
                       style={{ borderColor: "rgba(200,155,60,0.5)" }}
