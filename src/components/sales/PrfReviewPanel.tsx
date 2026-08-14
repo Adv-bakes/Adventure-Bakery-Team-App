@@ -36,37 +36,38 @@ export const PrfReviewPanel = ({ prfId, onClose }: Props) => {
     if (!prfId) { setPrf(null); setRelated({}); return; }
     setLoading(true);
     (async () => {
-      const { data } = await supabase.from("prf_submissions").select("*").eq("id", prfId).maybeSingle();
-      setPrf(data);
+      // One round trip: the related rows come back embedded. This relies on the
+      // foreign keys added in migration 20260814000001 — PostgREST resolves
+      // embeds from declared FKs, and without them this request fails outright
+      // with PGRST200 ("could not find a relationship"), it does not silently
+      // degrade. Each embed is many-to-one, so it returns an object or null.
+      const { data, error } = await (supabase as any)
+        .from("prf_submissions")
+        .select(
+          "*," +
+          "sales_leads(id, company_name, contact_name, email, phone, archived_at)," +
+          "profiles(id, full_name, email)," +
+          "concepts(id, product_name, status)"
+        )
+        .eq("id", prfId)
+        .maybeSingle();
 
-      // `prf_submissions` declares no foreign keys, so PostgREST cannot embed
-      // these via `select("*, sales_leads(...)")` — that needs a real FK. Fetch
-      // each separately, in parallel, and tolerate individual failures.
-      if (data) {
-        const [lead, owner, concept] = await Promise.all([
-          data.lead_id
-            ? (supabase as any).from("sales_leads")
-                .select("id, company_name, contact_name, email, phone, archived_at")
-                .eq("id", data.lead_id).maybeSingle()
-            : Promise.resolve({ data: null }),
-          data.owner_user_id
-            ? (supabase as any).from("profiles")
-                .select("id, full_name, email")
-                .eq("id", data.owner_user_id).maybeSingle()
-            : Promise.resolve({ data: null }),
-          data.concept_id
-            ? (supabase as any).from("concepts")
-                .select("id, product_name, status")
-                .eq("id", data.concept_id).maybeSingle()
-            : Promise.resolve({ data: null }),
-        ]);
-        setRelated({ lead: lead?.data ?? null, owner: owner?.data ?? null, concept: concept?.data ?? null });
-      } else {
+      if (error || !data) {
+        if (error) console.error("[PrfReviewPanel] load failed", error);
+        setPrf(null);
         setRelated({});
+        setLoading(false);
+        return;
       }
 
+      // Keep the embedded rows out of `prf` so the row stays a clean
+      // prf_submissions record for buildPrfSections().
+      const { sales_leads, profiles, concepts, ...row } = data;
+      setPrf(row);
+      setRelated({ lead: sales_leads ?? null, owner: profiles ?? null, concept: concepts ?? null });
+
       // mark as 'reviewing' if currently 'new'
-      if (data && data.status === "new") {
+      if (row.status === "new") {
         await supabase.from("prf_submissions").update({ status: "reviewing" }).eq("id", prfId);
       }
       setLoading(false);
