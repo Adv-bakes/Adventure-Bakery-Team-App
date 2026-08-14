@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -510,9 +511,18 @@ const SalesProjectWorkspace = () => {
       />
 
 
-      {/* Batch sheet side panel — staff-only */}
-      {batchOpen && batchSheet && (
-        <div className="fixed inset-0 z-50 team-portal" onClick={() => setBatchOpen(false)}>
+      {/* Batch sheet side panel — staff-only. Portalled to <body>: TeamPage wraps
+          this page in `.tp-fade-up`, whose animation keeps a transform
+          (fill-mode: both), and a transformed ancestor becomes the containing
+          block for `position: fixed` — which would clip the overlay to the page
+          wrapper. `team-portal` stays for the --tp-* vars; its near-black
+          background is overridden so the scrim below is what dims the page. */}
+      {batchOpen && batchSheet && createPortal(
+        <div
+          className="fixed inset-0 z-50 team-portal"
+          style={{ background: "transparent" }}
+          onClick={() => setBatchOpen(false)}
+        >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div onClick={(e) => e.stopPropagation()}
                className="absolute right-0 top-0 h-full w-full max-w-[680px] tp-surface border-l border-[hsl(var(--tp-hairline))] overflow-y-auto">
@@ -582,7 +592,8 @@ const SalesProjectWorkspace = () => {
               </p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </TeamPage>
   );

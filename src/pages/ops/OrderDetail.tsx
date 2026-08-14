@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
@@ -689,8 +690,12 @@ export default function OrderDetail() {
         </div>
       </div>
 
-      {/* Batch Edit Modal */}
-      {batchEditOpen && (
+      {/* Batch Edit Modal. Portalled to <body>: TeamPage wraps this page in
+          `.tp-fade-up`, whose animation keeps a transform (fill-mode: both), and
+          a transformed ancestor becomes the containing block for
+          `position: fixed` — which would clip this to the page wrapper and
+          off-center the dialog. */}
+      {batchEditOpen && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-background border border-[hsl(var(--tp-hairline))] rounded-xl p-6 w-full max-w-sm shadow-2xl">
             <p className="text-base font-semibold text-[hsl(var(--tp-text))] mb-1">Edit batch plan</p>
@@ -736,7 +741,8 @@ export default function OrderDetail() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </TeamPage>
   );
