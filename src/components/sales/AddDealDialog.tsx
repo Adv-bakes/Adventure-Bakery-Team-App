@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, FileText, Download } from "lucide-react";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate } from "@/lib/templates";
+import { cn } from "@/lib/utils";
 
 interface AddDealDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated?: (prfId: string) => void;
 }
+
+type LeadOption = {
+  id: string;
+  company_name: string;
+  contact_name: string | null;
+  email: string | null;
+  archived: boolean;
+};
+
+const MAX_SUGGESTIONS = 8;
+
+// Prefix hits rank above mid-string ones, so typing "Guilt" offers "Guilt Free"
+// before "No Guilt Baking Co".
+const matchCompanies = (leads: LeadOption[], query: string): LeadOption[] => {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const rank = (name: string) => (name.toLowerCase().startsWith(q) ? 0 : 1);
+  return leads
+    .filter((l) => l.company_name.toLowerCase().includes(q))
+    .sort((a, b) => rank(a.company_name) - rank(b.company_name) || a.company_name.localeCompare(b.company_name))
+    .slice(0, MAX_SUGGESTIONS);
+};
 
 export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogProps) => {
   const [company, setCompany] = useState("");
@@ -25,14 +48,113 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
   const [prfTpl, setPrfTpl] = useState<ActiveTemplate | null>(null);
   const [existingLead, setExistingLead] = useState<{ id: string; company_name: string | null; contact_name: string | null } | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  const [leads, setLeads] = useState<LeadOption[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const [pickedLead, setPickedLead] = useState<LeadOption | null>(null);
 
   useEffect(() => {
-    if (open) fetchActiveTemplates().then(t => setPrfTpl(t.prf_template));
+    if (!open) return;
+    fetchActiveTemplates().then(t => setPrfTpl(t.prf_template));
+
+    // The client list is small enough to hold in memory, so the company field
+    // filters locally — no round trip per keystroke and no out-of-order
+    // responses to guard against. Archived clients are included on purpose:
+    // checkExistingClient() below matches by email with no stage filter, so
+    // hiding them here would let staff re-key a company that the email check
+    // then reports as already on file.
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("sales_leads")
+        .select("id, company_name, contact_name, email, stage")
+        .not("company_name", "is", null)
+        .order("company_name")
+        .limit(1000);
+
+      const seen = new Set<string>();
+      const opts: LeadOption[] = [];
+      for (const l of (data ?? []) as any[]) {
+        const name = (l.company_name ?? "").trim();
+        if (!name) continue;
+        const key = `${name.toLowerCase()}|${(l.email ?? "").toLowerCase()}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        opts.push({
+          id: l.id,
+          company_name: name,
+          contact_name: l.contact_name,
+          email: l.email,
+          archived: l.stage === "Archived",
+        });
+      }
+      setLeads(opts);
+    })();
   }, [open]);
+
+  const matches = useMemo(() => matchCompanies(leads, company), [leads, company]);
+
+  const showSuggestions =
+    suggestOpen &&
+    matches.length > 0 &&
+    // Once the typed name is itself the only hit there is nothing left to offer.
+    !(matches.length === 1 && matches[0].company_name.toLowerCase() === company.trim().toLowerCase());
 
   const reset = () => {
     setCompany(""); setContact(""); setEmail(""); setProduct(""); setFile(null); setExistingLead(null);
+    setSuggestOpen(false); setHighlight(0); setPickedLead(null);
   };
+
+  // Picking a company only fills what is still blank. The email is what
+  // actually routes the deal to a folder (the PRF trigger matches on it), so it
+  // is never silently rewritten out from under whatever staff already typed.
+  const pickLead = (lead: LeadOption) => {
+    setCompany(lead.company_name);
+    setPickedLead(lead);
+    setSuggestOpen(false);
+    if (!contact.trim() && lead.contact_name) setContact(lead.contact_name);
+    if (!email.trim() && lead.email) {
+      setEmail(lead.email);
+      setExistingLead({ id: lead.id, company_name: lead.company_name, contact_name: lead.contact_name });
+    }
+  };
+
+  const companyKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight(h => (h + 1) % matches.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight(h => (h - 1 + matches.length) % matches.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      pickLead(matches[highlight] ?? matches[0]);
+    } else if (e.key === "Tab") {
+      setSuggestOpen(false);
+    }
+  };
+
+  // Typed a partial name and moved on without picking a row. Saving it verbatim
+  // would open a second client folder under a half-typed name — the duplicate
+  // this field exists to prevent — so offer the one company it can only mean.
+  // Only fires when the match is unambiguous; two candidates is a guess, not a
+  // correction.
+  const didYouMean = useMemo(() => {
+    const typed = company.trim().toLowerCase();
+    if (!typed || suggestOpen) return null;
+    if (leads.some(l => l.company_name.toLowerCase() === typed)) return null;
+    const hits = matchCompanies(leads, company);
+    return hits.length === 1 ? hits[0] : null;
+  }, [company, leads, suggestOpen]);
+
+  // The picked company is on file under a different address than the one typed,
+  // so this deal will open a second folder for the same company. Suppressed when
+  // the email already matched a folder — that banner covers where it lands.
+  const pickedEmailMismatch =
+    !existingLead &&
+    !!pickedLead?.email &&
+    !!email.trim() &&
+    email.trim().toLowerCase() !== pickedLead.email.toLowerCase();
 
   // Same client-matching the PRF trigger uses (by email) — surfaced here so
   // staff see right away that this deal will land on an existing folder
@@ -114,7 +236,16 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!busy) { onOpenChange(v); if (!v) reset(); } }}>
-      <DialogContent className="max-w-lg">
+      <DialogContent
+        className="max-w-lg"
+        // Escape should dismiss the company suggestions first, not the whole
+        // dialog. Radix listens on document in the capture phase, so stopping
+        // the event from the input's own handler is too late — this prop is the
+        // only point that runs before it decides to close.
+        onEscapeKeyDown={(e) => {
+          if (showSuggestions) { e.preventDefault(); setSuggestOpen(false); }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Add deal</DialogTitle>
           <DialogDescription>
@@ -124,9 +255,72 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
 
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="relative">
               <Label htmlFor="ad-company">Company</Label>
-              <Input id="ad-company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Foods" />
+              <Input
+                id="ad-company"
+                value={company}
+                onChange={(e) => { setCompany(e.target.value); setSuggestOpen(true); setHighlight(0); setPickedLead(null); }}
+                onFocus={() => setSuggestOpen(true)}
+                onBlur={() => setSuggestOpen(false)}
+                onKeyDown={companyKeyDown}
+                placeholder="Acme Foods"
+                autoComplete="off"
+                role="combobox"
+                aria-expanded={showSuggestions}
+                aria-autocomplete="list"
+                aria-controls="ad-company-suggestions"
+                aria-activedescendant={showSuggestions ? `ad-company-opt-${highlight}` : undefined}
+              />
+              {showSuggestions && (
+                <ul
+                  id="ad-company-suggestions"
+                  role="listbox"
+                  className="absolute z-50 mt-1 w-full max-h-56 overflow-auto rounded-md border bg-popover py-1 shadow-md"
+                >
+                  {matches.map((lead, i) => (
+                    <li
+                      key={lead.id}
+                      id={`ad-company-opt-${i}`}
+                      role="option"
+                      aria-selected={i === highlight}
+                      // Keep focus on the input so onBlur cannot close the list
+                      // out from under the click that is selecting a row.
+                      onMouseDown={(e) => e.preventDefault()}
+                      onMouseEnter={() => setHighlight(i)}
+                      onClick={() => pickLead(lead)}
+                      className={cn("cursor-pointer px-3 py-1.5", i === highlight && "bg-accent text-accent-foreground")}
+                    >
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <span className="truncate">{lead.company_name}</span>
+                        {lead.archived && (
+                          <span
+                            className={cn(
+                              "shrink-0 rounded border px-1 text-[10px] uppercase tracking-wide",
+                              i === highlight ? "text-accent-foreground/90" : "text-muted-foreground",
+                            )}
+                          >
+                            Archived
+                          </span>
+                        )}
+                      </div>
+                      {(lead.contact_name || lead.email) && (
+                        // muted-foreground is paired with the popover background, not with
+                        // bg-accent — on the highlighted row it drops to ~1.8:1. Fall back to
+                        // the accent's own foreground so the row stays legible when selected.
+                        <div
+                          className={cn(
+                            "truncate text-xs",
+                            i === highlight ? "text-accent-foreground/90" : "text-muted-foreground",
+                          )}
+                        >
+                          {[lead.contact_name, lead.email].filter(Boolean).join(" · ")}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div>
               <Label htmlFor="ad-contact">Contact name</Label>
@@ -140,6 +334,25 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
             <p className="text-xs rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
               Existing client found{existingLead.company_name ? ` — ${existingLead.company_name}` : ""}
               {existingLead.contact_name ? ` (${existingLead.contact_name})` : ""}. This deal will be added to their folder, not a new one.
+            </p>
+          )}
+          {didYouMean && (
+            <p className="text-xs rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
+              Did you mean{" "}
+              <button
+                type="button"
+                onClick={() => pickLead(didYouMean)}
+                className="font-medium text-primary underline underline-offset-2"
+              >
+                {didYouMean.company_name}
+              </button>
+              ? Saving “{company.trim()}” as typed starts a new client folder.
+            </p>
+          )}
+          {pickedEmailMismatch && (
+            <p className="text-xs rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2">
+              <strong>{pickedLead!.company_name}</strong> is on file under {pickedLead!.email}. Saving with a
+              different email opens a second folder for the same company.
             </p>
           )}
           <div className="grid grid-cols-2 gap-3">
