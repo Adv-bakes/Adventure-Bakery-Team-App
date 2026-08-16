@@ -12,9 +12,17 @@
   RewriteRule . /index.html [L]
 </IfModule>
 
+# Apache has no built-in MIME type for .mjs and falls back to text/plain. Browsers refuse to
+# execute a module served with a non-JavaScript type, so without this the pdf.js worker fails
+# with "Failed to fetch dynamically imported module" even though the file is served 200 OK with
+# the correct bytes. Vite emits workers and other ESM chunks as .mjs.
+<IfModule mod_mime.c>
+  AddType text/javascript .mjs
+</IfModule>
+
 # Long-cache the fingerprinted assets, never cache index.html
 <IfModule mod_headers.c>
-  <FilesMatch "\.(js|css|woff2?|png|jpg|jpeg|gif|svg|webp|ico)$">
+  <FilesMatch "\.(js|mjs|css|woff2?|png|jpg|jpeg|gif|svg|webp|ico)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
   <FilesMatch "index\.html$">
