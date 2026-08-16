@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Upload, FileText, Download } from "lucide-react";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate } from "@/lib/templates";
 import { cn } from "@/lib/utils";
+import { extractPrfFromPdf, type PrfImportResult } from "@/lib/prfPdfImport";
+import { PrfImportPanel } from "./PrfImportPanel";
 
 interface AddDealDialogProps {
   open: boolean;
@@ -24,6 +26,11 @@ type LeadOption = {
 };
 
 const MAX_SUGGESTIONS = 8;
+
+// Read from the PDF but owned by the visible inputs above the panel: they pre-fill those boxes
+// instead of being saved from the proposal, so listing them with a checkbox would offer a toggle
+// that does nothing.
+const DIALOG_OWNED = new Set(["company_name", "product_name"]);
 
 // Prefix hits rank above mid-string ones, so typing "Guilt" offers "Guilt Free"
 // before "No Guilt Baking Co".
@@ -52,6 +59,9 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const [pickedLead, setPickedLead] = useState<LeadOption | null>(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importResult, setImportResult] = useState<PrfImportResult | null>(null);
+  const [accepted, setAccepted] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
@@ -102,6 +112,7 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
   const reset = () => {
     setCompany(""); setContact(""); setEmail(""); setProduct(""); setFile(null); setExistingLead(null);
     setSuggestOpen(false); setHighlight(0); setPickedLead(null);
+    setImportBusy(false); setImportResult(null); setAccepted(new Set());
   };
 
   // Picking a company only fills what is still blank. The email is what
@@ -160,8 +171,8 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
   // staff see right away that this deal will land on an existing folder
   // instead of creating a duplicate, and so we don't blank out good data
   // already on file.
-  const checkExistingClient = async () => {
-    const trimmed = email.trim().toLowerCase();
+  const checkExistingClient = async (override?: string) => {
+    const trimmed = (override ?? email).trim().toLowerCase();
     if (!trimmed) { setExistingLead(null); return; }
     setCheckingEmail(true);
     const { data } = await (supabase as any)
@@ -175,6 +186,76 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
       if (!company.trim() && data.company_name) setCompany(data.company_name);
       if (!contact.trim() && data.contact_name) setContact(data.contact_name);
     }
+    return data ?? null;
+  };
+
+  // Reads the attached PRF and offers what it found. Everything is a proposal: the values only
+  // reach the database for rows still ticked when the deal is created. The blank dialog inputs are
+  // pre-filled directly so staff can see the company and contact without opening the panel — and
+  // so the email lands in the existing-client check, which is what routes the deal to a folder.
+  const runImport = async (f: File) => {
+    setImportBusy(true);
+    setImportResult(null);
+    setAccepted(new Set());
+    try {
+      const result = await extractPrfFromPdf(f);
+      setImportResult(result);
+      if (!result.ok) return;
+      setAccepted(new Set(result.fields.filter((x) => !DIALOG_OWNED.has(x.column)).map((x) => x.column)));
+
+      const read = (column: string) => {
+        const v = result.fields.find((x) => x.column === column)?.value;
+        return typeof v === "string" ? v.trim() : "";
+      };
+      if (!product.trim() && read("product_name")) setProduct(read("product_name"));
+      if (!contact.trim() && read("technical_contact_name")) setContact(read("technical_contact_name"));
+
+      const pdfEmail = read("technical_contact_email");
+      let matched: { company_name?: string | null } | null = null;
+      if (!email.trim() && pdfEmail) {
+        setEmail(pdfEmail);
+        matched = await checkExistingClient(pdfEmail);
+      }
+
+      // When the address is already on file, the folder's own spelling wins over the form's. These
+      // PDFs are typed in caps ("GUILT FREE BITES LLC"), and a variant spelling of a company that
+      // already exists is exactly how the duplicate-folder problem starts.
+      if (!company.trim()) {
+        const name = matched?.company_name || read("company_name");
+        if (name) setCompany(name);
+      }
+    } catch (e: any) {
+      // A failed read must never block filing the document.
+      setImportResult({ ok: false, reason: e?.message || "The PRF could not be read." });
+    } finally {
+      setImportBusy(false);
+    }
+  };
+
+  const onFilePicked = (f: File | null) => {
+    setFile(f);
+    setImportResult(null);
+    setAccepted(new Set());
+    if (f) runImport(f);
+  };
+
+  /** What the review panel shows — the proposal minus the fields the inputs above already own. */
+  const reviewable = useMemo(
+    () =>
+      importResult?.ok
+        ? { ...importResult, fields: importResult.fields.filter((f) => !DIALOG_OWNED.has(f.column)) }
+        : importResult,
+    [importResult],
+  );
+
+  /** Accepted values, keyed by column, ready to merge into the insert. */
+  const importedPayload = () => {
+    if (!reviewable?.ok) return {};
+    const payload: Record<string, unknown> = {};
+    for (const f of reviewable.fields) {
+      if (accepted.has(f.column)) payload[f.column] = f.value;
+    }
+    return payload;
   };
 
   const submit = async () => {
@@ -191,6 +272,8 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
       const { data: prf, error: prfErr } = await (supabase as any)
         .from("prf_submissions")
         .insert({
+          // Values read from the PDF go first so the explicit fields below always win.
+          ...importedPayload(),
           email: email.trim().toLowerCase(),
           company_name: company.trim() || null,
           customer_name: contact.trim() || null,
@@ -363,7 +446,9 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setExistingLead(null); }}
-                onBlur={checkExistingClient}
+                // Wrapped, not passed directly — the handler takes an optional email override and
+                // would otherwise receive the FocusEvent as that argument.
+                onBlur={() => checkExistingClient()}
                 placeholder="jane@acme.com"
               />
             </div>
@@ -391,7 +476,7 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
               type="file"
               accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg"
               className="hidden"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
             />
             <button
               type="button"
@@ -413,6 +498,29 @@ export const AddDealDialog = ({ open, onOpenChange, onCreated }: AddDealDialogPr
                 )}
               </div>
             </button>
+
+            {(importBusy || importResult) && (
+              <div className="mt-2">
+                <PrfImportPanel
+                  busy={importBusy}
+                  result={reviewable}
+                  accepted={accepted}
+                  onToggle={(column) =>
+                    setAccepted((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(column)) next.delete(column);
+                      else next.add(column);
+                      return next;
+                    })
+                  }
+                  onToggleAll={(on) =>
+                    setAccepted(
+                      on && reviewable?.ok ? new Set(reviewable.fields.map((f) => f.column)) : new Set(),
+                    )
+                  }
+                />
+              </div>
+            )}
           </div>
         </div>
 

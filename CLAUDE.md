@@ -600,6 +600,58 @@ Component in `src/components/ops/`. Drag/drop `.docx` files; `parseSopDocx()` (`
 
 ---
 
+## PRF PDF Import — `lib/prfPdfImport.ts` + `sales/PrfImportPanel.tsx`
+
+Attaching a filled **Manufacturing Project Request Form** (Form 009-1) in the Add Deal dialog reads it
+and proposes column values for `prf_submissions`. Before this, attaching a PRF filed a document and
+nothing else — 17 of 59 columns were populated, all from the dialog's own four inputs.
+
+Customers fill the printed template in a PDF editor, which leaves **three separable layers**:
+
+| layer | how it is identified | carries |
+|-------|----------------------|---------|
+| template | Calibri (+ MS-Mincho/MS-PGothic for `☐` glyphs) | the labels, used as anchors |
+| typed answers | **always Arial**, and the template never is | ~13 fields |
+| ticks | vector marks drawn **over** the `☐` glyph | more columns than the typed layer |
+
+**A ticked box still extracts as an empty `☐`** — the tick is a separate vector path, so it is
+invisible to text extraction and is found by rendering the page and measuring ink *inside* the box
+(inset 28% to skip the outline). Measured ticked 0.024–0.167, unticked exactly 0; `TICK_THRESHOLD`
+is 0.015. Validated against a rendered page: 12 detected / 12 visible on page 1, 7 on page 2.
+
+Two pdf.js constraints shape the implementation, both verified rather than assumed:
+- `textContent.styles[].fontFamily` returns only a generic CSS fallback (`"sans-serif"`), so real
+  font names must come from `page.commonObjs` — which is **populated only after the page renders**.
+  Hence render-then-read. Names carry a subset prefix (`SOXHWI+Arial`) that must be stripped.
+- Answers are located **by label, never by coordinate**: an answer's owning label is the nearest
+  template item to its left on the same row, and answers sit 2–5 units above the label baseline. A
+  template revision moves coordinates but preserves that relationship.
+
+**Paper wording ≠ database wording.** Each checkbox maps `box` (printed) → `as` (stored), because the
+Stage 2 wizard writes `Bag-in-box`, `Manufacturer Provided`, `Export Requirements`, `Natural +
+Artificial` where the paper says `Bag in box`, `CoPack provided`, `Export`, `Natural/Artificial`.
+Emitting paper wording would render imported PRFs inconsistently beside wizard-sourced ones. `as:
+null` means the box is understood but contributes nothing (the form's "Warehousing needs: yes" is
+implied by the storage type ticked beside it). Where the paper asks a question the schema cannot hold
+(`finished_form`'s bake/freeze/extrude options), the paper wording is kept and flagged rather than
+force-fitted.
+
+**The tick layer disambiguates the typed layer.** The form repeats "Units per primary vessel" once per
+vessel type and more than one row can carry a number; the *ticked* vessel decides which is real.
+
+Nothing writes silently: `PrfImportPanel` shows every value as a ticked proposal, and only accepted
+rows merge into the insert. `company_name`/`product_name` are excluded from the proposal
+(`DIALOG_OWNED`) because they pre-fill the visible inputs instead. When the PDF's email matches an
+existing folder, **that folder's spelling of the company wins** over the form's (these PDFs are typed
+in caps — a variant spelling is how duplicate client folders start).
+
+Degrades honestly rather than importing nothing: non-PDF, no text layer (a scan), not a PRF, and
+unopenable each report a distinct reason and never block filing the document. `pdfjs-dist` is loaded
+via dynamic `import()` — it lands in its own chunk (~479 kB + a 2.2 MB worker) and adds ~15 kB to the
+main bundle.
+
+---
+
 ## Training Deck Generator — `training-decks/`
 
 Node tooling (not part of the Vite app) that produces the SQF training decks the importer consumes. Outputs go to `training-decks/dist/` and external/design exports to `training-decks/incoming/` — both gitignored; only sources are tracked. DevDeps: `pptxgenjs`, `@resvg/resvg-js`, `jszip`.
@@ -651,6 +703,7 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
 | `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP/FSQM data from a .docx upload (scanned-hardcopy robust: merged-header splitting, running-header/noise filtering, list-rendered headings, trailing revision-history table, `Compass Blending`→`Adventure Bakery` rebrand); exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`) and `SopType` (`sop`/`form`/`policy`/`fsqm`) |
 | `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |
+| `prfPdfImport.ts` | `extractPrfFromPdf(file)` — reads a filled Form 009-1 PRF PDF into proposed `prf_submissions` values (Arial answer layer + pixel-measured checkbox ticks, located by label not coordinate); also exports `splitMeasure`/`splitDimensions`. Dynamic-imports `pdfjs-dist`. See "PRF PDF Import" above |
 | `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. Also exports `loadLogoDataUrl`, `confidentialFooter`, `DISCLAIMER`, `PDF_GOLD` for reuse by `formPdf.ts`. See "SOP PDF Export" above |
 | `docNumber.ts` | Document numbering convention: `DOC_STAGES`, `parseDocNumber`, `stageForNumber`/`stageForSopNumber`, `formatDocNumber`, `docNumberIssue`/`isValidDocNumber`; `parseClauseNumber`/`compareClauseIds` (the deliberate SQF-clause SOP scheme). See "Document Numbering Convention" above |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
