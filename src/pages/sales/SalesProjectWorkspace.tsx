@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PrfReviewPanel } from "@/components/sales/PrfReviewPanel";
 import { PssPreviewDrawer } from "@/components/sales/PssPreviewDrawer";
+import { DocumentReviewPanel } from "@/components/sales/DocumentReviewPanel";
 import { ArrowLeft, FileText, FileCheck2, FileSignature, FlaskConical, ExternalLink, Send, Upload, Download, ChevronDown, Pencil, Check, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { fetchActiveTemplates, downloadTemplate, type ActiveTemplate, type TemplateKind } from "@/lib/templates";
@@ -29,6 +30,8 @@ const SalesProjectWorkspace = () => {
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<Record<TemplateKind, ActiveTemplate | null> | null>(null);
   const [uploadingKind, setUploadingKind] = useState<"pss" | "nda" | "batch_sheet" | null>(null);
+  /** Set to a freshly uploaded NDA's id to open its review panel with the AI review already running. */
+  const [reviewDocId, setReviewDocId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -133,8 +136,9 @@ const SalesProjectWorkspace = () => {
         .upload(path, file, { contentType: file.type || undefined, upsert: false });
       if (upErr) throw upErr;
       const { data: u } = await supabase.auth.getUser();
+      const docId = crypto.randomUUID();
       const { error: insErr } = await (supabase as any).from("client_documents").insert({
-        id: crypto.randomUUID(),
+        id: docId,
         lead_id: lead.id,
         user_id: lead.profile_id || null,
         uploaded_by: u.user?.id || null,
@@ -145,8 +149,11 @@ const SalesProjectWorkspace = () => {
         review_status: "pending",
       });
       if (insErr) throw insErr;
-      toast.success(`${kind.toUpperCase()} uploaded — review it in the Documents Inbox.`);
       await refreshDocs();
+      // Open the reviewer straight away rather than sending them to the Documents Inbox to do the
+      // same thing; autoRunAI starts the read as soon as the signed URL is ready.
+      toast.success(`${kind.toUpperCase()} uploaded — running AI review.`);
+      setReviewDocId(docId);
     } catch (e: any) {
       toast.error(e?.message || "Upload failed");
     } finally {
@@ -508,6 +515,16 @@ const SalesProjectWorkspace = () => {
         pssDocumentId={openPss && pss?.id ? pss.id : null}
         onClose={() => setOpenPss(false)}
         onSaved={() => { refreshDocs(); refreshBatchSheet(); }}
+      />
+      {/* Opened by an NDA or PSS upload; refresh on close so the header chips pick up the verdict.
+          redirectAfterPssApproval=false because approving here should leave the reviewer in this
+          workspace rather than bouncing them out to the client folder. */}
+      <DocumentReviewPanel
+        documentId={reviewDocId}
+        autoRunAI
+        redirectAfterPssApproval={false}
+        onClose={() => { setReviewDocId(null); refreshDocs(); refreshBatchSheet(); }}
+        onDecided={() => { refreshDocs(); refreshBatchSheet(); }}
       />
 
 

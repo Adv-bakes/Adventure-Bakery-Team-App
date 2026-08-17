@@ -37,7 +37,9 @@ serve(async (req) => {
     const { data: isStaff } = await admin.rpc("is_staff_or_admin", { _user_id: caller.id });
     if (!isStaff) return json({ error: "Forbidden" }, 403);
 
-    const { document_id } = await req.json();
+    // doc_text / doc_images are supplied by the caller, which reads PDFs and Word files before
+    // invoking (src/lib/clientDocRead.ts). A scan arrives as page images instead of text.
+    const { document_id, doc_text, doc_images } = await req.json();
     if (!document_id) return json({ error: "document_id required" }, 400);
 
     const { data: doc, error: docErr } = await admin
@@ -61,8 +63,14 @@ serve(async (req) => {
 
     // Extract text
     let extracted = "";
+    let images: string[] = [];
     const lowerName = (doc.file_name || doc.file_path || "").toLowerCase();
     const buf = new Uint8Array(await file.arrayBuffer());
+
+    const callerText = typeof doc_text === "string" ? doc_text.trim() : "";
+    const callerImages = Array.isArray(doc_images)
+      ? doc_images.filter((u: unknown) => typeof u === "string" && u.length > 0)
+      : [];
 
     if (lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls")) {
       try {
@@ -74,11 +82,27 @@ serve(async (req) => {
       } catch (e) {
         extracted = `[Could not parse spreadsheet: ${(e as Error).message}]`;
       }
-    } else if (lowerName.endsWith(".pdf")) {
-      // Best-effort: pull printable ASCII strings from the PDF stream.
-      // Heavy PDF parsing is deferred; this is enough for AI to spot signed-by / completed fields.
-      const text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
-      extracted = (text.match(/[\x20-\x7E\n\r]{4,}/g) || []).join("\n").slice(0, 60000);
+    } else if (lowerName.endsWith(".pdf") || lowerName.endsWith(".docx")) {
+      // Nothing usable can be recovered from the raw bytes here. PDF text sits in FlateDecode
+      // content streams and a .docx is a zip of XML parts, so decoding either as text yields
+      // binary noise -- and a scanned NDA has no text at all, only a full-page image per page.
+      // All of it is handled by the caller; see src/lib/clientDocRead.ts.
+      if (callerText) {
+        extracted = callerText;
+      } else if (callerImages.length > 0) {
+        images = callerImages.slice(0, 8);
+      } else {
+        return json({
+          error:
+            "Could not read this document. Re-open it and run the review again so its contents " +
+            "can be read; if it keeps failing the file may be corrupt or password-protected.",
+        }, 422);
+      }
+    } else if (lowerName.endsWith(".doc")) {
+      // Legacy OLE binary. No parser here or on the client reads it.
+      return json({
+        error: "Legacy .doc files can't be reviewed. Ask the client to resend it as .docx or PDF.",
+      }, 422);
     } else {
       extracted = new TextDecoder("utf-8", { fatal: false }).decode(buf).slice(0, 60000);
     }
@@ -104,7 +128,9 @@ Return ONLY a JSON object matching this exact schema:
 - "signature_present" = true if you see an explicit "Signed by:" / "Signature:" line followed by a name, OR clear evidence of a handwritten signature image/glyph block. If ambiguous, set false and add an issue.
 - "issues" = short bullet-style strings, each ≤ 12 words.
 - "summary" = one sentence the salesperson will read.`;
-      userPrompt = `NDA text:\n\n${extracted}`;
+      userPrompt = images.length > 0
+        ? `This NDA is a scan of the signed paper original, attached as one image per page. Read the pages, including handwriting. A handwritten signature counts as a signature.`
+        : `NDA text:\n\n${extracted}`;
     } else {
       system = `You are reviewing a returned Product Spec Sheet (PSS) from a prospective bakery client.
 The PSS is allowed to be PARTIAL — missing optional sections become services we can offer them, not reasons to reject.
@@ -180,16 +206,19 @@ SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
   * "Shelf-life study & validation" — when optional_sections.shelf_life is null/empty.
 - NEVER offer "process development", "process design", "recipe optimization", "total batch weight calculator", or "bake profile development". Process is proprietary to Adventure Bakery.
 - Do not invent other services. If everything is present, return an empty array.`;
-      userPrompt = `PSS contents (CSV/text):\n\n${extracted}`;
+      userPrompt = images.length > 0
+        ? `This PSS is a scan with no text layer, attached as one image per page. Read the pages, including handwriting and table cells.`
+        : `PSS contents (spreadsheet CSV, Word document HTML, or plain text):\n\n${extracted}`;
     }
 
-    const verdict = await aiJSON({ system, user: userPrompt });
+    const verdict = await aiJSON({ system, user: userPrompt, images });
 
-    // Decide status
-    let review_status: string;
-    if (docType === "nda") {
-      review_status = verdict.fully_executed ? "ai_passed" : "ai_flagged";
-    } else {
+    // Decide status.
+    // NDAs are approved on upload (see migration 20260817000001_nda_auto_approve.sql), so the AI
+    // verdict is advisory for them: it is kept in review_notes and surfaced in the Documents Inbox,
+    // but it must not write review_status or it would knock the document back out of approved.
+    let review_status: string | null = null;
+    if (docType !== "nda") {
       // Enforce Adventure Bakery service rules server-side (AI may drift)
       const ex = verdict.extracted || {};
       const opt = ex.optional_sections || {};
@@ -214,7 +243,7 @@ SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
     await admin
       .from("client_documents")
       .update({
-        review_status,
+        ...(review_status ? { review_status } : {}),
         review_notes: verdict,
         reviewed_at: new Date().toISOString(),
         reviewed_by: caller.id,

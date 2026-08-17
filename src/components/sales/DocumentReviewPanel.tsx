@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X, Check, AlertTriangle, Sparkles, Download, Copy, ExternalLink } from "lucide-react";
+import { readDocumentForReview, needsClientRead, UnreadableDocumentError } from "@/lib/clientDocRead";
 
 const mimeForExt = (name: string): string => {
   const ext = (name.split(".").pop() || "").toLowerCase();
@@ -33,9 +34,29 @@ interface Props {
   documentId: string | null;
   onClose: () => void;
   onDecided?: () => void;
+  /**
+   * Kick off the AI review as soon as the document and its signed URL have loaded, without
+   * waiting for a click. Used when the panel is opened straight off an upload -- the reviewer
+   * is going to press the button anyway, and the read has to wait for the signed URL either way.
+   * Only ever fires for a document that has no verdict yet.
+   */
+  autoRunAI?: boolean;
+  /**
+   * Approving a PSS normally sends the reviewer to the client folder "so they land in context".
+   * That is right from the Documents Inbox, but wrong when the panel was opened from inside the
+   * project workspace -- the reviewer is already somewhere more specific, and navigating would
+   * throw that away. Callers already in context pass false.
+   */
+  redirectAfterPssApproval?: boolean;
 }
 
-export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) => {
+export const DocumentReviewPanel = ({
+  documentId,
+  onClose,
+  onDecided,
+  autoRunAI,
+  redirectAfterPssApproval = true,
+}: Props) => {
   const navigate = useNavigate();
   const [doc, setDoc] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -68,8 +89,43 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
   const runAI = async () => {
     if (!documentId) return;
     setReviewing(true);
+
+    // PDFs and Word files are read here, not in the edge function: pdf.js needs a canvas to
+    // rasterize a scanned page, and both parsers already ship on the client.
+    let docPayload: { doc_text?: string; doc_images?: string[] } = {};
+    const name = (doc?.file_name || doc?.file_path || "");
+    if (needsClientRead(name)) {
+      if (!signedUrl) {
+        setReviewing(false);
+        return toast.error("Still preparing the file — try again in a moment.");
+      }
+      try {
+        const buf = await (await fetch(signedUrl)).arrayBuffer();
+        const read = await readDocumentForReview(buf, name);
+        if (read.scanned) {
+          if (read.pageImages.length === 0) {
+            setReviewing(false);
+            return toast.error("This PDF has no readable text and no pages could be rendered.");
+          }
+          docPayload = { doc_images: read.pageImages };
+          toast.info(
+            `Scanned document — reading ${read.pageImages.length} page${read.pageImages.length === 1 ? "" : "s"} visually.` +
+              (read.droppedPages > 0 ? ` First ${read.pageImages.length} of ${read.pageCount} pages only.` : ""),
+          );
+        } else {
+          docPayload = { doc_text: read.text };
+        }
+      } catch (e) {
+        setReviewing(false);
+        const message = e instanceof Error ? e.message : "unknown error";
+        return toast.error(
+          e instanceof UnreadableDocumentError ? message : `Could not read the document: ${message}`,
+        );
+      }
+    }
+
     const { error, data } = await supabase.functions.invoke("review-client-document", {
-      body: { document_id: documentId },
+      body: { document_id: documentId, ...docPayload },
     });
     setReviewing(false);
     if (error) return toast.error(error.message || "AI review failed");
@@ -84,6 +140,23 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
       .maybeSingle();
     setDoc(fresh);
   };
+
+  // A ref, not state, is what holds this to one call per document: StrictMode double-invokes
+  // effects, and `doc` and `signedUrl` arrive in separate renders, so this effect legitimately
+  // runs several times before the review is allowed to start.
+  const autoRanFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoRunAI || !documentId || loading || reviewing) return;
+    if (!doc || !signedUrl) return; // runAI reads the file through the signed URL
+    if (autoRanFor.current === documentId) return;
+    const notes = doc.review_notes;
+    if (notes && Object.keys(notes).length > 0) return; // already has a verdict; leave it alone
+    autoRanFor.current = documentId;
+    runAI();
+    // runAI is deliberately not a dependency -- it closes over state that changes on every
+    // render, and the ref guard above is what makes this run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRunAI, documentId, loading, reviewing, doc, signedUrl]);
 
   const decide = async (status: "approved" | "rejected") => {
     if (!documentId || !doc) return;
@@ -162,8 +235,11 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
     onDecided?.();
     onClose();
 
-    // Navigate to the client folder after PSS approval so the salesperson lands in context
-    if (status === "approved" && docType === "pss" && doc.lead_id) {
+    // Navigate to the client folder after PSS approval so the salesperson lands in context.
+    // Skipped when the caller is already in a more specific place (see redirectAfterPssApproval).
+    if (status === "approved" && docType === "pss" && !redirectAfterPssApproval) {
+      if (batchSheetId) toast.success("Batch sheet v1 created.");
+    } else if (status === "approved" && docType === "pss" && doc.lead_id) {
       navigate(`/team/sales/clients/${doc.lead_id}`);
       if (batchSheetId) toast.success(`Batch sheet v1 created — open it from the project workspace.`);
     } else if (status === "approved" && docType === "pss") {
@@ -396,6 +472,19 @@ export const DocumentReviewPanel = ({ documentId, onClose, onDecided }: Props) =
               <button onClick={() => decide("rejected")} disabled={busy} className="tp-btn disabled:opacity-50">
                 <X className="w-3.5 h-3.5" /> Reject
               </button>
+            </div>
+          )}
+
+          {/* An NDA arrives already approved, so the pair above never renders for one. Without
+              this, a document the AI flagged as not fully executed could not be acted on at all. */}
+          {docType === "nda" && status === "approved" && (
+            <div className="flex items-center gap-3 pt-2">
+              <button onClick={() => decide("rejected")} disabled={busy} className="tp-btn disabled:opacity-50">
+                <X className="w-3.5 h-3.5" /> Reject NDA
+              </button>
+              <span className="text-[11px] text-[hsl(var(--tp-text-dim))]">
+                NDAs are approved on upload — reject only if this is not a valid signed NDA.
+              </span>
             </div>
           )}
         </div>

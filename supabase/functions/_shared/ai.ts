@@ -12,6 +12,13 @@ type AiCallArgs = {
   system: string;
   user: string;
   schemaHint?: string;
+  /**
+   * Image URLs or data URIs to send alongside the prompt, for documents that have to be read
+   * visually (scans). All three providers below take the OpenAI-compatible multimodal content
+   * array, which is the same shape generate-narration / extract-package-label already post to
+   * this gateway.
+   */
+  images?: string[];
 };
 
 const DEFAULT_MODELS: Record<string, string> = {
@@ -26,12 +33,20 @@ export function activeProvider(): { provider: string; model: string } {
   return { provider, model };
 }
 
-export async function aiJSON({ system, user }: AiCallArgs): Promise<any> {
+export async function aiJSON({ system, user, images }: AiCallArgs): Promise<any> {
   const { provider, model } = activeProvider();
 
   const messages = [
     { role: "system", content: system },
-    { role: "user", content: user },
+    images?.length
+      ? {
+          role: "user",
+          content: [
+            { type: "text", text: user },
+            ...images.map((url) => ({ type: "image_url", image_url: { url } })),
+          ],
+        }
+      : { role: "user", content: user },
   ];
 
   let url: string;
