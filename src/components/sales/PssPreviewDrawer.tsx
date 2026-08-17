@@ -47,6 +47,32 @@ type Extracted = {
   bake?: { temperature?: any; time_minutes?: any; internal_temp_target?: any; internal_temp_unit?: string };
   document_history?: { version?: string; date?: string; changes?: string; approved_by?: string }[];
   client_process_steps?: ProcStep[];
+  /**
+   * What the AI extractor writes (review-client-document's PSS schema). This drawer edits
+   * `client_process_steps` / `bake` instead, so these are read-only here -- see
+   * stepsFromProcess / bakeFromProcess below for the bridge.
+   */
+  process?: {
+    method?: string | null;
+    pre_bake?: { steps?: AiProcessStep[] };
+    bake?: {
+      temperature?: number | string | null;
+      time_minutes?: number | string | null;
+      temp_unit?: string | null;
+      internal_temp_target?: number | string | null;
+      internal_temp_unit?: string | null;
+    };
+  };
+};
+
+type AiProcessStep = {
+  order?: number;
+  station?: string | null;
+  action?: string | null;
+  text?: string | null;
+  mix_time_min?: number | string | null;
+  temperature?: number | string | null;
+  notes?: string | null;
 };
 
 const NUTRIENT_ROWS = [
@@ -75,6 +101,51 @@ const recomputePssPercents = (rows: Ing[]): Ing[] => {
   });
 };
 
+// The extractor writes the process under `process.*` (pre_bake.steps, bake); section 9 below
+// reads `client_process_steps` and `bake` -- the shape the team edits and the one
+// generate-batch-sheet-from-pss prefers when seeding. Nothing bridged the two, so a PSS whose
+// AI run found five steps and a 250 F / 60 min bake still rendered one empty row and three
+// empty fields, and the extraction looked like it had failed.
+//
+// Bridged on read rather than in the extractor: this way every document that was already
+// reviewed shows its process immediately, with no AI re-run, and nothing is written to the
+// record until a human saves.
+const asText = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+
+const stepsFromProcess = (ex: Extracted): ProcStep[] => {
+  const steps = ex?.process?.pre_bake?.steps;
+  if (!Array.isArray(steps) || steps.length === 0) return [];
+  return steps.map((s, i) => ({
+    step: typeof s?.order === "number" ? s.order : i + 1,
+    // Only offer a station the dropdown actually has; anything else would select as blank
+    // and silently drop on the next save.
+    station: s?.station && STATIONS.includes(s.station) ? s.station : "",
+    action: asText(s?.action || s?.text),
+    time_min: asText(s?.mix_time_min),
+    // Numeric only. The batch sheet seeder does Number(s.temp), so "250 F" would arrive as NaN.
+    temp: asText(s?.temperature),
+    notes: asText(s?.notes),
+  }));
+};
+
+const bakeFromProcess = (ex: Extracted): Extracted["bake"] => {
+  const legacy = ex?.bake || {};
+  const b = ex?.process?.bake || {};
+  const unit = asText(b.temp_unit).replace(/^°?\s*/, "").toUpperCase();
+  // "Bake temperature" is a free-text field labelled `e.g. 350 °F`, so the oven unit belongs
+  // with the number. It is NOT the same quantity as "Internal temp target"'s unit below.
+  const temp = legacy.temperature ?? (b.temperature != null
+    ? `${b.temperature}${unit === "F" || unit === "C" ? ` °${unit}` : ""}`
+    : undefined);
+  return {
+    ...legacy,
+    temperature: temp,
+    time_minutes: legacy.time_minutes ?? b.time_minutes,
+    internal_temp_target: legacy.internal_temp_target ?? b.internal_temp_target,
+    internal_temp_unit: legacy.internal_temp_unit ?? b.internal_temp_unit,
+  };
+};
+
 export function PssPreviewDrawer({
   pssDocumentId,
   onClose,
@@ -96,6 +167,7 @@ export function PssPreviewDrawer({
     const productName = (ex.header?.product_name || "").toString().trim().toLowerCase();
     const rawVessel = (ex.packaging?.primary?.vessel || "").toString().trim();
     const cleanedVessel = productName && rawVessel.toLowerCase() === productName ? "" : rawVessel;
+    const aiSteps = stepsFromProcess(ex);
     return {
       header: ex.header || {},
       product: { ...(ex.product || {}), unit_dimensions: ex.product?.unit_dimensions || {} },
@@ -116,13 +188,16 @@ export function PssPreviewDrawer({
       qc: ex.qc || {},
       certifications: ex.certifications || {},
       storage: ex.storage || {},
-      bake: ex.bake || {},
+      bake: bakeFromProcess(ex),
       document_history: ex.document_history && ex.document_history.length
         ? ex.document_history
         : [{ version: "", date: "", changes: "", approved_by: "" }],
+      // Hand-edited steps win; the AI's process.pre_bake.steps fill in when there are none yet.
       client_process_steps: ex.client_process_steps && ex.client_process_steps.length
         ? ex.client_process_steps.map((s: any, i: number) => ({ step: i + 1, ...s }))
-        : [{ step: 1, station: "", action: "", time_min: "", temp: "", notes: "" }],
+        : (aiSteps.length
+          ? aiSteps
+          : [{ step: 1, station: "", action: "", time_min: "", temp: "", notes: "" }]),
     };
   };
 
