@@ -61,7 +61,13 @@ Deno.serve(async (req) => {
       file_path: filePath,
       uploaded_at: new Date().toISOString(),
       uploaded_by: row.prospect_email,
-      review_status: "auto_approved",
+      // "approved", not "auto_approved": every consumer tests `review_status === "approved"`, so
+      // any other value reads as not-approved. A wizard PSS written as "auto_approved" showed a
+      // permanent "uploaded but not yet approved" banner in the project workspace and never
+      // appeared in the Documents Inbox (which lists only pending/ai_passed/ai_flagged) -- so
+      // there was no path in the UI to ever clear it. The fact that no human reviewed this is
+      // recorded by review_notes.source below, which is where that provenance belongs.
+      review_status: "approved",
       review_notes: {
         source: "pss_wizard",
         pss_submission_id: row.id,
