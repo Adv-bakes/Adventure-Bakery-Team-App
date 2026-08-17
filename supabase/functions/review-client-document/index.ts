@@ -182,9 +182,12 @@ Return ONLY a JSON object matching this exact schema (any field may be null if n
       "secondary": { "type": string|null, "units_per_case": number|null, "machine": string|null, "lot_code_printed": boolean|null },
       "palletizing": { "cases_per_pallet": number|null, "pattern": string|null, "notes": string|null }
     },
-    "optional_sections": {
-      "nutritional_panel": object|null, "allergens": object|null, "shelf_life": object|null
-    }
+    "nutrition": {
+      "serving_size": string|null,
+      "rows": [ { "nutrient": string, "amount": string|null, "dv": string|null } ]
+    },
+    "allergens": { "<Allergen Name>": { "present": boolean|null, "source": string|null } },
+    "storage": { "conditions": string|null, "shelf_life": string|null }
   },
   "summary": string
 }
@@ -196,14 +199,25 @@ CRITICAL RULES:
 - Classify process.method from the allowed taxonomy; null if unclear.
 - signature = true ONLY if an explicit signature line / "Signed by" appears with a name.
 - Keep step "action" concise (≤ 120 chars). Cap pre_bake.steps at 20.
+- nutrition.rows: one entry per row PRINTED on the form, using the form's own label verbatim
+  ("Energy (kcal)", "Carbohydrates (g)" — do NOT substitute US Nutrition-Facts names like
+  "Calories" or "Added Sugars"). "amount" is the value written in that row, transcribed as written
+  ("9g", "59mg"). A row printed on the form but left blank gets amount null — never invent a value,
+  and never emit a full blank template just because a nutrition section exists.
+- allergens: key each entry with EXACTLY one of
+  "Milk", "Eggs", "Tree nuts", "Peanuts", "Wheat / Gluten", "Soy", "Sesame", "Fish", "Shellfish"
+  (map the form's wording onto these: "Wheat/gluten" -> "Wheat / Gluten", "Soybean" -> "Soy").
+  present = true for yes/contains, false for no/none. If the form says something hedged such as
+  "maybe" or "may contain", set present true and put the form's wording in "source". Omit the key
+  entirely when that row was left blank -- an omitted key means unanswered, false means answered no.
 
 SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
 - Allowed services, ONLY include when the corresponding section is missing or incomplete:
   * "Formula calculator" — when recipe ingredient weights or total batch weight are missing/inconsistent.
   * "Packaging design & optimization" — when packaging.primary.vessel AND packaging.secondary.type are both missing.
-  * "Nutritional panel development" — when optional_sections.nutritional_panel is null/empty.
-  * "Allergen declaration & risk review" — when optional_sections.allergens is null/empty.
-  * "Shelf-life study & validation" — when optional_sections.shelf_life is null/empty.
+  * "Nutritional panel development" — when no nutrition.rows entry carries an amount.
+  * "Allergen declaration & risk review" — when allergens is empty / no allergen is answered.
+  * "Shelf-life study & validation" — when neither product.target_shelf_life nor storage.shelf_life is stated.
 - NEVER offer "process development", "process design", "recipe optimization", "total batch weight calculator", or "bake profile development". Process is proprietary to Adventure Bakery.
 - Do not invent other services. If everything is present, return an empty array.`;
       userPrompt = images.length > 0
@@ -221,17 +235,29 @@ SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
     if (docType !== "nda") {
       // Enforce Adventure Bakery service rules server-side (AI may drift)
       const ex = verdict.extracted || {};
-      const opt = ex.optional_sections || {};
       const recipe = ex.recipe || {};
       const pkg = ex.packaging || {};
       const ings = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
       const hasWeights = ings.length > 0 && ings.every((i: any) => typeof i.weight === "number" && i.weight > 0);
+
+      // These test for CONTENT, not for the key existing. The previous version asked
+      // `if (!opt.nutritional_panel)`, and the model habitually answered with `{}` -- which is
+      // truthy in JS, so a completely blank panel counted as "present" and the service that
+      // should have been offered never was.
+      const nonEmpty = (v: unknown) => String(v ?? "").trim() !== "";
+      const nutritionRows = Array.isArray(ex.nutrition?.rows) ? ex.nutrition.rows : [];
+      const hasNutrition = nutritionRows.some((r: any) => nonEmpty(r?.amount));
+      const hasAllergens = Object.values(ex.allergens || {}).some(
+        (a: any) => typeof a?.present === "boolean" || nonEmpty(a?.source),
+      );
+      const hasShelfLife = nonEmpty(ex.product?.target_shelf_life) || nonEmpty(ex.storage?.shelf_life);
+
       const allowed: string[] = [];
       if (ings.length === 0 || !hasWeights || !recipe.total_batch_weight) allowed.push("Formula calculator");
       if (!pkg?.primary?.vessel && !pkg?.secondary?.type) allowed.push("Packaging design & optimization");
-      if (!opt.nutritional_panel) allowed.push("Nutritional panel development");
-      if (!opt.allergens) allowed.push("Allergen declaration & risk review");
-      if (!opt.shelf_life) allowed.push("Shelf-life study & validation");
+      if (!hasNutrition) allowed.push("Nutritional panel development");
+      if (!hasAllergens) allowed.push("Allergen declaration & risk review");
+      if (!hasShelfLife) allowed.push("Shelf-life study & validation");
       verdict.services_to_offer = allowed;
 
       const req = verdict.has_required || {};

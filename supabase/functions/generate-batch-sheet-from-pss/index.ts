@@ -428,10 +428,13 @@ serve(async (req) => {
       recipe,
       process,
       packaging,
+      // review-client-document now extracts these as ex.nutrition / ex.allergens / ex.storage --
+      // the shape PssPreviewDrawer actually reads. The exOpt.* fallbacks keep documents that were
+      // extracted under the older `optional_sections` schema working unchanged.
       optional_sections: {
-        nutritional_panel: exOpt.nutritional_panel ?? null,
-        allergens: exOpt.allergens ?? null,
-        shelf_life: exOpt.shelf_life ?? null,
+        nutritional_panel: ex.nutrition ?? exOpt.nutritional_panel ?? null,
+        allergens: ex.allergens ?? exOpt.allergens ?? null,
+        shelf_life: ex.storage?.shelf_life ?? exProduct.target_shelf_life ?? exOpt.shelf_life ?? null,
       },
       services_to_offer: services,
       source: {
