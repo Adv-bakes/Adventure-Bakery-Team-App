@@ -39,7 +39,10 @@ serve(async (req) => {
 
     // doc_text / doc_images are supplied by the caller, which reads PDFs and Word files before
     // invoking (src/lib/clientDocRead.ts). A scan arrives as page images instead of text.
-    const { document_id, doc_text, doc_images } = await req.json();
+    // prf_id is an optional hint: a lead can own several PRFs (one per product) while a
+    // client_documents row only carries lead_id, so a caller that knows which project the
+    // document belongs to says so, and the product backfill below stops having to guess.
+    const { document_id, doc_text, doc_images, prf_id } = await req.json();
     if (!document_id) return json({ error: "document_id required" }, 400);
 
     const { data: doc, error: docErr } = await admin
@@ -234,7 +237,21 @@ SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
     let review_status: string | null = null;
     if (docType !== "nda") {
       // Enforce Adventure Bakery service rules server-side (AI may drift)
-      const ex = verdict.extracted || {};
+      const ex = verdict.extracted && typeof verdict.extracted === "object"
+        ? verdict.extracted
+        : (verdict.extracted = {});
+
+      // ---- Identity backfill -------------------------------------------------------------
+      // Who the client is and what they are making is on record before the PSS is ever sent
+      // out, so a form that comes back with an empty header does not make those unknown -- it
+      // makes them un-transcribed, and blanking them here would push the gap all the way onto
+      // the batch sheet. Fill them from the lead / PRF this document is already attached to.
+      //
+      // Filled values are recorded in extracted.header_sources so nothing downstream reads as
+      // though the client wrote it: has_required stays a statement about the paper, and the UI
+      // shows "from client record" rather than "present".
+      const backfilled = await backfillIdentity(admin, doc, prf_id, ex);
+
       const recipe = ex.recipe || {};
       const pkg = ex.packaging || {};
       const ings = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
@@ -260,8 +277,13 @@ SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
       if (!hasShelfLife) allowed.push("Shelf-life study & validation");
       verdict.services_to_offer = allowed;
 
+      // Company and product count as satisfied when they came off the client record instead of
+      // the page. Flagging a PSS for a company name we have had since the lead was created is
+      // noise, and noise is what makes a reviewer stop reading the flags that matter.
       const req = verdict.has_required || {};
-      const requiredOk = req.company && req.product && req.recipe && req.process &&
+      const requiredOk = (req.company || backfilled.company_name) &&
+        (req.product || backfilled.product_name) &&
+        req.recipe && req.process &&
         req.size_weight && req.units_per_primary && req.units_per_retail && req.signature;
       review_status = requiredOk ? "ai_passed" : "ai_flagged";
     }
@@ -282,6 +304,106 @@ SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
     return json({ error: (e as Error).message || "Unknown error" }, 500);
   }
 });
+
+const clean = (v: unknown) => String(v ?? "").trim();
+
+/**
+ * Fill extracted.header company / customer / product from the records the document is already
+ * attached to, for fields the document itself did not state. Never overwrites a value the AI
+ * read off the page -- the paper wins where the paper spoke.
+ *
+ * Returns a map of the fields that were filled, which is also written to
+ * extracted.header_sources so the reviewer can see which values are transcribed and which are
+ * ours. Best-effort throughout: a document with no lead and no PRF simply gets nothing.
+ */
+async function backfillIdentity(
+  admin: any,
+  doc: any,
+  prfIdHint: unknown,
+  ex: any,
+): Promise<Record<string, string>> {
+  const filled: Record<string, string> = {};
+  try {
+    const header = ex.header && typeof ex.header === "object" ? ex.header : (ex.header = {});
+
+    // Lead: the document's own lead_id is the reliable link. The profile_id route only helps
+    // for the older rows written before lead_id existed, and only when the prospect has an
+    // account at all -- most do not at PSS time.
+    let lead: any = null;
+    if (doc.lead_id) {
+      const { data } = await admin
+        .from("sales_leads")
+        .select("id, company_name, contact_name")
+        .eq("id", doc.lead_id)
+        .maybeSingle();
+      lead = data;
+    }
+    if (!lead && doc.user_id) {
+      const { data } = await admin
+        .from("sales_leads")
+        .select("id, company_name, contact_name")
+        .eq("profile_id", doc.user_id)
+        .maybeSingle();
+      lead = data;
+    }
+
+    const prfCols = "id, lead_id, company_name, customer_name, founder_name, product_name, created_at";
+
+    // A pinned PRF (the caller knew which project) settles the product outright.
+    let pinned: any = null;
+    if (typeof prfIdHint === "string" && prfIdHint) {
+      const { data } = await admin.from("prf_submissions").select(prfCols).eq("id", prfIdHint).maybeSingle();
+      // Only trust the hint if it belongs to the same client. It arrives from the caller, and a
+      // stale or mistyped id would otherwise stamp another company's product onto this sheet.
+      pinned = data && lead?.id && data.lead_id && data.lead_id !== lead.id ? null : data;
+    }
+
+    let prfs: any[] = [];
+    if (lead?.id) {
+      const { data } = await admin
+        .from("prf_submissions").select(prfCols)
+        .eq("lead_id", lead.id).order("created_at", { ascending: false });
+      prfs = data || [];
+    } else if (doc.user_id) {
+      const { data } = await admin
+        .from("prf_submissions").select(prfCols)
+        .eq("owner_user_id", doc.user_id).order("created_at", { ascending: false });
+      prfs = data || [];
+    }
+
+    const fill = (key: string, value: string, from: string) => {
+      if (!value || clean(header[key])) return;
+      header[key] = value;
+      filled[key] = from;
+    };
+
+    const anyPrf = pinned || prfs[0] || null;
+    fill("company_name", clean(lead?.company_name), "sales_leads.company_name");
+    fill("company_name", clean(anyPrf?.company_name), "prf_submissions.company_name");
+    fill("customer_name", clean(lead?.contact_name), "sales_leads.contact_name");
+    fill("customer_name", clean(anyPrf?.customer_name), "prf_submissions.customer_name");
+    fill("customer_name", clean(anyPrf?.founder_name), "prf_submissions.founder_name");
+
+    // Product is the one field that can genuinely be ambiguous: a lead with five projects has
+    // five PRFs and a client_documents row points at the lead, not the project. Guessing would
+    // put the wrong product name on a spec sheet, which is worse than leaving it blank -- so
+    // fill only from a pinned PRF, or when every PRF on the lead names the same product.
+    // Otherwise hand the reviewer the candidates and let them choose.
+    if (pinned) {
+      fill("product_name", clean(pinned.product_name), "prf_submissions.product_name");
+    } else {
+      const names = [...new Set(prfs.map((p) => clean(p.product_name)).filter(Boolean))];
+      if (names.length === 1) fill("product_name", names[0], "prf_submissions.product_name");
+      else if (names.length > 1 && !clean(header.product_name)) ex.product_name_candidates = names;
+    }
+
+    if (Object.keys(filled).length > 0) ex.header_sources = filled;
+  } catch (e) {
+    // A failed lookup must not cost the reviewer the whole AI verdict.
+    console.warn("identity backfill failed:", e);
+  }
+  return filled;
+}
 
 function json(body: any, status = 200) {
   return new Response(JSON.stringify(body), {
