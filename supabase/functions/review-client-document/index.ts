@@ -288,11 +288,35 @@ SERVICES_TO_OFFER RULES (Adventure Bakery proprietary services — be strict):
       review_status = requiredOk ? "ai_passed" : "ai_flagged";
     }
 
+    // Merge, never replace. review_notes is not the AI's private scratchpad: the PSS drawer
+    // writes hand-corrected values into review_notes.extracted and keeps the superseded copy in
+    // review_notes.versions[]. Assigning the fresh verdict over the whole object dropped both --
+    // a re-run silently discarded a reviewer's corrections AND the history that would have let
+    // anyone recover them. So snapshot the outgoing extracted the same way the drawer does, and
+    // spread the verdict over the existing notes so keys it does not carry survive.
+    //
+    // `doc` was read before the AI call, so it is the pre-run row. A concurrent drawer save
+    // between the two would be lost -- but it lands in versions[] here, which is the point.
+    const priorNotes = doc.review_notes && typeof doc.review_notes === "object" ? doc.review_notes : {};
+    const versions = Array.isArray(priorNotes.versions) ? [...priorNotes.versions] : [];
+    const priorExtracted = priorNotes.extracted;
+    if (priorExtracted && typeof priorExtracted === "object" && Object.keys(priorExtracted).length > 0) {
+      versions.push({
+        version: versions.length + 1,
+        saved_at: new Date().toISOString(),
+        saved_by: caller.id,
+        // The drawer stamps saved_by_email; this marks who/what superseded the snapshot instead,
+        // so a reader can tell a re-extraction apart from a human edit.
+        source: "ai_review",
+        extracted: priorExtracted,
+      });
+    }
+
     await admin
       .from("client_documents")
       .update({
         ...(review_status ? { review_status } : {}),
-        review_notes: verdict,
+        review_notes: { ...priorNotes, ...verdict, versions },
         reviewed_at: new Date().toISOString(),
         reviewed_by: caller.id,
       })
