@@ -18,6 +18,34 @@ interface PrfRow {
   created_at: string;
 }
 
+const DOC_COLUMNS =
+  "id, document_type, file_name, file_path, uploaded_at, user_id, lead_id, review_status, review_notes";
+
+// NDAs are approved the moment they are uploaded (migration 20260817000001_nda_auto_approve.sql),
+// so they never sit in the blocking states this inbox queries for. They are still listed here
+// while the AI check has yet to run -- that check is only ever triggered from this lane's review
+// panel, so dropping approved NDAs outright would mean it never ran at all -- and they stay listed
+// when it comes back saying the document is not fully executed.
+const ndaNeedsAttention = (d: any): boolean => {
+  const notes = d.review_notes;
+  if (!notes || Object.keys(notes).length === 0) return true;
+  return notes.fully_executed === false;
+};
+
+// What the row's chip should say. NDAs no longer carry their state in review_status, so for them
+// it is read off the AI verdict instead.
+const docDisplayState = (d: any): "flagged" | "passed" | "unreviewed" | null => {
+  if ((d.document_type || "").toLowerCase() === "nda" && d.review_status === "approved") {
+    const notes = d.review_notes;
+    if (!notes || Object.keys(notes).length === 0) return "unreviewed";
+    return notes.fully_executed === false ? "flagged" : "passed";
+  }
+  if (d.review_status === "ai_flagged") return "flagged";
+  if (d.review_status === "ai_passed") return "passed";
+  if (d.review_status === "pending") return "unreviewed";
+  return null;
+};
+
 const SalesDocumentsInbox = () => {
   const [rows, setRows] = useState<PrfRow[]>([]);
   const [docRows, setDocRows] = useState<any[]>([]);
@@ -28,24 +56,37 @@ const SalesDocumentsInbox = () => {
 
   const load = async () => {
     setLoading(true);
-    const [prfRes, docRes] = await Promise.all([
+    const [prfRes, docRes, ndaRes] = await Promise.all([
       supabase
         .from("prf_submissions")
         .select("id, product_name, company_name, founder_name, email, phone, status, created_at")
         .in("status", ["new", "reviewing"])
         .order("created_at", { ascending: false }),
+      // Documents still in a blocking state: every PSS, plus any legacy NDA row that predates
+      // auto-approval and was never triaged.
       (supabase as any)
         .from("client_documents")
-        .select("id, document_type, file_name, file_path, uploaded_at, user_id, lead_id, review_status, review_notes")
+        .select(DOC_COLUMNS)
         .or("document_type.eq.nda,document_type.eq.NDA,document_type.eq.pss,document_type.eq.PSS")
         .in("review_status", ["pending", "ai_passed", "ai_flagged"])
         .order("uploaded_at", { ascending: false }),
+      // Auto-approved NDAs, narrowed to the ones still worth a look by ndaNeedsAttention below.
+      (supabase as any)
+        .from("client_documents")
+        .select(DOC_COLUMNS)
+        .or("document_type.eq.nda,document_type.eq.NDA")
+        .eq("review_status", "approved")
+        .order("uploaded_at", { ascending: false })
+        .limit(200),
     ]);
     if (prfRes.error) toast.error(prfRes.error.message);
     setRows((prfRes.data || []) as any);
 
     // Enrich docs with lead/company info
-    const docs = docRes.data || [];
+    const seen = new Set<string>();
+    const docs = [...(docRes.data || []), ...(ndaRes.data || []).filter(ndaNeedsAttention)]
+      .filter((d: any) => (seen.has(d.id) ? false : (seen.add(d.id), true)))
+      .sort((a: any, b: any) => (b.uploaded_at || "").localeCompare(a.uploaded_at || ""));
     const leadIds = Array.from(new Set(docs.map((d: any) => d.lead_id).filter(Boolean)));
     let leadMap: Record<string, any> = {};
     if (leadIds.length > 0) {
@@ -202,6 +243,7 @@ const SalesDocumentsInbox = () => {
         {docRows.map((d) => {
           const type = (d.document_type || "").toLowerCase();
           const Icon = type === "nda" ? FileSignature : FileCheck2;
+          const state = docDisplayState(d);
           return (
             <div key={d.id} className="p-5 flex items-start justify-between gap-4 hover:bg-white/[0.02] transition">
               <div className="min-w-0 flex-1">
@@ -209,14 +251,17 @@ const SalesDocumentsInbox = () => {
                   <span className="tp-chip text-[10px] uppercase tracking-wider">
                     <Icon className="w-3 h-3 inline mr-1" />{type.toUpperCase()}
                   </span>
-                  {d.review_status === "ai_flagged" && (
+                  {state === "flagged" && (
                     <span className="tp-chip text-[10px] uppercase tracking-wider text-[hsl(var(--tp-warning))]">AI flagged</span>
                   )}
-                  {d.review_status === "ai_passed" && (
+                  {state === "passed" && (
                     <span className="tp-chip text-[10px] uppercase tracking-wider text-[hsl(var(--tp-gold))]">AI passed</span>
                   )}
-                  {d.review_status === "pending" && (
+                  {state === "unreviewed" && (
                     <span className="tp-chip text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))]">Not reviewed</span>
+                  )}
+                  {type === "nda" && d.review_status === "approved" && (
+                    <span className="tp-chip text-[10px] uppercase tracking-wider text-green-400">Approved</span>
                   )}
                   <p className="font-display text-sm font-semibold text-[hsl(var(--tp-text))] truncate">
                     {d.lead?.company_name || d.lead?.email || d.file_name || "(unknown client)"}
