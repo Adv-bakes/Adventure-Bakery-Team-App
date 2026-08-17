@@ -523,6 +523,7 @@ const SalesProjectWorkspace = () => {
         documentId={reviewDocId}
         autoRunAI
         redirectAfterPssApproval={false}
+        prfId={prfId}
         onClose={() => { setReviewDocId(null); refreshDocs(); refreshBatchSheet(); }}
         onDecided={() => { refreshDocs(); refreshBatchSheet(); }}
       />

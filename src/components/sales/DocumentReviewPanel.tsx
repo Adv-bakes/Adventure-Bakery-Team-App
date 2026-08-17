@@ -48,6 +48,13 @@ interface Props {
    * throw that away. Callers already in context pass false.
    */
   redirectAfterPssApproval?: boolean;
+  /**
+   * The project this document belongs to, when the caller knows it. A client_documents row is
+   * linked to the lead, not the project, so a client with five products has five PRFs and one
+   * PSS row -- passing the id is what lets the review fill a missing product name from the
+   * right one instead of declining to guess.
+   */
+  prfId?: string | null;
 }
 
 export const DocumentReviewPanel = ({
@@ -56,6 +63,7 @@ export const DocumentReviewPanel = ({
   onDecided,
   autoRunAI,
   redirectAfterPssApproval = true,
+  prfId,
 }: Props) => {
   const navigate = useNavigate();
   const [doc, setDoc] = useState<any>(null);
@@ -125,7 +133,7 @@ export const DocumentReviewPanel = ({
     }
 
     const { error, data } = await supabase.functions.invoke("review-client-document", {
-      body: { document_id: documentId, ...docPayload },
+      body: { document_id: documentId, ...(prfId ? { prf_id: prfId } : {}), ...docPayload },
     });
     setReviewing(false);
     if (error) return toast.error(error.message || "AI review failed");
@@ -375,14 +383,33 @@ export const DocumentReviewPanel = ({
               )}
 
               {/* PSS-specific */}
-              {docType === "pss" && notes.has_required && (
-                <div className="tp-surface p-4 space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Required fields</p>
-                  {Object.entries(notes.has_required).map(([k, v]) => (
-                    <Row key={k} k={pssLabel(k)} v={v ? "Present" : "Missing"} good={!!v} />
-                  ))}
-                </div>
-              )}
+              {docType === "pss" && notes.has_required && (() => {
+                // A field the form left blank but the client record already answers is neither
+                // "Present" (nobody wrote it on the page) nor "Missing" (we know it) — it gets
+                // its own state, showing the value and where it came from.
+                const header = notes.extracted?.header || {};
+                const sources = notes.extracted?.header_sources || {};
+                const HEADER_KEY: Record<string, string> = { company: "company_name", product: "product_name" };
+                const candidates: string[] = notes.extracted?.product_name_candidates || [];
+                return (
+                  <div className="tp-surface p-4 space-y-2">
+                    <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Required fields</p>
+                    {Object.entries(notes.has_required).map(([k, v]) => {
+                      const hk = HEADER_KEY[k];
+                      const filled = !v && hk && sources[hk] ? String(header[hk] || "") : "";
+                      if (filled) return <Row key={k} k={pssLabel(k)} v={`${filled} · from client record`} tone="record" />;
+                      return <Row key={k} k={pssLabel(k)} v={v ? "Present" : "Missing"} good={!!v} />;
+                    })}
+                    {candidates.length > 1 && (
+                      <p className="text-[11px] text-[hsl(var(--tp-text-dim))] pt-2 border-t border-[hsl(var(--tp-hairline))]">
+                        Product left blank on the form and this client has {candidates.length} projects
+                        ({candidates.join(", ")}) — open the review from the project workspace so the
+                        right one is used, or type it into the spec sheet.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {docType === "pss" && (notes.services_to_offer?.length ?? 0) > 0 && (
                 <div className="tp-surface p-4 border border-[hsl(var(--tp-gold))]/30">
@@ -494,13 +521,16 @@ export const DocumentReviewPanel = ({
   );
 };
 
-function Row({ k, v, good }: { k: string; v: string; good?: boolean }) {
+function Row({ k, v, good, tone }: { k: string; v: string; good?: boolean; tone?: "record" }) {
+  const cls = tone === "record"
+    ? "text-[hsl(var(--tp-gold))]"
+    : good === true ? "text-green-400"
+    : good === false ? "text-[hsl(var(--tp-warning))]"
+    : "text-[hsl(var(--tp-text))]";
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-[hsl(var(--tp-text-dim))]">{k}</span>
-      <span className={good === true ? "text-green-400" : good === false ? "text-[hsl(var(--tp-warning))]" : "text-[hsl(var(--tp-text))]"}>
-        {v}
-      </span>
+    <div className="flex items-center justify-between gap-3 text-sm">
+      <span className="text-[hsl(var(--tp-text-dim))] shrink-0">{k}</span>
+      <span className={`${cls} text-right`}>{v}</span>
     </div>
   );
 }

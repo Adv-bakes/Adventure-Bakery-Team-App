@@ -62,9 +62,18 @@ serve(async (req) => {
 
     const clientUserId = pss.user_id && UUID_RE.test(pss.user_id) ? pss.user_id : null;
 
-    // Lead lookup: profile_id, then email fallback
+    // Lead lookup: the document's own lead_id, then profile_id, then email.
+    // lead_id goes first because the other two both route through client_documents.user_id,
+    // which is the client's *profile* id -- and a prospect who has not been given a portal
+    // account yet has none, so those rows carry a null there. Every header fallback below
+    // (company, contact, product) hangs off this lookup, so when it came up empty the PSS
+    // header stayed blank even though the lead record had the answers all along.
     let lead: any = null;
-    if (clientUserId) {
+    if (pss.lead_id) {
+      const r = await admin.from("sales_leads").select("id, profile_id, email, company_name, contact_name").eq("id", pss.lead_id).maybeSingle();
+      lead = r.data;
+    }
+    if (!lead && clientUserId) {
       const r = await admin.from("sales_leads").select("id, profile_id, email, company_name, contact_name").eq("profile_id", clientUserId).maybeSingle();
       lead = r.data;
     }
@@ -83,9 +92,13 @@ serve(async (req) => {
       concept = r.data;
     }
 
-    // Most recent PRF for this client (best-effort)
+    // Most recent PRF for this client (best-effort), by lead first for the same reason as above.
     let prf: any = null;
-    if (clientUserId) {
+    if (lead?.id) {
+      const r = await admin.from("prf_submissions").select("*").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      prf = r.data;
+    }
+    if (!prf && clientUserId) {
       const r = await admin.from("prf_submissions").select("*").eq("owner_user_id", clientUserId).order("created_at", { ascending: false }).limit(1).maybeSingle();
       prf = r.data;
     }
