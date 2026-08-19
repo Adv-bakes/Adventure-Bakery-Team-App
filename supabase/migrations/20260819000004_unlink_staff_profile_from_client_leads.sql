@@ -47,23 +47,28 @@ where  profile_id = '0ec912f6-3b8a-4d40-ac4b-dd86e398eb84';
 
 do $$
 declare
-  staff constant uuid := '0ec912f6-3b8a-4d40-ac4b-dd86e398eb84';
+  -- text, not uuid, and every column is cast to text below. These columns are not all the same
+  -- type -- one of them is text -- so a typed uuid variable fails with
+  -- "operator does not exist: text = uuid". The UPDATEs above are unaffected: a bare string
+  -- literal is coerced to whatever the column happens to be.
+  staff constant text := '0ec912f6-3b8a-4d40-ac4b-dd86e398eb84';
   remaining integer := 0;
   n integer;
+  other integer;
 begin
-  select count(*) into n from public.production_orders where client_id = staff;
+  select count(*) into n from public.production_orders where client_id::text = staff;
   remaining := remaining + n; raise notice 'unlink_staff_profile: production_orders.client_id still set: %', n;
 
-  select count(*) into n from public.client_documents where user_id = staff;
+  select count(*) into n from public.client_documents where user_id::text = staff;
   remaining := remaining + n; raise notice 'unlink_staff_profile: client_documents.user_id still set: %', n;
 
-  select count(*) into n from public.batch_sheets where client_user_id = staff;
+  select count(*) into n from public.batch_sheets where client_user_id::text = staff;
   remaining := remaining + n; raise notice 'unlink_staff_profile: batch_sheets.client_user_id still set: %', n;
 
-  select count(*) into n from public.prf_submissions where owner_user_id = staff;
+  select count(*) into n from public.prf_submissions where owner_user_id::text = staff;
   remaining := remaining + n; raise notice 'unlink_staff_profile: prf_submissions.owner_user_id still set: %', n;
 
-  select count(*) into n from public.sales_leads where profile_id = staff;
+  select count(*) into n from public.sales_leads where profile_id::text = staff;
   remaining := remaining + n; raise notice 'unlink_staff_profile: sales_leads.profile_id still set: %', n;
 
   if remaining = 0 then
@@ -75,13 +80,13 @@ begin
   -- Any OTHER lead still pointing at an account that holds a staff role is the same bug with a
   -- different id. Reported, never changed automatically: only a person can say whether an address
   -- belongs to the customer or to us.
-  for n in
-    select 1 from public.sales_leads l
-    join public.user_roles ur on ur.user_id = l.profile_id
-    where ur.role in ('admin', 'owner', 'staff')
-    limit 1
-  loop
-    raise warning 'unlink_staff_profile: another lead still points at a profile holding a staff role -- review sales_leads.profile_id';
-  end loop;
+  select count(*) into other
+  from   public.sales_leads l
+  join   public.user_roles ur on ur.user_id::text = l.profile_id::text
+  where  ur.role::text in ('admin', 'owner', 'staff');
+
+  if other > 0 then
+    raise warning 'unlink_staff_profile: % lead(s) still point at a profile holding a staff role -- review sales_leads.profile_id', other;
+  end if;
 end
 $$;
