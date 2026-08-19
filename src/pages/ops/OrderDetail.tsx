@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Loader2, FlaskConical, Pencil } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, FlaskConical, Pencil, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { runMaterialCalc, type MaterialCalcJson } from "@/lib/materialCalc";
 import { MaterialCalcResults } from "@/components/sales/MaterialCalcResults";
@@ -19,6 +19,11 @@ const STAGES = [
   "Shipped",
 ] as const;
 type Stage = (typeof STAGES)[number];
+
+// Cancelling unwinds work that has not happened yet. Everything up to Scheduled is still
+// reversible -- reservations get released, the schedule slot frees up. Once a batch is running
+// materials are committed and the order is no longer a plan, so In Production and Shipped are out.
+const CANCELLABLE_STAGES: readonly string[] = ["Order Placed", "Confirmed", "Sourcing", "Scheduled"];
 
 interface OrderItem {
   product_id: string;
@@ -51,8 +56,12 @@ const DEFAULT_BATCH_SIZE = 110;
 
 export default function OrderDetail() {
   const { orderId } = useParams();
+  const navigate = useNavigate();
   const { role } = useUserRole();
   const isManagement = role === "admin" || role === "owner";
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
 
   const [order, setOrder] = useState<Order | null>(null);
   const [clientName, setClientName] = useState("");
@@ -480,6 +489,60 @@ export default function OrderDetail() {
 
   const showStationCards = isManagement || order.status === "In Production";
 
+  const cancelOrder = async () => {
+    if (!order) return;
+    const reason = cancelReason.trim();
+    if (!reason) return toast.error("Give a reason — it is the whole point of keeping the record.");
+    setCancelling(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const now = new Date().toISOString();
+      // One cast for the whole handler. archived_at/_by/_reason are not in the generated
+      // Database types until types.ts is regenerated against the migration, and neither
+      // inventory_reservations nor order_stage_events is typed there at all.
+      const sb = supabase as any;
+
+      // Release reserved stock first. The FK cascades on a hard delete, but this is a soft
+      // archive, so without this the ingredients stay reserved against an order nobody will
+      // ever build -- and the shortfall shows up as a sourcing problem weeks later.
+      const { error: resErr } = await sb
+        .from("inventory_reservations")
+        .delete()
+        .eq("order_id", order.id);
+      if (resErr) {
+        setCancelling(false);
+        return toast.error(`Could not release reservations: ${resErr.message}`);
+      }
+
+      // Close the open stage event so stage-age maths does not keep counting on a dead order.
+      await sb
+        .from("order_stage_events")
+        .update({ exited_at: now })
+        .eq("order_id", order.id)
+        .is("exited_at", null);
+
+      const { error } = await sb
+        .from("production_orders")
+        .update({
+          status: "Archived",
+          archived_at: now,
+          archived_by: user?.id ?? null,
+          archived_reason: reason,
+        })
+        .eq("id", order.id);
+      if (error) {
+        setCancelling(false);
+        return toast.error(error.message);
+      }
+
+      toast.success("Order cancelled — reservations released.");
+      setCancelOpen(false);
+      navigate("/team/ops/orders");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   return (
     <TeamPage
       eyebrow="Operations"
@@ -511,6 +574,14 @@ export default function OrderDetail() {
           )}
           {!nextStage && order.status === "Shipped" && (
             <span className="text-sm text-[hsl(var(--tp-text-dim))] italic">Order complete</span>
+          )}
+          {isManagement && CANCELLABLE_STAGES.includes(order.status) && (
+            <button
+              onClick={() => { setCancelReason(""); setCancelOpen(true); }}
+              className="tp-btn text-sm text-red-400 hover:text-red-300"
+            >
+              <Ban className="w-4 h-4" /> Cancel Order
+            </button>
           )}
         </div>
       }
@@ -758,6 +829,50 @@ export default function OrderDetail() {
                 className="tp-btn tp-btn-primary text-sm"
               >
                 Save
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Portalled to <body> for the same reason as the dialog above: TeamPage wraps the page in
+          `.tp-fade-up`, whose animation keeps a transform, and a transformed ancestor becomes the
+          containing block for `position: fixed`. */}
+      {cancelOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-background border border-[hsl(var(--tp-hairline))] rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <p className="text-base font-semibold text-[hsl(var(--tp-text))] mb-1">
+              Cancel this order?
+            </p>
+            <p className="text-sm text-[hsl(var(--tp-text-dim))] mb-4">
+              {order.order_number ? <><span className="font-mono">{order.order_number}</span> — </> : null}
+              {clientName}. It will be archived and disappear from the board and the client folder.
+              Any reserved ingredients are released back to stock. Nothing is deleted.
+            </p>
+            <label className="block text-[11px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">
+              Reason
+            </label>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              rows={3}
+              autoFocus
+              placeholder="e.g. duplicate of MB-081926 — created in error"
+              className="w-full rounded border border-[hsl(var(--tp-hairline))] bg-background px-3 py-2 text-sm text-[hsl(var(--tp-text))] focus:border-[hsl(var(--tp-gold))] outline-none resize-y"
+            />
+            <div className="flex justify-end gap-3 mt-6">
+              <button onClick={() => setCancelOpen(false)} disabled={cancelling} className="tp-btn text-sm">
+                Keep order
+              </button>
+              <button
+                onClick={cancelOrder}
+                disabled={cancelling || !cancelReason.trim()}
+                className="tp-btn text-sm text-red-400 hover:text-red-300 disabled:opacity-50"
+              >
+                {cancelling
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Cancelling…</>
+                  : <><Ban className="w-4 h-4" /> Cancel order</>}
               </button>
             </div>
           </div>
