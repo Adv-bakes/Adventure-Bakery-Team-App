@@ -57,6 +57,8 @@ interface Order {
   payment_status: string;
   case_count: number;
   order_type: string;
+  /** Customer-facing identifier. Null until the order leaves "Order Placed". */
+  order_number: string | null;
   clientName?: string;
   stageEvents?: StageEvent[];
 }
@@ -162,7 +164,7 @@ export default function OrderBoard() {
     const [{ data: ordersData }, { data: eventsData }] = await Promise.all([
       (supabase as any)
         .from("production_orders")
-        .select("id, status, client_id, lead_id, items, created_at, target_completion_date, scheduled_date, schedule_confirmed, payment_status, case_count, order_type")
+        .select("id, status, client_id, lead_id, items, created_at, target_completion_date, scheduled_date, schedule_confirmed, payment_status, case_count, order_type, order_number")
         .neq("status", "Archived")
         .order("created_at", { ascending: true }),
       (supabase as any)
@@ -542,6 +544,11 @@ export default function OrderBoard() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-[hsl(var(--tp-text))] group-hover:text-white truncate">{o.clientName}</p>
                   <p className="text-[11px] text-[hsl(var(--tp-text-dim))] group-hover:text-white/80 truncate mt-0.5">{productNames(o)}</p>
+                  {o.order_number && (
+                    <p className="text-[10px] font-mono tracking-tight text-[hsl(var(--tp-text-dim))] group-hover:text-white/80 mt-1">
+                      {o.order_number}
+                    </p>
+                  )}
                   <p className="text-[11px] text-red-400 group-hover:text-white mt-1.5 leading-snug">{hotReason(o)}</p>
                 </div>
               </button>
@@ -596,6 +603,13 @@ export default function OrderBoard() {
                         <p className="text-[11px] text-[hsl(var(--tp-text-dim))] leading-tight mt-0.5 truncate max-w-[180px]">
                           {productNames(order)}
                         </p>
+                        {/* Rendered only once it exists. An order is not numbered until it leaves
+                            "Order Placed", and a blank reads as that far better than a dash does. */}
+                        {order.order_number && (
+                          <p className="text-[10px] font-mono tracking-tight text-[hsl(var(--tp-text-dim))] leading-tight mt-1">
+                            {order.order_number}
+                          </p>
+                        )}
                       </td>
                       {STAGES.map((stage, si) => {
                         const event = order.stageEvents?.find(e => e.stage === stage);
