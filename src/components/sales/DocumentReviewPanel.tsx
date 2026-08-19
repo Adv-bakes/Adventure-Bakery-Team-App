@@ -195,12 +195,16 @@ export const DocumentReviewPanel = ({
     }
 
     if (status === "approved" && doc.lead_id) {
-      // Always log per-doc approval
-      await supabase.from("client_activity").insert({
-        client_id: doc.user_id,
-        action: `${docType}_approved`,
-        payload: { document_id: documentId, file_name: doc.file_name },
-      });
+      // client_activity.client_id is NOT NULL and the feed is per-client, so with no portal
+      // account there is nobody to log it for. Skipped rather than sent -- an insert that always
+      // fails is worse than an absent row, and this one's error was never checked.
+      if (doc.user_id) {
+        await supabase.from("client_activity").insert({
+          client_id: doc.user_id,
+          action: `${docType}_approved`,
+          payload: { document_id: documentId, file_name: doc.file_name },
+        });
+      }
 
       // Check if this client has an approved NDA AND approved PSS
       const { data: clientDocs } = await (supabase as any)
@@ -219,11 +223,13 @@ export const DocumentReviewPanel = ({
           .update({ stage: "Follow-Up", stage_updated_at: new Date().toISOString() })
           .eq("id", doc.lead_id)
           .eq("stage", "Send Documents");
-        await supabase.from("client_activity").insert({
-          client_id: doc.user_id,
-          action: "documents_completed",
-          payload: { trigger_doc_id: documentId },
-        });
+        if (doc.user_id) {
+          await supabase.from("client_activity").insert({
+            client_id: doc.user_id,
+            action: "documents_completed",
+            payload: { trigger_doc_id: documentId },
+          });
+        }
         toast.success("Both docs approved — moved to Follow-Up");
       } else {
         toast.success(`${docType.toUpperCase()} approved`);

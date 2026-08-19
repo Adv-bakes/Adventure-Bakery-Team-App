@@ -121,7 +121,11 @@ export function NewOrderDialog({ open, onOpenChange, onCreated }: Props) {
   const submit = async () => {
     if (!selectedId) return toast.error("Select a client first");
     if (!items.length) return toast.error("Select at least one product");
-    if (!selectedClient?.profile_id) return toast.error("This client has no linked user account yet");
+    // No profile check. This guard existed only because client_id (the client's portal account)
+    // used to be the order's identity, so an order without one was unattributable. lead_id carries
+    // that now, and most prospects have no portal account at PSS/order time -- refusing to take
+    // their order for want of a login they were never given was the bug, not the safeguard.
+    if (!selectedClient) return toast.error("Select a client first");
     setSubmitting(true);
 
     const { data: { user } } = await supabase.auth.getUser();
