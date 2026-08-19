@@ -541,10 +541,13 @@ function OverviewOrders({ leadId, profileId }: { leadId: string; profileId: stri
     if (!leadId && !profileId) return;
     (supabase as any)
       .from("production_orders")
-      .select("id, order_number, status, items, created_at, target_completion_date, payment_status")
-      .or(`client_id.eq.${leadId}${profileId ? `,client_id.eq.${profileId}` : ""}`)
+      .select("id, order_number, status, items, created_at, target_completion_date, payment_status, lead_id, client_id")
+      .or(`lead_id.eq.${leadId},client_id.eq.${leadId}${profileId ? `,client_id.eq.${profileId}` : ""}`)
       .order("created_at", { ascending: false })
-      .then(({ data }: any) => setOrders(data ?? []));
+      // Same reason as ClientOrders: the profile clause is needed for legacy rows but a profile
+      // is not unique per lead, so an order that names its lead is filtered on that alone.
+      .then(({ data }: any) =>
+        setOrders((data ?? []).filter((o) => (o.lead_id ? o.lead_id === leadId : true))));
   }, [leadId, profileId]);
 
   if (orders.length === 0) return null;

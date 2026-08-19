@@ -47,6 +47,8 @@ interface Order {
   id: string;
   status: Stage;
   client_id: string;
+  /** The sales_leads row this order was placed for. Null on rows created before it existed. */
+  lead_id: string | null;
   items: OrderItem[];
   created_at: string;
   target_completion_date: string | null;
@@ -160,7 +162,7 @@ export default function OrderBoard() {
     const [{ data: ordersData }, { data: eventsData }] = await Promise.all([
       (supabase as any)
         .from("production_orders")
-        .select("id, status, client_id, items, created_at, target_completion_date, scheduled_date, schedule_confirmed, payment_status, case_count, order_type")
+        .select("id, status, client_id, lead_id, items, created_at, target_completion_date, scheduled_date, schedule_confirmed, payment_status, case_count, order_type")
         .neq("status", "Archived")
         .order("created_at", { ascending: true }),
       (supabase as any)
@@ -172,15 +174,30 @@ export default function OrderBoard() {
     const rows = (ordersData ?? []) as Order[];
     const events = (eventsData ?? []) as StageEvent[];
 
-    const clientIds = [...new Set(rows.map(r => r.client_id).filter(Boolean))];
-    let nameMap: Record<string, string> = {};
-    if (clientIds.length) {
+    // Resolve the company from the order's lead. profile_id is NOT unique per lead -- two leads
+    // sharing one profile made this map overwrite itself and label an order with whichever
+    // company happened to come back last. Orders written before lead_id existed keep the old
+    // profile lookup, which stays ambiguous for those rows but is all they carry.
+    const leadIds = [...new Set(rows.map(r => r.lead_id).filter(Boolean))];
+    const legacyProfileIds = [...new Set(rows.filter(r => !r.lead_id).map(r => r.client_id).filter(Boolean))];
+
+    const byLead: Record<string, string> = {};
+    if (leadIds.length) {
+      const { data: leads } = await (supabase as any)
+        .from("sales_leads")
+        .select("id, company_name, email")
+        .in("id", leadIds);
+      for (const l of leads ?? []) byLead[l.id] = l.company_name || l.email || l.id;
+    }
+
+    const byProfile: Record<string, string> = {};
+    if (legacyProfileIds.length) {
       const { data: leads } = await (supabase as any)
         .from("sales_leads")
         .select("profile_id, company_name, email")
-        .in("profile_id", clientIds);
+        .in("profile_id", legacyProfileIds);
       for (const l of leads ?? [])
-        nameMap[l.profile_id] = l.company_name || l.email || l.profile_id;
+        byProfile[l.profile_id] = l.company_name || l.email || l.profile_id;
     }
 
     const eventsByOrder: Record<string, StageEvent[]> = {};
@@ -191,7 +208,7 @@ export default function OrderBoard() {
 
     setOrders(rows.map(o => ({
       ...o,
-      clientName: nameMap[o.client_id] ?? "Unknown",
+      clientName: (o.lead_id ? byLead[o.lead_id] : byProfile[o.client_id]) ?? "Unknown",
       stageEvents: eventsByOrder[o.id] ?? [],
     })));
     setLoading(false);

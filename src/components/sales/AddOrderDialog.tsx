@@ -116,6 +116,8 @@ export function AddOrderDialog({
     const { data: order, error } = await (supabase as any)
       .from("production_orders")
       .insert({
+        // See NewOrderDialog: the lead identifies the order, the profile does not.
+        lead_id: clientId,
         client_id: profileId,
         items: items as any,
         ship_to_kind: shipKind,

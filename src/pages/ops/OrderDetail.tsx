@@ -32,6 +32,7 @@ interface Order {
   id: string;
   status: Stage;
   client_id: string;
+  lead_id: string | null;
   items: OrderItem[];
   created_at: string;
   notes: string | null;
@@ -75,14 +76,33 @@ export default function OrderDetail() {
       setOrder(data as Order);
       setNotesDraft(data.notes || "");
 
+      // Prefer the order's lead. The old profile_id lookup was not just ambiguous -- with two
+      // leads on one profile .maybeSingle() returns PGRST116 and `lead` comes back null, so the
+      // page fell through to showing the raw client_id UUID as the client name. That UUID then
+      // seeded the generated order_number below.
       let leadName = "";
-      if (data.client_id) {
-        const { data: lead } = await (supabase as any)
+      let lead: { company_name?: string; email?: string } | null = null;
+      const sb = supabase as any;
+      if (data.lead_id) {
+        const r = await sb
+          .from("sales_leads")
+          .select("company_name, email")
+          .eq("id", data.lead_id)
+          .maybeSingle();
+        lead = r.data;
+      }
+      if (!lead && data.client_id) {
+        // Legacy rows only carry the profile. limit(1) rather than maybeSingle() so a shared
+        // profile degrades to "a plausible name" instead of no name at all.
+        const r = await sb
           .from("sales_leads")
           .select("company_name, email")
           .eq("profile_id", data.client_id)
-          .maybeSingle();
-        leadName = lead?.company_name || lead?.email || data.client_id;
+          .limit(1);
+        lead = r.data?.[0] ?? null;
+      }
+      if (data.lead_id || data.client_id) {
+        leadName = lead?.company_name || lead?.email || data.client_id || "";
         setClientName(leadName);
       }
 

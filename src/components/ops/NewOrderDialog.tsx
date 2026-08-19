@@ -126,6 +126,10 @@ export function NewOrderDialog({ open, onOpenChange, onCreated }: Props) {
 
     const { data: { user } } = await supabase.auth.getUser();
     const { data: newOrder, error } = await (supabase as any).from("production_orders").insert({
+      // The lead is the order's identity. client_id (the client's auth profile) is NOT unique
+      // per lead -- two leads can share one profile -- so storing only that loses which client
+      // the operator actually picked, and every read surface then has to guess.
+      lead_id: selectedClient.id,
       client_id: selectedClient.profile_id,
       items: items as any,
       ship_to_kind: shipKind,
