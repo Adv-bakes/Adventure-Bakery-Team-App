@@ -47,6 +47,8 @@ interface Order {
   id: string;
   status: Stage;
   client_id: string;
+  /** The sales_leads row this order was placed for. Null on rows created before it existed. */
+  lead_id: string | null;
   items: OrderItem[];
   created_at: string;
   target_completion_date: string | null;
@@ -55,6 +57,8 @@ interface Order {
   payment_status: string;
   case_count: number;
   order_type: string;
+  /** Customer-facing identifier. Null until the order leaves "Order Placed". */
+  order_number: string | null;
   clientName?: string;
   stageEvents?: StageEvent[];
 }
@@ -160,7 +164,7 @@ export default function OrderBoard() {
     const [{ data: ordersData }, { data: eventsData }] = await Promise.all([
       (supabase as any)
         .from("production_orders")
-        .select("id, status, client_id, items, created_at, target_completion_date, scheduled_date, schedule_confirmed, payment_status, case_count, order_type")
+        .select("id, status, client_id, lead_id, items, created_at, target_completion_date, scheduled_date, schedule_confirmed, payment_status, case_count, order_type, order_number")
         .neq("status", "Archived")
         .order("created_at", { ascending: true }),
       (supabase as any)
@@ -172,15 +176,30 @@ export default function OrderBoard() {
     const rows = (ordersData ?? []) as Order[];
     const events = (eventsData ?? []) as StageEvent[];
 
-    const clientIds = [...new Set(rows.map(r => r.client_id).filter(Boolean))];
-    let nameMap: Record<string, string> = {};
-    if (clientIds.length) {
+    // Resolve the company from the order's lead. profile_id is NOT unique per lead -- two leads
+    // sharing one profile made this map overwrite itself and label an order with whichever
+    // company happened to come back last. Orders written before lead_id existed keep the old
+    // profile lookup, which stays ambiguous for those rows but is all they carry.
+    const leadIds = [...new Set(rows.map(r => r.lead_id).filter(Boolean))];
+    const legacyProfileIds = [...new Set(rows.filter(r => !r.lead_id).map(r => r.client_id).filter(Boolean))];
+
+    const byLead: Record<string, string> = {};
+    if (leadIds.length) {
+      const { data: leads } = await (supabase as any)
+        .from("sales_leads")
+        .select("id, company_name, email")
+        .in("id", leadIds);
+      for (const l of leads ?? []) byLead[l.id] = l.company_name || l.email || l.id;
+    }
+
+    const byProfile: Record<string, string> = {};
+    if (legacyProfileIds.length) {
       const { data: leads } = await (supabase as any)
         .from("sales_leads")
         .select("profile_id, company_name, email")
-        .in("profile_id", clientIds);
+        .in("profile_id", legacyProfileIds);
       for (const l of leads ?? [])
-        nameMap[l.profile_id] = l.company_name || l.email || l.profile_id;
+        byProfile[l.profile_id] = l.company_name || l.email || l.profile_id;
     }
 
     const eventsByOrder: Record<string, StageEvent[]> = {};
@@ -191,7 +210,7 @@ export default function OrderBoard() {
 
     setOrders(rows.map(o => ({
       ...o,
-      clientName: nameMap[o.client_id] ?? "Unknown",
+      clientName: (o.lead_id ? byLead[o.lead_id] : byProfile[o.client_id]) ?? "Unknown",
       stageEvents: eventsByOrder[o.id] ?? [],
     })));
     setLoading(false);
@@ -525,6 +544,11 @@ export default function OrderBoard() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-[hsl(var(--tp-text))] group-hover:text-white truncate">{o.clientName}</p>
                   <p className="text-[11px] text-[hsl(var(--tp-text-dim))] group-hover:text-white/80 truncate mt-0.5">{productNames(o)}</p>
+                  {o.order_number && (
+                    <p className="text-[10px] font-mono tracking-tight text-[hsl(var(--tp-text-dim))] group-hover:text-white/80 mt-1">
+                      {o.order_number}
+                    </p>
+                  )}
                   <p className="text-[11px] text-red-400 group-hover:text-white mt-1.5 leading-snug">{hotReason(o)}</p>
                 </div>
               </button>
@@ -579,6 +603,13 @@ export default function OrderBoard() {
                         <p className="text-[11px] text-[hsl(var(--tp-text-dim))] leading-tight mt-0.5 truncate max-w-[180px]">
                           {productNames(order)}
                         </p>
+                        {/* Rendered only once it exists. An order is not numbered until it leaves
+                            "Order Placed", and a blank reads as that far better than a dash does. */}
+                        {order.order_number && (
+                          <p className="text-[10px] font-mono tracking-tight text-[hsl(var(--tp-text-dim))] leading-tight mt-1">
+                            {order.order_number}
+                          </p>
+                        )}
                       </td>
                       {STAGES.map((stage, si) => {
                         const event = order.stageEvents?.find(e => e.stage === stage);

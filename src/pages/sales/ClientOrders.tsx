@@ -17,6 +17,8 @@ interface Order {
   created_at: string;
   target_completion_date: string | null;
   scheduled_date: string | null;
+  lead_id: string | null;
+  client_id: string | null;
 }
 
 const STATUS_DOT: Record<string, string> = {
@@ -41,12 +43,17 @@ export function ClientOrders({ clientId, profileId }: ClientOrdersProps) {
       if (!profileId && !clientId) { setLoading(false); return; }
       const { data, error } = await (supabase as any)
         .from("production_orders")
-        .select("id, order_number, status, items, ship_to_kind, created_at, target_completion_date, scheduled_date")
-        .or(`client_id.eq.${clientId}${profileId && profileId !== clientId ? `,client_id.eq.${profileId}` : ""}`)
+        .select("id, order_number, status, items, ship_to_kind, created_at, target_completion_date, scheduled_date, lead_id, client_id")
+        .or(`lead_id.eq.${clientId},client_id.eq.${clientId}${profileId && profileId !== clientId ? `,client_id.eq.${profileId}` : ""}`)
         .neq("status", "Archived")
         .order("created_at", { ascending: false });
       if (error) toast.error(error.message);
-      setOrders((data ?? []) as Order[]);
+      // The profile clause above is deliberately broad -- it has to be, to still catch legacy
+      // rows that carry no lead_id. But a profile can belong to more than one lead, so matching
+      // on it alone put another company's orders in this folder. Once an order names its lead,
+      // that lead is the only thing that decides whether it belongs here.
+      setOrders(((data ?? []) as Order[]).filter(o =>
+        o.lead_id ? o.lead_id === clientId : true));
       setLoading(false);
     };
     load();
