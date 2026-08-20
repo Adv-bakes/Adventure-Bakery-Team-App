@@ -305,6 +305,20 @@ export async function runMaterialCalc(
 
     const formulaTotalPct = ingCalcs.reduce((s, i) => s + i.percentage, 0);
 
+    // A formula that does not sum to 100% silently scales the entire ingredient list: every
+    // need_lbs is that ingredient's share of production_lbs, so a 56% formula orders 56% of
+    // the materials and the only tell was an amber number on the breakdown card. The batch
+    // sheet editor already flags this drift (a warning, not a block); the estimate has to say
+    // it too, because this is where someone decides what to buy.
+    if (formulaTotalPct > 0 && Math.abs(formulaTotalPct - 100) > 0.5) {
+      const covered = Math.round((formulaTotalPct / 100) * productionLbs * 100) / 100;
+      warnings.push(
+        `Formula percentages sum to ${Math.round(formulaTotalPct * 100) / 100}%, not 100% — ` +
+        `ingredients below cover only ${covered} of ${Math.round(productionLbs * 100) / 100} production lbs. ` +
+        `Fix the batch sheet formula before ordering materials.`,
+      );
+    }
+
     productCalcs.push({
       product_id: item.product_id,
       product_name: productName,
