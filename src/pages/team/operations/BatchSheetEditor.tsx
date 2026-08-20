@@ -29,6 +29,8 @@ interface Ingredient {
   vendor_source?: string | null;
   preblend?: string | null;
   step?: number | null;
+  /** Part of the formula but never bought (water). Kept out of the buy list and reservations. */
+  non_purchased?: boolean | null;
 }
 
 interface MixStep {
@@ -557,6 +559,8 @@ const BatchSheetEditor = () => {
                 <th className="px-2 py-2 text-left min-w-[220px]">Ingredient</th>
                 <th className="px-2 py-2 text-right min-w-[110px]">% Formula</th>
                 <th className="px-2 py-2 text-right min-w-[130px]">Grams / unit</th>
+                <th className="px-2 py-2 text-center w-16" title="Uncheck for formula ingredients you never buy, e.g. water">Buy</th>
+                <th className="px-2 py-2 text-left min-w-[120px]">Preblend</th>
                 <th className="px-2 py-2 text-left min-w-[180px]">Vendor</th>
                 <th className="px-2 py-2 text-left min-w-[180px]">Notes</th>
                 <th className="px-2 py-2 w-10"></th>
@@ -598,6 +602,17 @@ const BatchSheetEditor = () => {
                         <span className="text-[hsl(var(--tp-text-dim))] text-xs">g</span>
                       </div>
                     </td>
+                    <td className="px-2 py-1 text-center">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 accent-[hsl(var(--tp-gold))] cursor-pointer disabled:cursor-default"
+                        checked={r.non_purchased !== true}
+                        onChange={(e) => updateIng(i, { non_purchased: !e.target.checked })}
+                        disabled={isSuperseded}
+                        title={r.non_purchased ? "Not purchased — excluded from the buy list" : "Purchased — included in the buy list"}
+                        aria-label={`Purchase ${r.name || "ingredient"}`}
+                      />
+                    </td>
                     <td className="px-2 py-1">
                       <input className="tp-input w-full" value={r.preblend ?? ""} onChange={(e) => updateIng(i, { preblend: e.target.value })} placeholder="—" />
                     </td>
@@ -634,7 +649,7 @@ const BatchSheetEditor = () => {
                 <td colSpan={3} className="px-2 py-2 text-right text-[hsl(var(--tp-text-dim))]">Totals</td>
                 <td className={`px-2 py-2 text-right tabular-nums ${pctDrift ? "text-amber-500" : "text-[hsl(var(--tp-text))]"}`}>{totalPct.toFixed(2)}%</td>
                 <td className="px-2 py-2 text-right tabular-nums text-[hsl(var(--tp-text))]">{totalGrams.toFixed(2)} g</td>
-                <td colSpan={4}></td>
+                <td colSpan={5}></td>
               </tr>
             </tbody>
           </table>
