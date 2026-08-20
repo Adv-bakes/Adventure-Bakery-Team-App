@@ -250,7 +250,7 @@ export default function OrderDetail() {
       }
 
       // Auto-calculate batch plan from calc results
-      let batchCount = 1;
+      let batchCount = 0;
       let orderBatchSizeLbs = DEFAULT_BATCH_SIZE;
       const batchInserts: any[] = [];
       for (const item of order.items) {
@@ -262,6 +262,10 @@ export default function OrderDetail() {
         const sizePerBatch = productionLbs > 0
           ? Math.round((productionLbs / itemBatches) * 1000) / 1000
           : DEFAULT_BATCH_SIZE;
+        // Seeded at 0, not 1: a single-batch order has itemBatches === 1, so a `> 1` guard
+        // never fired and the header kept the 110 lb default while the production_batches
+        // row below correctly got sizePerBatch. The order card then reported "1 batch × 110
+        // lbs" for what the floor was actually building as one 23.63 lb batch.
         if (itemBatches > batchCount) {
           batchCount = itemBatches;
           orderBatchSizeLbs = sizePerBatch;
@@ -281,13 +285,17 @@ export default function OrderDetail() {
         await (supabase as any).from("production_batches").insert(batchInserts);
       }
 
+      // An order with no items never entered the loop above; keep the old floor of 1 batch
+      // so the header does not read "0 batches" and hide the station cards entirely.
+      const orderBatchCount = Math.max(1, batchCount);
+
       // Move to Confirmed + store calc + batch plan + order number
       const { error: e1 } = await (supabase as any)
         .from("production_orders")
         .update({
           status: "Confirmed",
           order_number: orderNum,
-          batch_count: batchCount,
+          batch_count: orderBatchCount,
           batch_size_lbs: orderBatchSizeLbs,
           ...(calcJson ? { material_calc_json: calcJson } : {}),
         })
@@ -326,7 +334,7 @@ export default function OrderDetail() {
         status: "Sourcing",
         order_number: orderNum,
         material_calc_json: calcJson,
-        batch_count: batchCount,
+        batch_count: orderBatchCount,
         batch_size_lbs: orderBatchSizeLbs,
       } : o);
       toast.success("Order confirmed — materials estimated and inventory reserved");
