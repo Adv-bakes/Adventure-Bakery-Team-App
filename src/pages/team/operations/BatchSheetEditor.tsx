@@ -85,7 +85,14 @@ const BatchSheetEditor = () => {
     if (error) { toast.error(error.message); return; }
     setSheet(data);
     const d = data.data_json || {};
-    setIngs(_recomputePercents(d.recipe?.ingredients || []));
+    // Show what is stored, not a normalized view of it. This used to run the rows through
+    // _recomputePercents on load without setting `dirty`, so the screen showed percentages
+    // totalling 100% that had never been saved and that Save (disabled while !dirty) offered
+    // no way to save. Worse, the recompute is not always the correct answer: percentages are
+    // normalized over the whole batch basis, so when a non-purchased ingredient like water is
+    // missing from the rows the stored values are right and the recomputed ones are wrong.
+    // Disagreement is surfaced as an explicit prompt below instead.
+    setIngs(d.recipe?.ingredients || []);
     setMethodText(d.process?.method_text || d.process?.method || "");
     const specs: MixStep[] = d.process?.specifications && d.process.specifications.length
       ? d.process.specifications.map((s: any, i: number) => ({ step: i + 1, ...s }))
@@ -179,6 +186,24 @@ const BatchSheetEditor = () => {
   const totalPct = useMemo(() => ings.reduce((s, r) => s + (Number(r.percentage) || 0), 0), [ings]);
   const totalGrams = useMemo(() => ings.reduce((s, r) => s + (Number(r.weight_g ?? r.weight) || 0), 0), [ings]);
   const pctDrift = Math.abs(totalPct - 100) > 0.5 && totalPct > 0;
+
+  // The gram total the stored percentages were normalized over. When it exceeds the grams
+  // actually on the sheet, the difference is an ingredient that was in the formula when the
+  // percentages were computed but is not a row here -- typically water, which is measured but
+  // never purchased. That is a missing row, not a bad percentage, so recomputing would be the
+  // wrong repair and is offered rather than applied.
+  const impliedBasisG = totalPct > 0 && totalGrams > 0 ? (totalGrams / totalPct) * 100 : 0;
+  const basisMismatch = impliedBasisG > 0 && Math.abs(impliedBasisG - totalGrams) > 0.5;
+  // A couple of grams apart is rounding or a typo in one cell, and recomputing is the right
+  // repair. A large gap is a whole ingredient's worth of formula, which recomputing would
+  // paper over. Same banner, opposite advice, so the size decides which is given.
+  const gapIsSmall = impliedBasisG > 0 && Math.abs(impliedBasisG - totalGrams) / impliedBasisG < 0.02;
+
+  const recomputeFromGrams = () => {
+    if (isSuperseded) return;
+    setIngs((prev) => recomputePercents(prev));
+    setDirty(true);
+  };
 
   // ---- Mix steps ----
   const updateMix = (idx: number, patch: Partial<MixStep>) => {
@@ -529,7 +554,28 @@ const BatchSheetEditor = () => {
         <SummaryCard label="Status" value={sheet.status} />
       </section>
 
-      {pctDrift && (
+      {basisMismatch ? (
+        <div className="mb-4 border border-amber-500/40 bg-amber-500/10 rounded-md p-3 text-sm space-y-2">
+          <p>
+            Stored percentages sum to <strong>{totalPct.toFixed(2)}%</strong> and were normalized over
+            about <strong>{impliedBasisG.toFixed(0)} g</strong>, but the rows below total{" "}
+            <strong>{totalGrams.toFixed(2)} g</strong> — a difference of{" "}
+            <strong>{(impliedBasisG - totalGrams).toFixed(0)} g</strong>.
+          </p>
+          <p className="text-[hsl(var(--tp-text-dim))]">
+            {gapIsSmall
+              ? "That is small enough to be rounding or a typo in a single percentage cell. Recomputing from the grams will settle it."
+              : "A gap that size is usually a whole ingredient missing from the rows rather than a wrong percentage — most often water, which is measured on the floor but never purchased. Adding it as a row with Buy unchecked resolves the totals on its own. Recompute only if the rows below really are the whole formula."}
+          </p>
+          <button
+            className="tp-btn text-xs"
+            onClick={recomputeFromGrams}
+            disabled={isSuperseded}
+          >
+            Recompute percentages from grams
+          </button>
+        </div>
+      ) : pctDrift && (
         <div className="mb-4 border border-amber-500/40 bg-amber-500/10 rounded-md p-3 text-sm">
           Formula percentages sum to <strong>{totalPct.toFixed(2)}%</strong>. They should equal 100%. Adjust ingredient weights or percentages.
         </div>
