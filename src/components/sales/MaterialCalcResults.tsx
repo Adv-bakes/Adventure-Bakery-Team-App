@@ -47,7 +47,16 @@ function ProductRow({ p }: { p: ProductCalc }) {
               <tbody className="divide-y divide-[hsl(var(--tp-hairline))]">
                 {p.ingredients.map((ing, i) => (
                   <tr key={i}>
-                    <td className="py-1.5 text-[hsl(var(--tp-text))]">{ing.name}</td>
+                    <td className="py-1.5 text-[hsl(var(--tp-text))]">
+                      {ing.name}
+                      {/* Shown here but absent from the buy list below — say why, or the two
+                          tables look like they disagree. */}
+                      {ing.non_purchased && (
+                        <span className="ml-1.5 text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] border border-[hsl(var(--tp-hairline))] rounded px-1 py-0.5">
+                          not purchased
+                        </span>
+                      )}
+                    </td>
                     <td className="py-1.5 text-right text-[hsl(var(--tp-text-dim))] tabular-nums">{ing.percentage.toFixed(1)}%</td>
                     <td className="py-1.5 text-right text-[hsl(var(--tp-text))] tabular-nums font-medium">{fmt(ing.need_lbs)}</td>
                   </tr>

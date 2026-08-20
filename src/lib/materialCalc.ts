@@ -6,6 +6,13 @@ export interface IngredientCalc {
   name: string;
   percentage: number;
   need_lbs: number;
+  /**
+   * Part of the formula but never bought — water is the case this exists for. It has to stay
+   * in the formula so the percentages total 100% and the floor is told to add it, but it must
+   * not reach the buy list, the inventory reservations, or the tolling seed. Those three all
+   * read summary.ingredients, so excluding it there covers every purchasing path at once.
+   */
+  non_purchased: boolean;
 }
 
 export interface PackagingCalc {
@@ -301,6 +308,7 @@ export async function runMaterialCalc(
         name: ing.name,
         percentage: Number(ing.percentage),
         need_lbs: (Number(ing.percentage) / 100) * productionLbs,
+        non_purchased: ing.non_purchased === true,
       }));
 
     const formulaTotalPct = ingCalcs.reduce((s, i) => s + i.percentage, 0);
@@ -346,9 +354,14 @@ export async function runMaterialCalc(
 
   // ─── Aggregate ingredient summary ──────────────────────────────────────────
 
+  // The summary is the purchasing view: buy list, shortfalls, inventory reservations and the
+  // tolling seed all read it. Non-purchased rows stay in productCalcs[].ingredients (the floor
+  // still measures them, and formula_total_pct still counts them toward 100%) but are dropped
+  // here so nothing tries to source or reserve them.
   const aggMap = new Map<string, number>();
   for (const p of productCalcs) {
     for (const ing of p.ingredients) {
+      if (ing.non_purchased) continue;
       const key = ing.name.toLowerCase().trim();
       aggMap.set(key, (aggMap.get(key) ?? 0) + ing.need_lbs);
     }
@@ -357,6 +370,7 @@ export async function runMaterialCalc(
   const canonicalName = new Map<string, string>();
   for (const p of productCalcs) {
     for (const ing of p.ingredients) {
+      if (ing.non_purchased) continue;
       const key = ing.name.toLowerCase().trim();
       if (!canonicalName.has(key)) canonicalName.set(key, ing.name);
     }
