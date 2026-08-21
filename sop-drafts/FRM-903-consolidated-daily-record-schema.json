@@ -104,13 +104,17 @@
     },
     {
       "id": "sanitizer",
-      "title": "3. Sanitizer Verification",
-      "description": "Confirm and record sanitizer concentration before use (SQF 11.2.5.3).",
+      "title": "3. Detergent & Sanitizer Verification",
+      "description": "Confirm and record detergent and sanitizer concentration before use (SQF 11.2.5.3).",
       "fields": [
+        { "id": "detergent_used", "type": "text", "label": "Detergent used", "width": "third", "defaultValue": "Dazzle" },
+        { "id": "detergent_concentration", "type": "text", "label": "Detergent concentration", "width": "third", "required": true, "help": "% or oz/gal, per the manufacturer's instructions", "defaultValue": "3oz per gallon" },
+        { "id": "detergent_within_target", "type": "pass_fail", "label": "Detergent within target?", "width": "third", "required": true },
+        { "id": "detergent_test_method", "type": "text", "label": "Detergent test method", "width": "full", "help": "e.g. titration kit, test strip" },
         { "id": "sanitizer_used", "type": "text", "label": "Sanitizer used", "width": "third", "defaultValue": "Noble Sani-512" },
-        { "id": "concentration_ppm", "type": "text", "label": "Concentration (PPM)", "width": "third", "required": true },
+        { "id": "concentration_ppm", "type": "text", "label": "Concentration (PPM)", "width": "third", "required": true, "defaultValue": "200 ppm" },
         { "id": "sanitizer_verified", "type": "pass_fail", "label": "Within target?", "width": "third", "required": true },
-        { "id": "test_method", "type": "text", "label": "Test method (e.g. test strip)", "width": "half", "defaultValue": "Test strip" }
+        { "id": "test_method", "type": "text", "label": "Test method (e.g. test strip)", "width": "full", "defaultValue": "Test strip" }
       ]
     },
     {

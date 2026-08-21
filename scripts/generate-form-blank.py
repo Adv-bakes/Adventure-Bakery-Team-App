@@ -341,9 +341,16 @@ FOOT = "Adventure Bakery, LLC · Confidential · {no} · Handwritten entries are
 if __name__ == "__main__":
     # FRM-903 — one sheet per production day
     s903 = load_schema("sop-drafts/FRM-903-consolidated-daily-record-schema.json")
+    # Document-control values mirror the live sop_documents row for FRM-903, read
+    # 2026-08-21: rev v2, effective 2026-08-21, active. sqf_reference is the completed
+    # five-clause list applied by migration 20260821000001 (one clause per section).
+    # Re-check all of these against the row whenever the schema changes - a blank printed
+    # with a revision the quality system does not have is a document-control finding, not
+    # a cosmetic one.
     meta903 = {"form_no": "FRM-903", "title": "Daily Sanitation, Pre-Operation & Release Record",
-               "revision": "A", "eff": "2026-06-01", "appr": "GJM",
-               "sqf": "11.2.5.7, 11.2.5.3, 11.2.5.9, 11.7.3.4", "footer": FOOT.format(no="FRM-903")}
+               "revision": "v2", "eff": "2026-08-21", "appr": "GJM",
+               "sqf": "11.2.5.1, 11.2.5.3, 11.2.5.7, 11.2.5.9, 11.7.3.4",
+               "footer": FOOT.format(no="FRM-903")}
     b903 = blocks_from_schema(s903)
     build_pdf("sop-drafts/FRM-903-blank.pdf", meta903, b903)
     build_docx("sop-drafts/FRM-903-blank.docx", meta903, b903)
