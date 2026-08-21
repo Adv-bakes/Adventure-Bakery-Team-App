@@ -12,7 +12,8 @@ import { updateModuleContent } from "@/lib/training";
 import {
   FIELD_TYPE_LABELS, FORM_SCHEMA_VERSION, emptyValues, getFormSchema, slugifyFieldId, valueFields,
   type FormField, type FormFieldType, type FormSchema, type FormSection, type GridField,
-  type InfoField, type NumberField, type ReferenceTableField, type SelectField,
+  type InfoField, type NumberField, type PassFailField, type ReferenceTableField,
+  type SelectField,
   type SignatureField, type TextareaField,
 } from "@/lib/formSchema";
 import { FormRenderer } from "./FormRenderer";
@@ -43,6 +44,93 @@ const newField = (type: FormFieldType, taken: Set<string>): FormField => {
 };
 
 /** Live preview gets its own throwaway RHF instance, remounted per toggle. */
+// Field types emptyFieldValue() can pre-fill. Date types are deliberately absent: they
+// already carry "Default to now", and offering both would leave two competing sources for
+// one value. Signature is absent because it is stamped with the live signer identity and
+// must never be pre-answered.
+const DEFAULTABLE: ReadonlySet<FormFieldType> = new Set<FormFieldType>([
+  "text", "textarea", "number", "select", "checkbox", "pass_fail",
+]);
+
+// Radix Select rejects an empty-string item value, so "no default" needs a sentinel.
+const NO_DEFAULT = "__none";
+
+/** "Default value" editor, shaped to the field type. Writes FieldBase.defaultValue. */
+function DefaultValueInput({ field, onChange }: {
+  field: FormField;
+  onChange: (v: string | number | boolean | undefined) => void;
+}) {
+  const dv = field.defaultValue;
+
+  if (field.type === "checkbox") {
+    return (
+      <Select value={dv === true ? "true" : "false"} onValueChange={v => onChange(v === "true" || undefined)}>
+        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="false">Unchecked</SelectItem>
+          <SelectItem value="true">Checked</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  if (field.type === "select") {
+    const options = (field as SelectField).options.filter(Boolean);
+    return (
+      <Select
+        value={typeof dv === "string" && options.includes(dv) ? dv : NO_DEFAULT}
+        onValueChange={v => onChange(v === NO_DEFAULT ? undefined : v)}
+      >
+        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NO_DEFAULT}>(none)</SelectItem>
+          {options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  if (field.type === "pass_fail") {
+    const pf = field as PassFailField;
+    const options: Array<[string, string]> = [
+      ["pass", pf.labels?.pass ?? "Pass"],
+      ["fail", pf.labels?.fail ?? "Fail"],
+      ...(pf.naAllowed !== false ? [["na", pf.labels?.na ?? "N/A"] as [string, string]] : []),
+    ];
+    return (
+      <Select
+        value={typeof dv === "string" && options.some(([k]) => k === dv) ? dv : NO_DEFAULT}
+        onValueChange={v => onChange(v === NO_DEFAULT ? undefined : v)}
+      >
+        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NO_DEFAULT}>(none)</SelectItem>
+          {options.map(([k, label]) => <SelectItem key={k} value={k}>{label}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  if (field.type === "number") {
+    return (
+      <Input
+        type="number"
+        className="h-8 text-xs"
+        value={typeof dv === "number" ? dv : ""}
+        onChange={e => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+      />
+    );
+  }
+
+  return (
+    <Input
+      className="h-8 text-xs"
+      value={typeof dv === "string" ? dv : ""}
+      onChange={e => onChange(e.target.value || undefined)}
+    />
+  );
+}
+
 function SchemaPreview({ schema }: { schema: FormSchema }) {
   const form = useForm<Record<string, any>>({ defaultValues: emptyValues(schema) });
   return (
@@ -470,10 +558,28 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                     />
                   )}
                   {field.type !== "heading" && field.type !== "info" && field.type !== "reference_table" && (
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">Help text (optional)</Label>
-                      <Input className="h-8 text-xs" value={field.help ?? ""} onChange={e => patchField(sIdx, fIdx, { help: e.target.value || undefined })} />
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="flex-1 min-w-48">
+                        <Label className="text-[10px] text-muted-foreground">Help text (optional)</Label>
+                        <Input className="h-8 text-xs" value={field.help ?? ""} onChange={e => patchField(sIdx, fIdx, { help: e.target.value || undefined })} />
+                      </div>
+                      {DEFAULTABLE.has(field.type) && !(field.type === "select" && (field as SelectField).multiple) && (
+                        <div className="w-52">
+                          <Label
+                            className="text-[10px] text-muted-foreground"
+                            title="Pre-fills a NEW entry; the person filling the form can still change it. Entries already saved are untouched."
+                          >
+                            Default value (optional)
+                          </Label>
+                          <DefaultValueInput field={field} onChange={v => patchField(sIdx, fIdx, { defaultValue: v })} />
+                        </div>
+                      )}
                     </div>
+                  )}
+                  {field.type === "pass_fail" && field.defaultValue !== undefined && (
+                    <p className="text-[10px] text-amber-700">
+                      A pre-answered verification check reads to an auditor as a check nobody performed. Default this only when the value is a starting point, not a result.
+                    </p>
                   )}
                 </div>
               ))}
