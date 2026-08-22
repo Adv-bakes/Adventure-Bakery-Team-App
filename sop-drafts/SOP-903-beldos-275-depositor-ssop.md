@@ -5,9 +5,9 @@
 | **Document No.** | SOP-903 *(proposed — Sanitation block; SOP-901 mixer, SOP-902 KEK depositor)* |
 | **Title** | SSOP — Beldos 275 Depositor |
 | **Type** | sop |
-| **Revision** | Draft A |
-| **Effective Date** | *(pending approval)* |
-| **Approved By** | *(pending)* |
+| **Revision** | v2 |
+| **Effective Date** | 2026-08-22 |
+| **Approved By** | GJM |
 | **SQF Reference** | 11.2.5.1, 11.2.5.3, 11.2.5.7 |
 | **Category** | Sanitation & GMP |
 
@@ -64,10 +64,14 @@ Scrape/empty any product left in the parts before washing.
 ### 2. Wash the parts — in the sink
 
 The **product-contact parts and all the seals** are washed in the sink: **lukewarm water + soft
-detergent → rinse → sanitizing solution at label strength → drying rack** to air dry. Don't towel
-them dry; that undoes the sanitizing. Store clean, dry and protected.
+detergent → rinse → Noble Sani-512 at 1:512 → drying rack** to air dry — 1 fl oz of Sani-512
+per 4 gallons of water (0.25 oz per gallon), about **200 ppm quat**. Sani-512 is **no-rinse** at
+this dilution: don't rinse it off, and don't towel them dry; either one undoes the sanitizing.
+Store clean, dry and protected.
 
-Check the sanitizer strength with a test strip and record the reading on **FRM-911**.
+Check the sanitizer strength with a test strip **before you wash** — the target is about
+**200 ppm quat** — and record the reading on **FRM-911**. If the strip reads below target,
+remake the solution; don't wash in weak sanitizer.
 
 ### 3. The machine body (wipe only)
 
@@ -125,6 +129,8 @@ policy.
   production)
 - Beldos N.V. — *Manual for end user, Depositor 275 series*, © 2020 (disassemble and wash daily;
   remove all seals for cleaning; do not submerge the air cylinders)
+- Noble Chemical **Sani-512** (quaternary sanitizer) — food-contact use at **1:512** (1 fl oz per
+  4 gallons), about **200 ppm quat**; **no-rinse**: wet the surface at least 1 minute and let it air dry
 - FDA 21 CFR Part 117 Subpart B — Current Good Manufacturing Practice
 
 ## Revision History
@@ -132,3 +138,4 @@ policy.
 | Rev | Date | Description | Approved By |
 |-----|------|-------------|-------------|
 | Draft A | 2026-07-25 | Initial draft, written to the daily disassembly the machine requires: all product-contact parts and seals washed in the sink; air cylinders/body wiped only; seals inspected and greased with food-approved grease. Records on FRM-911. | — |
+| v2 | 2026-08-22 | Named the sanitizer: Noble Sani-512 at the food-contact dilution 1:512 (1 fl oz per 4 gal, about 200 ppm quat), no-rinse, plus the test-strip target and what to do when it reads low. Cleaning process unchanged. | GJM |
