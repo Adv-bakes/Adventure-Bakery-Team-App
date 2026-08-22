@@ -23,7 +23,7 @@
     {
       "id": "register",
       "title": "Equipment Register",
-      "description": "Every item of equipment on site, with the documents that govern it and its maintenance frequency (SQF 11.2.1.2).",
+      "description": "Every item of equipment on site, with the documents that govern it and its maintenance frequency (SQF 11.2.1.2). PM frequency = preventive maintenance: how often the item is scheduled for planned maintenance.",
       "fields": [
         {
           "id": "register_date",
