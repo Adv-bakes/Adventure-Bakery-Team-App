@@ -5,9 +5,9 @@
 | **Document No.** | SOP-902 *(proposed — Sanitation block; SOP-901 is the mixer)* |
 | **Title** | SSOP — Rhodes Kook-E-King Cookie Depositor |
 | **Type** | sop |
-| **Revision** | Draft A |
-| **Effective Date** | *(pending approval)* |
-| **Approved By** | *(pending)* |
+| **Revision** | v2 |
+| **Effective Date** | 2026-08-22 |
+| **Approved By** | GJM |
 | **SQF Reference** | 11.2.5.1, 11.2.5.3, 11.2.5.7 |
 | **Category** | Sanitation & GMP |
 
@@ -74,10 +74,14 @@ support fingers stay on** — leave them in place and wipe them clean (section 4
 ### 3. Wash the removable parts — in the sink
 
 The **hopper, feed rollers, die and scrapers** are washed in the sink: **detergent → rinse →
-sanitizing solution at label strength → drying rack** to air dry. Don't towel them dry; that undoes
-the sanitizing. Store them clean, dry and protected.
+Noble Sani-512 at 1:512 → drying rack** to air dry — 1 fl oz of Sani-512 per 4 gallons of
+water (0.25 oz per gallon), about **200 ppm quat**. Sani-512 is **no-rinse** at this dilution:
+don't rinse it off, and don't towel them dry; either one undoes the sanitizing. Store them
+clean, dry and protected.
 
-Check the sanitizer strength with a test strip and record the reading on **FRM-910**.
+Check the sanitizer strength with a test strip **before you wash** — the target is about
+**200 ppm quat** — and record the reading on **FRM-910**. If the strip reads below target,
+remake the solution; don't wash in weak sanitizer.
 
 ### 4. The cut-off wire and fingers — wipe in place + foreign-matter check
 
@@ -132,6 +136,8 @@ policy.
   production)
 - Practical Baker — *Rhodes Kook-E-King® Super Automatic Instruction Manual*, V.3B Jan 2013
   (clean the head/cabinet with a damp cloth; no excessive water; nothing on electrical components)
+- Noble Chemical **Sani-512** (quaternary sanitizer) — food-contact use at **1:512** (1 fl oz per
+  4 gallons), about **200 ppm quat**; **no-rinse**: wet the surface at least 1 minute and let it air dry
 - FDA 21 CFR Part 117 Subpart B — Current Good Manufacturing Practice
 
 ## Revision History
@@ -139,3 +145,4 @@ policy.
 | Rev | Date | Description | Approved By |
 |-----|------|-------------|-------------|
 | Draft A | 2026-07-24 | Initial draft, written to the process actually performed on the floor: hopper, rollers, die and scrapers washed in the sink (detergent/rinse/sanitizer at label strength, air-dry); cut-off wire and fingers wiped in place (not removed); cabinet/head/belts wiped; food-safe oil on the bushings. Records on FRM-910. | — |
+| v2 | 2026-08-22 | Named the sanitizer: Noble Sani-512 at the food-contact dilution 1:512 (1 fl oz per 4 gal, about 200 ppm quat), no-rinse, plus the test-strip target and what to do when it reads low. Cleaning process unchanged. | GJM |

@@ -5,9 +5,9 @@
 | **Document No.** | SOP-901 *(proposed — verify against register)* |
 | **Title** | SSOP — Hobart V-1401 Planetary Mixer |
 | **Type** | sop |
-| **Revision** | Draft B |
-| **Effective Date** | *(pending approval)* |
-| **Approved By** | *(pending)* |
+| **Revision** | v2 |
+| **Effective Date** | 2026-08-22 |
+| **Approved By** | GJM |
 | **SQF Reference** | 11.2.5.1, 11.2.5.3, 11.2.5.7 |
 | **Category** | Sanitation & GMP |
 
@@ -78,10 +78,14 @@ Washed in the sink:
 
 1. **Detergent** wash.
 2. **Rinse.**
-3. **Sanitizing solution** at label strength.
-4. Onto the **drying rack** — let them air dry. Don't towel them off; that undoes the sanitizing.
+3. **Noble Sani-512** at the food-contact dilution of **1:512** — 1 fl oz per 4 gallons of
+   water (0.25 oz per gallon), about **200 ppm quat** on a test strip.
+4. Onto the **drying rack** — let them air dry. Sani-512 is **no-rinse** at this dilution:
+   don't rinse it off, and don't towel them off; either one undoes the sanitizing.
 
-Check the sanitizer strength with a test strip and write the reading on **FRM-909**.
+Check the sanitizer strength with a test strip **before you wash** — the target is about
+**200 ppm quat** — and write the reading on **FRM-909**. If the strip reads below target,
+remake the solution; don't wash in weak sanitizer.
 
 ### 4. Changing between products with different allergens
 
@@ -121,6 +125,8 @@ policy.
   **11.2.5.3** (sanitizer concentration verified and recorded), **11.2.5.7** (check before production)
 - Hobart Corporation **Form 13966A** Rev. 6-82 — *Instruction Manual, Model V-1401 Series Mixers*
   (clean daily; no hose; damp cloth only)
+- Noble Chemical **Sani-512** (quaternary sanitizer) — food-contact use at **1:512** (1 fl oz per
+  4 gallons), about **200 ppm quat**; **no-rinse**: wet the surface at least 1 minute and let it air dry
 - FDA 21 CFR Part 117 Subpart B — Current Good Manufacturing Practice
 
 ## Revision History
@@ -131,3 +137,4 @@ policy.
 | Draft B | 2026-07-23 | Rewritten to match the process actually performed on the floor; cut to one page. | — |
 | Draft C | 2026-07-23 | Records folded into the existing FRM-901/902/903 rather than a mixer-specific form; allergen changeover cross-referred to SOP-204. | — |
 | Draft D | 2026-07-24 | Records moved back to FRM-909: FRM-901/902 are Word attachments (not fillable) and FRM-903 is a glass check, so none could receive the mixer's records. FRM-909 adopted as the fillable log. | — |
+| v2 | 2026-08-22 | Named the sanitizer: Noble Sani-512 at the food-contact dilution 1:512 (1 fl oz per 4 gal, about 200 ppm quat), no-rinse, plus the test-strip target and what to do when it reads low. Cleaning process unchanged. | GJM |
