@@ -398,15 +398,16 @@ if __name__ == "__main__":
     # FRM-004 — equipment register. LANDSCAPE: ten columns (leading label + nine) do not fit
     # portrait; each would land at about half an inch, too narrow to read or write in.
     #
-    # The live row is status='draft' with no effective_date and no approved_by (read 2026-08-22),
-    # so the blank says so on its face rather than printing a blank date box that reads as an
-    # oversight. Re-stamp these here from the row when the activation migration runs - a blank
-    # circulating as if approved when it is not is the document-control failure this avoids.
+    # Activated and stamped by migration 20260825000002 after the owner confirmed the seeded
+    # Food contact values: active, effective 2026-08-25, approved GJM. Revision stays 'New' -
+    # the house pattern for a first issue. The draft wording that used to sit here is gone
+    # because the document is no longer a draft; re-check these against the row whenever the
+    # schema changes.
     s004 = load_schema("sop-drafts/FRM-004-equipment-register-schema.json")
     meta004 = {"form_no": "FRM-004", "title": "Equipment Register",
-               "revision": "New", "eff": "Draft — not yet effective", "appr": "—",
+               "revision": "New", "eff": "2026-08-25", "appr": "GJM",
                "sqf": "11.2.1.2",
-               "footer": FOOT.format(no="FRM-004") + " · DRAFT — not approved for use"}
+               "footer": FOOT.format(no="FRM-004")}
     b004 = blocks_from_schema(s004)
     build_pdf("sop-drafts/FRM-004-blank.pdf", meta004, b004, landscape_page=True)
     build_docx("sop-drafts/FRM-004-blank.docx", meta004, b004, landscape_page=True)
