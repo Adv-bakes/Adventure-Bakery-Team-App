@@ -77,8 +77,10 @@ def grid_layout(field):
 
 
 # ================================ PDF ================================
-def build_pdf(out, meta, blocks):
-    from reportlab.lib.pagesizes import letter
+def build_pdf(out, meta, blocks, landscape_page=False):
+    """landscape_page: for wide register grids (FRM-004 has ten columns; portrait squeezes
+    each to about half an inch, which is unreadable and unwritable)."""
+    from reportlab.lib.pagesizes import letter, landscape
     from reportlab.lib.units import inch
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
@@ -102,9 +104,11 @@ def build_pdf(out, meta, blocks):
 
     def P(t, s=cell): return Paragraph(str(t).replace("&", "&amp;"), s)
 
-    doc = SimpleDocTemplate(out, pagesize=letter, leftMargin=0.6 * inch, rightMargin=0.6 * inch,
+    page = landscape(letter) if landscape_page else letter
+    doc = SimpleDocTemplate(out, pagesize=page, leftMargin=0.6 * inch, rightMargin=0.6 * inch,
                             topMargin=0.5 * inch, bottomMargin=0.6 * inch, title=f"{meta['form_no']} {meta['title']}")
-    W = letter[0] - 1.2 * inch; E = []
+    # Everything downstream sizes off W as a fraction, so the page swap is the only change needed.
+    W = page[0] - 1.2 * inch; E = []
     iw, ih = ImageReader(LOGO).getSize()
     E.append(Image(LOGO, width=1.9 * inch, height=1.9 * inch * ih / iw)); E.append(Spacer(1, 6))
 
@@ -181,10 +185,23 @@ def build_pdf(out, meta, blocks):
         elif k == "grid":
             header, body, weights, fixed = grid_layout(b["field"])
             tot = sum(weights); cw = [W * w / tot for w in weights]
-            data = [[P(h, cellb) for h in header]] + [[P(c, cell) for c in r] for r in body]
+            # Wide grids: reportlab's default 6pt side padding costs 12pt of every column, and at
+            # 8.5pt a one-weight column cannot hold "Sanitation" - reportlab then splits the word
+            # itself ("Sanitatio / n SOP"). Tighten the padding and the type instead of distorting
+            # the schema's column weights, which have to serve the screen too.
+            wide = len(header) >= 8
+            hstyle = ParagraphStyle("cellbw", parent=cellb, fontSize=7.5, leading=9) if wide else cellb
+            cstyle = ParagraphStyle("cellw", parent=cell, fontSize=7.5, leading=9) if wide else cell
+            data = [[P(h, hstyle) for h in header]] + [[P(c, cstyle) for c in r] for r in body]
             t = Table(data, colWidths=cw, repeatRows=1)
             gs = [("GRID", (0, 0), (-1, -1), 0.5, colors.black), ("BACKGROUND", (0, 0), (-1, 0), CREAM),
                   ("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("TOPPADDING", (0, 1), (-1, -1), 9), ("BOTTOMPADDING", (0, 1), (-1, -1), 9)]
+            if wide:
+                # Row padding also comes down: a wide register's rows arrive pre-filled, so only
+                # the couple of genuinely blank cells need writing room, and 9pt of padding per row
+                # was pushing the closing note onto a page of its own.
+                gs += [("LEFTPADDING", (0, 0), (-1, -1), 2), ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+                       ("TOPPADDING", (0, 1), (-1, -1), 6), ("BOTTOMPADDING", (0, 1), (-1, -1), 6)]
             if fixed:
                 for i in range(1, len(data)):
                     gs.append(("BACKGROUND", (0, i), (0, i), CREAM2))
@@ -203,19 +220,25 @@ def build_pdf(out, meta, blocks):
 
 
 # ================================ DOCX ================================
-def build_docx(out, meta, blocks):
+def build_docx(out, meta, blocks, landscape_page=False):
+    """landscape_page: see build_pdf. python-docx does not swap the page dimensions when the
+    orientation changes, so they are swapped by hand."""
     from docx import Document
     from docx.shared import Pt, RGBColor, Inches
     from docx.enum.text import WD_ALIGN_PARAGRAPH as AL
     from docx.enum.table import WD_ALIGN_VERTICAL as VA
+    from docx.enum.section import WD_ORIENT
     from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
 
     GOLD = RGBColor(0xC8, 0x9B, 0x3C); GREY = RGBColor(0x55, 0x55, 0x55)
     d = Document(); s0 = d.sections[0]
+    if landscape_page:
+        s0.orientation = WD_ORIENT.LANDSCAPE
+        s0.page_width, s0.page_height = s0.page_height, s0.page_width
     s0.top_margin = Inches(0.5); s0.bottom_margin = Inches(0.6); s0.left_margin = Inches(0.6); s0.right_margin = Inches(0.6)
     d.styles["Normal"].font.name = "Calibri"; d.styles["Normal"].font.size = Pt(9)
-    PAGEW = 7.3  # inches usable
+    PAGEW = s0.page_width.inches - 1.2  # inches usable (7.3 portrait, 9.8 landscape)
 
     def shade(c, hexc):
         tcPr = c._tc.get_or_add_tcPr(); sh = OxmlElement("w:shd")
@@ -232,9 +255,12 @@ def build_docx(out, meta, blocks):
         return p
 
     def widths(tbl, ws):
+        # Call sites pass absolute inches that add up to the portrait usable width; normalising
+        # by the total makes them relative, so landscape scales them and portrait is unchanged.
+        scale = PAGEW / sum(ws)
         for row in tbl.rows:
             for i, c in enumerate(row.cells):
-                c.width = Inches(ws[i]); c.vertical_alignment = VA.CENTER
+                c.width = Inches(ws[i] * scale); c.vertical_alignment = VA.CENTER
 
     def checkbox_run(p, size=11):
         r = p.add_run(BOX); r.font.name = "Segoe UI Symbol"; r.font.size = Pt(size); return r
@@ -311,12 +337,13 @@ def build_docx(out, meta, blocks):
         elif k == "grid":
             header, body, weights, fixed = grid_layout(b["field"]); tot = sum(weights)
             ws = [PAGEW * w / tot for w in weights]
+            gfs = 7.5 if len(header) >= 8 else 8.5  # match the PDF's wide-grid type size
             t = d.add_table(rows=1 + len(body), cols=len(header)); t.style = "Table Grid"; widths(t, ws)
             for i, h in enumerate(header):
-                para(t.rows[0].cells[i], h, bold=True, size=8.5); shade(t.rows[0].cells[i], CREAM_HEX)
+                para(t.rows[0].cells[i], h, bold=True, size=gfs); shade(t.rows[0].cells[i], CREAM_HEX)
             for ri, row in enumerate(body, 1):
                 for i, val in enumerate(row):
-                    cc = t.rows[ri].cells[i]; para(cc, val, size=8.5)
+                    cc = t.rows[ri].cells[i]; para(cc, val, size=gfs)
                     if fixed and i == 0: shade(cc, CREAM2_HEX)
                     cc.add_paragraph()
             d.add_paragraph()
@@ -366,3 +393,19 @@ if __name__ == "__main__":
     b901 = blocks_from_schema(s901, completion_as_log=completion_log)
     build_pdf("sop-drafts/FRM-901-blank.pdf", meta901, b901)
     build_docx("sop-drafts/FRM-901-blank.docx", meta901, b901)
+
+    # FRM-004 — equipment register. LANDSCAPE: ten columns (leading label + nine) do not fit
+    # portrait; each would land at about half an inch, too narrow to read or write in.
+    #
+    # The live row is status='draft' with no effective_date and no approved_by (read 2026-08-22),
+    # so the blank says so on its face rather than printing a blank date box that reads as an
+    # oversight. Re-stamp these here from the row when the activation migration runs - a blank
+    # circulating as if approved when it is not is the document-control failure this avoids.
+    s004 = load_schema("sop-drafts/FRM-004-equipment-register-schema.json")
+    meta004 = {"form_no": "FRM-004", "title": "Equipment Register",
+               "revision": "New", "eff": "Draft — not yet effective", "appr": "—",
+               "sqf": "11.2.1.2",
+               "footer": FOOT.format(no="FRM-004") + " · DRAFT — not approved for use"}
+    b004 = blocks_from_schema(s004)
+    build_pdf("sop-drafts/FRM-004-blank.pdf", meta004, b004, landscape_page=True)
+    build_docx("sop-drafts/FRM-004-blank.docx", meta004, b004, landscape_page=True)
