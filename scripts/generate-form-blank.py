@@ -178,7 +178,12 @@ def build_pdf(out, meta, blocks, landscape_page=False):
             E.append(Spacer(1, 4))
         elif k == "reftable":
             data = [[P(c, cellb) for c in b["columns"]]] + [[P(c, cell) for c in r] for r in b["rows"]]
-            n = len(b["columns"]); t = Table(data, colWidths=[W / n] * n, repeatRows=1)
+            n = len(b["columns"])
+            # Optional relative weights. A matrix has one wide label column and many narrow tick
+            # columns; equal widths would squeeze the label to nothing and waste the rest.
+            ws = b.get("weights") or [1] * n
+            tot = sum(ws)
+            t = Table(data, colWidths=[W * w / tot for w in ws], repeatRows=1)
             gs = [("GRID", (0, 0), (-1, -1), 0.5, colors.black), ("BACKGROUND", (0, 0), (-1, 0), CREAM),
                   ("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 1), (-1, -1), 4), ("BOTTOMPADDING", (0, 1), (-1, -1), 4)]
             t.setStyle(TableStyle(gs)); E.append(t); E.append(Spacer(1, 6))
@@ -327,7 +332,10 @@ def build_docx(out, meta, blocks, landscape_page=False):
             d.add_paragraph()
         elif k == "reftable":
             cols = b["columns"]; rows = b["rows"]; n = len(cols)
-            t = d.add_table(rows=1 + len(rows), cols=n); t.style = "Table Grid"; widths(t, [PAGEW / n] * n)
+            ws = b.get("weights") or [1] * n
+            tot = sum(ws)
+            t = d.add_table(rows=1 + len(rows), cols=n); t.style = "Table Grid"
+            widths(t, [PAGEW * w / tot for w in ws])
             for i, c in enumerate(cols):
                 para(t.rows[0].cells[i], c, bold=True); shade(t.rows[0].cells[i], CREAM_HEX)
             for ri, row in enumerate(rows, 1):
