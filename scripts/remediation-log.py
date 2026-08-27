@@ -155,6 +155,95 @@ def shared_strings(parts):
     return [re.sub(r"<[^>]+>", "", si) for si in re.findall(r"<si>(.*?)</si>", xml, re.S)]
 
 
+STYLES = "xl/styles.xml"
+GREEN_RGB = "FF81D41A"   # the fill already on completed rows in this workbook, matched exactly
+
+
+def _cell_xfs(styles):
+    m = re.search(r'(<cellXfs count=")(\d+)(">)(.*?)(</cellXfs>)', styles, re.S)
+    if not m:
+        raise SystemExit("no <cellXfs> in %s" % STYLES)
+    return m, re.findall(r"<xf .*?(?:/>|</xf>)", m.group(4), re.S)
+
+
+def green_fill_id(styles):
+    """Index of the green solid fill, appended only if this workbook has none."""
+    fills = re.findall(r"<fill>.*?</fill>", styles, re.S)
+    for i, f in enumerate(fills):
+        if GREEN_RGB in f:
+            return styles, i
+    add = ('<fill><patternFill patternType="solid"><fgColor rgb="%s"/>'
+           '<bgColor rgb="FF70AD47"/></patternFill></fill>' % GREEN_RGB)
+    m = re.search(r'(<fills count=")(\d+)(">)(.*?)(</fills>)', styles, re.S)
+    styles = (styles[:m.start()] + m.group(1) + str(int(m.group(2)) + 1) + m.group(3)
+              + m.group(4) + add + m.group(5) + styles[m.end():])
+    return styles, len(fills)
+
+
+def green_twin(styles, style_id, fill):
+    """The cellXfs id that is `style_id` plus the green fill.
+
+    A cell's style is font+fill+border+alignment together, so "make it green" means swapping in
+    the sibling entry that differs only in fillId - not editing the style in place, which would
+    repaint every other cell using it. This workbook already carries both twins it needs (67 is
+    green 20, 68 is green 3); one is minted only when a base style has none, so repeat runs do
+    not grow styles.xml.
+    """
+    m, xfs = _cell_xfs(styles)
+    if style_id is None or style_id >= len(xfs):
+        style_id = 0
+    base = xfs[style_id]
+    if re.search(r'fillId="%d"' % fill, base):
+        return styles, style_id, False                      # already green
+    want = re.sub(r'fillId="\d+"', 'fillId="%d"' % fill, base)
+    want = (re.sub(r'applyFill="[^"]*"', 'applyFill="true"', want) if "applyFill=" in want
+            else want.replace("<xf ", '<xf applyFill="true" ', 1))
+    norm = lambda s: re.sub(r"\s+", " ", re.sub(r'applyFill="[^"]*"\s*', "", s)).strip()
+    for i, e in enumerate(xfs):
+        if norm(e) == norm(want):
+            return styles, i, False
+    styles = (styles[:m.start()] + m.group(1) + str(len(xfs) + 1) + m.group(3)
+              + m.group(4) + want + m.group(5) + styles[m.end():])
+    return styles, len(xfs), True
+
+
+def green_completed_rows(sheet, styles, strings):
+    """Fill every row whose Status reads Completed with the workbook's green.
+
+    ADDITIVE ONLY - a row is never un-greened. Green does not mean exactly "Completed" in this
+    file: row 97 is an N/A the owner greened by hand. Clearing fills to match the status column
+    would silently destroy a distinction someone deliberately made, and a spreadsheet script
+    should never be the thing that erases a human's mark.
+
+    Rows are rewritten back-to-front so that each match's offsets stay valid as earlier ones are
+    edited.
+    """
+    styles, fill = green_fill_id(styles)
+    touched, minted = [], 0
+    for rm in reversed(list(re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S))):
+        n, inner = int(rm.group(1)), rm.group(2)
+        if n <= HEADER_ROW or cell_text(inner, STATUS_COL, n, strings).strip() != "Completed":
+            continue
+        new_inner, changed = inner, False
+        for cm in re.finditer(r'<c r="([A-Z]+)%d"([^>]*)>' % n, inner):
+            col, attrs = cm.groups()
+            s = re.search(r's="(\d+)"', attrs)
+            cur = int(s.group(1)) if s else None
+            styles, twin, made = green_twin(styles, cur, fill)
+            minted += made
+            if twin != cur:
+                old = cm.group(0)
+                new = (re.sub(r's="\d+"', 's="%d"' % twin, old, count=1) if s
+                       else old.replace('<c r="%s%d"' % (col, n),
+                                        '<c r="%s%d" s="%d"' % (col, n, twin), 1))
+                new_inner = new_inner.replace(old, new, 1)
+                changed = True
+        if changed:
+            sheet = sheet[:rm.start()] + rm.group(0).replace(inner, new_inner, 1) + sheet[rm.end():]
+            touched.append(n)
+    return sheet, styles, sorted(touched), minted
+
+
 TASK_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
 INTERNAL_BANNER = ("Internally identified — gaps found during the work, not raised in the "
                    "consultant's gap assessment")
@@ -305,7 +394,11 @@ def main():
     if a.status:
         pairs.append((STATUS_COL, a.status))
     sheet = put_cells(sheet, row, pairs)
+
+    styles_xml = parts[STYLES].decode("utf-8")
+    sheet, styles_xml, greened, minted = green_completed_rows(sheet, styles_xml, strings)
     parts[SHEET] = sheet.encode("utf-8")
+    parts[STYLES] = styles_xml.encode("utf-8")
 
     if not a.no_backup:
         bak = "%s.%s.bak" % (a.workbook, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -320,6 +413,10 @@ def main():
 
     if added:
         print("added columns %s (%s) and %s (%s)" % (SUMMARY_COL, SUMMARY_HEAD, DOCS_COL, DOCS_HEAD))
+    if greened:
+        print("green fill applied to Completed row%s %s%s"
+              % ("" if len(greened) == 1 else "s", ", ".join(str(r) for r in greened),
+                 " (minted %d style%s)" % (minted, "" if minted == 1 else "s") if minted else ""))
     print("task %s -> row %d  (%d words%s)"
           % (a.task, row, n, ", status=" + a.status if a.status else ""))
 
