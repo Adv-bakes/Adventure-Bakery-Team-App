@@ -52,10 +52,42 @@ def cell_style(sheet, row, col):
     return c.group(1) if c else None
 
 
-def ensure_columns(sheet):
+def cell_text(inner, col, row_n, strings):
+    """Resolved text of one cell, whether it is stored inline or as a shared string."""
+    c = re.search(r'<c r="%s%d"([^>]*)>(.*?)</c>' % (col, row_n), inner, re.S)
+    if not c:
+        return ""
+    attrs, body = c.groups()
+    if 't="s"' in attrs:
+        v = re.search(r"<v>(\d+)</v>", body)
+        return strings[int(v.group(1))] if v and int(v.group(1)) < len(strings) else ""
+    t = re.search(r"<t[^>]*>(.*?)</t>", body, re.S)
+    return t.group(1) if t else ""
+
+
+def sheet_has_text(sheet, needle, strings):
+    """Is `needle` in any cell of this sheet?
+
+    A literal `needle in sheet` will NOT do, and getting this wrong is silent: LibreOffice
+    rewrites inline strings into the shared string table when it saves, so text this script
+    wrote as <is><t>...</t></is> comes back as <v>417</v> and the substring vanishes from
+    sheet4.xml. Both idempotency guards below used a raw substring search and both quietly
+    returned "not present" after the workbook had been opened and saved once - which appended
+    a second set of M/N <col> entries and a duplicate "Internally identified" banner
+    (2026-08-27). Resolve the string table instead.
+    """
+    for rm in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
+        n, inner = int(rm.group(1)), rm.group(2)
+        for cm in re.finditer(r'<c r="([A-Z]+)%d"' % n, inner):
+            if needle in cell_text(inner, cm.group(1), n, strings):
+                return True
+    return False
+
+
+def ensure_columns(sheet, strings):
     """Add the two headers, the <col> widths, widen the merged banner rows and the sheet
     dimension. Idempotent - re-running finds the headers already there and does nothing."""
-    if SUMMARY_HEAD in sheet:
+    if sheet_has_text(sheet, SUMMARY_HEAD, strings):
         return sheet, False
 
     # 1. <col> entries. The sheet uses LibreOffice's verbose form; match it so the file
@@ -162,9 +194,8 @@ def append_row(sheet, values, style, height, merged=False):
 
 def ensure_internal_group(sheet, strings):
     """The banner row that marks these as internally found. Added once."""
-    for rm in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
-        if INTERNAL_BANNER[:40] in rm.group(2):
-            return sheet, False
+    if sheet_has_text(sheet, INTERNAL_BANNER[:40], strings):
+        return sheet, False
     # style of an existing group banner, taken from a row the header row is not
     style = cell_style(sheet, HEADER_ROW, "A")
     for rm in re.finditer(r'<row r="(\d+)"[^>]*>', sheet):
@@ -194,17 +225,7 @@ def find_task_row(sheet, task, strings):
     """Locate the row whose column B holds the task number (e.g. 30.7)."""
     for rm in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
         n, inner = int(rm.group(1)), rm.group(2)
-        c = re.search(r'<c r="B%d"([^>]*)>(.*?)</c>' % n, inner, re.S)
-        if not c:
-            continue
-        attrs, body = c.groups()
-        if 't="s"' in attrs:
-            v = re.search(r"<v>(\d+)</v>", body)
-            text = strings[int(v.group(1))] if v and int(v.group(1)) < len(strings) else ""
-        else:
-            t = re.search(r"<t[^>]*>(.*?)</t>", body, re.S)
-            text = t.group(1) if t else ""
-        if text.strip() == task:
+        if cell_text(inner, "B", n, strings).strip() == task:
             return n
     return None
 
@@ -257,9 +278,9 @@ def main():
     zin.close()
 
     sheet = parts[SHEET].decode("utf-8")
-    sheet, added = ensure_columns(sheet)
-
     strings = shared_strings(parts)
+    sheet, added = ensure_columns(sheet, strings)
+
     row = find_task_row(sheet, a.task, strings)
 
     if a.new_task:
