@@ -15,8 +15,8 @@ import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, ScanLine, Sa
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  answerManifest, buildZodSchema, emptyValues, instanceTitle, mergeScanAnswers, valueFields,
-  type FormSchema, type LabelFact, type LabelScanResult,
+  answerManifest, buildZodSchema, emptyValues, getFormSchema, instanceTitle, mergeScanAnswers,
+  valueFields, type FormSchema, type LabelFact, type LabelScanResult,
 } from "@/lib/formSchema";
 import {
   StaleResponseError, deleteResponse, extractFormAnswers, extractPackageLabel, fetchProfileNames,
@@ -127,8 +127,16 @@ export default function FormEntry() {
   const isMine = !!signer && response?.created_by === signer.userId;
   const canEdit = !isSubmitted && (isMine || isAdmin);
   const readOnly = !canEdit;
-  const deletable = schema?.settings?.deletable !== false;
-  const attachmentsEnabled = schema?.settings?.attachmentsEnabled !== false;
+  // Field STRUCTURE is pinned to the revision the entry was filled under, so an old entry renders
+  // as it was filled — that is what `resolved.schema` is for. POLICY is not: `deletable` and
+  // `attachmentsEnabled` are decisions about what may be done to records *now*, so they are read
+  // off the live document. Reading them from a frozen snapshot meant a form that was ever
+  // non-deletable left permanently undeletable entries behind: the entry resolves the old
+  // snapshot, so turning `deletable` on in the live schema could never reach it. (Hit on FRM-903,
+  // 2026-08-27 — an entry pinned to v4 stayed undeletable after the setting was changed.)
+  const liveSettings = getFormSchema(doc?.content)?.settings;
+  const deletable = liveSettings?.deletable !== false;
+  const attachmentsEnabled = liveSettings?.attachmentsEnabled !== false;
 
   // Answers whose field ids no longer exist in the resolved schema — shown, never dropped.
   const unmapped = useMemo(() => {

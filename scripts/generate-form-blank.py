@@ -376,7 +376,7 @@ if __name__ == "__main__":
     # with a revision the quality system does not have is a document-control finding, not
     # a cosmetic one.
     meta903 = {"form_no": "FRM-903", "title": "Daily Sanitation, Pre-Operation & Release Record",
-               "revision": "v3", "eff": "2026-08-25", "appr": "GJM",
+               "revision": "v5", "eff": "2026-08-27", "appr": "GJM",
                "sqf": "11.2.5.1, 11.2.5.3, 11.2.5.7, 11.2.5.9, 11.7.3.4",
                "footer": FOOT.format(no="FRM-903")}
     b903 = blocks_from_schema(s903)

@@ -25,14 +25,18 @@
           "type": "select",
           "label": "Shift",
           "width": "third",
-          "options": ["1st Shift", "2nd Shift", "3rd Shift"],
+          "options": [
+            "1st Shift",
+            "2nd Shift",
+            "3rd Shift"
+          ],
           "showInList": true
         },
         {
           "id": "product_run",
+          "help": "What was produced today (leave blank if no production)",
           "type": "text",
           "label": "Product / batch run",
-          "help": "What was produced today (leave blank if no production)",
           "width": "half"
         }
       ]
@@ -40,17 +44,11 @@
     {
       "id": "preop_surfaces",
       "title": "1. Pre-Operation Cleanliness Check",
-      "description": "Before production starts, following cleaning and sanitation, confirm each surface/equipment is visibly clean and sanitized (SQF 11.2.5.7). Mark Pass (clean/sanitized) or Fail; note any corrective action taken before start-up. Add or remove items as the line changes.",
       "fields": [
         {
           "id": "surface_check",
-          "type": "grid",
-          "label": "Surface & equipment check",
           "rows": {
             "mode": "fixed",
-            "deletable": true,
-            "labelHeader": "Item / Surface",
-            "addLabel": "Add item",
             "labels": [
               "Tables",
               "Mixers",
@@ -62,105 +60,225 @@
               "Scales",
               "Depositors",
               "Chopper",
-              "Floors"
-            ]
+              "Floors",
+              "Handwash stations (clean, stocked, draining)",
+              "Restrooms / sanitary facilities",
+              "Break room / lockers (staff amenities)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Item / Surface"
           },
+          "type": "grid",
+          "label": "Surface & equipment check",
           "columns": [
-            { "id": "visibly_clean", "type": "pass_fail", "label": "Visibly clean", "width": 1, "required": true },
-            { "id": "sanitized", "type": "pass_fail", "label": "Sanitized", "width": 1, "required": true },
-            { "id": "corrective", "type": "text", "label": "Corrective action / comments", "width": 3 }
+            {
+              "id": "visibly_clean",
+              "type": "pass_fail",
+              "label": "Visibly clean",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "sanitized",
+              "type": "pass_fail",
+              "label": "Sanitized",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "corrective",
+              "type": "text",
+              "label": "Corrective action / comments",
+              "width": 3
+            }
           ]
         }
-      ]
+      ],
+      "description": "Before production starts, following cleaning and sanitation, confirm each item is visibly clean and sanitized (SQF 11.2.5.7). The clause covers the processing areas and product contact surfaces AND the staff amenities and sanitary facilities, so all of them are listed here. Mark Pass, Fail, or N/A — N/A is the right answer for \"Sanitized\" on an area that is cleaned but not sanitized, such as a locker room. Note any corrective action taken before start-up. Add or remove items as the line changes."
     },
     {
       "id": "equipment_ssop",
       "title": "2. Production Equipment — Cleaned & Sanitized per SSOP",
-      "description": "For each machine used in today's production, confirm it was verified clean and sanitized per its SSOP and recorded on its own cleaning log, or mark \"Not used today\". Add or remove equipment as the line changes.",
       "fields": [
         {
           "id": "equipment_status",
-          "type": "grid",
-          "label": "Equipment",
           "rows": {
             "mode": "fixed",
-            "deletable": true,
-            "labelHeader": "Equipment",
-            "addLabel": "Add equipment",
             "labels": [
               "Hobart V-1401 Mixer — SOP-901 / FRM-909",
               "Kook-E-King Depositor — SOP-902 / FRM-910",
               "Beldos 275 Depositor — SOP-903 / FRM-911",
               "Smipack S560NA Shrink Wrapper — SOP-601",
-              "Groen TDB Kettle — SOP-904 / FRM-912"
-            ]
+              "Groen TDB Kettle — SOP-904 / FRM-912",
+              "Molds — SOP-906 (recorded here)"
+            ],
+            "addLabel": "Add equipment",
+            "deletable": true,
+            "labelHeader": "Equipment"
           },
+          "type": "grid",
+          "label": "Equipment",
           "columns": [
-            { "id": "status", "type": "select", "label": "Status", "width": 2, "options": ["Clean & sanitized", "Not used today"], "required": true },
-            { "id": "notes", "type": "text", "label": "Notes", "width": 3 }
+            {
+              "id": "status",
+              "type": "select",
+              "label": "Status",
+              "width": 2,
+              "options": [
+                "Clean & sanitized",
+                "Between-use care (scrape, wipe, re-grease)",
+                "Not used today"
+              ],
+              "required": true
+            },
+            {
+              "id": "notes",
+              "type": "text",
+              "label": "Notes",
+              "width": 3
+            }
           ]
         }
-      ]
+      ],
+      "description": "For each machine used in today's production, confirm it was verified clean and sanitized per its SSOP and recorded on its own cleaning log, or mark \"Not used today\". Items without a separate log — the molds — are recorded here. Molds are scraped, wiped and re-greased between uses and washed weekly under SOP-906, so record which of those happened. Add or remove equipment as the line changes."
     },
     {
       "id": "sanitizer",
       "title": "3. Detergent & Sanitizer Verification",
-      "description": "Confirm and record detergent and sanitizer concentration before use (SQF 11.2.5.3). Site chemicals: Dawn Professional detergent at 1-2 oz per 10 gallons of water; Noble Sani-512 sanitizer at the food-contact dilution of 1:512 (1 fl oz per 4 gallons, about 200 ppm quat).",
       "fields": [
-        { "id": "detergent_used", "type": "text", "label": "Detergent used", "width": "third", "defaultValue": "Dawn Professional" },
-        { "id": "detergent_concentration", "type": "text", "label": "Detergent concentration", "width": "third", "required": true, "help": "Per the manufacturer's instructions - Dawn Professional is 1-2 oz per 10 gallons of water", "defaultValue": "1-2 oz per 10 gallons" },
-        { "id": "detergent_within_target", "type": "pass_fail", "label": "Detergent within target?", "width": "third", "required": true },
-        { "id": "detergent_test_method", "type": "text", "label": "Detergent test method", "width": "full", "help": "How the dose was measured - pump strokes, measuring cup or proportioner. The Dawn Professional pump delivers 1 oz per full stroke.", "defaultValue": "Measured dose per sink fill" },
-        { "id": "sanitizer_used", "type": "text", "label": "Sanitizer used", "width": "third", "defaultValue": "Noble Sani-512" },
-        { "id": "concentration_ppm", "type": "text", "label": "Concentration (PPM)", "width": "third", "required": true, "defaultValue": "200 ppm" },
-        { "id": "sanitizer_verified", "type": "pass_fail", "label": "Within target?", "width": "third", "required": true },
-        { "id": "test_method", "type": "text", "label": "Test method (e.g. test strip)", "width": "full", "defaultValue": "Test strip" }
-      ]
+        {
+          "id": "detergent_used",
+          "type": "text",
+          "label": "Detergent used",
+          "width": "third",
+          "defaultValue": "Dawn Professional"
+        },
+        {
+          "id": "detergent_concentration",
+          "help": "Per the manufacturer's instructions - Dawn Professional is 1-2 oz per 10 gallons of water",
+          "type": "text",
+          "label": "Detergent concentration",
+          "width": "third",
+          "required": true,
+          "defaultValue": "1-2 oz per 10 gallons"
+        },
+        {
+          "id": "detergent_within_target",
+          "type": "pass_fail",
+          "label": "Detergent within target?",
+          "width": "third",
+          "required": true
+        },
+        {
+          "id": "detergent_test_method",
+          "help": "How the dose was measured - pump strokes, measuring cup or proportioner. The Dawn Professional pump delivers 1 oz per full stroke.",
+          "type": "text",
+          "label": "Detergent test method",
+          "width": "full",
+          "defaultValue": "Measured dose per sink fill"
+        },
+        {
+          "id": "sanitizer_used",
+          "type": "text",
+          "label": "Sanitizer used",
+          "width": "third",
+          "defaultValue": "Noble Sani-512"
+        },
+        {
+          "id": "concentration_ppm",
+          "type": "text",
+          "label": "Concentration (PPM)",
+          "width": "third",
+          "required": true,
+          "defaultValue": "200 ppm"
+        },
+        {
+          "id": "sanitizer_verified",
+          "type": "pass_fail",
+          "label": "Within target?",
+          "width": "third",
+          "required": true
+        },
+        {
+          "id": "test_method",
+          "type": "text",
+          "label": "Test method (e.g. test strip)",
+          "width": "full",
+          "defaultValue": "Test strip"
+        }
+      ],
+      "description": "Confirm and record detergent and sanitizer concentration before use (SQF 11.2.5.3). Site chemicals: Dawn Professional detergent at 1-2 oz per 10 gallons of water; Noble Sani-512 sanitizer at the food-contact dilution of 1:512 (1 fl oz per 4 gallons, about 200 ppm quat)."
     },
     {
       "id": "glass",
       "title": "4. Glass & Brittle Plastic Check",
-      "description": "At the start of the shift, confirm glass instrument dial covers and MIG thermometers are undamaged (SQF 11.7.3.4). Mark Pass (undamaged), Fail (damaged/broken), or N/A. Any Fail requires a Glass Breakage Incident Report (FRM-908) and follows SOP-11.7.3. Items are drawn from the Glass & Brittle Plastic Register (FRM-907).",
       "fields": [
         {
           "id": "glass_check",
-          "type": "grid",
-          "label": "Glass dial covers & MIG thermometers",
           "rows": {
             "mode": "fixed",
+            "labels": [
+              "Processing Room",
+              "Processing Room",
+              "Processing Room"
+            ],
+            "addLabel": "Add item",
             "deletable": true,
             "labelHeader": "Location",
-            "addLabel": "Add item",
-            "labels": ["Processing Room", "Processing Room", "Processing Room"],
             "defaultValues": [
-              { "item": "Pan scrubber dials" },
-              { "item": "Oven controls and door glass" },
-              { "item": "MIG thermometers" }
+              {
+                "item": "Pan scrubber dials"
+              },
+              {
+                "item": "Oven controls and door glass"
+              },
+              {
+                "item": "MIG thermometers"
+              }
             ]
           },
+          "type": "grid",
+          "label": "Glass dial covers & MIG thermometers",
           "columns": [
-            { "id": "item", "type": "text", "label": "Item", "width": 2 },
-            { "id": "undamaged", "type": "pass_fail", "label": "Undamaged", "width": 1, "required": true },
-            { "id": "comments", "type": "text", "label": "Condition / comments", "width": 2 },
-            { "id": "action", "type": "text", "label": "Action taken", "width": 2 }
+            {
+              "id": "item",
+              "type": "text",
+              "label": "Item",
+              "width": 2
+            },
+            {
+              "id": "undamaged",
+              "type": "pass_fail",
+              "label": "Undamaged",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "comments",
+              "type": "text",
+              "label": "Condition / comments",
+              "width": 2
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Action taken",
+              "width": 2
+            }
           ]
         }
-      ]
+      ],
+      "description": "At the start of the shift, confirm glass instrument dial covers and MIG thermometers are undamaged (SQF 11.7.3.4). Mark Pass (undamaged), Fail (damaged/broken), or N/A. Any Fail requires a Glass Breakage Incident Report (FRM-908) and follows SOP-11.7.3. Items are drawn from the Glass & Brittle Plastic Register (FRM-907)."
     },
     {
       "id": "operational_gmp",
       "title": "5. Operational GMP Check",
-      "description": "During production, confirm operational GMPs are being followed. Mark Pass, Fail, or N/A; note corrective action for any Fail (absorbs the former FRM-904 Daily Operation Check).",
       "fields": [
         {
           "id": "gmp_check",
-          "type": "grid",
-          "label": "Operational GMP check",
           "rows": {
             "mode": "fixed",
-            "deletable": true,
-            "labelHeader": "Check",
-            "addLabel": "Add check",
             "labels": [
               "Hair/beard nets worn; no exposed jewelry",
               "Clean outer garments; no eating/drinking/gum in production",
@@ -171,25 +289,47 @@
               "No condensation or drip over exposed product",
               "Pest control devices in place and intact",
               "Doors/screens to outside kept closed"
-            ]
+            ],
+            "addLabel": "Add check",
+            "deletable": true,
+            "labelHeader": "Check"
           },
+          "type": "grid",
+          "label": "Operational GMP check",
           "columns": [
-            { "id": "result", "type": "pass_fail", "label": "Conforms", "width": 1, "required": true },
-            { "id": "comments", "type": "text", "label": "Corrective action / comments", "width": 3 }
+            {
+              "id": "result",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "comments",
+              "type": "text",
+              "label": "Corrective action / comments",
+              "width": 3
+            }
           ]
         }
-      ]
+      ],
+      "description": "During production, confirm operational GMPs are being followed. Mark Pass, Fail, or N/A; note corrective action for any Fail (absorbs the former FRM-904 Daily Operation Check)."
     },
     {
       "id": "release",
       "title": "6. Corrective Actions & Release",
-      "description": "Production shall not begin until all non-conformances are corrected and the area is verified clean (SOP-11.2.12). A record of pre-operational hygiene inspection is maintained for a minimum of 12 months (SQF 11.2.5.9).",
       "fields": [
-        { "id": "all_corrected", "type": "pass_fail", "label": "All corrective actions completed before start-up", "width": "half", "required": true },
+        {
+          "id": "all_corrected",
+          "type": "pass_fail",
+          "label": "All corrective actions completed before start-up",
+          "width": "half",
+          "required": true
+        },
         {
           "id": "released_by",
-          "type": "signature",
           "role": "filler",
+          "type": "signature",
           "label": "QA Technician (qualified inspector)",
           "width": "half",
           "required": true,
@@ -197,17 +337,17 @@
         },
         {
           "id": "supervisor",
-          "type": "signature",
           "role": "verifier",
+          "type": "signature",
           "label": "Production Supervisor",
           "width": "half",
           "statement": "I confirm the pre-operation inspection was completed and the area is released for production."
         }
-      ]
+      ],
+      "description": "Production shall not begin until all non-conformances are corrected and the area is verified clean (SOP-11.2.12). A record of pre-operational hygiene inspection is maintained for a minimum of 12 months (SQF 11.2.5.9)."
     }
   ],
   "settings": {
-    "deletable": false,
     "attachmentsEnabled": true,
     "allowMultipleDrafts": true,
     "requireVerification": false,
