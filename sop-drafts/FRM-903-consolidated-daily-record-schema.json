@@ -348,7 +348,6 @@
     }
   ],
   "settings": {
-    "deletable": false,
     "attachmentsEnabled": true,
     "allowMultipleDrafts": true,
     "requireVerification": false,
