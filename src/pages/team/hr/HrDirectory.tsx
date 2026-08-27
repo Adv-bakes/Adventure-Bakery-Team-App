@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { UserSquare2, Search, ChevronRight, UserPlus, Copy, Check, Clock, Ban, MailCheck, MailX } from "lucide-react";
+import { UserSquare2, Search, ChevronRight, UserPlus, Copy, Check, Clock, Ban, MailCheck, MailX, AlertTriangle } from "lucide-react";
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
 import { DEPARTMENTS } from "@/lib/training";
 
@@ -21,6 +21,15 @@ const ROLE_LABEL: Record<string, string> = {
   owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor", user: "Client",
 };
 const NO_DEPT = "__none__";
+
+// Roles that receive training assignments — the same three sync_module_training and
+// sync_employee_training gate on. Training is granted by department
+// (required_departments IS NULL OR profiles.department = ANY(required_departments)), so one of
+// these people WITHOUT a department silently receives only the all-staff modules and then reads
+// as fully trained. Auditors and users get no training, so a department is not expected of them.
+const TRAINED_ROLES: AppRole[] = ["owner", "admin", "staff"];
+const needsDepartment = (m: Member) =>
+  m.roles.some((r) => TRAINED_ROLES.includes(r)) && !m.department.trim();
 
 interface Member {
   id: string;
@@ -216,6 +225,11 @@ export default function HrDirectory() {
   // canEdit depends on the async role fetch, so (re)load invites once it resolves.
   useEffect(() => { if (canEdit) loadInvites(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [canEdit]);
 
+  // Surfaced as a banner: the invite RPC now refuses a training-bearing role without a
+  // department, but roles can also be granted straight from the member detail page, which
+  // bypasses it. This catches that path (and anything predating the guard).
+  const missingDept = members.filter(needsDepartment);
+
   const filtered = members.filter((m) => {
     if (!q.trim()) return true;
     const hay = `${m.full_name} ${m.email} ${m.employee_id} ${m.department} ${m.job_title}`.toLowerCase();
@@ -234,6 +248,7 @@ export default function HrDirectory() {
             Everyone with a team role. {canEdit ? "Open a member to set their roles and department." : "View-only."}
           </p>
         </div>
+
 
         {canEdit && (
           <Dialog open={inviteOpen} onOpenChange={(o) => { setInviteOpen(o); if (!o) resetInvite(); }}>
@@ -335,6 +350,26 @@ export default function HrDirectory() {
         )}
       </div>
 
+      {!loading && missingDept.length > 0 && (
+        <div
+          className="mb-4 rounded-md border px-4 py-3 flex gap-3 items-start"
+          style={{ borderColor: "#C89B3C", background: "rgba(200,155,60,0.12)" }}
+        >
+          <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" style={{ color: "#C89B3C" }} />
+          <div className="text-sm" style={{ color: "#F5F1E6" }}>
+            <div className="font-semibold">
+              {missingDept.length} team member{missingDept.length === 1 ? " has" : "s have"} no department
+            </div>
+            <p className="mt-1" style={{ color: "rgba(245,241,230,0.75)" }}>
+              Training is assigned by department, so {missingDept.length === 1 ? "this person receives" : "these people receive"}{" "}
+              only the all-staff modules — none of the job-specific ones — and will still show as fully
+              trained. {canEdit ? "Open each one and set a department." : "Ask an admin to set a department."}
+            </p>
+            <p className="mt-1 font-medium">{missingDept.map((m) => m.full_name).join(", ")}</p>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-3">
@@ -374,7 +409,16 @@ export default function HrDirectory() {
                             : m.job_title || m.employee_id || "—"}
                         </div>
                       </TableCell>
-                      <TableCell>{m.department || "—"}</TableCell>
+                      <TableCell>
+                        {m.department || (
+                          needsDepartment(m) ? (
+                            <span className="inline-flex items-center gap-1 font-medium"
+                                  style={{ color: "#C89B3C" }}>
+                              <AlertTriangle className="h-3.5 w-3.5" />Not set
+                            </span>
+                          ) : "—"
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {m.roles.map((r) => (
