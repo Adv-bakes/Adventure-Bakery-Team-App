@@ -123,7 +123,9 @@ Cheapest fix in this document: three rows on an existing grid.
 - It names **"FRM001 — Training Sign-In Sheet."** FRM-001 is the **Management Review Record**. The
   sign-in sheet is **FRM-953**. An active controlled document points at the wrong record.
 - It names a **"Training Matrix"** with no number in Records and Responsibility. FRM-951 *is* the
-  Training Matrix — a 265-character empty shell.
+  Training Matrix — active, with PDF and DOCX attached. It is a paper form rather than a fillable
+  one, which is why its stored content is short; it simply was never cited by number. FRM-952
+  Training Competency Verification Record is also active and is not referenced at all.
 - **2.9.2.1 lists eight competency areas** (HACCP, CCP monitoring, hygiene, GMPs, sampling,
   environmental monitoring, allergen/defense/fraud, and SQF-critical tasks). **None appears in
   SOP-2.9.** The consultant wrote *"meets this requirement at a high level overall"* — and scored it
