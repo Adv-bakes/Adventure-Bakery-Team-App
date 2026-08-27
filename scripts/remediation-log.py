@@ -52,10 +52,42 @@ def cell_style(sheet, row, col):
     return c.group(1) if c else None
 
 
-def ensure_columns(sheet):
+def cell_text(inner, col, row_n, strings):
+    """Resolved text of one cell, whether it is stored inline or as a shared string."""
+    c = re.search(r'<c r="%s%d"([^>]*)>(.*?)</c>' % (col, row_n), inner, re.S)
+    if not c:
+        return ""
+    attrs, body = c.groups()
+    if 't="s"' in attrs:
+        v = re.search(r"<v>(\d+)</v>", body)
+        return strings[int(v.group(1))] if v and int(v.group(1)) < len(strings) else ""
+    t = re.search(r"<t[^>]*>(.*?)</t>", body, re.S)
+    return t.group(1) if t else ""
+
+
+def sheet_has_text(sheet, needle, strings):
+    """Is `needle` in any cell of this sheet?
+
+    A literal `needle in sheet` will NOT do, and getting this wrong is silent: LibreOffice
+    rewrites inline strings into the shared string table when it saves, so text this script
+    wrote as <is><t>...</t></is> comes back as <v>417</v> and the substring vanishes from
+    sheet4.xml. Both idempotency guards below used a raw substring search and both quietly
+    returned "not present" after the workbook had been opened and saved once - which appended
+    a second set of M/N <col> entries and a duplicate "Internally identified" banner
+    (2026-08-27). Resolve the string table instead.
+    """
+    for rm in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
+        n, inner = int(rm.group(1)), rm.group(2)
+        for cm in re.finditer(r'<c r="([A-Z]+)%d"' % n, inner):
+            if needle in cell_text(inner, cm.group(1), n, strings):
+                return True
+    return False
+
+
+def ensure_columns(sheet, strings):
     """Add the two headers, the <col> widths, widen the merged banner rows and the sheet
     dimension. Idempotent - re-running finds the headers already there and does nothing."""
-    if SUMMARY_HEAD in sheet:
+    if sheet_has_text(sheet, SUMMARY_HEAD, strings):
         return sheet, False
 
     # 1. <col> entries. The sheet uses LibreOffice's verbose form; match it so the file
@@ -123,6 +155,95 @@ def shared_strings(parts):
     return [re.sub(r"<[^>]+>", "", si) for si in re.findall(r"<si>(.*?)</si>", xml, re.S)]
 
 
+STYLES = "xl/styles.xml"
+GREEN_RGB = "FF81D41A"   # the fill already on completed rows in this workbook, matched exactly
+
+
+def _cell_xfs(styles):
+    m = re.search(r'(<cellXfs count=")(\d+)(">)(.*?)(</cellXfs>)', styles, re.S)
+    if not m:
+        raise SystemExit("no <cellXfs> in %s" % STYLES)
+    return m, re.findall(r"<xf .*?(?:/>|</xf>)", m.group(4), re.S)
+
+
+def green_fill_id(styles):
+    """Index of the green solid fill, appended only if this workbook has none."""
+    fills = re.findall(r"<fill>.*?</fill>", styles, re.S)
+    for i, f in enumerate(fills):
+        if GREEN_RGB in f:
+            return styles, i
+    add = ('<fill><patternFill patternType="solid"><fgColor rgb="%s"/>'
+           '<bgColor rgb="FF70AD47"/></patternFill></fill>' % GREEN_RGB)
+    m = re.search(r'(<fills count=")(\d+)(">)(.*?)(</fills>)', styles, re.S)
+    styles = (styles[:m.start()] + m.group(1) + str(int(m.group(2)) + 1) + m.group(3)
+              + m.group(4) + add + m.group(5) + styles[m.end():])
+    return styles, len(fills)
+
+
+def green_twin(styles, style_id, fill):
+    """The cellXfs id that is `style_id` plus the green fill.
+
+    A cell's style is font+fill+border+alignment together, so "make it green" means swapping in
+    the sibling entry that differs only in fillId - not editing the style in place, which would
+    repaint every other cell using it. This workbook already carries both twins it needs (67 is
+    green 20, 68 is green 3); one is minted only when a base style has none, so repeat runs do
+    not grow styles.xml.
+    """
+    m, xfs = _cell_xfs(styles)
+    if style_id is None or style_id >= len(xfs):
+        style_id = 0
+    base = xfs[style_id]
+    if re.search(r'fillId="%d"' % fill, base):
+        return styles, style_id, False                      # already green
+    want = re.sub(r'fillId="\d+"', 'fillId="%d"' % fill, base)
+    want = (re.sub(r'applyFill="[^"]*"', 'applyFill="true"', want) if "applyFill=" in want
+            else want.replace("<xf ", '<xf applyFill="true" ', 1))
+    norm = lambda s: re.sub(r"\s+", " ", re.sub(r'applyFill="[^"]*"\s*', "", s)).strip()
+    for i, e in enumerate(xfs):
+        if norm(e) == norm(want):
+            return styles, i, False
+    styles = (styles[:m.start()] + m.group(1) + str(len(xfs) + 1) + m.group(3)
+              + m.group(4) + want + m.group(5) + styles[m.end():])
+    return styles, len(xfs), True
+
+
+def green_completed_rows(sheet, styles, strings):
+    """Fill every row whose Status reads Completed with the workbook's green.
+
+    ADDITIVE ONLY - a row is never un-greened. Green does not mean exactly "Completed" in this
+    file: row 97 is an N/A the owner greened by hand. Clearing fills to match the status column
+    would silently destroy a distinction someone deliberately made, and a spreadsheet script
+    should never be the thing that erases a human's mark.
+
+    Rows are rewritten back-to-front so that each match's offsets stay valid as earlier ones are
+    edited.
+    """
+    styles, fill = green_fill_id(styles)
+    touched, minted = [], 0
+    for rm in reversed(list(re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S))):
+        n, inner = int(rm.group(1)), rm.group(2)
+        if n <= HEADER_ROW or cell_text(inner, STATUS_COL, n, strings).strip() != "Completed":
+            continue
+        new_inner, changed = inner, False
+        for cm in re.finditer(r'<c r="([A-Z]+)%d"([^>]*)>' % n, inner):
+            col, attrs = cm.groups()
+            s = re.search(r's="(\d+)"', attrs)
+            cur = int(s.group(1)) if s else None
+            styles, twin, made = green_twin(styles, cur, fill)
+            minted += made
+            if twin != cur:
+                old = cm.group(0)
+                new = (re.sub(r's="\d+"', 's="%d"' % twin, old, count=1) if s
+                       else old.replace('<c r="%s%d"' % (col, n),
+                                        '<c r="%s%d" s="%d"' % (col, n, twin), 1))
+                new_inner = new_inner.replace(old, new, 1)
+                changed = True
+        if changed:
+            sheet = sheet[:rm.start()] + rm.group(0).replace(inner, new_inner, 1) + sheet[rm.end():]
+            touched.append(n)
+    return sheet, styles, sorted(touched), minted
+
+
 TASK_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
 INTERNAL_BANNER = ("Internally identified — gaps found during the work, not raised in the "
                    "consultant's gap assessment")
@@ -162,9 +283,8 @@ def append_row(sheet, values, style, height, merged=False):
 
 def ensure_internal_group(sheet, strings):
     """The banner row that marks these as internally found. Added once."""
-    for rm in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
-        if INTERNAL_BANNER[:40] in rm.group(2):
-            return sheet, False
+    if sheet_has_text(sheet, INTERNAL_BANNER[:40], strings):
+        return sheet, False
     # style of an existing group banner, taken from a row the header row is not
     style = cell_style(sheet, HEADER_ROW, "A")
     for rm in re.finditer(r'<row r="(\d+)"[^>]*>', sheet):
@@ -194,17 +314,7 @@ def find_task_row(sheet, task, strings):
     """Locate the row whose column B holds the task number (e.g. 30.7)."""
     for rm in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
         n, inner = int(rm.group(1)), rm.group(2)
-        c = re.search(r'<c r="B%d"([^>]*)>(.*?)</c>' % n, inner, re.S)
-        if not c:
-            continue
-        attrs, body = c.groups()
-        if 't="s"' in attrs:
-            v = re.search(r"<v>(\d+)</v>", body)
-            text = strings[int(v.group(1))] if v and int(v.group(1)) < len(strings) else ""
-        else:
-            t = re.search(r"<t[^>]*>(.*?)</t>", body, re.S)
-            text = t.group(1) if t else ""
-        if text.strip() == task:
+        if cell_text(inner, "B", n, strings).strip() == task:
             return n
     return None
 
@@ -257,9 +367,9 @@ def main():
     zin.close()
 
     sheet = parts[SHEET].decode("utf-8")
-    sheet, added = ensure_columns(sheet)
-
     strings = shared_strings(parts)
+    sheet, added = ensure_columns(sheet, strings)
+
     row = find_task_row(sheet, a.task, strings)
 
     if a.new_task:
@@ -284,7 +394,11 @@ def main():
     if a.status:
         pairs.append((STATUS_COL, a.status))
     sheet = put_cells(sheet, row, pairs)
+
+    styles_xml = parts[STYLES].decode("utf-8")
+    sheet, styles_xml, greened, minted = green_completed_rows(sheet, styles_xml, strings)
     parts[SHEET] = sheet.encode("utf-8")
+    parts[STYLES] = styles_xml.encode("utf-8")
 
     if not a.no_backup:
         bak = "%s.%s.bak" % (a.workbook, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -299,6 +413,10 @@ def main():
 
     if added:
         print("added columns %s (%s) and %s (%s)" % (SUMMARY_COL, SUMMARY_HEAD, DOCS_COL, DOCS_HEAD))
+    if greened:
+        print("green fill applied to Completed row%s %s%s"
+              % ("" if len(greened) == 1 else "s", ", ".join(str(r) for r in greened),
+                 " (minted %d style%s)" % (minted, "" if minted == 1 else "s") if minted else ""))
     print("task %s -> row %d  (%d words%s)"
           % (a.task, row, n, ", status=" + a.status if a.status else ""))
 
