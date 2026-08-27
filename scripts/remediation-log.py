@@ -123,6 +123,73 @@ def shared_strings(parts):
     return [re.sub(r"<[^>]+>", "", si) for si in re.findall(r"<si>(.*?)</si>", xml, re.S)]
 
 
+TASK_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
+INTERNAL_BANNER = ("Internally identified — gaps found during the work, not raised in the "
+                   "consultant's gap assessment")
+
+
+def last_row(sheet):
+    return max(int(m) for m in re.findall(r'<row r="(\d+)"', sheet))
+
+
+def append_row(sheet, values, style, height, merged=False):
+    """Append a new row at the bottom of the sheet.
+
+    Appending rather than inserting is deliberate. Inserting mid-sheet means renumbering every
+    <row> and every <c r=..> below the insertion point AND rewriting every mergeCell that spans
+    them - a lot of moving parts for no benefit, since these rows are new work that did not come
+    from the consultant's list and reads better in its own section anyway.
+    """
+    n = last_row(sheet) + 1
+    cells = "".join(
+        '<c r="%s%d"%s t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>'
+        % (col, n, ' s="%s"' % style if style else "", esc(val))
+        for col, val in values if val != "")
+    row = ('<row r="%d" customFormat="false" ht="%g" hidden="false" customHeight="true" '
+           'outlineLevel="0" collapsed="false">%s</row>' % (n, height, cells))
+    sheet = sheet.replace("</sheetData>", row + "</sheetData>", 1)
+
+    if merged:
+        last_col = values[-1][0]
+        sheet = sheet.replace("</mergeCells>", '<mergeCell ref="A%d:%s%d"/></mergeCells>'
+                              % (n, last_col, n), 1)
+        sheet = re.sub(r'(<mergeCells count=")(\d+)(")',
+                       lambda m: m.group(1) + str(int(m.group(2)) + 1) + m.group(3), sheet, count=1)
+
+    sheet = re.sub(r'(<dimension ref="A1:[A-Z]+)\d+("/>)', r"\g<1>%d\g<2>" % n, sheet)
+    return sheet, n
+
+
+def ensure_internal_group(sheet, strings):
+    """The banner row that marks these as internally found. Added once."""
+    for rm in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
+        if INTERNAL_BANNER[:40] in rm.group(2):
+            return sheet, False
+    # style of an existing group banner, taken from a row the header row is not
+    style = cell_style(sheet, HEADER_ROW, "A")
+    for rm in re.finditer(r'<row r="(\d+)"[^>]*>', sheet):
+        n = int(rm.group(1))
+        s = cell_style(sheet, n, "A")
+        if s and n > HEADER_ROW and re.search(r'<mergeCell ref="A%d:[A-Z]+%d"/>' % (n, n), sheet):
+            style = s
+            break
+    sheet, _ = append_row(sheet, [(c, "") for c in TASK_COLS[:-1]]
+                          + [(DOCS_COL, INTERNAL_BANNER)], style, 30, merged=False)
+    # rewrite that row so the banner text sits in A and the row is merged across
+    n = last_row(sheet)
+    sheet = re.sub(r'<row r="%d".*?</row>' % n,
+                   '<row r="%d" customFormat="false" ht="30" hidden="false" customHeight="true" '
+                   'outlineLevel="0" collapsed="false">'
+                   '<c r="A%d"%s t="inlineStr"><is><t xml:space="preserve">%s</t></is></c></row>'
+                   % (n, n, ' s="%s"' % style if style else "", esc(INTERNAL_BANNER)), sheet,
+                   flags=re.S)
+    sheet = sheet.replace("</mergeCells>", '<mergeCell ref="A%d:%s%d"/></mergeCells>'
+                          % (n, DOCS_COL, n), 1)
+    sheet = re.sub(r'(<mergeCells count=")(\d+)(")',
+                   lambda m: m.group(1) + str(int(m.group(2)) + 1) + m.group(3), sheet, count=1)
+    return sheet, True
+
+
 def find_task_row(sheet, task, strings):
     """Locate the row whose column B holds the task number (e.g. 30.7)."""
     for rm in re.finditer(r'<row r="(\d+)"[^>]*>(.*?)</row>', sheet, re.S):
@@ -151,7 +218,28 @@ def main():
     ap.add_argument("--docs", required=True, help="documents affected, e.g. 'FRM-903 (Rev v2)'")
     ap.add_argument("--status", help="also set the Status column, e.g. Completed")
     ap.add_argument("--no-backup", action="store_true")
+    # --- new-task mode: append a task the consultant's list never had ---
+    ap.add_argument("--new-task", action="store_true",
+                    help="append a NEW task row instead of updating an existing one. Lands under "
+                         "an 'Internally identified' banner at the bottom of the sheet, so a task "
+                         "found during the work is never mistaken for one the assessment raised.")
+    ap.add_argument("--name", help="new-task: the task name (column C)")
+    ap.add_argument("--artifact", help="new-task: what it produces (column D)")
+    ap.add_argument("--clauses", help="new-task: clauses served (column E)")
+    ap.add_argument("--days", help="new-task: estimate (column F)")
+    ap.add_argument("--owner", help="new-task: owner (column G)")
+    ap.add_argument("--depends", default="", help="new-task: depends on (column H)")
+    ap.add_argument("--app-fit", dest="app_fit", default="",
+                    help="new-task: App today / Needs build / Off-app (column I)")
+    ap.add_argument("--capability", default="", help="new-task: capability or feature (column J)")
+    ap.add_argument("--notes", default="", help="new-task: notes and risk (column K)")
     a = ap.parse_args()
+
+    if a.new_task:
+        missing = [f for f in ("name", "artifact", "clauses", "days", "owner")
+                   if not getattr(a, f)]
+        if missing:
+            raise SystemExit("--new-task also needs: %s" % ", ".join("--" + m for m in missing))
 
     n = words(a.summary)
     if n > WORD_CAP:
@@ -171,9 +259,26 @@ def main():
     sheet = parts[SHEET].decode("utf-8")
     sheet, added = ensure_columns(sheet)
 
-    row = find_task_row(sheet, a.task, shared_strings(parts))
-    if row is None:
-        raise SystemExit("task %r not found in column B of the Task Detail sheet." % a.task)
+    strings = shared_strings(parts)
+    row = find_task_row(sheet, a.task, strings)
+
+    if a.new_task:
+        if row is not None:
+            raise SystemExit("task %r already exists at row %d - drop --new-task to update it."
+                             % (a.task, row))
+        sheet, banner_added = ensure_internal_group(sheet, strings)
+        body_style = cell_style(sheet, HEADER_ROW + 3, "K") or cell_style(sheet, HEADER_ROW + 3, "A")
+        vals = [("A", ""), ("B", a.task), ("C", a.name), ("D", a.artifact), ("E", a.clauses),
+                ("F", a.days), ("G", a.owner), ("H", a.depends), ("I", a.app_fit),
+                ("J", a.capability), ("K", a.notes), ("L", a.status or "Not started")]
+        # tall enough for the widest wrapped cell among the pre-M columns
+        h = max(30, max((-(-len(v) // 44) for _, v in vals if v), default=1) * 13.5 + 6)
+        sheet, row = append_row(sheet, vals, body_style, h)
+        if banner_added:
+            print("added the 'Internally identified' section")
+    elif row is None:
+        raise SystemExit("task %r not found in column B of the Task Detail sheet. Use --new-task "
+                         "to append it." % a.task)
 
     pairs = [(SUMMARY_COL, a.summary), (DOCS_COL, a.docs)]
     if a.status:
