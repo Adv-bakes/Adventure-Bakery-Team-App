@@ -1,6 +1,10 @@
 """Generate FRM-951 Training Matrix as a printable PDF + DOCX, from the live database.
 
-    python scripts/generate-training-matrix.py [--out-dir sop-drafts]
+    python scripts/generate-training-matrix.py
+    python scripts/generate-training-matrix.py --revision v2 --effective 2026-09-01
+
+Pass --revision (and --approved-by) when reissuing: they default to "New"/"GJM", so regenerating
+without them resets a revision that was stamped by hand.
 
 Two tables:
 
@@ -92,6 +96,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out-dir", default="sop-drafts")
     ap.add_argument("--effective", help="effective date on the printed form (default: today)")
+    # Without this the revision is hardcoded and every regeneration silently resets whatever was
+    # stamped by hand - the same drift that put FRM-903's printed blank two revisions behind the
+    # app. Pass the revision you are issuing under and the sheet keeps it.
+    ap.add_argument("--revision", default="New",
+                    help="revision shown on the printed form (default: New)")
+    ap.add_argument("--approved-by", dest="approved_by", default="GJM",
+                    help="approver shown on the printed form (default: GJM)")
     a = ap.parse_args()
 
     eff = a.effective or datetime.date.today().isoformat()
@@ -156,8 +167,8 @@ def main():
             "and regenerate, or the paper and the app will disagree." % eff},
     ]
 
-    meta = {"form_no": "FRM-951", "title": "Training Matrix", "revision": "New", "eff": eff,
-            "appr": "GJM", "sqf": "2.9.1.1, 2.9.1.2, 2.9.2.1, 2.9.2.2, 2.9.2.3",
+    meta = {"form_no": "FRM-951", "title": "Training Matrix", "revision": a.revision, "eff": eff,
+            "appr": a.approved_by, "sqf": "2.9.1.1, 2.9.1.2, 2.9.2.1, 2.9.2.2, 2.9.2.3",
             "footer": fb.FOOT.format(no="FRM-951")}
 
     out_dir = a.out_dir if os.path.isabs(a.out_dir) else os.path.join(ROOT, a.out_dir)
@@ -165,7 +176,8 @@ def main():
     docx = os.path.join(out_dir, "FRM-951-training-matrix.docx")
     fb.build_pdf(pdf, meta, blocks, landscape_page=True)
     fb.build_docx(docx, meta, blocks, landscape_page=True)
-    print("modules: %d   people: %d   effective: %s" % (len(modules), len(people), eff))
+    print("modules: %d   people: %d   rev %s   effective: %s   approved by %s"
+          % (len(modules), len(people), a.revision, eff, a.approved_by))
 
 
 if __name__ == "__main__":
