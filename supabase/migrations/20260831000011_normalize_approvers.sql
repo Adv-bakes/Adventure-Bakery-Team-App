@@ -45,6 +45,7 @@ begin
      set approved_by = 'GJM'
    where sop_number in ('TRN-004A', 'TRN-012')
      and status = 'active'
+     and title not like '%(ES)%'
      and approved_by in ('TR-12', 'Gabriela Juncos Mercer');
 
   get diagnostics n_fixed = row_count;
@@ -58,11 +59,23 @@ begin
            || ', expected a rise of exactly 2'
      where after_gjm <> before_gjm + 2
     union all
+    -- Scoped to the ENGLISH rows, because that is what the UPDATE targets. TRN-012 has a
+    -- Spanish sibling sharing its sop_number, with a null approver that 20260831000010
+    -- deliberately left alone: an ES row is a content variant of its English sibling, not a
+    -- separately approved document. The first version of this check omitted that filter, matched
+    -- the ES row and aborted the migration -- an assertion wider than the statement it guards.
     select 'TRN-004A approver is ' || coalesce(approved_by, 'null') from public.sop_documents
-     where sop_number = 'TRN-004A' and status = 'active' and approved_by is distinct from 'GJM'
+     where sop_number = 'TRN-004A' and status = 'active' and title not like '%(ES)%'
+       and approved_by is distinct from 'GJM'
     union all
     select 'TRN-012 approver is ' || coalesce(approved_by, 'null') from public.sop_documents
-     where sop_number = 'TRN-012' and status = 'active' and approved_by is distinct from 'GJM'
+     where sop_number = 'TRN-012' and status = 'active' and title not like '%(ES)%'
+       and approved_by is distinct from 'GJM'
+    union all
+    -- and the Spanish variants must still be unapproved, which is the state that broke the
+    -- first attempt and is correct
+    select 'a Spanish variant gained an approver: ' || title from public.sop_documents
+     where title like '%(ES)%' and approved_by is not null
     union all
     -- no approver value may remain that fails to name a person
     select 'a non-person approver value survives: ' || approved_by from public.sop_documents
