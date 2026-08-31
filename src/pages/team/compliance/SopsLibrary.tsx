@@ -57,7 +57,7 @@ type SopDocument = {
   id: string;
   sop_number: string | null;
   title: string;
-  type: "sop" | "form" | "policy" | "training" | "fsqm" | "report";
+  type: "sop" | "form" | "policy" | "training" | "fsqm" | "report" | "internal";
   category: string | null;
   revision: string | null;
   effective_date: string | null;
@@ -91,7 +91,9 @@ const statusColors: Record<string, string> = {
 };
 
 // "report" is a generated view (FRM-951 Training Matrix), not a blank anybody fills.
-const TYPES = ["sop", "form", "policy", "training", "fsqm", "report"] as const;
+// "internal" is engineering documentation kept here for convenience -- in force, but not a
+// controlled food-safety document, so the Document Register excludes it.
+const TYPES = ["sop", "form", "policy", "training", "fsqm", "report", "internal"] as const;
 const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM" };
 
 // SQF Code section names (top-level integer prefix of the reference code)

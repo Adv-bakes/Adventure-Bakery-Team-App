@@ -14,7 +14,7 @@ type RegisterDoc = {
   id: string;
   sop_number: string | null;
   title: string;
-  type: "sop" | "form" | "policy" | "training" | "fsqm" | "report";
+  type: "sop" | "form" | "policy" | "training" | "fsqm" | "report" | "internal";
   revision: string | null;
   effective_date: string | null;
   sqf_reference: string | null;
@@ -45,7 +45,7 @@ export default function DocumentRegister() {
       const { data, error } = await (supabase as any)
         .from("sop_documents")
         .select("id, sop_number, title, type, revision, effective_date, sqf_reference, status")
-        .neq("type", "training")
+        .not("type", "in", "(training,internal)")
         .order("sop_number", { ascending: true });
       if (error) toast.error(error.message);
       setDocs((data ?? []) as RegisterDoc[]);
