@@ -14,14 +14,19 @@ type RegisterDoc = {
   id: string;
   sop_number: string | null;
   title: string;
-  type: "sop" | "form" | "policy" | "training" | "fsqm" | "report";
+  type: "sop" | "form" | "policy" | "training" | "fsqm" | "report" | "internal";
   revision: string | null;
   effective_date: string | null;
   sqf_reference: string | null;
   status: "draft" | "active" | "archived";
 };
 
-const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM" };
+// Every sop_documents.type needs an entry: the list badge and the type dropdowns read
+// straight out of this map, so a missing key renders an empty pill and a blank option.
+const TYPE_LABELS: Record<string, string> = {
+  sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM",
+  report: "Report", internal: "Internal Doc",
+};
 
 const statusColors: Record<string, string> = {
   draft: "bg-[#C89B3C]/20 text-[#9A6F1E] border-[#C89B3C]/40",
@@ -45,7 +50,7 @@ export default function DocumentRegister() {
       const { data, error } = await (supabase as any)
         .from("sop_documents")
         .select("id, sop_number, title, type, revision, effective_date, sqf_reference, status")
-        .neq("type", "training")
+        .not("type", "in", "(training,internal)")
         .order("sop_number", { ascending: true });
       if (error) toast.error(error.message);
       setDocs((data ?? []) as RegisterDoc[]);

@@ -324,7 +324,9 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   (`in`/`equals`/`notEquals`/`notEmpty`/`empty`/`anyNotEmpty` — e.g. `supplier_status in [Approved, …]`, or
   FRM-603 Label Change Control Log's `anyNotEmpty` over FRM-601 Section-2 change fields); `loadReportBase` + pure `filterReportRows`,
   client-side; `buildReportSql` renders the read-only SQL equivalent for the **View SQL** panel). UI: **Report** tab in the drawer (`FormReportTab.tsx` viewer +
-  `ReportSchemaBuilder.tsx` admin authoring, saved via `updateModuleContent` merge) + a "Report" list pill;
+  `ReportSchemaBuilder.tsx` admin authoring, saved via `updateModuleContent` merge) + a "Derived" list pill
+  (renamed from "Report" once `type='report'` existed — that pill marks a FORM projecting a derived
+  report, which is a different thing from a document that IS a report);
   shown for forms when `isAdmin || hasReportSchema`. **Full runbook + data-model + FRM-003↔FRM-002 mapping
   in `FORM_REPORTS.md`.**
 - **PDF:** `src/lib/formPdf.ts` — `generateFormResponsePdf` (paper-like entry PDF; grids as real tables),

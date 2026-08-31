@@ -42,20 +42,24 @@ export const DOC_STAGES: DocStage[] = [
   { rangeStart: 950, rangeEnd: 999, key: "hr-admin", label: "HR / Training / Admin / Records" },
 ];
 
-// The numbering scheme covers one type beyond the parser's SopType: `training`
-// modules (TRN). It's a valid sop_documents.type but isn't produced by the Word
-// parser, so it lives here rather than in SopType.
-export type DocNumberType = SopType | "training";
+// The numbering scheme covers two types beyond the parser's SopType: `training`
+// modules (TRN) and `report` (REP). Both are valid sop_documents.type values that the
+// Word parser never produces, so they live here rather than in SopType.
+export type DocNumberType = SopType | "training" | "report";
 
 // Prefix ↔ type. Kept in sync with detectType() in sopDocxParser.ts. `policy` has no
 // established prefix in the source hardcopies, so POL is introduced here for new policies;
-// TRN numbers training modules (typically in the 950–999 HR/Training block).
+// TRN numbers training modules (typically in the 950–999 HR/Training block). REP numbers
+// generated reports — a register entry describing a live view rather than a blank anybody
+// fills, so it must not carry FRM. Without REP here, parseDocNumber() rejects REP-951 and
+// DocNumberHint shows a live "unrecognized format" warning under a perfectly valid number.
 const PREFIX_TO_TYPE: Record<string, DocNumberType> = {
   FSQM: "fsqm",
   FRM: "form",
   SOP: "sop",
   POL: "policy",
   TRN: "training",
+  REP: "report",
 };
 
 const TYPE_TO_PREFIX: Record<DocNumberType, string> = {
@@ -64,6 +68,7 @@ const TYPE_TO_PREFIX: Record<DocNumberType, string> = {
   sop: "SOP",
   policy: "POL",
   training: "TRN",
+  report: "REP",
 };
 
 export type ParsedDocNumber = {

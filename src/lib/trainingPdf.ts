@@ -7,8 +7,9 @@
  * satisfies it structurally.
  *
  * These are REPORTS, not a form: the effective date is the day it was generated, and
- * that is stamped on every sheet. FRM-951 keeps its number so SOP-2.9's references
- * stay valid, but nothing here is a blank anybody fills in.
+ * that is stamped on every sheet. The number is REP-951, not FRM-951 — FRM means form,
+ * and nothing here is a blank anybody fills in. The former number is kept on the
+ * document as its legacy number, so an older printed copy is still traceable.
  */
 import { format } from "date-fns";
 import { generateDerivedReportPdf } from "@/lib/formPdf";
@@ -49,7 +50,7 @@ function reportLink(view: "requirements" | "completion") {
 
 function docFor(title: string) {
   return {
-    sop_number: "FRM-951",
+    sop_number: "REP-951",
     title,
     revision: "Generated report",
     effective_date: today(),
