@@ -317,17 +317,19 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   **Form Records** page **`/team/compliance/records`** (`Records.tsx`, Compliance nav) = cross-form recent
   entries + per-form flattened answer table with From/To + status filters and CSV/PDF export.
 - **Derived reports (log forms):** a `type='form'` doc can carry a **`content.report_schema`** that presents
-  it as a live report projected from *another* form's responses (e.g. **FRM-003 Customer Complaint Log** ←
-  **FRM-002** reports, **FRM-201 Approved Supplier Register** ← **FRM-202**) — a register with **no entries
+  it as a live report projected from *another* form's responses (e.g. **REP-003 Customer Complaint Log** ←
+  **FRM-002** reports, **REP-201 Approved Supplier Register** ← **FRM-202**) — a register with **no entries
   of its own**, so it does NOT duplicate `Records.tsx`. Engine `src/lib/formReport.ts` (declarative column
   kinds `field/template/map/cases/const`; user `params` + always-applied `filters[]` fixed conditions
   (`in`/`equals`/`notEquals`/`notEmpty`/`empty`/`anyNotEmpty` — e.g. `supplier_status in [Approved, …]`, or
-  FRM-603 Label Change Control Log's `anyNotEmpty` over FRM-601 Section-2 change fields); `loadReportBase` + pure `filterReportRows`,
+  REP-603 Label Change Control Log's `anyNotEmpty` over FRM-601 Section-2 change fields); `loadReportBase` + pure `filterReportRows`,
   client-side; `buildReportSql` renders the read-only SQL equivalent for the **View SQL** panel). UI: **Report** tab in the drawer (`FormReportTab.tsx` viewer +
-  `ReportSchemaBuilder.tsx` admin authoring, saved via `updateModuleContent` merge) + a "Derived" list pill
-  (renamed from "Report" once `type='report'` existed — that pill marks a FORM projecting a derived
-  report, which is a different thing from a document that IS a report);
-  shown for forms when `isAdmin || hasReportSchema`. **Full runbook + data-model + FRM-003↔FRM-002 mapping
+  `ReportSchemaBuilder.tsx` admin authoring, saved via `updateModuleContent` merge). There is no extra
+  list pill: these carry the **Report** type pill like any other report document, which is the whole
+  point of typing them correctly;
+  shown only for `type='report'` documents. A projected report is its own REP-numbered document
+  sourcing another form's entries, never a mode of the form it reads — gating the tab on
+  `type='form'` hid it the moment those documents were typed correctly. **Full runbook + data-model + REP-003↔FRM-002 mapping
   in `FORM_REPORTS.md`.**
 - **PDF:** `src/lib/formPdf.ts` — `generateFormResponsePdf` (paper-like entry PDF; grids as real tables),
   `generateFormReportPdf` (landscape, clamps to 10 columns → "see CSV"), and `generateDerivedReportPdf`

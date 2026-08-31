@@ -33,7 +33,6 @@ import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
 import { TRAINING_CATEGORY_LABELS, DEPARTMENTS, updateModuleContent, patchModuleContent, updateModuleRequirements, updateModuleQuizConfig, hasReferenceDocs, hasSopBody, resolveFileUrl, type Attachment } from "@/lib/training";
 import { hasFormSchema, getFormSchema, type FormSchema } from "@/lib/formSchema";
-import { hasReportSchema } from "@/lib/formReport";
 import { FormSchemaBuilder } from "@/components/team/forms/FormSchemaBuilder";
 import { FormReportTab } from "@/components/team/forms/FormReportTab";
 import { FormEntriesTab } from "@/components/team/forms/FormEntriesTab";
@@ -616,9 +615,6 @@ export default function SopsLibrary() {
                     {hasFormSchema(d) && (
                       <Badge className="bg-[#C89B3C]/15 text-[#9A6F1E] border-[#C89B3C]/30">Fillable</Badge>
                     )}
-                    {hasReportSchema(d.content) && (
-                      <Badge className="bg-[#2A1F0E]/10 text-[#2A1F0E]/70 border-[#2A1F0E]/20">Derived</Badge>
-                    )}
                     {hasSopBody(d.content) && (
                       <button
                         onClick={async e => {
@@ -890,8 +886,10 @@ export default function SopsLibrary() {
               <Tabs
                 key={selected.id}
                 defaultValue={
-                  selected.type === "form"
-                    ? (hasFormSchema(selected) ? "entries" : hasReportSchema(selected.content) ? "report" : "form")
+                  selected.type === "report"
+                    ? "report"
+                    : selected.type === "form"
+                    ? (hasFormSchema(selected) ? "entries" : "form")
                     : selected.training_category != null ? "training" : hasSopBody(selected.content) ? "document" : "reference"
                 }
                 className="space-y-3"
@@ -903,7 +901,10 @@ export default function SopsLibrary() {
                   {selected.type === "form" && hasFormSchema(selected) && (
                     <TabsTrigger value="entries"><ListChecks className="w-3.5 h-3.5 mr-1.5" />Entries</TabsTrigger>
                   )}
-                  {selected.type === "form" && (isAdmin || hasReportSchema(selected.content)) && (
+                  {/* A projected report is its own document (type=report) sourcing another form's
+                      entries — never a mode of the form it reads. Gating on type=form hid the tab
+                      the moment these were typed correctly. */}
+                  {selected.type === "report" && (
                     <TabsTrigger value="report"><FileBarChart className="w-3.5 h-3.5 mr-1.5" />Report</TabsTrigger>
                   )}
                   <TabsTrigger value="training"><GraduationCap className="w-3.5 h-3.5 mr-1.5" />Training</TabsTrigger>
@@ -948,7 +949,7 @@ export default function SopsLibrary() {
                   </TabsContent>
                 )}
 
-                {selected.type === "form" && (isAdmin || hasReportSchema(selected.content)) && (
+                {selected.type === "report" && (
                   <TabsContent value="report">
                     <FormReportTab doc={selected} isAdmin={isAdmin} onContentChange={saveBody} />
                   </TabsContent>
