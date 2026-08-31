@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,9 @@ const STATUS_DOT: Record<AssignmentStatus, string> = {
   expired: "bg-red-500",
 };
 
+type ReportView = "requirements" | "completion" | "exceptions";
+const VIEWS: ReportView[] = ["requirements", "completion", "exceptions"];
+
 export default function TrainingCompliance() {
   const { hasRole } = useUserRole();
   const isAdmin = hasRole("admin") || hasRole("owner");
@@ -46,6 +50,15 @@ export default function TrainingCompliance() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [variants, setVariants] = useState<ModuleVariant[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Deep link from a printed export: ?view= picks the tab, &download=1 re-runs that
+  // export. Every generated PDF carries one, because a printed report is stale the
+  // moment it prints and has to say where the current one lives.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = searchParams.get("view") as ReportView | null;
+  const [tab, setTab] = useState<ReportView>(
+    viewParam && VIEWS.includes(viewParam) ? viewParam : "requirements");
+  const autoFired = useRef(false);
 
   // Manual assignment dialog (in addition to the automatic department sync).
   const [assignOpen, setAssignOpen] = useState(false);
@@ -165,6 +178,22 @@ export default function TrainingCompliance() {
       : downloadCompletionPdf(employees, modules, assignments, governing);
     run.catch((e: any) => toast.error(e.message ?? "Failed to generate PDF"));
   };
+
+  // Fire the requested export once the data it is built from has actually loaded.
+  useEffect(() => {
+    if (autoFired.current || loading) return;
+    if (searchParams.get("download") !== "1") return;
+    autoFired.current = true;
+    // Drop the flag first, so a refresh or a Back navigation does not download again.
+    const next = new URLSearchParams(searchParams);
+    next.delete("download");
+    setSearchParams(next, { replace: true });
+    if (tab === "exceptions") return;          // no export for that view
+    // A download with no click behind it can be blocked, and a silent block looks
+    // like a dead link. Say where the manual button is.
+    toast.info("Preparing your download — if nothing happens, use Download PDF below.");
+    exportPdf(tab);
+  }, [loading, searchParams, tab]);
 
   const alerts = useMemo(() => {
     const expiringSoon: { employee: Employee; module: TrainingModule; assignment: TrainingAssignment }[] = [];
@@ -316,7 +345,7 @@ export default function TrainingCompliance() {
         </Card>
       </div>
 
-      <Tabs defaultValue="requirements" className="w-full">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as ReportView)} className="w-full">
         <TabsList>
           <TabsTrigger value="requirements">Requirements</TabsTrigger>
           <TabsTrigger value="completion">Completion</TabsTrigger>
