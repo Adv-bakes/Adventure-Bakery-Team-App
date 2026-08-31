@@ -151,6 +151,9 @@ export function SopImportDialog({ open, onOpenChange, onImported, categories = [
     // Keep the original Word file as a downloadable attachment on the record.
     try {
       const path = await uploadSopFile(inserted.id, item.file);
+      // The one legitimate full replace left: `inserted` was created by this same
+      // function moments ago, so payload.content IS the row's content and there is no
+      // window for anyone to have edited it. Everywhere else, use patchModuleContent.
       await updateModuleContent(inserted.id, { ...payload.content, attachments: [{ path, name: item.file.name }] });
     } catch {
       toast.warning(`Saved "${p.title}", but the source Word file couldn't be attached.`);

@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ChevronUp, Plus, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchQuizQuestions, saveQuizQuestions, updateModuleContent, QuizQuestion } from "@/lib/training";
+import { fetchQuizQuestions, saveQuizQuestions, patchModuleContent, QuizQuestion } from "@/lib/training";
 
 type EditableQuestion = Omit<QuizQuestion, "id" | "sop_id">;
 
@@ -162,10 +162,11 @@ export function QuizEditor({ sopId, title, content, onContentChange }: QuizEdito
         required: ackRequired,
         text: ackText.trim() || DEFAULT_ACKNOWLEDGMENT_TEXT,
       };
-      const nextContent = { ...(content ?? {}), acknowledgment };
-      await Promise.all([
+      // patchModuleContent re-reads the row, so the acknowledgment lands on current
+      // content rather than on whatever the drawer held when it opened.
+      const [, nextContent] = await Promise.all([
         saveQuizQuestions(sopId, cleaned),
-        updateModuleContent(sopId, nextContent),
+        patchModuleContent(sopId, { acknowledgment }),
       ]);
       setQuestions(cleaned);
       onContentChange?.(nextContent);

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Save, Bold, Italic, List } from "lucide-react";
 import { toast } from "sonner";
-import { updateModuleContent } from "@/lib/training";
+import { patchModuleContent } from "@/lib/training";
 import { SECTION_LABELS, groupProcedureSteps, parseInlineMarks } from "@/lib/sopDocxParser";
 
 // Renders plain text with **bold** / *italic* inline marks as formatted spans.
@@ -98,8 +98,9 @@ export function SopBodyEditor({ sopId, content, docType, onChange }: Props) {
         : Object.fromEntries(BODY_SECTIONS.map(({ key }) =>
             [key, key === "procedure" ? fields.procedure.split("\n").map(s => s.trim()).filter(Boolean) : fields[key]]
           ));
-      const merged = { ...(content ?? {}), ...body };
-      await updateModuleContent(sopId, merged);
+      // Merge server-side against the CURRENT row. Spreading `content` here writes back
+      // whatever the drawer loaded on mount, which erased FRM-951's revision_history.
+      const merged = await patchModuleContent(sopId, body);
       await onChange?.(merged);
       toast.success("Document saved");
     } catch (e: any) {

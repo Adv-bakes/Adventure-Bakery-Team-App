@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { updateModuleContent } from "@/lib/training";
+import { patchModuleContent } from "@/lib/training";
 import {
   FIELD_TYPE_LABELS, FORM_SCHEMA_VERSION, emptyValues, getFormSchema, slugifyFieldId, valueFields,
   type FormField, type FormFieldType, type FormSchema, type FormSection, type GridField,
@@ -306,8 +306,9 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
     };
     setSaving(true);
     try {
-      const nextContent = { ...(content ?? {}), form_schema: cleaned };
-      await updateModuleContent(sopId, nextContent);
+      // Patch so a schema save cannot roll back an unrelated content field edited since
+      // this drawer loaded.
+      const nextContent = await patchModuleContent(sopId, { form_schema: cleaned });
       setSchema(cleaned);
       setIsProposal(false);
       const ids = new Set<string>();

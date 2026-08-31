@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { updateModuleContent } from "@/lib/training";
+import { patchModuleContent } from "@/lib/training";
 import { getFormSchema, hasFormSchema, slugifyFieldId, valueFields, type FormField } from "@/lib/formSchema";
 import {
   COLUMN_SOURCE_LABELS, FILTER_OP_LABELS, MULTI_FIELD_OPS, REPORT_SCHEMA_VERSION, runReport,
@@ -167,8 +167,8 @@ export function ReportSchemaBuilder({ sopId, content, onSaved, onCancel }: Repor
     };
     setSaving(true);
     try {
-      const nextContent = { ...(content ?? {}), report_schema: cleaned };
-      await updateModuleContent(sopId, nextContent);
+      // Patch: see FormSchemaBuilder — same drawer, same stale-state hazard.
+      const nextContent = await patchModuleContent(sopId, { report_schema: cleaned });
       toast.success("Report saved");
       onSaved(nextContent);
     } catch (e: any) {
