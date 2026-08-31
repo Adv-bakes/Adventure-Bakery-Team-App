@@ -150,6 +150,33 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
     });
   }
 
+  // A policy carries its whole body in `statement`, which is NOT in SECTION_LABELS -- that list
+  // describes the SOP/FSQM section structure, and a policy has none of it. Without this, every
+  // type='policy' document printed a header table and a blank page, because the loop below had
+  // nothing to iterate over. SopBodyEditor has an isPolicy branch for the same reason; this is its
+  // missing counterpart.
+  //
+  // No section heading: the statement opens with its own title, so a "Statement:" label above it
+  // would just repeat that. Paragraphs are split on blank lines and pushed separately, which keeps
+  // the spacing a reader expects and lets pdfmake wrap each one; single newlines inside a paragraph
+  // are preserved, so a signature block stays on its own lines.
+  if (typeof content.statement === "string" && content.statement.trim()) {
+    // Split on blank lines by scanning, not by regex: a paragraph keeps its internal
+    // newlines so a signature block stays on separate lines, while each paragraph is
+    // pushed on its own and left for pdfmake to wrap.
+    const paras: string[] = [];
+    let buf: string[] = [];
+    for (const line of content.statement.trim().split("\n")) {
+      if (line.trim() === "") {
+        if (buf.length) { paras.push(buf.join("\n")); buf = []; }
+      } else {
+        buf.push(line);
+      }
+    }
+    if (buf.length) paras.push(buf.join("\n"));
+    for (const para of paras) body.push({ text: para, margin: [0, 0, 0, 8] });
+  }
+
   // Body sections, in canonical order, skipping empties.
   for (const { key, display } of SECTION_LABELS) {
     if (key === "procedure") {
