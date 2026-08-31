@@ -20,20 +20,23 @@ import { useUserRole } from "@/hooks/useUserRole";
 import {
   TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS, DEPARTMENTS,
   TrainingModule, TrainingAssignment, Employee, ModuleVariant,
-  AssignmentStatus, getAssignmentStatus, isExpiringSoon, isOverdue,
+  isExpiringSoon, isOverdue,
   fetchTrainingModules, fetchTrainingAssignments, fetchEmployees, fetchTrainingVariants,
   assignModulesToEmployees, deleteAssignment,
 } from "@/lib/training";
 import {
   assignableModules, buildGoverningMap, requirementMatrix, exceptions,
-  exceptionLabel, statusLabel,
+  exceptionLabel, statusLabel, recordStatus, RECORD_STATUS_LABEL, type RecordStatus,
 } from "@/lib/trainingMatrix";
 import { downloadRequirementsPdf, downloadCompletionPdf } from "@/lib/trainingPdf";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
 
-const STATUS_DOT: Record<AssignmentStatus, string> = {
-  not_started: "bg-[#2A1F0E]/15",
+// Five states, not four: an assignment nobody has opened is drawn as a hollow ring
+// rather than the same solid gold as one genuinely under way. See recordStatus().
+const STATUS_DOT: Record<RecordStatus, string> = {
+  not_assigned: "bg-[#2A1F0E]/15",
+  assigned: "border-2 border-[#C89B3C] bg-transparent",
   in_progress: "bg-[#C89B3C]",
   completed: "bg-green-500",
   expired: "bg-red-500",
@@ -424,8 +427,9 @@ export default function TrainingCompliance() {
           <div className="flex items-center gap-3 text-xs text-[#F5F1E6]/70">
             <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.completed}`} />Completed</span>
             <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.in_progress}`} />In Progress</span>
+            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.assigned}`} />Assigned, not started</span>
             <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.expired}`} />Expired</span>
-            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.not_started}`} />Not Assigned</span>
+            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.not_assigned}`} />Not Assigned</span>
           </div>
         </div>
 
@@ -478,9 +482,9 @@ export default function TrainingCompliance() {
                   </TableCell>
                   {categoryGroups.flatMap(group => group.items).map((m, idx, arr) => {
                     const assignment = assignmentMap.get(`${emp.id}:${m.id}`);
-                    const status = getAssignmentStatus(assignment);
+                    const status = recordStatus(assignment ?? null);
                     const isFirstInGroup = idx === 0 || arr[idx - 1].training_category !== m.training_category;
-                    const cellTitle = `${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${status.replace("_", " ")}`;
+                    const cellTitle = `${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${RECORD_STATUS_LABEL[status]}`;
                     const dot = <span className={`inline-block w-3 h-3 rounded-full ${STATUS_DOT[status]}`} />;
                     return (
                       <TableCell
@@ -502,7 +506,7 @@ export default function TrainingCompliance() {
                                 <span className="font-mono">{m.module_number}</span> {m.title}
                               </p>
                               <p className="text-xs mb-3">
-                                Status: <span className="capitalize">{status.replace("_", " ")}</span>
+                                Status: <span>{RECORD_STATUS_LABEL[status]}</span>
                                 {assignment.due_at ? ` · due ${assignment.due_at}` : ""}
                               </p>
                               <Button
