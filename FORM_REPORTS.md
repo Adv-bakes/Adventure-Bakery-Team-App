@@ -6,8 +6,8 @@ drawer (`/team/compliance/sops` → open a `type='form'` doc → **Report**).
 
 ## Why we built it
 
-Several FRM forms are **logs/registers** — e.g. **FRM-003 Customer Complaint Log**, whose rows are not
-hand-entered. Each row is a projection of a completed **source** report (FRM-003's rows each come from a
+Several FRM forms are **logs/registers** — e.g. **REP-003 Customer Complaint Log**, whose rows are not
+hand-entered. Each row is a projection of a completed **source** report (REP-003's rows each come from a
 submitted **FRM-002 Customer Complaint Report**). Historically the log was transcribed by hand off the
 individual reports.
 
@@ -75,7 +75,7 @@ user-adjustable (that's what `params` are for). They AND together; an `in` filte
 how, e.g., an **Approved Supplier Register** only ever lists suppliers whose `supplier_status` is Approved
 or Conditionally Approved. Ops: `in` (`values[]`), `equals` / `notEquals` (`value`), `notEmpty`, `empty`,
 and `anyNotEmpty` (`fields[]` — matches when **any** of several fields is populated, e.g. "Section 2 of
-FRM-601 has data" → the FRM-603 Label Change Control Log only lists label reviews that recorded a change).
+FRM-601 has data" → the REP-603 Label Change Control Log only lists label reviews that recorded a change).
 Applied in `loadReportBase` (so `select`-param dropdowns only see eligible rows) and rendered in the
 `buildReportSql` `WHERE` marked `-- fixed`.
 
@@ -135,11 +135,11 @@ copy and run against `sop_document_responses`.
   report-only log (no `form_schema`) defaults to the Report tab.
 - **Grids are not offered as column sources** (a multi-row value has no single-cell projection).
 
-## Worked example — FRM-003 ← FRM-002
+## Worked example — REP-003 ← FRM-002
 
 The seeded Customer Complaint Log maps as:
 
-| FRM-003 column | Kind | Source |
+| REP-003 column | Kind | Source |
 |----------------|------|--------|
 | Ref No. | field | `complaint_ref_no` |
 | Date Received | field | `date_received` |
