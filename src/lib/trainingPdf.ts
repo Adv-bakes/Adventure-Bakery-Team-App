@@ -12,6 +12,7 @@
  */
 import { format } from "date-fns";
 import { generateDerivedReportPdf } from "@/lib/formPdf";
+import { appOrigin } from "@/lib/sopPdf";
 import { DEPARTMENTS, type Employee, type TrainingAssignment, type TrainingModule } from "@/lib/training";
 import {
   type RequirementRow,
@@ -37,25 +38,12 @@ export const REPORT_PATH = "/team/hr/traceability";
 /**
  * Deep link back to the live report, stamped into every export.
  *
- * The origin is read from the browser rather than hardcoded: these PDFs are built
- * client-side, so window.location.origin is already the host the reader came from -
- * localhost in development, the real domain in production, with nothing to keep in
- * sync. Falls back to the production host on the server-rendered path, where there is
- * no window (nothing renders these there today, but a bare path in a printed document
- * would be useless).
- *
  * NOTE: the target is behind the team-portal login. It reaches anyone with an account,
  * and shows a sign-in page to anyone without one. There is no server-side renderer for
  * these PDFs, so a link that returns the file directly is not currently possible.
  */
-function origin(): string {
-  return typeof window !== "undefined" && window.location?.origin
-    ? window.location.origin
-    : "https://team.adventurebakes.com";
-}
-
 function reportLink(view: "requirements" | "completion") {
-  const url = `${origin()}${REPORT_PATH}?view=${view}&download=1`;
+  const url = `${appOrigin()}${REPORT_PATH}?view=${view}&download=1`;
   return { label: url, url };
 }
 
@@ -168,8 +156,8 @@ export function downloadPersonPdf(
       // The member page, not the report page: this record is generated from the
       // Training Record card there, which carries its own PDF button.
       link: {
-        label: `${origin()}/team/member/${employee.id}`,
-        url: `${origin()}/team/member/${employee.id}`,
+        label: `${appOrigin()}/team/member/${employee.id}`,
+        url: `${appOrigin()}/team/member/${employee.id}`,
       },
     },
   );

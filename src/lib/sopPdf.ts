@@ -36,6 +36,7 @@ export const confidentialFooter = (currentPage: number): Content => ({
 
 // Minimal shape of a sop_documents row needed to render the PDF.
 export interface SopPdfRow {
+  type?: string | null;
   title?: string | null;
   sop_number?: string | null;
   revision?: string | null;
@@ -44,6 +45,20 @@ export interface SopPdfRow {
   sqf_reference?: string | null;
   status?: string | null;
   content?: any;
+}
+
+/**
+ * The app's own origin, for links printed into a PDF.
+ *
+ * These are generated client-side, so the browser already knows the right host -
+ * localhost in development, the real domain in production, with nothing to keep in
+ * sync. The production host is the fallback for any path with no window, because a
+ * bare relative path in a printed document is useless.
+ */
+export function appOrigin(): string {
+  return typeof window !== "undefined" && window.location?.origin
+    ? window.location.origin
+    : "https://team.adventurebakes.com";
 }
 
 let logoDataUrl: string | null = null;
@@ -70,6 +85,10 @@ const dash = "—";
 const show = (v?: string | null) => (v && String(v).trim() ? String(v).trim() : dash);
 
 export async function generateSopPdf(row: SopPdfRow): Promise<void> {
+  // A row of type "report" is a generated view, not a procedure. Printing it under
+  // "SOP Title"/"SOP No." mislabels it as an SOP on the one artifact an auditor is
+  // most likely to be holding.
+  const isReport = row.type === "report";
   const logo = await loadLogoDataUrl();
   const content = row.content ?? {};
 
@@ -92,13 +111,13 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
           { text: show(row.revision), alignment: "center" },
         ],
         [
-          { text: "SOP Title", bold: true },
+          { text: isReport ? "Report Title" : "SOP Title", bold: true },
           { text: show(row.title), bold: true },
           { text: "Approval", bold: true, alignment: "center" },
           { text: show(row.approved_by), alignment: "center" },
         ],
         [
-          { text: "SOP No.", bold: true },
+          { text: isReport ? "Report No." : "SOP No.", bold: true },
           { text: show(row.sop_number) },
           { text: "Eff. Date:", bold: true, alignment: "center" },
           { text: show(row.effective_date), alignment: "center" },
@@ -176,6 +195,22 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
     margin: [0, 14, 0, 0],
     fontSize: 9,
   });
+
+  // Where the live version lives. A printed copy of a generated document is stale the
+  // moment it prints, so it has to point at the current one - the point-of-use rule in
+  // document control. Stored as a PATH rather than a URL so the same record links to
+  // localhost in development and the real host in production.
+  const livePath = typeof row.content?.live_path === "string" ? row.content.live_path.trim() : "";
+  if (livePath.startsWith("/")) {
+    const url = appOrigin() + livePath;
+    body.push({
+      text: [
+        { text: "Current version: ", bold: true, fontSize: 9 },
+        { text: url, link: url, fontSize: 9, color: GOLD, decoration: "underline" },
+      ],
+      margin: [0, 6, 0, 0],
+    });
+  }
 
   const docDefinition: TDocumentDefinitions = {
     pageSize: "LETTER",
