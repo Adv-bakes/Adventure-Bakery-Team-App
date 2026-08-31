@@ -10,7 +10,7 @@ import {
 import { FileUp, Loader2, CheckCircle2, Presentation, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import {
-  getTrainingSlideUrl, deleteTrainingSlide, updateModuleContent,
+  getTrainingSlideUrl, deleteTrainingSlide, patchModuleContent,
   computeSlideDuration, saveQuizQuestions, TRAINING_CATEGORY_LABELS,
   parseQuizCsv, type ImportedQuizQuestion,
 } from "@/lib/training";
@@ -169,8 +169,10 @@ export function PptxImportDialog({ open, onOpenChange, onImported, existingModul
       // 5. Persist slides + narrations + dwell durations
       setStep("Saving module content");
       const slideDurations = narrations.map(computeSlideDuration);
-      const baseContent = isReplace ? (existingModule!.content ?? {}) : {};
-      await updateModuleContent(moduleId, { ...baseContent, slides, narrations, slideDurations });
+      // Patch rather than spreading existingModule.content, which is the list's
+      // mount-time copy of the row. Works for a new module too: its content is empty,
+      // so the merge is the patch.
+      await patchModuleContent(moduleId, { slides, narrations, slideDurations });
 
       // 6. Quiz: hand-authored CSV wins over AI generation
       let quizCount = 0;

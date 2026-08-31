@@ -12,7 +12,7 @@ import { PptxImportDialog } from "@/components/team/PptxImportDialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
-  getTrainingSlideUrl, replaceTrainingSlide, deleteTrainingSlide, updateModuleContent,
+  getTrainingSlideUrl, replaceTrainingSlide, deleteTrainingSlide, patchModuleContent,
   computeSlideDuration, generateModuleAudio, getTrainingAudioUrl,
 } from "@/lib/training";
 
@@ -128,9 +128,18 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
     speakWithBrowserTts();
   };
 
-  const persist = async (next: any) => {
-    await updateModuleContent(sopId, next);
+  /**
+   * Merge a PATCH into the row's current content and adopt the result.
+   *
+   * Takes only the keys that changed, never a spread of `content`: that prop is the
+   * drawer's mount-time state, and writing it back rolls the row into the past. The
+   * slide arrays stay internally consistent because every caller passes the aligned
+   * set it just recomputed.
+   */
+  const persist = async (patch: any) => {
+    const next = await patchModuleContent(sopId, patch);
     onContentChange(next);
+    return next;
   };
 
   const saveNarration = async () => {
@@ -142,7 +151,7 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
       const slideDurations = slides.map((_, i) =>
         i === clampedIndex ? newDuration : savedDurations[i] ?? computeSlideDuration(narrations[i]),
       );
-      await persist({ ...(content ?? {}), narrations, slideDurations });
+      await persist({ narrations, slideDurations });
       setDuration(newDuration);
       setDurationTouched(false);
       toast.success(`Slide ${clampedIndex + 1} narration saved`);
@@ -179,7 +188,18 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
       const nextDurations = slides
         .map((_, i) => savedDurations[i] ?? computeSlideDuration(savedNarrations[i]))
         .filter((_, i) => i !== clampedIndex);
-      await persist({ ...(content ?? {}), slides: nextSlides, narrations: nextNarrations, slideDurations: nextDurations });
+      // audio is the fourth parallel array and was NOT being spliced, so deleting a
+      // slide left every cached MP3 from this index on attached to the wrong slide -
+      // the viewer would read out the previous slide's narration. The orphaned object
+      // in storage is left behind deliberately, as elsewhere: harmless, and cheaper
+      // than a delete that can fail halfway.
+      const nextAudio = slides
+        .map((_, i) => savedAudio[i] ?? null)
+        .filter((_, i) => i !== clampedIndex);
+      await persist({
+        slides: nextSlides, narrations: nextNarrations,
+        slideDurations: nextDurations, audio: nextAudio,
+      });
       setIndex(i => Math.max(Math.min(i, nextSlides.length - 1), 0));
       toast.success("Slide deleted");
     } catch (e: any) {
@@ -269,7 +289,7 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
       const slideDurations = slides.map((_, i) =>
         targets.includes(i) ? computeSlideDuration(next[i]) : savedDurations[i] ?? computeSlideDuration(next[i]),
       );
-      await persist({ ...(content ?? {}), narrations: next, slideDurations });
+      await persist({ narrations: next, slideDurations });
       setNarration(next[clampedIndex] ?? "");
       setDuration(slideDurations[clampedIndex] ?? 20);
       setDurationTouched(false);
@@ -300,8 +320,9 @@ export function SlideContentEditor({ sopId, content, onContentChange }: SlideCon
           ? (durationTouched ? Math.max(0, Math.round(duration)) : computeSlideDuration(narration))
           : savedDurations[i] ?? computeSlideDuration(narrations[i]),
       );
-      const baseContent = { ...(content ?? {}), narrations, slideDurations };
-      await persist(baseContent);
+      // Persist narrations first so content.audio[] lines up with what's saved, and
+      // hand generateModuleAudio the MERGED row rather than the local guess at it.
+      const baseContent = await persist({ narrations, slideDurations });
       const { failed, generated, audio } = await generateModuleAudio(
         sopId, narrations, lang, baseContent,
         (done, total) => setAudioProgress({ done, total }),

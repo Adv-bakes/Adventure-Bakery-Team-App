@@ -524,7 +524,9 @@ export async function generateModuleAudio(
     if (!(narrations[i] ?? "").trim()) audio[i] = null;
   }
 
-  await updateModuleContent(sopId, { ...(content ?? {}), audio });
+  // Patch, not replace: `content` is whatever the editor had in state when the user
+  // pressed the button, and voicing a deck takes a while.
+  await patchModuleContent(sopId, { audio });
   return { failed, generated: targets.length - failed, audio };
 }
 
