@@ -630,6 +630,36 @@ export async function fetchReferenceDocuments(includeInactive = false): Promise<
   return (data ?? []).filter((d: any) => d.training_category == null || hasReferenceDocs(d));
 }
 
+/**
+ * Merge top-level keys into a document's content, re-reading it first.
+ *
+ * updateModuleContent() REPLACES content wholesale, so a caller that spreads its own
+ * React state - `{ ...selected.content, attachments }` - writes back whatever the row
+ * looked like when the page loaded, silently destroying anything added since.
+ *
+ * That is not hypothetical. A drawer left open across migration 20260831000002 did
+ * exactly this to FRM-951: removing its attachments wrote the pre-migration content
+ * back and erased a revision_history the open tab had never seen. The intended change
+ * survived; an unrelated field did not.
+ *
+ * Re-reading immediately before the write closes the window rather than the race - two
+ * people editing the same document in the same second can still lose one edit. The
+ * fillable-forms code carries a real optimistic-concurrency guard (StaleResponseError
+ * in formResponses.ts) and this is the same problem one notch lower in severity, so it
+ * is the pattern to reach for if this ever needs to be airtight.
+ */
+export async function patchModuleContent(sopId: string, patch: Record<string, any>): Promise<any> {
+  const { data, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("content")
+    .eq("id", sopId)
+    .maybeSingle();
+  if (error) throw error;
+  const merged = { ...(data?.content ?? {}), ...patch };
+  await updateModuleContent(sopId, merged);
+  return merged;
+}
+
 export async function updateModuleContent(sopId: string, content: any): Promise<void> {
   const { error } = await (supabase as any)
     .from("sop_documents")

@@ -31,7 +31,7 @@ import { SlideContentEditor } from "@/components/team/SlideContentEditor";
 import { DocumentAttachment } from "@/components/team/DocumentAttachment";
 import { QuizEditor } from "@/components/team/QuizEditor";
 import { PptxImportDialog } from "@/components/team/PptxImportDialog";
-import { TRAINING_CATEGORY_LABELS, DEPARTMENTS, updateModuleContent, updateModuleRequirements, updateModuleQuizConfig, hasReferenceDocs, hasSopBody, resolveFileUrl, type Attachment } from "@/lib/training";
+import { TRAINING_CATEGORY_LABELS, DEPARTMENTS, updateModuleContent, patchModuleContent, updateModuleRequirements, updateModuleQuizConfig, hasReferenceDocs, hasSopBody, resolveFileUrl, type Attachment } from "@/lib/training";
 import { hasFormSchema, getFormSchema, type FormSchema } from "@/lib/formSchema";
 import { hasReportSchema } from "@/lib/formReport";
 import { FormSchemaBuilder } from "@/components/team/forms/FormSchemaBuilder";
@@ -361,9 +361,13 @@ export default function SopsLibrary() {
   // Persist the multi-attachment list into content.attachments (upload/remove done in the component).
   const saveAttachments = async (attachments: Attachment[]) => {
     if (!selected) return;
-    const content = { ...(selected.content ?? {}), attachments };
+    // patch, not `{ ...selected.content, attachments }`: this page fetches once on mount,
+    // so spreading its own state writes back whatever the row looked like then and
+    // destroys anything changed since. That erased FRM-951's revision_history when a
+    // drawer was left open across a migration.
+    let content: any;
     try {
-      await updateModuleContent(selected.id, content);
+      content = await patchModuleContent(selected.id, { attachments });
     } catch (e: any) {
       toast.error(e.message ?? "Failed to save attachments");
       return;
