@@ -26,7 +26,7 @@ if hasattr(sys.stdout, "reconfigure"):
 DEFAULT_WB = r"C:\AdventureBakes\RumCakeFactory_SQF_Gap Assessment_Ed 9 - Remediation Plan.xlsx"
 SHEET = "xl/worksheets/sheet4.xml"          # Task Detail
 WORD_CAP = 100
-SUMMARY_COL, DOCS_COL, STATUS_COL = "M", "N", "L"
+SUMMARY_COL, DOCS_COL, STATUS_COL, NOTES_COL = "M", "N", "L", "K"
 SUMMARY_HEAD = "Change summary (as built)"
 DOCS_HEAD = "Documents affected"
 HEADER_ROW = 4
@@ -342,7 +342,10 @@ def main():
     ap.add_argument("--app-fit", dest="app_fit", default="",
                     help="new-task: App today / Needs build / Off-app (column I)")
     ap.add_argument("--capability", default="", help="new-task: capability or feature (column J)")
-    ap.add_argument("--notes", default="", help="new-task: notes and risk (column K)")
+    ap.add_argument("--notes", default="",
+                    help="notes and risk (column K). Sets it on a --new-task row, and rewrites "
+                         "it on an existing one - a note can go stale when the thing it warns "
+                         "about gets fixed.")
     a = ap.parse_args()
 
     if a.new_task:
@@ -393,6 +396,10 @@ def main():
     pairs = [(SUMMARY_COL, a.summary), (DOCS_COL, a.docs)]
     if a.status:
         pairs.append((STATUS_COL, a.status))
+    # On a new row the note went in with the rest of the columns already; on an existing row
+    # this is the only way to correct one.
+    if a.notes and not a.new_task:
+        pairs.append((NOTES_COL, a.notes))
     sheet = put_cells(sheet, row, pairs)
 
     styles_xml = parts[STYLES].decode("utf-8")
