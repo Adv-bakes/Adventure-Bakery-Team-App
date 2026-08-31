@@ -67,6 +67,12 @@ export type Employee = {
   preferred_language: string | null;
 };
 
+export type ModuleVariant = {
+  id: string;
+  module_number: string | null;
+  title: string;
+};
+
 export type AssignmentStatus = "not_started" | "in_progress" | "completed" | "expired";
 
 export function getAssignmentStatus(assignment: TrainingAssignment | undefined, today: Date = new Date()): AssignmentStatus {
@@ -630,4 +636,25 @@ export async function updateModuleContent(sopId: string, content: any): Promise<
     .update({ content })
     .eq("id", sopId);
   if (error) throw error;
+}
+
+/**
+ * Active Spanish content variants, for resolving an assignment back to the module
+ * that governs it.
+ *
+ * fetchTrainingModules() filters on training_category IS NOT NULL, and an ES row
+ * deliberately carries a null training_category (it is a content variant, not an
+ * assignable unit — see 20260714000009 and governing_training_module() in
+ * 20260827000008). ES rows are therefore absent from the module list, so an
+ * assignment pointing at one matches nothing and reads as "not assigned" unless it
+ * is resolved through its English sibling by module_number.
+ */
+export async function fetchTrainingVariants(): Promise<ModuleVariant[]> {
+  const { data, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, module_number, title")
+    .like("title", "%(ES)%")
+    .eq("status", "active");
+  if (error) throw error;
+  return (data ?? []) as ModuleVariant[];
 }

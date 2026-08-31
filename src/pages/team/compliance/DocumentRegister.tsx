@@ -14,7 +14,7 @@ type RegisterDoc = {
   id: string;
   sop_number: string | null;
   title: string;
-  type: "sop" | "form" | "policy" | "training" | "fsqm";
+  type: "sop" | "form" | "policy" | "training" | "fsqm" | "report";
   revision: string | null;
   effective_date: string | null;
   sqf_reference: string | null;

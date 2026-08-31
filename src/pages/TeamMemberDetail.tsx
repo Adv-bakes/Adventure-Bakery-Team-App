@@ -13,6 +13,7 @@ import { ArrowLeft, Save, User, Shield, Briefcase, Phone, FileCheck } from "luci
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
 import { DEPARTMENTS } from "@/lib/training";
 import AccountAccessCard from "@/components/team/AccountAccessCard";
+import TrainingRecordCard from "@/components/team/TrainingRecordCard";
 
 // Assignable roles. owner/admin are privileged grants — only an owner may set
 // them (mirrors the user_roles RLS escalation guard in 20260714000001).
@@ -329,6 +330,13 @@ export default function TeamMemberDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Training record - read-only, live, and NOT covered by Save Changes below. */}
+      <TrainingRecordCard
+        userId={userId!}
+        fullName={profile.full_name}
+        department={profile.department || null}
+      />
 
       {/* Emergency Contact */}
       <Card className="mb-6">

@@ -11,17 +11,23 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { RefreshCw, AlertTriangle, Clock, CheckCircle2, UserPlus, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RefreshCw, AlertTriangle, Clock, CheckCircle2, UserPlus, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { format, addDays } from "date-fns";
 import { useUserRole } from "@/hooks/useUserRole";
 import {
-  TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS,
-  TrainingModule, TrainingAssignment, Employee,
+  TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS, DEPARTMENTS,
+  TrainingModule, TrainingAssignment, Employee, ModuleVariant,
   AssignmentStatus, getAssignmentStatus, isExpiringSoon, isOverdue,
-  fetchTrainingModules, fetchTrainingAssignments, fetchEmployees,
+  fetchTrainingModules, fetchTrainingAssignments, fetchEmployees, fetchTrainingVariants,
   assignModulesToEmployees, deleteAssignment,
 } from "@/lib/training";
+import {
+  assignableModules, buildGoverningMap, requirementMatrix, exceptions,
+  exceptionLabel, statusLabel,
+} from "@/lib/trainingMatrix";
+import { downloadRequirementsPdf, downloadCompletionPdf } from "@/lib/trainingPdf";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
 
@@ -38,6 +44,7 @@ export default function TrainingCompliance() {
   const [modules, setModules] = useState<TrainingModule[]>([]);
   const [assignments, setAssignments] = useState<TrainingAssignment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [variants, setVariants] = useState<ModuleVariant[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Manual assignment dialog (in addition to the automatic department sync).
@@ -50,14 +57,16 @@ export default function TrainingCompliance() {
   const load = async () => {
     setLoading(true);
     try {
-      const [mods, assigns, emps] = await Promise.all([
+      const [mods, assigns, emps, vars] = await Promise.all([
         fetchTrainingModules(),
         fetchTrainingAssignments(),
         fetchEmployees(),
+        fetchTrainingVariants(),
       ]);
       setModules(mods);
       setAssignments(assigns);
       setEmployees(emps);
+      setVariants(vars);
     } catch (e: any) {
       toast.error(e.message ?? "Failed to load compliance data");
     } finally {
@@ -115,21 +124,47 @@ export default function TrainingCompliance() {
     }
   };
 
+  // Spanish variant id -> the English module that governs it. Without this an ES
+  // assignment keys on a sop_id that is in no module list (fetchTrainingModules filters
+  // training_category IS NOT NULL, and ES rows carry null) and reads as "not assigned".
+  const governing = useMemo(
+    () => buildGoverningMap(modules, variants), [modules, variants]);
+
   const assignmentMap = useMemo(() => {
     const map = new Map<string, TrainingAssignment>();
-    for (const a of assignments) map.set(`${a.employee_id}:${a.sop_id}`, a);
+    for (const a of assignments) {
+      const moduleId = governing.get(a.sop_id) ?? a.sop_id;
+      const key = `${a.employee_id}:${moduleId}`;
+      const prev = map.get(key);
+      // If somebody holds both languages, the completed record is the evidence.
+      if (!prev || (!prev.completed_at && a.completed_at)) map.set(key, a);
+    }
     return map;
-  }, [assignments]);
+  }, [assignments, governing]);
+
+  const reqRows = useMemo(
+    () => requirementMatrix(modules, variants), [modules, variants]);
+
+  const exceptionRows = useMemo(
+    () => exceptions(employees, modules, assignments, governing),
+    [employees, modules, assignments, governing]);
 
   const categoryGroups = useMemo(() => {
     return TRAINING_CATEGORIES.map(cat => ({
       category: cat,
       label: TRAINING_CATEGORY_LABELS[cat],
-      items: modules.filter(m => m.training_category === cat),
+      items: assignableModules(modules).filter(m => m.training_category === cat),
     })).filter(g => g.items.length > 0);
   }, [modules]);
 
   const employeeName = (e: Employee) => e.full_name || e.id;
+
+  const exportPdf = (which: "requirements" | "completion") => {
+    const run = which === "requirements"
+      ? downloadRequirementsPdf(reqRows)
+      : downloadCompletionPdf(employees, modules, assignments, governing);
+    run.catch((e: any) => toast.error(e.message ?? "Failed to generate PDF"));
+  };
 
   const alerts = useMemo(() => {
     const expiringSoon: { employee: Employee; module: TrainingModule; assignment: TrainingAssignment }[] = [];
@@ -155,7 +190,8 @@ export default function TrainingCompliance() {
         <div>
           <h1 className="text-3xl font-bold" style={{ color: "#F5F1E6" }}>Training Compliance</h1>
           <p className="text-sm mt-1" style={{ color: "rgba(245,241,230,0.6)" }}>
-            Who was trained on what, when, and what's coming due.
+            Generated from the live system &mdash; not a maintained document. Who is required to
+            take what, who has done it, and where the two disagree.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -280,122 +316,250 @@ export default function TrainingCompliance() {
         </Card>
       </div>
 
-      {/* Legend */}
-      <div className="flex justify-end">
-        <div className="flex items-center gap-3 text-xs text-[#F5F1E6]/70">
-          <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.completed}`} />Completed</span>
-          <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.in_progress}`} />In Progress</span>
-          <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.expired}`} />Expired</span>
-          <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.not_started}`} />Not Assigned</span>
-        </div>
-      </div>
+      <Tabs defaultValue="requirements" className="w-full">
+        <TabsList>
+          <TabsTrigger value="requirements">Requirements</TabsTrigger>
+          <TabsTrigger value="completion">Completion</TabsTrigger>
+          <TabsTrigger value="exceptions">
+            Exceptions{exceptionRows.length > 0 ? ` (${exceptionRows.length})` : ""}
+          </TabsTrigger>
+        </TabsList>
 
-      {isAdmin && (
-        <p className="text-xs text-[#F5F1E6]/60 -mb-2">
-          Tip: click any filled status dot to remove that assignment.
-        </p>
-      )}
-
-      {/* Compliance matrix */}
-      <Card className="border overflow-x-auto" style={cardStyle}>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-[#2A1F0E]/60 sticky left-0 bg-white z-10 row-span-2 align-bottom" rowSpan={2}>Employee</TableHead>
-              {categoryGroups.map(group => (
-                <TableHead
-                  key={group.category}
-                  colSpan={group.items.length}
-                  className="text-center text-[#2A1F0E] border-l"
-                  style={{ borderColor: "rgba(200,155,60,0.25)" }}
-                >
-                  Category {group.category}: {group.label}
-                </TableHead>
-              ))}
-            </TableRow>
-            <TableRow>
-              {categoryGroups.flatMap(group => group.items).map((m, idx, arr) => {
-                const isFirstInGroup = idx === 0 || arr[idx - 1].training_category !== m.training_category;
-                return (
-                  <TableHead
-                    key={m.id}
-                    className="text-[#2A1F0E]/60 text-center min-w-[70px]"
-                    style={isFirstInGroup ? { borderLeft: "1px solid rgba(200,155,60,0.25)" } : undefined}
-                  >
-                    <div className="flex flex-col items-center">
-                      <span className="font-mono text-xs">{m.module_number}</span>
-                      {m.is_annual_refresher && <CheckCircle2 className="w-3 h-3 text-[#C89B3C] mt-0.5" />}
-                    </div>
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {employees.map(emp => (
-              <TableRow key={emp.id}>
-                <TableCell className="font-medium text-[#2A1F0E] sticky left-0 bg-white z-10 whitespace-nowrap">
-                  {employeeName(emp)}
-                </TableCell>
-                {categoryGroups.flatMap(group => group.items).map((m, idx, arr) => {
-                  const assignment = assignmentMap.get(`${emp.id}:${m.id}`);
-                  const status = getAssignmentStatus(assignment);
-                  const isFirstInGroup = idx === 0 || arr[idx - 1].training_category !== m.training_category;
-                  const cellTitle = `${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${status.replace("_", " ")}`;
-                  const dot = <span className={`inline-block w-3 h-3 rounded-full ${STATUS_DOT[status]}`} />;
-                  return (
-                    <TableCell
-                      key={m.id}
-                      className="text-center"
-                      style={isFirstInGroup ? { borderLeft: "1px solid rgba(200,155,60,0.25)" } : undefined}
-                      title={cellTitle}
-                    >
-                      {isAdmin && assignment ? (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button className="p-1 rounded hover:bg-[#2A1F0E]/5" aria-label="Assignment actions">
-                              {dot}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-64 text-sm" align="center">
-                            <p className="font-medium text-[#2A1F0E]">{employeeName(emp)}</p>
-                            <p className="text-xs text-muted-foreground mb-1">
-                              <span className="font-mono">{m.module_number}</span> {m.title}
-                            </p>
-                            <p className="text-xs mb-3">
-                              Status: <span className="capitalize">{status.replace("_", " ")}</span>
-                              {assignment.due_at ? ` · due ${assignment.due_at}` : ""}
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
-                              disabled={removingId === assignment.id}
-                              onClick={() => handleUnassign(assignment)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5 mr-1" />
-                              {removingId === assignment.id ? "Removing…" : "Remove assignment"}
-                            </Button>
-                            <p className="text-[11px] text-muted-foreground mt-2">
-                              Automatic sync may re-add this if the employee's department still
-                              requires the module.
-                            </p>
-                          </PopoverContent>
-                        </Popover>
-                      ) : (
-                        dot
-                      )}
+        {/* ---- Requirements: the standing requirement, by department (SQF 2.9.2.1) ---- */}
+        <TabsContent value="requirements" className="space-y-3 mt-4">
+          <div className="flex justify-between items-center gap-3">
+            <p className="text-xs text-[#F5F1E6]/60">
+              What each department must complete. An X means the module is required of everyone in
+              that department; a module marked in every column is required of all staff.
+            </p>
+            <Button variant="outline" size="sm" onClick={() => exportPdf("requirements")}>
+              <Download className="w-4 h-4 mr-1" />Download PDF
+            </Button>
+          </div>
+          <Card className="border overflow-x-auto" style={cardStyle}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-[#2A1F0E]/60">Module</TableHead>
+                  <TableHead className="text-[#2A1F0E]/60">Title</TableHead>
+                  <TableHead className="text-[#2A1F0E]/60 text-center">Cat</TableHead>
+                  {DEPARTMENTS.map(d => (
+                    <TableHead key={d} className="text-[#2A1F0E]/60 text-center whitespace-nowrap">{d}</TableHead>
+                  ))}
+                  <TableHead className="text-[#2A1F0E]/60 text-center" title="A Spanish version exists (SQF 2.9.2.2)">ES</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reqRows.map(({ module, marks, hasSpanish }) => (
+                  <TableRow key={module.id}>
+                    <TableCell className="font-mono text-xs text-[#2A1F0E] whitespace-nowrap">
+                      {module.module_number ?? module.sop_number ?? "-"}
                     </TableCell>
+                    <TableCell className="text-[#2A1F0E]">{module.title}</TableCell>
+                    <TableCell className="text-center text-[#2A1F0E]/60">{module.training_category}</TableCell>
+                    {marks.map((on, i) => (
+                      <TableCell key={DEPARTMENTS[i]} className="text-center text-[#2A1F0E] font-semibold">
+                        {on ? "X" : ""}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center text-[#2A1F0E]/70 text-xs">
+                      {hasSpanish ? "Yes" : ""}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {reqRows.length === 0 && (
+              <p className="p-8 text-center text-[#2A1F0E]/50 text-sm">No active training modules.</p>
+            )}
+          </Card>
+          {/* The limitation is stated rather than hidden: department is the finest grain the
+              data holds, and 2.9.2.1 ii asks by duty. Closing it is deliverable D-01. */}
+          <p className="text-xs text-[#F5F1E6]/50 leading-relaxed">
+            Training is assigned by <strong>department</strong>. SQF 2.9.2.1 ii asks for competencies
+            by <strong>duty</strong> &mdash; &ldquo;staff engaged in monitoring critical control
+            points&rdquo; and their named backups &mdash; and a duty is narrower than a department.
+            Recording that needs the job descriptions and named CCP monitors from deliverable D-01.
+          </p>
+        </TabsContent>
+
+        {/* ---- Completion: the existing employee x module grid ---- */}
+        <TabsContent value="completion" className="space-y-3 mt-4">
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={() => exportPdf("completion")}>
+              <Download className="w-4 h-4 mr-1" />Download PDF
+            </Button>
+          </div>
+        {/* Legend */}
+        <div className="flex justify-end">
+          <div className="flex items-center gap-3 text-xs text-[#F5F1E6]/70">
+            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.completed}`} />Completed</span>
+            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.in_progress}`} />In Progress</span>
+            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.expired}`} />Expired</span>
+            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.not_started}`} />Not Assigned</span>
+          </div>
+        </div>
+
+        {isAdmin && (
+          <p className="text-xs text-[#F5F1E6]/60 -mb-2">
+            Tip: click any filled status dot to remove that assignment.
+          </p>
+        )}
+
+        {/* Compliance matrix */}
+        <Card className="border overflow-x-auto" style={cardStyle}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-[#2A1F0E]/60 sticky left-0 bg-white z-10 row-span-2 align-bottom" rowSpan={2}>Employee</TableHead>
+                {categoryGroups.map(group => (
+                  <TableHead
+                    key={group.category}
+                    colSpan={group.items.length}
+                    className="text-center text-[#2A1F0E] border-l"
+                    style={{ borderColor: "rgba(200,155,60,0.25)" }}
+                  >
+                    Category {group.category}: {group.label}
+                  </TableHead>
+                ))}
+              </TableRow>
+              <TableRow>
+                {categoryGroups.flatMap(group => group.items).map((m, idx, arr) => {
+                  const isFirstInGroup = idx === 0 || arr[idx - 1].training_category !== m.training_category;
+                  return (
+                    <TableHead
+                      key={m.id}
+                      className="text-[#2A1F0E]/60 text-center min-w-[70px]"
+                      style={isFirstInGroup ? { borderLeft: "1px solid rgba(200,155,60,0.25)" } : undefined}
+                    >
+                      <div className="flex flex-col items-center">
+                        <span className="font-mono text-xs">{m.module_number}</span>
+                        {m.is_annual_refresher && <CheckCircle2 className="w-3 h-3 text-[#C89B3C] mt-0.5" />}
+                      </div>
+                    </TableHead>
                   );
                 })}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {employees.length === 0 && (
-          <p className="p-8 text-center text-[#2A1F0E]/50 text-sm">No employees found.</p>
-        )}
-      </Card>
+            </TableHeader>
+            <TableBody>
+              {employees.map(emp => (
+                <TableRow key={emp.id}>
+                  <TableCell className="font-medium text-[#2A1F0E] sticky left-0 bg-white z-10 whitespace-nowrap">
+                    {employeeName(emp)}
+                  </TableCell>
+                  {categoryGroups.flatMap(group => group.items).map((m, idx, arr) => {
+                    const assignment = assignmentMap.get(`${emp.id}:${m.id}`);
+                    const status = getAssignmentStatus(assignment);
+                    const isFirstInGroup = idx === 0 || arr[idx - 1].training_category !== m.training_category;
+                    const cellTitle = `${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${status.replace("_", " ")}`;
+                    const dot = <span className={`inline-block w-3 h-3 rounded-full ${STATUS_DOT[status]}`} />;
+                    return (
+                      <TableCell
+                        key={m.id}
+                        className="text-center"
+                        style={isFirstInGroup ? { borderLeft: "1px solid rgba(200,155,60,0.25)" } : undefined}
+                        title={cellTitle}
+                      >
+                        {isAdmin && assignment ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="p-1 rounded hover:bg-[#2A1F0E]/5" aria-label="Assignment actions">
+                                {dot}
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-64 text-sm" align="center">
+                              <p className="font-medium text-[#2A1F0E]">{employeeName(emp)}</p>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                <span className="font-mono">{m.module_number}</span> {m.title}
+                              </p>
+                              <p className="text-xs mb-3">
+                                Status: <span className="capitalize">{status.replace("_", " ")}</span>
+                                {assignment.due_at ? ` · due ${assignment.due_at}` : ""}
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
+                                disabled={removingId === assignment.id}
+                                onClick={() => handleUnassign(assignment)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                                {removingId === assignment.id ? "Removing…" : "Remove assignment"}
+                              </Button>
+                              <p className="text-[11px] text-muted-foreground mt-2">
+                                Automatic sync may re-add this if the employee's department still
+                                requires the module.
+                              </p>
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          dot
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {employees.length === 0 && (
+            <p className="p-8 text-center text-[#2A1F0E]/50 text-sm">No employees found.</p>
+          )}
+        </Card>
+        </TabsContent>
+
+        {/* ---- Exceptions: where requirement and assignment disagree ---- */}
+        <TabsContent value="exceptions" className="space-y-3 mt-4">
+          <p className="text-xs text-[#F5F1E6]/60">
+            Where the standing requirement and the actual assignments disagree. An empty list is the
+            healthy state.
+          </p>
+          <Card className="border overflow-x-auto" style={cardStyle}>
+            {exceptionRows.length === 0 ? (
+              <p className="p-8 text-center text-[#2A1F0E]/50 text-sm">
+                No exceptions &mdash; every required module is assigned, and nothing is assigned out of scope.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-[#2A1F0E]/60">Employee</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">Department</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">Module</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">Title</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">Finding</TableHead>
+                    <TableHead className="text-[#2A1F0E]/60">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {exceptionRows.map(({ employee, row }) => (
+                    <TableRow key={`${employee.id}:${row.module.id}`}>
+                      <TableCell className="text-[#2A1F0E] whitespace-nowrap">
+                        {employee.full_name || employee.id}
+                      </TableCell>
+                      <TableCell className="text-[#2A1F0E]/70">{employee.department ?? "Not set"}</TableCell>
+                      <TableCell className="font-mono text-xs text-[#2A1F0E] whitespace-nowrap">
+                        {row.module.module_number ?? row.module.sop_number ?? "-"}
+                      </TableCell>
+                      <TableCell className="text-[#2A1F0E]">{row.module.title}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={row.exception === "gap"
+                            ? "bg-red-500/20 text-red-700 border-red-500/30"
+                            : "bg-[#C89B3C]/20 text-[#9A6F1E] border-[#C89B3C]/40"}
+                        >
+                          {exceptionLabel(row)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-[#2A1F0E]/70 capitalize">{statusLabel(row)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
