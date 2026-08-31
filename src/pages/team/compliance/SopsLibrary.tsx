@@ -94,7 +94,12 @@ const statusColors: Record<string, string> = {
 // "internal" is engineering documentation kept here for convenience -- in force, but not a
 // controlled food-safety document, so the Document Register excludes it.
 const TYPES = ["sop", "form", "policy", "training", "fsqm", "report", "internal"] as const;
-const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM" };
+// Every sop_documents.type needs an entry: the list badge and the type dropdowns read
+// straight out of this map, so a missing key renders an empty pill and a blank option.
+const TYPE_LABELS: Record<string, string> = {
+  sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM",
+  report: "Report", internal: "Internal Doc",
+};
 
 // SQF Code section names (top-level integer prefix of the reference code)
 const SQF_SECTION_NAMES: Record<string, string> = {
@@ -607,12 +612,12 @@ export default function SopsLibrary() {
                 </TableCell>
                 <TableCell>
                   <span className="inline-flex items-center gap-1.5">
-                    <Badge variant="outline">{TYPE_LABELS[d.type]}</Badge>
+                    <Badge variant="outline">{TYPE_LABELS[d.type] ?? d.type}</Badge>
                     {hasFormSchema(d) && (
                       <Badge className="bg-[#C89B3C]/15 text-[#9A6F1E] border-[#C89B3C]/30">Fillable</Badge>
                     )}
                     {hasReportSchema(d.content) && (
-                      <Badge className="bg-[#2A1F0E]/10 text-[#2A1F0E]/70 border-[#2A1F0E]/20">Report</Badge>
+                      <Badge className="bg-[#2A1F0E]/10 text-[#2A1F0E]/70 border-[#2A1F0E]/20">Derived</Badge>
                     )}
                     {hasSopBody(d.content) && (
                       <button
@@ -812,7 +817,7 @@ export default function SopsLibrary() {
           {selected && (
             <div className="space-y-4 mt-4 text-sm">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">{TYPE_LABELS[selected.type]}</Badge>
+                <Badge variant="outline">{TYPE_LABELS[selected.type] ?? selected.type}</Badge>
                 <Badge className={statusColors[selected.status]}>{selected.status}</Badge>
                 {selected.category && <Badge variant="outline">{selected.category}</Badge>}
                 {selected.sqf_required && (

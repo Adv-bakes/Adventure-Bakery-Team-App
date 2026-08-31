@@ -21,7 +21,12 @@ type RegisterDoc = {
   status: "draft" | "active" | "archived";
 };
 
-const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM" };
+// Every sop_documents.type needs an entry: the list badge and the type dropdowns read
+// straight out of this map, so a missing key renders an empty pill and a blank option.
+const TYPE_LABELS: Record<string, string> = {
+  sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM",
+  report: "Report", internal: "Internal Doc",
+};
 
 const statusColors: Record<string, string> = {
   draft: "bg-[#C89B3C]/20 text-[#9A6F1E] border-[#C89B3C]/40",
