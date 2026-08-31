@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,24 +20,30 @@ import { useUserRole } from "@/hooks/useUserRole";
 import {
   TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS, DEPARTMENTS,
   TrainingModule, TrainingAssignment, Employee, ModuleVariant,
-  AssignmentStatus, getAssignmentStatus, isExpiringSoon, isOverdue,
+  isExpiringSoon, isOverdue,
   fetchTrainingModules, fetchTrainingAssignments, fetchEmployees, fetchTrainingVariants,
   assignModulesToEmployees, deleteAssignment,
 } from "@/lib/training";
 import {
   assignableModules, buildGoverningMap, requirementMatrix, exceptions,
-  exceptionLabel, statusLabel,
+  exceptionLabel, statusLabel, recordStatus, RECORD_STATUS_LABEL, type RecordStatus,
 } from "@/lib/trainingMatrix";
 import { downloadRequirementsPdf, downloadCompletionPdf } from "@/lib/trainingPdf";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
 
-const STATUS_DOT: Record<AssignmentStatus, string> = {
-  not_started: "bg-[#2A1F0E]/15",
+// Five states, not four: an assignment nobody has opened is drawn as a hollow ring
+// rather than the same solid gold as one genuinely under way. See recordStatus().
+const STATUS_DOT: Record<RecordStatus, string> = {
+  not_assigned: "bg-[#2A1F0E]/15",
+  assigned: "border-2 border-[#C89B3C] bg-transparent",
   in_progress: "bg-[#C89B3C]",
   completed: "bg-green-500",
   expired: "bg-red-500",
 };
+
+type ReportView = "requirements" | "completion" | "exceptions";
+const VIEWS: ReportView[] = ["requirements", "completion", "exceptions"];
 
 export default function TrainingCompliance() {
   const { hasRole } = useUserRole();
@@ -46,6 +53,15 @@ export default function TrainingCompliance() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [variants, setVariants] = useState<ModuleVariant[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Deep link from a printed export: ?view= picks the tab, &download=1 re-runs that
+  // export. Every generated PDF carries one, because a printed report is stale the
+  // moment it prints and has to say where the current one lives.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = searchParams.get("view") as ReportView | null;
+  const [tab, setTab] = useState<ReportView>(
+    viewParam && VIEWS.includes(viewParam) ? viewParam : "requirements");
+  const autoFired = useRef(false);
 
   // Manual assignment dialog (in addition to the automatic department sync).
   const [assignOpen, setAssignOpen] = useState(false);
@@ -165,6 +181,22 @@ export default function TrainingCompliance() {
       : downloadCompletionPdf(employees, modules, assignments, governing);
     run.catch((e: any) => toast.error(e.message ?? "Failed to generate PDF"));
   };
+
+  // Fire the requested export once the data it is built from has actually loaded.
+  useEffect(() => {
+    if (autoFired.current || loading) return;
+    if (searchParams.get("download") !== "1") return;
+    autoFired.current = true;
+    // Drop the flag first, so a refresh or a Back navigation does not download again.
+    const next = new URLSearchParams(searchParams);
+    next.delete("download");
+    setSearchParams(next, { replace: true });
+    if (tab === "exceptions") return;          // no export for that view
+    // A download with no click behind it can be blocked, and a silent block looks
+    // like a dead link. Say where the manual button is.
+    toast.info("Preparing your download — if nothing happens, use Download PDF below.");
+    exportPdf(tab);
+  }, [loading, searchParams, tab]);
 
   const alerts = useMemo(() => {
     const expiringSoon: { employee: Employee; module: TrainingModule; assignment: TrainingAssignment }[] = [];
@@ -316,7 +348,7 @@ export default function TrainingCompliance() {
         </Card>
       </div>
 
-      <Tabs defaultValue="requirements" className="w-full">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as ReportView)} className="w-full">
         <TabsList>
           <TabsTrigger value="requirements">Requirements</TabsTrigger>
           <TabsTrigger value="completion">Completion</TabsTrigger>
@@ -395,8 +427,9 @@ export default function TrainingCompliance() {
           <div className="flex items-center gap-3 text-xs text-[#F5F1E6]/70">
             <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.completed}`} />Completed</span>
             <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.in_progress}`} />In Progress</span>
+            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.assigned}`} />Assigned, not started</span>
             <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.expired}`} />Expired</span>
-            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.not_started}`} />Not Assigned</span>
+            <span className="flex items-center gap-1"><span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT.not_assigned}`} />Not Assigned</span>
           </div>
         </div>
 
@@ -449,9 +482,9 @@ export default function TrainingCompliance() {
                   </TableCell>
                   {categoryGroups.flatMap(group => group.items).map((m, idx, arr) => {
                     const assignment = assignmentMap.get(`${emp.id}:${m.id}`);
-                    const status = getAssignmentStatus(assignment);
+                    const status = recordStatus(assignment ?? null);
                     const isFirstInGroup = idx === 0 || arr[idx - 1].training_category !== m.training_category;
-                    const cellTitle = `${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${status.replace("_", " ")}`;
+                    const cellTitle = `${TRAINING_CATEGORY_LABELS[m.training_category]} — ${m.title}: ${RECORD_STATUS_LABEL[status]}`;
                     const dot = <span className={`inline-block w-3 h-3 rounded-full ${STATUS_DOT[status]}`} />;
                     return (
                       <TableCell
@@ -473,7 +506,7 @@ export default function TrainingCompliance() {
                                 <span className="font-mono">{m.module_number}</span> {m.title}
                               </p>
                               <p className="text-xs mb-3">
-                                Status: <span className="capitalize">{status.replace("_", " ")}</span>
+                                Status: <span>{RECORD_STATUS_LABEL[status]}</span>
                                 {assignment.due_at ? ` · due ${assignment.due_at}` : ""}
                               </p>
                               <Button

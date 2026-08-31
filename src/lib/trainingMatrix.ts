@@ -33,6 +33,41 @@ import {
 
 export type TrainingException = "gap" | "extra" | null;
 
+/**
+ * Five states, where getAssignmentStatus() has four.
+ *
+ * getAssignmentStatus() returns "in_progress" for ANY assignment that is neither
+ * completed nor expired, so an assignment nobody has ever opened reports as in
+ * progress - and "not_started" is reserved for having no assignment at all. On this
+ * database exactly one assignment has a progress object, while seventeen display as
+ * in progress.
+ *
+ * That is tolerable as a dashboard colour and is NOT tolerable in a training record:
+ * it asserts that somebody has begun training they have never opened. The viewer
+ * writes progress on every slide transition, so progress === null && !completed_at
+ * genuinely means "assigned, never opened".
+ *
+ * Deliberately a separate function rather than a change to getAssignmentStatus(),
+ * which the employee-facing pages also use for sorting and display.
+ */
+export type RecordStatus =
+  | "not_assigned" | "assigned" | "in_progress" | "completed" | "expired";
+
+export function recordStatus(a: TrainingAssignment | null): RecordStatus {
+  if (!a) return "not_assigned";
+  if (a.expires_at && new Date(a.expires_at) < new Date()) return "expired";
+  if (a.completed_at) return "completed";
+  return a.progress ? "in_progress" : "assigned";
+}
+
+export const RECORD_STATUS_LABEL: Record<RecordStatus, string> = {
+  not_assigned: "Not assigned",
+  assigned: "Assigned, not started",
+  in_progress: "In progress",
+  completed: "Completed",
+  expired: "Expired",
+};
+
 export interface PersonModuleRow {
   module: TrainingModule;
   required: boolean;
@@ -222,6 +257,6 @@ export function exceptionLabel(row: PersonModuleRow): string {
 
 export function statusLabel(row: PersonModuleRow): string {
   if (!row.assignment) return row.required ? "Not assigned" : "Not required";
-  const base = row.status.replace("_", " ");
+  const base = RECORD_STATUS_LABEL[recordStatus(row.assignment)];
   return row.inSpanish ? `${base} (ES)` : base;
 }

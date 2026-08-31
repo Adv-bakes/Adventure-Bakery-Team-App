@@ -349,7 +349,16 @@ export async function generateDerivedReportPdf(
   logDoc: FormPdfDoc,
   headers: string[],
   rows: string[][],
-  meta: { rangeLabel?: string; count: number; sourceLabel?: string; legend?: string[] },
+  meta: {
+    rangeLabel?: string; count: number; sourceLabel?: string; legend?: string[];
+    /**
+     * Where the live version of this report lives. A printed report is stale the
+     * moment it prints, so the copy has to say where the current one is - the
+     * point-of-use rule in document control. Rendered as a real PDF link
+     * annotation, not just text, so it is clickable from the file.
+     */
+    link?: { label: string; url: string };
+  },
 ): Promise<void> {
   const logo = await loadLogoDataUrl();
   const clampCount = Math.min(headers.length, MAX_REPORT_COLUMNS);
@@ -421,6 +430,19 @@ export async function generateDerivedReportPdf(
     for (const line of meta.legend) {
       body.push({ text: line, fontSize: 8, color: "#555555", margin: [0, 0, 0, 1] });
     }
+  }
+
+  if (meta.link) {
+    body.push({
+      text: [
+        { text: "Current version: ", fontSize: 8, color: "#555555" },
+        {
+          text: meta.link.label, link: meta.link.url,
+          fontSize: 8, color: PDF_GOLD, decoration: "underline",
+        },
+      ],
+      margin: [0, 8, 0, 0],
+    });
   }
 
   const docDefinition: TDocumentDefinitions = {
