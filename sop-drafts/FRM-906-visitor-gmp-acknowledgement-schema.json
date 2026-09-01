@@ -1,0 +1,167 @@
+{
+  "settings": {
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "requireVerification": false,
+    "instanceTitleTemplate": "Acknowledgement — {ack_date} — {visitor_name}"
+  },
+  "sections": [
+    {
+      "id": "visitor",
+      "title": "Visitor",
+      "fields": [
+        {
+          "id": "ack_date",
+          "type": "date",
+          "label": "Date",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "defaultToday": true
+        },
+        {
+          "id": "visitor_name",
+          "type": "text",
+          "label": "Visitor name",
+          "width": "third",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "company",
+          "type": "text",
+          "label": "Company / organisation",
+          "width": "third",
+          "showInList": true
+        }
+      ]
+    },
+    {
+      "id": "rules",
+      "title": "Food Safety and Hygiene Rules",
+      "fields": [
+        {
+          "id": "rules_intro",
+          "type": "info",
+          "label": "Please read before entering",
+          "text": "Adventure Bakery makes food. Everything below exists to keep what we make safe for the people who eat it. Read these rules, ask your host if anything is unclear, and sign at the bottom to confirm you have understood them.\n\nThis briefing is what SQF 11.3.4.1 requires before a visitor enters a food handling area. If you have not been briefed, you must be escorted at all times instead."
+        },
+        {
+          "id": "rules_table",
+          "type": "reference_table",
+          "label": "The rules",
+          "columns": [
+            "#",
+            "Rule"
+          ],
+          "rows": [
+            [
+              "1",
+              "Sign in on FRM-905 before entering any food handling, processing or storage area."
+            ],
+            [
+              "2",
+              "Remove jewellery and other loose objects. Plain wedding bands with no stones are the only exception. This applies to management staff equally."
+            ],
+            [
+              "3",
+              "Wear the protective clothing issued at entry — hairnet covering all hair with both ears covered, beard cover where applicable, lab coat, and shoe covers or dedicated footwear."
+            ],
+            [
+              "4",
+              "Wash your hands on entering a food handling or processing area, after using a toilet, after eating, drinking or smoking, and after touching anything that is not clean."
+            ],
+            [
+              "5",
+              "Enter and exit through the staff entrance points only."
+            ],
+            [
+              "6",
+              "Do not eat, drink, chew gum, smoke or spit anywhere product is made, stored or exposed."
+            ],
+            [
+              "7",
+              "Remain within the areas your host has approved."
+            ],
+            [
+              "8",
+              "Do not touch ingredients, packaging, product or equipment unless the SQF Practitioner has authorized you to."
+            ],
+            [
+              "9",
+              "Do not enter if you have any symptom of illness — see the health declaration below."
+            ],
+            [
+              "10",
+              "Contractors: agree your work area and its segregation with the SQF Practitioner or Supervisor before starting; account for all tools, parts and materials before and after the work; and if the work introduces glass or brittle plastic, it must be recorded on FRM-907 under SOP-11.7.3."
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "health",
+      "title": "Health Declaration",
+      "fields": [
+        {
+          "id": "health_info",
+          "type": "info",
+          "label": "Why we ask",
+          "text": "SQF 11.3.4.3 requires that visitors showing visible signs of illness are not permitted into any area where food is handled or processed. The same rules apply to our own staff."
+        },
+        {
+          "id": "no_symptoms",
+          "type": "pass_fail",
+          "width": "full",
+          "required": true,
+          "label": "I have none of the following today: vomiting, diarrhoea, jaundice, fever with sore throat, discharge from the eyes, ears or nose, or an infected wound, boil or sore"
+        },
+        {
+          "id": "wounds_covered",
+          "type": "pass_fail",
+          "width": "half",
+          "required": true,
+          "label": "Any cut or graze on my hands or exposed skin is covered with the dressing provided"
+        },
+        {
+          "id": "health_notes",
+          "type": "textarea",
+          "label": "Anything the host should know",
+          "width": "full"
+        }
+      ]
+    },
+    {
+      "id": "acknowledgement",
+      "title": "Acknowledgement",
+      "fields": [
+        {
+          "id": "ack_statement",
+          "type": "info",
+          "label": "Acknowledgement",
+          "text": "I have read and understood the food safety and hygiene rules above. I will follow them for the whole of my visit, and I will do what my host asks of me while I am on site. I understand that not following them means being asked to leave the production areas."
+        },
+        {
+          "id": "visitor_signature",
+          "type": "signature",
+          "label": "Visitor",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "briefed_by",
+          "type": "signature",
+          "label": "Briefed by (host)",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "retention_note",
+          "type": "info",
+          "label": "Retention",
+          "text": "Completed visitor records are retained by QA for a minimum of twelve months (FSQM-012 Part 6)."
+        }
+      ]
+    }
+  ]
+}

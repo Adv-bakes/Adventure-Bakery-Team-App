@@ -1,0 +1,176 @@
+{
+  "settings": {
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "requireVerification": false,
+    "instanceTitleTemplate": "Visitor — {visit_date} — {visitor_name}"
+  },
+  "sections": [
+    {
+      "id": "visit",
+      "title": "Visit",
+      "fields": [
+        {
+          "id": "visit_date",
+          "type": "date",
+          "label": "Date",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "defaultToday": true
+        },
+        {
+          "id": "visitor_name",
+          "type": "text",
+          "label": "Visitor name",
+          "width": "third",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "company",
+          "type": "text",
+          "label": "Company / organisation",
+          "width": "third",
+          "showInList": true
+        },
+        {
+          "id": "purpose",
+          "type": "select",
+          "label": "Purpose of visit",
+          "width": "half",
+          "options": [
+            "Contractor / maintenance",
+            "Audit or inspection",
+            "Supplier",
+            "Customer",
+            "Pest control",
+            "Delivery",
+            "Other"
+          ],
+          "required": true,
+          "allowOther": true,
+          "showInList": true
+        },
+        {
+          "id": "host",
+          "type": "text",
+          "label": "Host (authorized employee responsible for this visitor)",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "areas",
+          "type": "text",
+          "label": "Areas entered",
+          "width": "full",
+          "help": "Production floor, packaging, storage, etc. Visitors remain within approved areas only."
+        },
+        {
+          "id": "time_in",
+          "type": "time",
+          "label": "Time in",
+          "width": "third",
+          "required": true
+        },
+        {
+          "id": "time_out",
+          "type": "time",
+          "label": "Time out",
+          "width": "third"
+        }
+      ]
+    },
+    {
+      "id": "entry_note",
+      "title": "Before entry",
+      "fields": [
+        {
+          "id": "entry_info",
+          "type": "info",
+          "label": "Before entry",
+          "text": "11.3.4.1 gives two routes into a food handling area and the site must use one of them: the visitor is briefed on the site's food safety and hygiene rules, or the visitor is escorted at all times by an authorized employee. Record which applies. A visitor who has not completed the FRM-906 briefing is NOT left unaccompanied.\n\nThe host completes this section before the visitor enters, not afterwards."
+        },
+        {
+          "id": "entry_route",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "Route under 11.3.4.1",
+          "options": [
+            "Briefed — FRM-906 completed and signed",
+            "Escorted at all times by an authorized employee",
+            "Both"
+          ]
+        },
+        {
+          "id": "escort_name",
+          "type": "text",
+          "label": "Escort, where escorted",
+          "width": "half"
+        },
+        {
+          "id": "no_illness",
+          "type": "pass_fail",
+          "width": "half",
+          "required": true,
+          "label": "No visible signs of illness (11.3.4.3)"
+        },
+        {
+          "id": "jewellery_removed",
+          "type": "pass_fail",
+          "width": "half",
+          "required": true,
+          "label": "Jewellery and loose objects removed (11.3.4.2)"
+        },
+        {
+          "id": "ppe_issued",
+          "type": "pass_fail",
+          "width": "half",
+          "required": true,
+          "label": "PPE issued and worn — hairnet, beard cover where applicable, lab coat, footwear"
+        },
+        {
+          "id": "entry_point",
+          "type": "pass_fail",
+          "width": "half",
+          "required": true,
+          "label": "Entered via the staff entrance and washed hands (11.3.4.4)"
+        },
+        {
+          "id": "entry_notes",
+          "type": "textarea",
+          "label": "Notes",
+          "width": "full",
+          "help": "Anything refused, restricted, or worth recording about this visit"
+        }
+      ]
+    },
+    {
+      "id": "signoff",
+      "title": "Sign-off",
+      "fields": [
+        {
+          "id": "visitor_signature",
+          "type": "signature",
+          "label": "Visitor",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "host_signature",
+          "type": "signature",
+          "label": "Host",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "retention_note",
+          "type": "info",
+          "label": "Retention",
+          "text": "Completed visitor records are retained by QA for a minimum of twelve months (FSQM-012 Part 6)."
+        }
+      ]
+    }
+  ]
+}
