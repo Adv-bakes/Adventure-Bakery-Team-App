@@ -221,6 +221,15 @@ depends on, and correct deficiencies raised by GMP inspection.
   different jobs — never make a foot bath at the food-contact dilution, and never sanitize a
   food-contact surface at the foot-bath dilution.** The foot-bath dilution is not a no-rinse
   food-contact strength.
+- **The two dilutions are made up into separate, clearly labelled containers**, so the foot-bath
+  solution and the food-contact solution are never drawn from the same vessel. That labelling is
+  the control which keeps two strengths of one product from reaching the wrong job — the solutions
+  look identical, and only the label distinguishes them.
+- **Foot bath maintenance.** The solution is made up fresh at the start of each production day,
+  and sooner whenever it is visibly soiled or a test strip reads below target. The baths are
+  stripped and thoroughly cleaned **monthly**, and sooner if required. The change interval matters
+  as much as the dilution: the soil a bath lifts off the floor is exactly what spends the quat, so
+  a bath left standing is weaker than its label says however carefully it was mixed.
 - **Disposable gloves and aprons shall be changed after each break, on every re-entry to the
   processing area, and whenever damaged.** They are not washed and re-used.
 - Non-disposable aprons and gloves shall be cleaned and sanitized as required. When not in use
@@ -319,13 +328,17 @@ depends on, and correct deficiencies raised by GMP inspection.
 - **Sanitary drainage** is not connected to any other drain within the premises and discharges to
   the sewerage system in accordance with regulations.
 - The **break room** is separate from all food contact and handling zones, is lit, and is
-  ventilated by the site's heating and cooling system. It has **a refrigerator**, and **a table
-  with seating for all employees at one sitting** (11.3.5.9 i, ii, iv). It holds the personal-item
-  lockers and is kept clean and free from waste materials and pests.
-- The break room does **not** have a **sink served with hot and cold potable water for washing
-  utensils** (11.3.5.9 iii). The handwash basin in the adjacent lavatory is a handwash basin, not
-  the utensil sink that clause asks for. Whether a means of heating food is provided is not yet
-  recorded (11.3.5.9 iv).
+  ventilated by the site's heating and cooling system. It has **a refrigerator**, **a microwave
+  for heating food**, and **a table with seating for all employees at one sitting** (11.3.5.9 i,
+  ii, iv). It holds the personal-item lockers and is kept clean and free from waste materials and
+  pests.
+- The break room has **no utensil sink** (11.3.5.9 iii), and nothing is washed up in it: **the
+  utensils provided are disposable**, and any re-usable personal item a member of staff brings is
+  taken home to be washed rather than washed on site. The handwash basin in the adjacent lavatory
+  is therefore not standing in for a utensil sink — there are no utensils to wash. Used personal
+  items are kept in the owner's locker or bag until they leave, not left out in the room. This is
+  an alternative arrangement rather than the fixture the clause names, so it is recorded in the
+  Module 11 exemption analysis with this justification, as 2.4.2.1 requires.
 - **Staff food is not stored in the production walk-in refrigerator.** Personal food held among
   ingredients is a contamination and allergen route, which is why the break room carries its own
   refrigeration rather than borrowing the walk-in.
@@ -459,37 +472,45 @@ dispenser and towels that can be taken without touching the housing; handwash si
 room, at its exit, in both toilet rooms and at the production entrance, in English and Spanish; no
 designated high-risk area; protective clothing laundered by employees at home with detergent and
 hung to dry; footwear controlled by two sanitizing foot baths, at the production entrance and at
-the walkthrough to the inventory and packaging area, dosed with Sani-512 at 1:160; changing done
-in the toilet rooms, personal items in break room lockers; the employee lavatory reached through a
-vented airlock; sanitary drainage separate and compliant; the break room separate from food zones,
-lit, ventilated, with a refrigerator and a table seating all employees at one sitting; no fixed
-illness exclusion interval — supervisor clearance is the control; product tasting carried out in
-the office adjacent to production, never on the floor.
+the walkthrough to the inventory and packaging area, dosed with Sani-512 at 1:160, made up in
+separate clearly labelled containers from the 1:512 food-contact solution, and thoroughly cleaned
+monthly; changing done in the toilet rooms, personal items in break room lockers; the employee
+lavatory reached through a vented airlock; sanitary drainage separate and compliant; the break
+room separate from food zones, lit, ventilated, with a refrigerator, a microwave and a table
+seating all employees at one sitting, and with disposable utensils so nothing is washed up there;
+no fixed illness exclusion interval — supervisor clearance is the control; product tasting carried
+out in the office adjacent to production, never on the floor.
 
-OPEN BEFORE ACTIVATION — four items. Where the site chooses not to provide something, that is an
-input to the Module 11 exemption analysis required by 2.4.2.1, not a silent omission.
+OPEN BEFORE ACTIVATION — three items.
 1. ACTION — protective clothing racks. These do not exist yet. 11.3.3.7 wants them at or adjacent
 to the personnel access doorway AND the handwashing facilities, so the right place is the
 production entrance beside the existing handwash station and foot bath, not by the walk-in fridge:
 the garment comes off, the foot bath is crossed and the hands are washed at one point. A simple
-coat rack satisfies the clause.
-2. DECISION — break room sink. 11.3.5.9 (iii) asks for a sink served with hot and cold potable
-water for washing utensils. The break room has none; the adjacent lavatory has a handwash basin,
-which is a different fixture for a different purpose. Either install a small sink or carry this
-into the exemption analysis with a justification for how utensils are washed instead. While
-settling this, also record whether the break room has a means of HEATING food (11.3.5.9 iv) — the
-refrigerator is confirmed, heating is not.
-3. CONFIRM — handwash station construction: stainless steel or a similar non-corrosive material,
-with dispensers that can be cleaned (11.3.2.3). Also worth settling for 13.6: the towel dispenser
-has no no-touch MECHANISM, and an auditor reading 'hands-free dispenser' strictly could call that
-out even though a towel is taken without contact. The exemption analysis is where that argument is
-made once, in writing, rather than at the audit.
-4. CONFIRM — the foot baths, on two points. (a) HOW OFTEN THEY ARE CHANGED. The dilution is now
-specified; a correctly dosed bath that is never changed is still not a control, because the soil
-it collects is what spends the quat. Set an interval and put it on FRM-901 as a scheduled task,
-with the strength verified on a test strip the way the SSOPs already do. (b) THE 1:160 FIGURE
+coat rack satisfies the clause. This is the last physical item outstanding.
+2. CONFIRM — handwash station construction: stainless steel or a similar non-corrosive material,
+with dispensers that can be cleaned (11.3.2.3). A five-minute look at the three stations settles
+it.
+3. CONFIRM — the foot baths, on two points. (a) THE DAILY CHANGE. This program states the solution
+is made up fresh at the start of each production day and sooner when visibly soiled or below strip
+target, with a thorough clean monthly. The monthly clean is the site's own answer; the daily
+change is written here because a concentration without a change interval is not a control — the
+soil a bath lifts off the floor is what spends the quat, so a bath left standing is weaker than
+its label says however carefully it was mixed. Confirm the daily interval or set a different one,
+then put both it and the monthly clean on FRM-901 with a test strip check. (b) THE 1:160 FIGURE
 AGAINST THE PRODUCT LABEL. The 1:512 food-contact dilution was checked against the Sani-512 label
 on 2026-08-25; this foot-bath ratio has not been. A sanitizer used at a dilution its label does
 not carry is a label-use problem before it is an SQF problem, so confirm 1:160 appears on the
 label for this use — and while doing it, add the label and SDS to the Chemical Safety Data Sheets
 collection, which still holds only a generated summary.
+
+CARRIED INTO THE MODULE 11 EXEMPTION ANALYSIS (task 13.6). Two arrangements meet what a clause
+protects without being the fixture it names. 2.4.2.1 allows exactly that, in exchange for a
+written justification, and these are the two that need one:
+i. NO UTENSIL SINK in the break room (11.3.5.9 iii). Nothing is washed up there — utensils are
+disposable and personal items go home to be washed — so the fixture has no work to do. The
+justification is that there are no utensils to wash, not that a handwash basin substitutes for a
+sink.
+ii. THE PAPER TOWEL DISPENSER has no no-touch mechanism (11.3.2.3 iii), though a towel is taken
+without contacting the housing. What the clause protects — clean hands not recontaminated on the
+way to being dried — is met, but the clause names a dispenser type, so the argument is worth
+making once in writing rather than at the audit.
