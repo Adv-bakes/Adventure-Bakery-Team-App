@@ -1,3 +1,88 @@
+-- FSQM-013 - the six undetermined Module 11 classifications, answered.
+--
+-- The analysis was issued with six category D entries: clauses whose classification depended on a
+-- fact about the site nobody had stated. The site answered all six on 2026-09-01, before issue.
+-- Five became category B. The sixth became the document's third category C entry.
+--
+-- FIVE STRAIGHTFORWARD DETERMINATIONS (category B - the clause's own condition is not met):
+--   11.5.4     Ice is not used during processing, as a processing aid, or as an ingredient.
+--   11.7.2     The site no longer handles frozen product; nothing is thawed.
+--   11.5.5     Compressed air runs pneumatic equipment only; no food or food-contact surface
+--              comes into contact with it.
+--   11.1.4.1   No online inspection is performed; no inspection area is designated.
+--   11.5.2     Water is supplied by the local utility at potable quality and used as delivered.
+--
+-- 11.7.4.1 IS THE ONE THAT COULD NOT BE ANSWERED WITH A "NO". The mechanical sieve has been
+-- DISMANTLED and is no longer part of the production operation, so the site operates no
+-- foreign-matter removal or detection technology at all. That is a cleaner position than the first
+-- draft's - the sieve present but unused - because idle equipment invites the question of whether
+-- it is really unused and a dismantled unit does not. The clause is NOT conditional, so absence
+-- has to be JUSTIFIED rather than merely noted - which makes it category C, and the entry now
+-- states what controls foreign matter instead: SOP-11.7.3 with FRM-907/908, the pre-operation
+-- inspection on FRM-903, equipment condition under 11.2.1, the personnel and processing practices
+-- in FSQM-012, and 11.7.4.5, which applies regardless. Its neighbours 11.7.4.2/.3/.4 ARE
+-- conditional and go to category B.
+--
+-- TWO NEIGHBOURING CLAUSES ARE EXPLICITLY PRESERVED, because an exemption sitting beside them could
+-- be misread as covering them. Both are stated in the body rather than left to inference:
+--   11.4.1.1 (v)  hose storage after use is a PROCESSING PRACTICE, not scoped to food contact, so
+--                 it survives the compressed air determination entirely. It is then answered on its
+--                 own terms as a FOURTH category C entry: the compressed air lines are coiled drops
+--                 suspended from the ceiling, which retract overhead and never reach the floor, so
+--                 the site has no hose racks because it needs none. Recorded as an alternative
+--                 control rather than assumed compliant - many auditors would read a ceiling drop
+--                 as satisfying the clause outright, and it costs a paragraph to have answered the
+--                 one who does not.
+--   11.5.3        water quality testing and its records survive the water treatment determination.
+--                 Not treating water removes nothing from the obligation to test it.
+--
+-- A PLANNED CHANGE IS RECORDED NOW RATHER THAN LEFT TO THE NEXT REVIEW. A metal detector is to be
+-- purchased for rum cake production. New Part 5 states what it re-classifies on installation -
+-- 11.7.4.1 from C to A, 11.7.4.2/.3/.4 from B to A in full, 11.1.4.1 from B to A - and what must
+-- exist before it is used in production: a line on FRM-004, an operating and verification SOP, and
+-- its checks on the daily record. It also records that the sieve is dismantled, and that
+-- reinstating it - or introducing any other screen, filter or magnet - re-engages 11.7.4.1 and
+-- 11.7.4.2 immediately.
+--
+-- Category D is now empty and the category is KEPT anyway, with its definition, because it is the
+-- honest place to put the next one. Deleting it would make the next undetermined clause look like
+-- an anomaly rather than a normal state.
+--
+-- Body grows 28 -> 33 lines, still 6 Parts (category D's Part becomes Part 5, Pending Changes).
+-- ONE ITEM REMAINS OPEN, and it is narrower than the one it replaces: 11.4.1.1 (v) covers WASH-DOWN
+-- hoses as well as compressed air ones, and only the compressed air lines are ceiling drops. How the
+-- wash-down hoses are stored is unstated. No revision bump: FSQM-013 is an unissued draft from earlier today and this completes
+-- what it was written to say, rather than revising something anyone has relied on.
+--
+-- Guarded: FSQM-013 must still be the 28-line draft carrying the category D wording this replaces.
+
+begin;
+
+do $$
+declare
+  st    text;
+  rev   text;
+  lines int;
+  d_old boolean;
+begin
+  select status, revision, jsonb_array_length(content->'procedure'),
+         (content->'procedure')::text like '%most consequential open line%'
+    into st, rev, lines, d_old
+    from public.sop_documents where sop_number = 'FSQM-013';
+
+  if st is null then
+    raise exception 'FSQM-013 does not exist - run 20260901000013 first.';
+  end if;
+  if st <> 'draft' or rev <> 'New' then
+    raise exception 'FSQM-013 is % at revision % - expected the unissued draft.', st, rev;
+  end if;
+  if lines <> 28 or not d_old then
+    raise exception 'FSQM-013 is not the version this migration was derived from (% procedure lines, category D wording present=%). Re-derive before applying.', lines, d_old;
+  end if;
+end $$;
+
+update public.sop_documents
+   set content = $j013$
 {
   "purpose": "To record, as SQF 2.4.2.1 requires, which Good Manufacturing Practices in Module 11 of the SQF Food Safety Code: Food Manufacturing apply at this site, which are not engaged because the clause's own condition is not met, and which are met by an alternative control — with the justification or the evidence of effectiveness in each case.",
   "scope": "Covers all 175 clauses across the 34 subsections of Module 11.\n\nCompanion to FSQM-012, the Good Manufacturing Practices Program, which states what the site does. This document states what the site does not do, and why that is defensible.\n\nVerified through the monthly inspection recorded on FRM-913, whose N/A rows and their written reasons are the input to this analysis.",
@@ -43,3 +128,83 @@
   "governing_reference": "SQF Food Safety Code: Food Manufacturing, Edition 9 — 2.4.2.1 (Module 11 GMPs applied or exempted according to a written risk analysis outlining the justification for exemption or evidence of the effectiveness of alternative control measures) and 2.4.2.2 (GMPs documented and implemented).\nSQF Food Safety Code: Food Manufacturing, Edition 9 — Module 11 in full.\nFDA 21 CFR Part 117 Subpart B — Current Good Manufacturing Practice.",
   "revision_history": "New — 2026-09-01 — Initial issue, under D-13 task 13.6.\n\nWritten because 2.4.2.1 permits exempting a Module 11 requirement only on a documented risk analysis, and FSQM-012 was issued stating that no exemption is claimed until such an analysis exists. This is that analysis, and FSQM-012 references it.\n\nTHE THREE-WAY CLASSIFICATION IS THE POINT. Lumping every departure together as an exemption would overstate what the site claims. A clause scoped to high-risk areas at a site with no high-risk area is not being set aside — it has no subject — and saying otherwise invites an auditor to ask what risk assessment supports the exemption, when the honest answer is that none is needed. Separating that from a genuine alternative control keeps the burden of justification where 2.4.2.1 puts it.\n\nALL SIX UNDETERMINED ITEMS ANSWERED 2026-09-01 by Richard Mercer, before issue. Ice is not used in processing, as a processing aid or as an ingredient; the site no longer handles frozen product so nothing is thawed; compressed air runs pneumatic equipment only and contacts no food or food-contact surface; no online inspection is performed and no inspection area is designated; water is supplied by the local utility at potable quality and used as delivered; and a sieve exists on site but is not used in the production of rum cake. Five became category B. The sixth, 11.7.4.1, became the analysis's third category C entry — it is not a conditional clause, so the absence of any foreign-matter removal or detection technology in the certified process has to be justified rather than merely noted.\n\nTWO NEIGHBOURING CLAUSES ARE EXPLICITLY PRESERVED, because an exemption sitting next to them could be misread as covering them. 11.4.1.1 (v), hose storage after use, is a processing practice and is not scoped to food contact, so it survives the compressed air determination. 11.5.3, water quality testing and its records, survives the water treatment determination — not treating water removes nothing from the obligation to test it.\n\nA PLANNED CHANGE IS RECORDED RATHER THAN LEFT TO THE NEXT REVIEW. A metal detector is to be purchased for rum cake production. Part 5 states what it re-classifies on installation — 11.7.4.1 from C to A, 11.7.4.2/.3/.4 from B to A in full, and 11.1.4.1 from B to A — and what must exist before it is used: a line on FRM-004, an operating and verification SOP, and its checks on the daily record. Naming that now costs a paragraph; rediscovering it at an audit costs a finding.\n\nTWO FACTS ARRIVED AFTER THE FIRST DRAFT AND BOTH IMPROVED IT. The compressed air lines turned out to be coiled drops suspended from the ceiling, which retract overhead and never reach the floor — so 11.4.1.1 (v) is met by where the hose is mounted rather than by a rack, and it is recorded as the fourth category C entry rather than left as an open question. And the mechanical sieve has been dismantled and removed from the production operation, which simplifies the 11.7.4.1 justification: idle equipment invites the question of whether it is really unused, and a dismantled unit does not.\n\nOPEN BEFORE ACTIVATION — one item. 11.4.1.1 (v) covers WASH-DOWN hoses as well as compressed air ones, and only the compressed air lines are ceiling drops. Confirm how the wash-down hoses are stored after use. If they are racked, that is category A and this entry narrows to compressed air alone; if they are left on the floor, that is a finding rather than an exemption.\n\nStatus stays draft. Issues with the other FSQM documents under INT-7."
 }
+$j013$::jsonb
+ where sop_number = 'FSQM-013'
+   and status = 'draft';
+
+do $$
+declare
+  r record;
+begin
+  select status, revision,
+         jsonb_array_length(content->'procedure')                          as lines,
+         (select count(*) from jsonb_array_elements_text(content->'procedure') s
+           where s not like '• %')                                as steps,
+         (select count(*) from unnest(array['purpose','scope','definitions','responsibility',
+                                            'procedure','form_references','records',
+                                            'governing_reference','revision_history']) k
+           where content ? k and length(content->>k) > 0)                  as filled,
+         -- the five new category B determinations
+         (content->'procedure')::text like '%Ice is used in none of those ways%'      as ice,
+         (content->'procedure')::text like '%no longer handles frozen product%'       as thaw,
+         (content->'procedure')::text like '%only to operate pneumatic equipment%'    as air,
+         (content->'procedure')::text like '%No online product inspection is performed%' as inspect,
+         (content->'procedure')::text like '%used as delivered%'                      as water,
+         -- 11.7.4.1 moved to category C with a real justification
+         (content->'procedure')::text like '%has been dismantled and is no longer part%' as sieve,
+         (content->'procedure')::text like '%coiled drops suspended from the ceiling%'  as hose_drops,
+         (content->'procedure')::text like '%What controls foreign matter instead%'   as fm_control,
+         -- the two preserved neighbours
+         (content->'procedure')::text like '%11.4.1.1 (v), the requirement to store wash-down%' as hoses,
+         (content->'procedure')::text like '%11.5.3 Water Quality remains category A%' as water_quality,
+         -- the planned change
+         (content->'procedure')::text like '%PENDING CHANGES ALREADY KNOWN%'          as pending,
+         (content->'procedure')::text like '%metal detector is to be purchased%'      as detector,
+         -- category D is now empty but still defined
+         (content->'procedure')::text like '%No clause is currently undetermined%'    as d_empty,
+         (content->'procedure')::text like '%most consequential open line%'           as d_stale,
+         -- earlier content must survive
+         (content->'procedure')::text like '%Silence here is not an exemption%'       as silence,
+         (content->'procedure')::text like '%no designated high-risk processing area%' as high_risk
+    into r
+    from public.sop_documents where sop_number = 'FSQM-013';
+
+  if r.status <> 'draft' or r.revision <> 'New' then
+    raise exception 'FSQM-013 wrong after update: status=%, revision=%.', r.status, r.revision;
+  end if;
+  if r.lines <> 33 or r.steps <> 6 then
+    raise exception 'FSQM-013 body wrong shape: % lines, % steps (expected 33 / 6).',
+      r.lines, r.steps;
+  end if;
+  if r.filled <> 9 then
+    raise exception 'FSQM-013 has % of 9 body sections filled.', r.filled;
+  end if;
+  if not (r.ice and r.thaw and r.air and r.inspect and r.water) then
+    raise exception 'Category B determinations missing: ice=%, thawing=%, air=%, inspection=%, water=%.',
+      r.ice, r.thaw, r.air, r.inspect, r.water;
+  end if;
+  if not (r.sieve and r.fm_control) then
+    raise exception '11.7.4.1 did not become a justified category C entry: sieve dismantled=%, control statement=%.',
+      r.sieve, r.fm_control;
+  end if;
+  if not r.hose_drops then
+    raise exception 'The 11.4.1.1 (v) hose entry did not land.';
+  end if;
+  if not (r.hoses and r.water_quality) then
+    raise exception 'The preserved neighbours are missing: 11.4.1.1(v)=%, 11.5.3=%.',
+      r.hoses, r.water_quality;
+  end if;
+  if not (r.pending and r.detector) then
+    raise exception 'The pending-change Part is missing: part=%, detector=%.', r.pending, r.detector;
+  end if;
+  if r.d_stale or not r.d_empty then
+    raise exception 'Category D wrong: old wording still present=%, empty-but-kept statement=%.',
+      r.d_stale, r.d_empty;
+  end if;
+  if not (r.silence and r.high_risk) then
+    raise exception 'FSQM-013 regressed its first-issue content: silence clause=%, high-risk entry=%.',
+      r.silence, r.high_risk;
+  end if;
+end $$;
+
+commit;
