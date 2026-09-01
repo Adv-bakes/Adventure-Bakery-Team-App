@@ -1,12 +1,4 @@
 {
-  "schemaVersion": 1,
-  "settings": {
-    "deletable": false,
-    "allowMultipleDrafts": false,
-    "requireVerification": true,
-    "attachmentsEnabled": true,
-    "instanceTitleTemplate": "Equipment Register — {register_date}"
-  },
   "sections": [
     {
       "id": "purpose",
@@ -14,16 +6,15 @@
       "fields": [
         {
           "id": "purpose_note",
+          "text": "The master list of every item of equipment on site (SQF 11.2.1.2). It is the source list for the preventive maintenance schedule, the calibration programme and the food-grade lubricant register — each of those covers what this register says exists, so an item missing here is an item nothing maintains.\n\nRows are seeded from the equipment SOPs (SOP-501 to SOP-605 and SOP-901 to SOP-905). Add, rename or remove rows as the plant changes; this is a living register, not a checklist.",
           "type": "info",
-          "label": "Purpose & Scope",
-          "text": "The master list of every item of equipment on site (SQF 11.2.1.2). It is the source list for the preventive maintenance schedule, the calibration programme and the food-grade lubricant register — each of those covers what this register says exists, so an item missing here is an item nothing maintains.\n\nRows are seeded from the equipment SOPs (SOP-501 to SOP-605 and SOP-901 to SOP-905). Add, rename or remove rows as the plant changes; this is a living register, not a checklist."
+          "label": "Purpose & Scope"
         }
       ]
     },
     {
       "id": "register",
       "title": "Equipment Register",
-      "description": "Every item of equipment on site, with the documents that govern it and its maintenance frequency (SQF 11.2.1.2). PM frequency = preventive maintenance: how often the item is scheduled for planned maintenance.",
       "fields": [
         {
           "id": "register_date",
@@ -31,13 +22,13 @@
           "label": "Register date",
           "width": "third",
           "required": true,
-          "defaultToday": true,
-          "showInList": true
+          "showInList": true,
+          "defaultToday": true
         },
         {
           "id": "compiled_by",
-          "type": "signature",
           "role": "filler",
+          "type": "signature",
           "label": "Compiled by",
           "width": "third",
           "required": true,
@@ -45,19 +36,14 @@
         },
         {
           "id": "contact_note",
+          "text": "Food contact is the column that matters most and the one to check first. “Direct” means product or a food-contact surface touches the equipment (including packaging film that touches product). It decides what the food-grade lubricant requirement (SQF 11.2.1.7) and the calibration programme have to cover, so the seeded values are a starting point to be confirmed by someone who knows the line — not an answer.",
           "type": "info",
-          "label": "About the Food contact column",
-          "text": "Food contact is the column that matters most and the one to check first. “Direct” means product or a food-contact surface touches the equipment (including packaging film that touches product). It decides what the food-grade lubricant requirement (SQF 11.2.1.7) and the calibration programme have to cover, so the seeded values are a starting point to be confirmed by someone who knows the line — not an answer."
+          "label": "About the Food contact column"
         },
         {
           "id": "equipment",
-          "type": "grid",
-          "label": "Equipment",
           "rows": {
             "mode": "fixed",
-            "deletable": true,
-            "labelHeader": "Equipment",
-            "addLabel": "Add equipment",
             "labels": [
               "Planetary mixer",
               "Cookie depositor",
@@ -73,124 +59,129 @@
               "Flow wrapper",
               "Pot & pan washer"
             ],
+            "addLabel": "Add equipment",
+            "deletable": true,
+            "labelHeader": "Equipment",
             "defaultValues": [
               {
-                "make_model": "Hobart V-1401",
-                "location": "Production",
-                "food_contact": "Direct",
-                "operating_sop": "SOP-501",
-                "pm_frequency": "Not yet set",
                 "status": "In service",
+                "location": "Production",
+                "make_model": "Hobart V-1401",
+                "food_contact": "Direct",
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-501",
                 "sanitation_sop": "SOP-901"
               },
               {
-                "make_model": "Rhodes Kook-E-King Super Automatic",
-                "location": "Production",
-                "food_contact": "Direct",
-                "operating_sop": "SOP-502",
-                "pm_frequency": "Not yet set",
                 "status": "In service",
+                "location": "Production",
+                "make_model": "Rhodes Kook-E-King Super Automatic",
+                "food_contact": "Direct",
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-502",
                 "sanitation_sop": "SOP-902"
               },
               {
-                "make_model": "Beldos 275",
-                "location": "Production",
-                "food_contact": "Direct",
-                "operating_sop": "SOP-503",
-                "pm_frequency": "Not yet set",
                 "status": "In service",
+                "location": "Production",
+                "make_model": "Beldos 275",
+                "food_contact": "Direct",
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-503",
                 "sanitation_sop": "SOP-903"
               },
               {
-                "make_model": "Groen TDB (hand tilt)",
-                "location": "Production",
-                "food_contact": "Direct",
-                "operating_sop": "SOP-504",
-                "pm_frequency": "Not yet set",
                 "status": "In service",
+                "location": "Production",
+                "make_model": "Groen TDB (hand tilt)",
+                "food_contact": "Direct",
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-504",
                 "sanitation_sop": "SOP-904"
               },
               {
+                "status": "In service",
+                "location": "Production",
                 "make_model": "Revent 724",
-                "location": "Production",
                 "food_contact": "Indirect",
-                "operating_sop": "SOP-505",
-                "pm_frequency": "Not yet set",
-                "status": "In service"
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-505"
               },
               {
+                "notes": "Calibration scope - see SOP-506",
+                "status": "In service",
+                "location": "Production",
                 "make_model": "OHAUS Defender 3000 i-DT33",
-                "location": "Production",
                 "food_contact": "Indirect",
-                "operating_sop": "SOP-506",
-                "pm_frequency": "Not yet set",
-                "status": "In service",
-                "notes": "Calibration scope - see SOP-506"
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-506"
               },
               {
+                "notes": "Model not yet confirmed",
+                "status": "In service",
+                "location": "Production",
                 "make_model": "“ULTRA” — model to confirm",
-                "location": "Production",
                 "food_contact": "Indirect",
-                "operating_sop": "SOP-506",
-                "pm_frequency": "Not yet set",
-                "status": "In service",
-                "notes": "Model not yet confirmed"
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-506"
               },
               {
+                "notes": "Film is direct food contact (SOP-601)",
+                "status": "In service",
+                "location": "Packaging",
                 "make_model": "Smipack S560NA",
-                "location": "Packaging",
                 "food_contact": "Direct",
-                "operating_sop": "SOP-601",
-                "pm_frequency": "Not yet set",
-                "status": "In service",
-                "notes": "Film is direct food contact (SOP-601)"
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-601"
               },
               {
+                "notes": "Vendor/model not recorded on SOP-602",
+                "status": "In service",
+                "location": "Packaging",
                 "make_model": "Tabletop continuous band sealer",
-                "location": "Packaging",
                 "food_contact": "Direct",
-                "operating_sop": "SOP-602",
-                "pm_frequency": "Not yet set",
-                "status": "In service",
-                "notes": "Vendor/model not recorded on SOP-602"
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-602"
               },
               {
+                "status": "In service",
+                "location": "Packaging",
                 "make_model": "SNEED-JET Titan",
-                "location": "Packaging",
                 "food_contact": "Indirect",
-                "operating_sop": "SOP-603",
-                "pm_frequency": "Not yet set",
-                "status": "In service"
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-603"
               },
               {
+                "status": "In service",
+                "location": "Packaging",
                 "make_model": "TOAUTO HP-003",
-                "location": "Packaging",
                 "food_contact": "Indirect",
-                "operating_sop": "SOP-604",
-                "pm_frequency": "Not yet set",
-                "status": "In service"
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-604"
               },
               {
+                "notes": "Film is direct food contact (SOP-605)",
+                "status": "In service",
+                "location": "Packaging",
                 "make_model": "S350X rotary pillow packer",
-                "location": "Packaging",
                 "food_contact": "Direct",
-                "operating_sop": "SOP-605",
-                "pm_frequency": "Not yet set",
-                "status": "In service",
-                "notes": "Film is direct food contact (SOP-605)"
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-605"
               },
               {
-                "make_model": "Douglas Machines",
-                "location": "Warewashing",
-                "food_contact": "Indirect",
-                "operating_sop": "SOP-905",
-                "pm_frequency": "Not yet set",
+                "notes": "Sanitizes by heat — ~190 °F final rinse",
                 "status": "In service",
-                "sanitation_sop": "SOP-905",
-                "notes": "Sanitizes by heat — ~190 °F final rinse"
+                "location": "Warewashing",
+                "make_model": "Douglas Machines",
+                "food_contact": "None",
+                "pm_frequency": "As required",
+                "operating_sop": "SOP-905",
+                "sanitation_sop": "SOP-905"
               }
             ]
           },
+          "type": "grid",
+          "label": "Equipment",
           "columns": [
             {
               "id": "make_model",
@@ -271,17 +262,17 @@
             }
           ]
         }
-      ]
+      ],
+      "description": "Every item of equipment on site, with the documents that govern it and its maintenance frequency (SQF 11.2.1.2). PM frequency = preventive maintenance: how often the item is scheduled for planned maintenance."
     },
     {
       "id": "review",
       "title": "Review",
-      "description": "The register is reviewed at least annually and whenever equipment is added, moved or removed.",
       "fields": [
         {
           "id": "reviewed_by",
-          "type": "signature",
           "role": "verifier",
+          "type": "signature",
           "label": "Reviewed by",
           "width": "third",
           "statement": "I have reviewed this register and confirm it is complete and current."
@@ -294,17 +285,26 @@
         },
         {
           "id": "review_notes",
+          "help": "Equipment added, moved, removed or taken out of service.",
           "type": "textarea",
-          "label": "Changes since last review",
-          "help": "Equipment added, moved, removed or taken out of service."
+          "label": "Changes since last review"
         },
         {
           "id": "records_note",
+          "text": "Retained per the record retention policy. Superseded versions are kept as the audit trail of what was on site and when.",
           "type": "info",
-          "label": "Records",
-          "text": "Retained per the record retention policy. Superseded versions are kept as the audit trail of what was on site and when."
+          "label": "Records"
         }
-      ]
+      ],
+      "description": "The register is reviewed at least annually and whenever equipment is added, moved or removed."
     }
-  ]
+  ],
+  "settings": {
+    "deletable": false,
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": false,
+    "requireVerification": true,
+    "instanceTitleTemplate": "Equipment Register — {register_date}"
+  },
+  "schemaVersion": 1
 }
