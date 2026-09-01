@@ -1,6 +1,9 @@
 # FSQM-012 — Good Manufacturing Practices Program
 
-**Draft for redline.** Not controlled until it exists as a `sop_documents` row.
+**Working draft.** The controlled copy is the `FSQM-012` row in `sop_documents`; this file is
+the readable version of it. Everything from **Purpose** down is *generated from the same JSON
+the migration writes*, so the two cannot drift apart — edit the body through a migration, not
+here.
 
 | | |
 |---|---|
@@ -40,59 +43,60 @@ and procedure named in this document was checked against the live register on 20
 
 ## Purpose
 
-To document the Good Manufacturing Practices applied at Adventure Bakery, LLC — personnel health and
-hygiene, handwashing, clothing and personal effects, visitors and contractors, staff amenities, and
-processing practices — and to state how each is implemented, verified and trained, so that food
-safety is controlled and assured across the scope of certification.
+To document the Good Manufacturing Practices applied at Adventure Bakery, LLC — personnel health
+and hygiene, handwashing, clothing and personal effects, visitors and contractors, staff
+amenities, and processing practices — and to state how each is implemented, verified and trained,
+so that food safety is controlled and assured across the scope of certification.
 
 ## Scope
 
-Applies to **all persons** entering food handling, processing or storage areas at the Adventure
-Bakery facility — employees, temporary staff, contractors, maintenance personnel, auditors, visitors
-and management.
+Applies to all persons entering food handling, processing or storage areas at the Adventure Bakery
+facility — employees, temporary staff, contractors, maintenance personnel, auditors, visitors and
+management.
 
-This program is the umbrella document for **SQF Food Safety Code: Food Manufacturing, Edition 9,
-Module 11.3 (Personnel Hygiene) and Module 11.4 (Personnel Processing Practices)**. The remaining
-Module 11 GMPs are implemented through documents that already exist and are referenced rather than
-restated:
+This program is the umbrella document for SQF Food Safety Code: Food Manufacturing, Edition 9,
+Module 11.3 (Personnel Hygiene) and Module 11.4 (Personnel Processing Practices). The remaining
+Module 11 GMPs are implemented through documents that already exist and are referenced here rather
+than restated:
 
-| Area | Controlling document |
-|---|---|
-| Pre-operational inspection and release | SOP-11.2.12, recorded on FRM-903 |
-| Equipment and utensil cleaning | SOP-901 to SOP-906 (SSOPs) |
-| Sanitation schedule and verification | FRM-901, FRM-902, FRM-903 |
-| Glass and brittle plastic | SOP-11.7.3, FRM-907, FRM-908 |
-| Allergen changeover | SOP-204 |
-| Site food safety inspections | FSQM-022 |
-| Training and records | SOP-2.9, FRM-952, FRM-953, REP-951 |
+Pre-operational inspection and release — SOP-11.2.12, recorded on FRM-903.
+Equipment and utensil cleaning — SOP-901 to SOP-906 (SSOPs).
+Sanitation schedule and verification — FRM-901, FRM-902, FRM-903.
+Glass and brittle plastic — SOP-11.7.3, FRM-907, FRM-908.
+Allergen changeover — SOP-204.
+Site food safety inspections — FSQM-022.
+Training and records — SOP-2.9, FRM-952, FRM-953, REP-951.
 
-**Not covered here:** premises and equipment construction (11.2), water, ice and air (11.5), storage
+Not covered here: premises and equipment construction (11.2), water, ice and air (11.5), storage
 and transport (11.6), and separation of functions (11.7) other than glass control.
 
 ## Definitions
 
-- **Food handling / contact zone** — any area where product, ingredients, primary packaging or
-  food-contact surfaces are exposed. Includes the production floor, the depositing and packing
-  areas, and open ingredient storage.
-- **Protective clothing** — outer garments, hairnets, beard covers, aprons, gloves and dedicated
-  footwear or shoe covers worn to protect product, as distinct from personal clothing.
-- **Visitor** — any person entering a food handling, processing or storage area who is not an
-  employee of the site, including contractors, maintenance personnel, auditors, suppliers, customers
-  and guests.
-- **Escorted** — accompanied at all times by an authorized employee who is responsible for the
-  visitor's compliance with this program.
+Food handling / contact zone — any area where product, ingredients, primary packaging or
+food-contact surfaces are exposed. Includes the production floor, the depositing and packing
+areas, and open ingredient storage.
+
+Protective clothing — outer garments, hairnets, beard covers, aprons, gloves and dedicated
+footwear or shoe covers worn to protect product, as distinct from personal clothing.
+
+Visitor — any person entering a food handling, processing or storage area who is not an employee
+of the site, including contractors, maintenance personnel, auditors, suppliers, customers and
+guests.
+
+Escorted — accompanied at all times by an authorized employee who is responsible for the visitor's
+compliance with this program.
 
 ## Responsibility
 
-- **SQF Practitioner / QA** — owns this program, enforces it, approves exceptions, holds the risk
-  assessments for permitted jewellery, and verifies compliance through GMP inspection.
-- **Supervisors** — ensure staff on their shift comply, act on non-compliance immediately, and
-  receive illness and injury reports.
-- **All staff** — comply with this program, and report illness, injury and any breach they observe.
-- **Reception / designated staff** — ensure every visitor completes FRM-905 and FRM-906 before entry
-  and is escorted or trained.
-- **Maintenance** — maintain handwashing stations, amenities and the facility provisions this
-  program depends on, and correct deficiencies raised by GMP inspection.
+SQF Practitioner / QA — owns this program, enforces it, approves exceptions, holds the risk
+assessments for permitted jewellery, and verifies compliance through GMP inspection.
+Supervisors — ensure staff on their shift comply, act on non-compliance immediately, and receive
+illness and injury reports.
+All staff — comply with this program, and report illness, injury and any breach they observe.
+Reception / designated staff — ensure every visitor completes FRM-905 and FRM-906 before entry and
+is escorted or trained.
+Maintenance — maintain handwashing stations, amenities and the facility provisions this program
+depends on, and correct deficiencies raised by GMP inspection.
 
 ---
 
@@ -102,18 +106,20 @@ and transport (11.6), and separation of functions (11.7) other than glass contro
 
 *(2.4.2.1, 2.4.2.2)*
 
-The Good Manufacturing Practices set out in Module 11 of the SQF Food Safety Code: Food
-Manufacturing apply in full to the scope of certification — the manufacture, baking, packing and
-storage of baked products at this facility.
-
-**No exemption from any Module 11 requirement is claimed by this program.** Where the site
-determines that a requirement does not apply, or that an alternative control achieves the same
-outcome, that determination shall be recorded as a written risk analysis stating the justification
-or the evidence of effectiveness, approved by the SQF Practitioner, **before** it takes effect. An
-undocumented exemption is a non-conformance against 2.4.2.1.
-
-The GMPs in Module 11.3 and 11.4 are stated in Parts 2 to 8 of this program. The remaining Module 11
-GMPs are implemented through the documents listed in the Scope above.
+- The Good Manufacturing Practices set out in Module 11 of the SQF Food Safety Code: Food
+  Manufacturing apply in full to the scope of certification — the manufacture, baking, packing and
+  storage of baked products at this facility.
+- **No exemption from any Module 11 requirement is claimed by this program.** Where the site
+  determines that a requirement does not apply, or that an alternative control achieves the same
+  outcome, that determination shall be recorded as a written risk analysis stating the
+  justification or the evidence of effectiveness, approved by the SQF Practitioner, **before** it
+  takes effect. An undocumented exemption is a non-conformance against 2.4.2.1.
+- The GMPs in Module 11.3 and 11.4 are stated in Parts 2 to 8 below. The remaining Module 11 GMPs
+  are implemented through the documents listed in the Scope: SOP-11.2.12 and FRM-903
+  (pre-operational inspection), SOP-901 to SOP-906 (equipment and utensil cleaning), FRM-901 and
+  FRM-902 (sanitation schedule and verification), SOP-11.7.3 with FRM-907 and FRM-908 (glass and
+  brittle plastic), SOP-204 (allergen changeover), FSQM-022 (site food safety inspections), and
+  SOP-2.9 (training and records).
 
 ### Part 2 — Health, illness and injury
 
@@ -124,80 +130,69 @@ GMPs are implemented through the documents listed in the Scope above.
   exposed.
 - Staff shall report to their supervisor, **before starting work**, any of: vomiting, diarrhoea,
   jaundice, fever with sore throat, discharge from the eyes, ears or nose, or an infected wound,
-  boil or sore. A person reporting any of these shall not enter a food handling or processing area.
+  boil or sore. A person reporting any of these shall not enter a food handling or processing
+  area.
 - A person excluded under this Part returns to food handling work only when free of symptoms and
   cleared by their supervisor.
 - **Exposed cuts, sores or lesions** — personnel with these shall not handle exposed product,
   primary (food-contact) packaging, or food-contact surfaces. Minor cuts or abrasions on exposed
   skin shall be covered with a **coloured, metal-detectable bandage** or an equivalent waterproof,
-  coloured dressing; where the injury is on the hand, a glove shall be worn over the dressing.
-  A lost dressing is treated as a foreign-material incident and reported immediately.
+  coloured dressing; where the injury is on the hand, a glove shall be worn over the dressing. A
+  lost dressing is treated as a foreign-material incident and reported immediately.
 - Staff shall not cough, sneeze or spit over product, ingredients, packaging or food-contact
   surfaces, and shall wash their hands afterwards.
 - **Spillage of bodily fluid** — the area is cleared, and a trained staff member ensures every
-  affected area is cleaned and sanitized and that all affected materials and product are quarantined
-  or disposed of. The incident and its disposition are recorded.
+  affected area is cleaned and sanitized and that all affected materials and product are
+  quarantined or disposed of. The incident and its disposition are recorded.
 
 ### Part 3 — Handwashing
 
-*(11.3.2.1, 11.3.2.2, 11.3.2.3, 11.3.2.4, 11.3.2.5, 11.3.2.6)*
+*(11.3.2.1 to 11.3.2.6)*
 
-**Hands shall be clean.** All staff, contractors and visitors shall wash their hands:
-
-1. on entering a food handling or processing area;
-2. after each visit to a toilet;
-3. after using a handkerchief or tissue;
-4. after smoking, eating or drinking; and
-5. after handling wash-down hoses, cleaning materials, dropped product or contaminated material.
-
-Hands shall also be washed after handling waste, after touching the face, hair or clothing, and
-after handling a mobile phone.
-
-**Method** — wet hands with potable water, apply liquid soap, lather and scrub all surfaces
-including between the fingers and under the nails for at least twenty seconds, rinse, and dry with a
-single-use paper towel.
-
-**Gloves do not replace handwashing.** Hands are washed before gloves are put on and at every
-trigger listed above; gloves are changed, not washed, at those points.
-
-**Handwashing stations** are provided adjacent to all personnel access points and at accessible
-locations within food handling and processing areas. Each station is constructed of stainless steel
-or a similar non-corrosive material and is supplied with:
-
-- potable water at an appropriate temperature;
-- liquid soap in a fixed dispenser;
-- paper towels in a hands-free, cleanable dispenser; and
-- a container for used paper towels.
-
-Handwashing stations are for handwashing only. They shall not be used to wash equipment, utensils or
-cloths.
-
-**Signage** instructing people to wash their hands before entering food processing areas is
-displayed in a prominent position in the break room, at the break room exit, in the toilet rooms and
-at the entrances to production, **in English and Spanish** — the languages understood by site
-personnel, consistent with FSQM-002.
-
-The site does not currently operate a designated high-risk processing area. Where such an area is
-established, hands-free taps and hand sanitizers shall be provided at its handwashing stations
-(11.3.2.4).
+- **Hands shall be clean.** All staff, contractors and visitors shall wash their hands: (i) on
+  entering a food handling or processing area; (ii) after each visit to a toilet; (iii) after
+  using a handkerchief or tissue; (iv) after smoking, eating or drinking; and (v) after handling
+  wash-down hoses, cleaning materials, dropped product or contaminated material.
+- Hands shall also be washed after handling waste, after touching the face, hair or clothing, and
+  after handling a mobile phone.
+- **Method** — wet hands with potable water, apply liquid soap, lather and scrub all surfaces
+  including between the fingers and under the nails for at least twenty seconds, rinse, and dry
+  with a single-use paper towel.
+- **Gloves do not replace handwashing.** Hands are washed before gloves are put on and at every
+  trigger listed above; gloves are changed, not washed, at those points.
+- **Handwashing stations — three are provided:** one in each of the two lavatories, and one
+  immediately inside the personnel access point into the production area from the office, break
+  room and reception. Each is supplied with hot and cold running potable water, a paper towel
+  dispenser, and a bin for used paper towels.
+- Each station shall also provide **liquid soap in a fixed dispenser** and **paper towels in a
+  hands-free, cleanable dispenser**, and shall be of stainless steel or a similar non-corrosive
+  material (11.3.2.3).
+- Handwashing stations are for handwashing only. They shall not be used to wash equipment,
+  utensils or cloths.
+- **Signage** instructing people to wash their hands before entering food processing areas is
+  displayed in a prominent position in the break room, at the break room exit, in both toilet
+  rooms and at the entrance to production, **in English and Spanish** — the languages understood
+  by site personnel, consistent with FSQM-002.
+- The site operates **no designated high-risk processing area**. Where such an area is
+  established, hands-free taps and hand sanitizers shall be provided at its handwashing stations
+  (11.3.2.4).
 
 ### Part 4 — Clothing, hair and protective wear
 
-*(11.3.3.1, 11.3.3.2, 11.3.3.3, 11.3.3.4, 11.3.3.5, 11.3.3.6, 11.3.3.7)*
+*(11.3.3.1 to 11.3.3.7)*
 
-**Basis of this policy (the risk analysis required by 11.3.3.1).** The hazards the clothing and hair
-policy controls are: hair and beard hair falling into open product; fibres, buttons, drawstrings and
-other loose components detaching from garments; soil, dust and organic matter carried in from
-outside the facility on clothing and footwear; microbiological transfer from street clothing and
-from garments stored against product or packaging; and allergen carry-over on protective clothing
-worn across a changeover. The controls chosen against those hazards are: full hair and beard
-containment in every area where product is exposed; site-designated outer garments that are smooth,
-cleanable and free of external components that can detach; footwear controlled at the point of entry
-so external soil does not reach the floor; separation of street clothing from clean protective
-clothing and from all food and packaging; and removal or change of protective clothing at
-changeovers and whenever it becomes a contamination risk. This analysis is reviewed whenever the
-process, the product range or the facility layout changes.
-
+- **Basis of this policy — the risk analysis required by 11.3.3.1.** The hazards the clothing and
+  hair policy controls are: hair and beard hair falling into open product; fibres, buttons,
+  drawstrings and other loose components detaching from garments; soil, dust and organic matter
+  carried in from outside the facility on clothing and footwear; microbiological transfer from
+  street clothing and from garments stored against product or packaging; and allergen carry-over
+  on protective clothing worn across a changeover. The controls chosen against those hazards are:
+  full hair and beard containment in every area where product is exposed; site-designated outer
+  garments that are smooth, cleanable and free of external components that can detach; footwear
+  controlled at the point of entry so external soil does not reach the floor; separation of street
+  clothing from clean protective clothing and from all food and packaging; and removal or change
+  of protective clothing at changeovers and whenever it becomes a contamination risk. This
+  analysis is reviewed whenever the process, the product range or the facility layout changes.
 - Wear clean, designated outer garments, and arrive at the facility in clean clothing free of
   soilage or foul odour. Change lab coats if they become soiled.
 - Wear hairnets so both ears are covered and all hair is contained; wear a beard net covering all
@@ -206,24 +201,33 @@ process, the product range or the facility layout changes.
   serviceable condition. Excessively soiled uniforms shall be changed or replaced as soon as they
   present a contamination risk — not at the end of the shift.
 - Wear pants that fully cover the torso and ankles; wear a belt if pants sag.
-- Control footwear so that external soilage — dirt, faecal matter, decomposing material or other
-  foreign matter — does not enter production or storage areas, by changing into dedicated
-  production-floor footwear, using shoe covers, or passing through a sanitizing foot bath at entry.
+- **Footwear is controlled by sanitizing foot baths, and every person passes through them.** There
+  are two: one at the entrance to the production area from the office, break room and reception,
+  and one at the walkthrough between the production area and the inventory and packaging area.
+  External soilage — dirt, faecal matter, decomposing material or other foreign matter — shall not
+  be carried into production or storage areas.
 - **Disposable gloves and aprons shall be changed after each break, on every re-entry to the
   processing area, and whenever damaged.** They are not washed and re-used.
-- Non-disposable aprons and gloves shall be cleaned and sanitized as required. When not in use they
-  are stored on the racks provided in the processing area, or in designated sealed containers in
-  personnel lockers. They shall **never** be placed or stored on packaging, ingredients, product or
-  equipment.
+- Non-disposable aprons and gloves shall be cleaned and sanitized as required. When not in use
+  they are stored on the racks provided in the processing area, or in designated sealed containers
+  in personnel lockers. They shall **never** be placed or stored on packaging, ingredients,
+  product or equipment.
 - Protective clothing shall be made from material that poses no food safety threat and is easily
-  cleaned. It shall be cleaned after use, or at a frequency that controls contamination, and stored
-  clean and serviceable so that it cannot pick up microbiological or allergen contamination between
-  uses.
+  cleaned. It shall be cleaned after use, or at a frequency that controls contamination, and
+  stored clean and serviceable so that it cannot pick up microbiological or allergen contamination
+  between uses.
+- **Laundering — aprons and other protective clothing are laundered by employees at home**, with
+  laundry detergent, and hung to dry. Home laundering is permitted, and these conditions apply to
+  it: the garment is laundered after each use, or sooner if it becomes soiled; washed separately
+  from heavily soiled household laundry; dried and kept in a clean, dry place; carried to and from
+  the site in a clean, covered bag; and presented clean at the start of each shift. A garment that
+  cannot be returned to a clean, serviceable condition is replaced rather than worn.
 - Racks are provided for the temporary storage of protective clothing when staff leave the
-  processing area, located at or adjacent to the personnel access doorways and handwashing
-  facilities.
-- Protective clothing is removed before entering toilet rooms, the break room, or any outside area,
-  and is not worn outside the facility.
+  processing area, at the **personnel access doorway into production, beside the handwashing
+  station and the foot bath** — so the garment comes off, the foot bath is crossed and the hands
+  are washed at one point rather than three (11.3.3.7).
+- Protective clothing is removed before entering toilet rooms, the break room, or any outside
+  area, and is not worn outside the facility.
 
 ### Part 5 — Jewellery and personal effects
 
@@ -238,125 +242,127 @@ process, the product range or the facility layout changes.
   route.
 - Every permitted exception shall be covered so it cannot be lost into product, shall meet
   regulatory and customer requirements, and shall be supported by a **written risk assessment**
-  recorded and retained by the SQF Practitioner with this program. Permitted exceptions are checked
-  at GMP inspection, which is the ongoing risk management 11.3.3.8 requires — a one-time approval is
-  not sufficient.
+  recorded and retained by the SQF Practitioner with this program. Permitted exceptions are
+  checked at GMP inspection, which is the ongoing risk management 11.3.3.8 requires — a one-time
+  approval is not sufficient.
 - Store clothes, mobile phones, personal belongings and other non-food items in lockers or offices
   only. Personal items are not taken into food handling, processing or storage areas.
 
 ### Part 6 — Visitors and contractors
 
-*(11.3.4.1, 11.3.4.2, 11.3.4.3, 11.3.4.4)*
+*(11.3.4.1 to 11.3.4.4)*
 
-Every visitor — including contractors, maintenance personnel, auditors, suppliers, customers,
-guests and **management staff** — shall:
-
+- Every visitor — including contractors, maintenance personnel, auditors, suppliers, customers,
+  guests and **management staff** — shall comply with this Part.
 - **Sign in on FRM-905** (Visitor Sign-In Log) before entering any food handling, processing or
   storage area.
 - **Read and acknowledge the site's food safety and hygiene rules on FRM-906** (Visitor GMP
   Acknowledgement) before entry. A visitor who has completed the FRM-906 briefing satisfies the
-  training requirement of 11.3.4.1; **any visitor who has not shall be escorted at all times** by an
-  authorized employee.
-- **Remove jewellery and loose objects** in accordance with Part 5. This applies to management staff
-  equally.
-- Wear suitable clothing and footwear and the protective wear issued at entry — hairnet, beard cover
-  where applicable, lab coat, and shoe covers or dedicated footwear.
-- **Enter and exit through the proper staff entrance points only**, and comply with the handwashing
-  requirements of Part 3 and the processing practices of Part 8.
+  training requirement of 11.3.4.1; **any visitor who has not shall be escorted at all times** by
+  an authorized employee.
+- **Remove jewellery and loose objects** in accordance with Part 5. This applies to management
+  staff equally.
+- Wear suitable clothing and footwear and the protective wear issued at entry — hairnet, beard
+  cover where applicable, lab coat, and shoe covers or dedicated footwear.
+- **Enter and exit through the proper staff entrance points only**, and comply with the
+  handwashing requirements of Part 3 and the processing practices of Part 8.
 - Remain within approved areas, and not touch ingredients, packaging, product or equipment unless
   authorized by the SQF Practitioner.
-
-**Visitors showing visible signs of illness shall not be permitted to enter** any area where food is
-handled or processed. The rules of Part 2 apply to visitors as they do to staff.
-
-**Contractors** additionally: agree the work area and its segregation with the SQF Practitioner or
-Supervisor before starting; account for all tools, parts and materials before and after the work;
-and where the work introduces glass or brittle plastic, comply with SOP-11.7.3 and record it on
-FRM-907.
-
-Completed visitor records are retained by QA for a minimum of **twelve months**.
+- **Visitors showing visible signs of illness shall not be permitted to enter** any area where
+  food is handled or processed. The rules of Part 2 apply to visitors as they do to staff.
+- **Contractors** additionally: agree the work area and its segregation with the SQF Practitioner
+  or Supervisor before starting; account for all tools, parts and materials before and after the
+  work; and where the work introduces glass or brittle plastic, comply with SOP-11.7.3 and record
+  it on FRM-907.
+- Completed visitor records are retained by QA for a minimum of **twelve months**.
 
 ### Part 7 — Staff amenities and welfare
 
 *(11.3.5.1 to 11.3.5.10)*
 
 - Staff amenities — toilet rooms, the break room and changing areas — have documented cleaning
-  procedures, are scheduled on **FRM-901** (Master Sanitation Schedule), and their sanitary condition
-  is confirmed on **FRM-903** at pre-operation. They are lit and ventilated appropriately and are
-  available to every person engaged in handling and processing product.
-- **Changing** — provision is made for staff and visitors to change into and out of protective
-  clothing, and the changing area is kept clean.
-- **Street clothing and personal items** are stored separately from clean uniforms, food-contact
-  zones, food, and packaging storage areas.
-- The site does not process high-risk foods and does not operate a designated high-risk area, so a
-  high-risk change area (11.3.5.3) is not provided. Showers (11.3.5.5) are not required by the
-  processes performed at this site. Should either condition change, the provision shall be made
-  before that processing begins.
+  procedures, are scheduled on **FRM-901** (Master Sanitation Schedule), and their sanitary
+  condition is confirmed on **FRM-903** at pre-operation. They are lit and ventilated
+  appropriately and are available to every person engaged in handling and processing product.
+- **Changing** — staff and visitors change into and out of protective clothing in the toilet
+  rooms, which are of sufficient size for the purpose and are kept clean (11.3.5.2).
+- **Street clothing and personal items** are stored in the lockers provided in the break room,
+  which is separate from all food-contact zones and from food and packaging storage (11.3.5.4).
+- The site processes no high-risk foods and operates no designated high-risk area, so a high-risk
+  change area (11.3.5.3) is not provided. Showers (11.3.5.5) are not required by the processes
+  performed here. Should either condition change, the provision shall be made before that
+  processing begins.
 - **Toilet rooms** are accessible to staff, separate from processing and food handling operations,
   sufficient in number for the maximum number of staff on site, constructed so they can be easily
-  cleaned and maintained, and kept clean and tidy. Provision is made for storing protective
-  clothing and outer garments while the facilities are in use. **Cleaning tools and equipment used
-  in toilet rooms shall never be used to clean processing areas** and are stored separately and
-  identified for that use only.
+  cleaned and maintained, and kept clean and tidy. **The employee lavatory is reached through a
+  vented airlock** rather than opening onto the processing area (11.3.5.6 ii). Provision is made
+  for storing protective clothing and outer garments while the facilities are in use. **Cleaning
+  tools and equipment used in toilet rooms shall never be used to clean processing areas** and are
+  stored separately and identified for that use only.
 - **Handwashing basins** are provided immediately inside or outside the toilet room, to the
   specification in Part 3.
 - **Sanitary drainage** is not connected to any other drain within the premises and discharges to
   the sewerage system in accordance with regulations.
-- The **break room** is separate from food contact and handling zones, ventilated and well lit, with
-  adequate tables and seating for the maximum number of staff at one sitting, a sink served with hot
-  and cold potable water for washing utensils, and refrigeration and heating so staff can store or
-  heat food and prepare non-alcoholic beverages. It is kept clean and free from waste materials and
-  pests.
+- The **break room** is separate from all food contact and handling zones, is lit, and is
+  ventilated by the site's heating and cooling system. It holds the personal-item lockers and is
+  kept clean and free from waste materials and pests.
+- The break room shall also be equipped with a **sink served with hot and cold potable water for
+  washing utensils**, and with **refrigeration and heating** so staff can store or heat their own
+  food and prepare non-alcoholic beverages (11.3.5.9 iii and iv). **Staff food is not stored in
+  the production walk-in refrigerator** — personal food held among ingredients is a contamination
+  and allergen route, so the break room carries its own refrigeration rather than borrowing the
+  walk-in. The handwash basin in the adjacent lavatory is a handwash basin, not the utensil sink
+  this clause asks for.
 - Where an outside eating area is provided it is kept clean and free from waste materials and
   maintained so it does not attract pests or introduce contamination to the site.
 
 ### Part 8 — Processing practices
 
-*(11.4.1.1, 11.4.1.2, 11.4.1.3, 11.4.1.4)*
-
-All personnel handling, preparing or processing food shall handle and store products and materials
-so as to prevent damage and contamination, and shall comply with the following:
+*(11.4.1.1 to 11.4.1.4)*
 
 - **Entry to processing areas is through the personnel access doors only.**
-- **All doors are kept closed.** Doors are not left open for extended periods during waste removal or
-  when receiving product, ingredients or packaging.
+- **All doors are kept closed.** Doors are not left open for extended periods during waste removal
+  or when receiving product, ingredients or packaging.
 - Packaging, product and ingredients are kept in appropriate containers as required and **off the
   floor**.
-- **Waste** is contained in the bins identified for the purpose and removed from the processing area
-  regularly; it is not left to accumulate.
-- **Wash-down and compressed air hoses** are stored on the hose racks after use and are not left on
-  the floor.
+- **Waste** is contained in the bins identified for the purpose and removed from the processing
+  area regularly; it is not left to accumulate.
+- **Wash-down and compressed air hoses** are stored on the hose racks after use and are not left
+  on the floor.
 - Staff shall **not eat or taste any product being processed** in a food handling or contact zone,
   except under the sensory evaluation controls below.
-- **False fingernails, false eyelashes, eyelash extensions, long nails and fingernail polish are not
-  permitted** when handling exposed food.
+- **False fingernails, false eyelashes, eyelash extensions, long nails and fingernail polish are
+  not permitted** when handling exposed food.
 - **Hair restraints and beard covers** are worn wherever product is exposed.
-- **Smoking, chewing, eating and spitting are not permitted** in any area where product is produced,
-  stored or otherwise exposed.
-- **Drinking water** is permitted only under conditions that prevent contamination. Containers shall
-  be clear and covered, and kept in designated areas away from raw materials, packaging, tools and
-  equipment storage.
+- **Smoking, chewing, eating and spitting are not permitted** in any area where product is
+  produced, stored or otherwise exposed.
+- **Drinking water** is permitted only under conditions that prevent contamination. Containers
+  shall be clear and covered, and kept in designated areas away from raw materials, packaging,
+  tools and equipment storage.
 - **Personnel flow** is managed so the potential for contamination is minimized: staff move from
   cleaner to less clean areas rather than back, do not move between an allergen-handling task and
   exposed non-allergen product without changing protective clothing and washing hands, and do not
   take traffic through an exposed-product area as a shortcut between other parts of the facility.
-
-**Sensory evaluation** is not conducted in food handling or contact zones. Where it becomes
-necessary to do so, the site shall ensure that food safety is not compromised; that the evaluation
-is conducted by authorized personnel only; that a high standard of personal hygiene is practised by
-those conducting it; that it is carried out in an area equipped for the purpose; and that equipment
-used for it is sanitized, maintained and stored separately from processing equipment.
+- **Sensory evaluation — product tasting is carried out in the office adjacent to the production
+  area**, which is outside the food handling and contact zones. No tasting of in-process product
+  takes place on the floor (11.4.1.2 i). Product is carried to the office on clean utensils by
+  authorized personnel, and nothing tasted is returned to the process.
+- Should it ever become necessary to evaluate within a food handling or contact zone, the site
+  shall ensure that food safety is not compromised; that the evaluation is conducted by authorized
+  personnel only; that a high standard of personal hygiene is practised by those conducting it;
+  that it is carried out in an area equipped for the purpose; and that equipment used for it is
+  sanitized, maintained and stored separately from processing equipment (11.4.1.4).
 
 ### Part 9 — Verification
 
 *(2.5.4.3)*
 
-- **Daily** — the pre-operation inspection under **SOP-11.2.12**, recorded on **FRM-903**, confirms
-  that food-contact surfaces, utensils, production areas and staff amenities are sanitary and that
-  GMP requirements are met before production begins.
-- **Periodic** — planned inspections of the site and equipment verify that this program and facility
-  and equipment maintenance comply with the SQF Food Safety Code: Food Manufacturing. Scope,
-  frequency and responsibility are set in **FSQM-022** (Food Safety Monitoring Program).
+- **Daily** — the pre-operation inspection under **SOP-11.2.12**, recorded on **FRM-903**,
+  confirms that food-contact surfaces, utensils, production areas and staff amenities are sanitary
+  and that GMP requirements are met before production begins.
+- **Periodic** — planned inspections of the site and equipment verify that this program and
+  facility and equipment maintenance comply with the SQF Food Safety Code: Food Manufacturing.
+  Scope, frequency and responsibility are set in **FSQM-022** (Food Safety Monitoring Program).
 - Findings are recorded. The site shall take corrections or corrective and preventive action, and
   shall **maintain records of inspections and of any corrective action taken**.
 - Non-compliance with this program by a member of staff or a visitor results in immediate removal
@@ -364,12 +370,12 @@ used for it is sanitized, maintained and stored separately from processing equip
 
 ### Part 10 — Training
 
-*(2.9.2.1 iii, iv — 2.4.2.2)*
+*(2.9.2.1 iii and iv, 2.4.2.2)*
 
 - Every employee who handles food or food-contact surfaces completes **TRN-002 Personal Hygiene &
   GMPs**, **TRN-002A Personnel Hygiene & Visitor Policy** and **TRN-002B Good Manufacturing
-  Practices**, available in English and Spanish and assigned in the language the employee is trained
-  in.
+  Practices**, available in English and Spanish and assigned in the language the employee is
+  trained in.
 - Training is delivered at induction, **before the employee works unsupervised in a food handling
   area**, and refreshed at the frequency set in **SOP-2.9**.
 - Competency is verified on **FRM-952**; attendance on **FRM-953**. Assignment, completion and
@@ -380,109 +386,96 @@ used for it is sanitized, maintained and stored separately from processing equip
 
 ## Form references
 
-- **FRM-905** — Visitor Sign-In Log
-- **FRM-906** — Visitor GMP Acknowledgement
-- **FRM-903** — Daily Sanitation, Pre-Operation & Release Record
-- **FRM-901** — Master Sanitation Schedule (amenity cleaning is scheduled here)
-- **FRM-907 / FRM-908** — Glass & Brittle Plastic Register / Breakage Incident Report
-- **FRM-952 / FRM-953** — Training Competency Verification Record / Training Sign-In Sheet
-- **REP-951** — Training Matrix
-- **SOP-11.2.12** — GMP / Pre-Operation Inspection
-- **SOP-11.7.3** — Glass & Brittle Plastic Control
-- **SOP-204** — Allergen Cleaning Procedure
-- **SOP-2.9** — Training & Recordkeeping
-- **FSQM-022** — Food Safety Monitoring Program
+FRM-905 — Visitor Sign-In Log
+FRM-906 — Visitor GMP Acknowledgement
+FRM-903 — Daily Sanitation, Pre-Operation & Release Record
+FRM-901 — Master Sanitation Schedule (amenity cleaning is scheduled here)
+FRM-907 / FRM-908 — Glass & Brittle Plastic Register / Glass Breakage Incident Report
+FRM-952 / FRM-953 — Training Competency Verification Record / Training Sign-In Sheet
+REP-951 — Training Matrix
+SOP-11.2.12 — GMP / Pre-Operation Inspection
+SOP-11.7.3 — Glass & Brittle Plastic Control
+SOP-204 — Allergen Cleaning Procedure
+SOP-2.9 — Training & Recordkeeping
+FSQM-022 — Food Safety Monitoring Program
 
 ## Records
 
-| Record | Held on | Retention |
-|---|---|---|
-| Visitor sign-in and GMP acknowledgement | FRM-905, FRM-906 | minimum 12 months |
-| Daily pre-operation and amenity check | FRM-903 | per record retention policy |
-| Periodic GMP / food safety inspections and corrective actions | per FSQM-022 | per record retention policy |
-| Risk assessments for permitted jewellery exceptions | held by the SQF Practitioner with this program | while the exception stands, plus one audit cycle |
-| Illness, injury and bodily-fluid incident dispositions | held by QA | per record retention policy |
-| Training assignment, completion and competency | Team Portal, FRM-952, FRM-953, REP-951 | per SOP-2.9 |
+Visitor sign-in and GMP acknowledgement — FRM-905 and FRM-906, retained a minimum of 12 months.
+Daily pre-operation and amenity check — FRM-903, retained per the record retention policy.
+Periodic GMP and food safety inspections and their corrective actions — per FSQM-022, retained per
+the record retention policy.
+Risk assessments for permitted jewellery exceptions — held by the SQF Practitioner with this
+program, for as long as the exception stands plus one audit cycle.
+Illness, injury and bodily-fluid incident dispositions — held by QA, retained per the record
+retention policy.
+Training assignment, completion and competency — Team Portal, FRM-952, FRM-953 and REP-951,
+retained per SOP-2.9.
 
 ## Governing reference
 
-- SQF Food Safety Code: Food Manufacturing, Edition 9 — **Module 11.3** (Personnel Hygiene:
-  11.3.1.1–11.3.5.10) and **Module 11.4** (Personnel Processing Practices: 11.4.1.1–11.4.1.4).
-- SQF Food Safety Code: Food Manufacturing, Edition 9 — System Elements **2.4.2.1** (GMPs applied or
-  exempted by written risk analysis), **2.4.2.2** (GMPs documented and implemented), **2.5.4.3**
-  (planned site and equipment inspections with corrective action and records), **2.9.2.1 iii and iv**
-  (personal hygiene and GMP training).
-- FDA 21 CFR Part 117 Subpart B — Current Good Manufacturing Practice, in particular §117.10
-  (Personnel) and §117.20 (Plant and grounds).
-
----
+SQF Food Safety Code: Food Manufacturing, Edition 9 — Module 11.3 (Personnel Hygiene, 11.3.1.1 to
+11.3.5.10) and Module 11.4 (Personnel Processing Practices, 11.4.1.1 to 11.4.1.4).
+SQF Food Safety Code: Food Manufacturing, Edition 9 — System Elements 2.4.2.1 (GMPs applied or
+exempted by written risk analysis), 2.4.2.2 (GMPs documented and implemented), 2.5.4.3 (planned
+site and equipment inspections with corrective action and records), and 2.9.2.1 iii and iv
+(personal hygiene and Good Manufacturing Practices training).
+FDA 21 CFR Part 117 Subpart B — Current Good Manufacturing Practice, in particular §117.10
+(Personnel) and §117.20 (Plant and grounds).
 
 ## Revision history
 
-**New — 2026-09-01 — Initial issue.**
+New — 2026-09-01 — Initial issue. Written to close SQF 2.4.2.2, which requires the site's
+applicable Good Manufacturing Practices to be documented. Covers Module 11.3 and 11.4 in full —
+thirty-five clauses, of which SOP-11.3 addressed about nine.
 
-Written to close SQF 2.4.2.2, which requires the site's applicable Good Manufacturing Practices to
-be documented. Covers Module 11.3 and 11.4 in full — thirty-five clauses, of which SOP-11.3
-addressed about nine. (Thirty-five, not thirty-four: 11.3.1.3 is a clause in its own right, and
-the site's generated clause map folds its text into 11.3.1.2.)
-
-**Supersedes SOP-11.3 Personnel Hygiene & Visitor Policy.** SOP-11.3's dress code, jewellery list,
-visitor requirements, twelve-month retention and corrective-action clause are carried forward here,
+SUPERSEDES SOP-11.3 Personnel Hygiene & Visitor Policy. Its dress code, jewellery list, visitor
+requirements, twelve-month retention and corrective-action clause are carried forward here,
 extended rather than rewritten. SOP-11.3 remains the active controlled document until this program
-is approved and issued; it is archived in the same transaction that activates this one, so the site
-is never without an active personnel hygiene document.
+is approved and issued; it is archived in the same transaction that activates this one, so the
+site is never without an active personnel hygiene document.
 
-### OPEN BEFORE ACTIVATION
+SITE ARRANGEMENTS CONFIRMED 2026-09-01 by Richard Mercer. The facility facts in this program are
+the site's own answers, not assumptions: three handwashing stations (one in each lavatory, one
+immediately inside the production access point) with hot and cold potable water, towel dispensers
+and waste bins; handwash signage in the break room, at its exit, in both toilet rooms and at the
+production entrance, in English and Spanish; no designated high-risk area; protective clothing
+laundered by employees at home with detergent and hung to dry; footwear controlled by two
+sanitizing foot baths, at the production entrance and at the walkthrough to the inventory and
+packaging area; changing done in the toilet rooms, personal items in break room lockers; the
+employee lavatory reached through a vented airlock; sanitary drainage separate and compliant; the
+break room separate from food zones, lit and ventilated; no fixed illness exclusion interval —
+supervisor clearance is the control; product tasting carried out in the office adjacent to
+production, never on the floor.
 
-These are statements of fact about the facility that only the site can confirm. Each is written in
-the body as the arrangement the program requires; confirm it is what the facility actually provides,
-or correct it — and where the facility does not provide it, that is an input to the Module 11
-exemption analysis (task 13.6), not a silent omission.
-
-1. **Handwashing stations** (Part 3) — how many, where they are, and whether each has potable water
-   at an appropriate temperature, liquid soap in a fixed dispenser, paper towels in a hands-free
-   cleanable dispenser, and a bin for used towels. 11.3.2.2 asks for one adjacent to *every*
-   personnel access point.
-2. **Handwash signage** (Part 3) — confirm signage exists in the break room, at the break room exit,
-   in the toilet rooms and at the production entrances, and that it is posted in English and
-   Spanish. This is the same question FSQM-002 raises about where the food safety policy is
-   displayed; answer both together.
-3. **High-risk area** (Parts 3 and 7) — the program states the site operates none, which makes
-   11.3.2.4 (hands-free taps, hand sanitizers) and 11.3.5.3 (high-risk change area) inapplicable.
-   Confirm.
-4. **Laundering** (Part 4) — are lab coats and other protective clothing laundered on site,
-   commercially, or by employees at home? 11.3.3.2 requires that clothing is *"maintained, stored,
-   laundered and worn"* so it presents no contamination risk; home laundering is permitted but the
-   program should say so and say what is required of it.
-5. **Racks for protective clothing** (Part 4) — 11.3.3.7 requires racks at or adjacent to the
-   personnel access doorways and handwashing facilities. Confirm these exist.
-6. **Footwear control** (Part 4) — SOP-11.3 offers dedicated footwear, shoe covers *or* a sanitizing
-   foot bath as alternatives. Which does the site actually use? An auditor will ask, and a document
-   listing three options describes none of them.
-7. **Changing arrangements and lockers** (Part 7) — where staff change, and where street clothing
-   and personal items are stored separately from clean uniforms, food and packaging.
-8. **Toilet rooms** (Part 7) — 11.3.5.6 (ii) asks that they be accessed from the processing area via
-   an airlock vented to the exterior or through an adjoining room. Confirm the actual arrangement;
-   if neither applies, it belongs in the exemption analysis with its justification.
-9. **Sanitary drainage** (Part 7) — confirm it is not connected to any other drain on the premises
-   and discharges to sewer or septic per regulation.
-10. **Break room** (Part 7) — confirm it is separate from food zones and has the sink with hot and
-    cold potable water, refrigeration and heating that 11.3.5.9 requires.
-11. **Illness exclusion period** (Part 2) — the program requires exclusion until symptom-free and
-    cleared by a supervisor. If the site wants a fixed interval (commonly 24 or 48 hours
-    symptom-free), set it here.
-12. **Sensory evaluation** (Part 8) — the program states it is not conducted in food handling or
-    contact zones. Confirm that no tasting of in-process product happens on the floor today.
-
-### Related tasks
-
-- **13.2** (visitor and contractor rules) is delivered as **Part 6** of this program, per the
-  remediation plan.
-- **13.3** — FRM-905 and FRM-906 exist but are Word attachments, not fillable forms, with no
-  entries. Part 6 depends on them being usable records.
-- **13.4 / 13.5** — Part 9 points at FSQM-022 for the periodic inspection. FSQM-022 currently names
-  a `Form-0010 Food Safety Inspection` that does not exist; 13.4 amends it and 13.5 builds the form.
-- **13.6** — anything on the OPEN list the site does not provide becomes an entry in the Module 11
-  exemption analysis with a written justification, as 2.4.2.1 requires.
-- **13.8** — TRN-002, TRN-002A and TRN-002B are already active in English and Spanish. Part 10 names
-  them; the task is to confirm their content matches this program, not to build a new module.
+OPEN BEFORE ACTIVATION — seven items remain, and the first three are actions rather than
+questions. Where the site chooses not to provide something, that is an input to the Module 11
+exemption analysis required by 2.4.2.1, not a silent omission.
+1. ACTION — protective clothing racks. These do not exist yet. 11.3.3.7 wants them at or adjacent
+to the personnel access doorway AND the handwashing facilities, so the right place is the
+production entrance beside the existing handwash station and foot bath, not by the walk-in fridge:
+the garment comes off, the foot bath is crossed and the hands are washed at one point. A simple
+coat rack satisfies the clause.
+2. ACTION — break room refrigeration. 11.3.5.9 (iv) asks the break room itself to be equipped with
+refrigeration so staff can store their own food. The production walk-in does not substitute: staff
+food held among ingredients is a contamination and allergen route, and an auditor reading
+11.3.5.4's separation principle will treat it as one. A small domestic refrigerator in the break
+room closes it.
+3. DECISION — break room sink. 11.3.5.9 (iii) asks for a sink served with hot and cold potable
+water for washing utensils. The break room has none; the adjacent lavatory has a handwash basin,
+which is a different fixture for a different purpose. Either install a small sink or carry this
+into the exemption analysis with a justification for how utensils are washed instead.
+4. CONFIRM — handwash station fittings. The stations have water, towel dispensers and bins.
+11.3.2.3 also asks for liquid soap in a FIXED dispenser, paper towels in a HANDS-FREE cleanable
+dispenser, and construction in stainless steel or similar non-corrosive material. Confirm each,
+since a pump bottle on a ledge and a fixed dispenser read differently at audit.
+5. CONFIRM — handwash coverage in production. 11.3.2.2 asks for a station adjacent to every
+personnel access point AND at accessible locations throughout food handling and processing areas
+as required. One station serves the whole production area. Confirm that is adequate for the
+floor's size and layout, or add one.
+6. CONFIRM — the foot baths' sanitizer and change frequency. A foot bath with no stated strength
+and no change interval is a tray of water, not a control. Name the sanitizer (Sani-512 is the
+house product), its dilution, and how often the baths are changed — then it belongs on FRM-901 as
+a scheduled task.
+7. CONFIRM — break room tables and seating adequate for the maximum number of staff at one sitting
+(11.3.5.9 ii).
