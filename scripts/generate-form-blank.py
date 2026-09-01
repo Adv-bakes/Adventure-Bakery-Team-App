@@ -439,3 +439,23 @@ if __name__ == "__main__":
     b907 = blocks_from_schema(s907)
     build_pdf("sop-drafts/FRM-907-blank.pdf", meta907, b907, landscape_page=True)
     build_docx("sop-drafts/FRM-907-blank.docx", meta907, b907, landscape_page=True)
+
+    # FRM-913 - GMP / Food Safety Inspection Record. LANDSCAPE: the checklist is a long Module 11
+    # subsection label plus Conforms, Finding and Corrective action, and the last two are written in
+    # by hand while walking the site. Portrait leaves them about an inch each, which is not enough
+    # room to record what was seen and what was done about it.
+    #
+    # The 34 rows are GENERATED from src/lib/sqfFoodClauses.ts, one per Module 11 subsection with
+    # the clause range it covers - see 20260901000012. Re-run that generator, not this file, if the
+    # clause map is ever refreshed from a new edition of the code.
+    #
+    # rev New, draft: seeded by 20260901000012 alongside the FSQM-022 rewrite that references it.
+    # Both are approved together under INT-7, so this blank carries the draft revision until then.
+    s913 = load_schema("sop-drafts/FRM-913-gmp-inspection-schema.json")
+    meta913 = {"form_no": "FRM-913", "title": "GMP / Food Safety Inspection Record",
+               "revision": "New", "eff": "(draft)", "appr": "(pending)",
+               "sqf": "2.4.2.1, 2.4.2.2, 2.5.4.3, 11.1-11.8",
+               "footer": FOOT.format(no="FRM-913")}
+    b913 = blocks_from_schema(s913)
+    build_pdf("sop-drafts/FRM-913-blank.pdf", meta913, b913, landscape_page=True)
+    build_docx("sop-drafts/FRM-913-blank.docx", meta913, b913, landscape_page=True)

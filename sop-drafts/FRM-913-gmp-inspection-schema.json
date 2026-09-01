@@ -1,0 +1,476 @@
+{
+  "sections": [
+    {
+      "id": "details",
+      "title": "Inspection",
+      "fields": [
+        {
+          "id": "inspection_date",
+          "type": "date",
+          "label": "Date",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "defaultToday": true
+        },
+        {
+          "id": "inspection_type",
+          "type": "select",
+          "label": "Type",
+          "width": "third",
+          "options": [
+            "Routine (monthly)",
+            "Follow-up",
+            "Pre-audit",
+            "Other"
+          ],
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "areas_covered",
+          "type": "text",
+          "label": "Areas covered",
+          "width": "third",
+          "showInList": true
+        },
+        {
+          "id": "inspectors",
+          "type": "text",
+          "label": "Inspection team",
+          "help": "Quality Team members present, and any hourly employee accompanying the inspection",
+          "width": "full"
+        }
+      ]
+    },
+    {
+      "id": "how_to",
+      "title": "How to use this form",
+      "fields": [
+        {
+          "id": "how_to_note",
+          "type": "info",
+          "label": "How to use this form",
+          "text": "One row per SQF Module 11 subsection, with the clause range it covers. Walk the site and mark each row Pass, Fail, or N/A.\n\nPass — observed and conforming. Fail — record what was seen in Finding, and the correction, who owns it and by when in Corrective action. N/A — the subsection does not apply to this site; say WHY in the Finding column, because 2.4.2.1 permits exempting a Module 11 requirement only on a written risk analysis, and these N/A rows with their reasons are what that analysis is built from.\n\nA blank row is not the same as a Pass. Every row is answered before the inspection is signed off."
+        }
+      ]
+    },
+    {
+      "id": "sec_11_1",
+      "title": "11.1 Site Location and Premises",
+      "fields": [
+        {
+          "id": "check_11_1",
+          "type": "grid",
+          "label": "11.1 Site Location and Premises",
+          "columns": [
+            {
+              "id": "conforms",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "finding",
+              "type": "text",
+              "label": "Finding / observation",
+              "width": 3
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Corrective action, owner & due date",
+              "width": 3
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "11.1.1 Premises Location and Approval  (11.1.1.1)",
+              "11.1.2 Building Materials  (11.1.2.1–.9)",
+              "11.1.3 Lighting and Light Fittings  (11.1.3.1–.3)",
+              "11.1.4 Inspection/Quality Control Area  (11.1.4.1)",
+              "11.1.5 Dust, Insect, and Pest Proofing  (11.1.5.1–.3)",
+              "11.1.6 Ventilation  (11.1.6.1–.4)",
+              "11.1.7 Equipment and Utensils  (11.1.7.1–.9)",
+              "11.1.8 Grounds and Roadways  (11.1.8.1–.3)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Module 11 subsection"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec_11_2",
+      "title": "11.2 Site Operation",
+      "fields": [
+        {
+          "id": "check_11_2",
+          "type": "grid",
+          "label": "11.2 Site Operation",
+          "columns": [
+            {
+              "id": "conforms",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "finding",
+              "type": "text",
+              "label": "Finding / observation",
+              "width": 3
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Corrective action, owner & due date",
+              "width": 3
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "11.2.1 Repairs and Maintenance  (11.2.1.1–.8)",
+              "11.2.2 Maintenance Staff and Contractors  (11.2.2.1–.3)",
+              "11.2.3 Calibration  (11.2.3.1–.6)",
+              "11.2.4 Pest Prevention  (11.2.4.1–.6)",
+              "11.2.5 Cleaning and Sanitation  (11.2.5.1–.9)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Module 11 subsection"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec_11_3",
+      "title": "11.3 Personnel Hygiene and Welfare",
+      "fields": [
+        {
+          "id": "check_11_3",
+          "type": "grid",
+          "label": "11.3 Personnel Hygiene and Welfare",
+          "columns": [
+            {
+              "id": "conforms",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "finding",
+              "type": "text",
+              "label": "Finding / observation",
+              "width": 3
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Corrective action, owner & due date",
+              "width": 3
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "11.3.1 Personnel Welfare  (11.3.1.1–.2)",
+              "11.3.2 Handwashing  (11.3.2.1–.6)",
+              "11.3.3 Clothing and Personal Effects  (11.3.3.1–.8)",
+              "11.3.4 Visitors  (11.3.4.1–.4)",
+              "11.3.5 Staff Amenities (change rooms, toilets, break rooms)  (11.3.5.1–.10)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Module 11 subsection"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec_11_4",
+      "title": "11.4 Personnel Processing Practices",
+      "fields": [
+        {
+          "id": "check_11_4",
+          "type": "grid",
+          "label": "11.4 Personnel Processing Practices",
+          "columns": [
+            {
+              "id": "conforms",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "finding",
+              "type": "text",
+              "label": "Finding / observation",
+              "width": 3
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Corrective action, owner & due date",
+              "width": 3
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "11.4.1 Staff Engaged in Food Handling and Processing Operations  (11.4.1.1–.4)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Module 11 subsection"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec_11_5",
+      "title": "11.5 Water, Ice, and Air Supply",
+      "fields": [
+        {
+          "id": "check_11_5",
+          "type": "grid",
+          "label": "11.5 Water, Ice, and Air Supply",
+          "columns": [
+            {
+              "id": "conforms",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "finding",
+              "type": "text",
+              "label": "Finding / observation",
+              "width": 3
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Corrective action, owner & due date",
+              "width": 3
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "11.5.1 Water Supply  (11.5.1.1–.6)",
+              "11.5.2 Water Treatment  (11.5.2.1–.3)",
+              "11.5.3 Water Quality  (11.5.3.1–.3)",
+              "11.5.4 Ice Supply  (11.5.4.1–.3)",
+              "11.5.5 Air and Other Gases  (11.5.5.1–.2)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Module 11 subsection"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec_11_6",
+      "title": "11.6 Receipt, Storage, and Transport",
+      "fields": [
+        {
+          "id": "check_11_6",
+          "type": "grid",
+          "label": "11.6 Receipt, Storage, and Transport",
+          "columns": [
+            {
+              "id": "conforms",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "finding",
+              "type": "text",
+              "label": "Finding / observation",
+              "width": 3
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Corrective action, owner & due date",
+              "width": 3
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "11.6.1 Receipt, Storage, and Handling of Goods  (11.6.1.1–.6)",
+              "11.6.2 Cold Storage, Freezing, and Chilling of Foods  (11.6.2.1–.4)",
+              "11.6.3 Storage of Dry Ingredients, Packaging, and Shelf Stable Packaged Goods  (11.6.3.1–.2)",
+              "11.6.4 Storage of Hazardous Chemicals and Toxic Substances  (11.6.4.1–.7)",
+              "11.6.5 Loading, Transport, and Unloading Practices  (11.6.5.1–.8)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Module 11 subsection"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec_11_7",
+      "title": "11.7 Separation of Functions",
+      "fields": [
+        {
+          "id": "check_11_7",
+          "type": "grid",
+          "label": "11.7 Separation of Functions",
+          "columns": [
+            {
+              "id": "conforms",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "finding",
+              "type": "text",
+              "label": "Finding / observation",
+              "width": 3
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Corrective action, owner & due date",
+              "width": 3
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "11.7.1 High-Risk Processes  (11.7.1.1–.5)",
+              "11.7.2 Thawing of Food  (11.7.2.1–.3)",
+              "11.7.3 Control of Foreign Matter Contamination  (11.7.3.1–.9)",
+              "11.7.4 Detection of Foreign Objects  (11.7.4.1–.5)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Module 11 subsection"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec_11_8",
+      "title": "11.8 Waste Disposal",
+      "fields": [
+        {
+          "id": "check_11_8",
+          "type": "grid",
+          "label": "11.8 Waste Disposal",
+          "columns": [
+            {
+              "id": "conforms",
+              "type": "pass_fail",
+              "label": "Conforms",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "finding",
+              "type": "text",
+              "label": "Finding / observation",
+              "width": 3
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Corrective action, owner & due date",
+              "width": 3
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "11.8.1 Waste Disposal  (11.8.1.1–.10)"
+            ],
+            "addLabel": "Add item",
+            "deletable": true,
+            "labelHeader": "Module 11 subsection"
+          }
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Findings & Sign-Off",
+      "fields": [
+        {
+          "id": "findings_count",
+          "type": "number",
+          "label": "Number of findings raised",
+          "width": "third",
+          "showInList": true
+        },
+        {
+          "id": "na_count",
+          "type": "number",
+          "label": "Rows marked N/A",
+          "width": "third",
+          "help": "These feed the Module 11 exemption analysis required by 2.4.2.1"
+        },
+        {
+          "id": "repeat_findings",
+          "type": "pass_fail",
+          "label": "Any repeat findings from last inspection?",
+          "width": "third"
+        },
+        {
+          "id": "summary_notes",
+          "type": "textarea",
+          "label": "Summary, trends and anything referred to Maintenance",
+          "width": "full"
+        },
+        {
+          "id": "all_assigned",
+          "type": "pass_fail",
+          "label": "Every finding has a corrective action, an owner and a due date",
+          "required": true,
+          "width": "half"
+        },
+        {
+          "id": "inspector_sig",
+          "type": "signature",
+          "label": "Inspection led by",
+          "width": "half"
+        },
+        {
+          "id": "management_sig",
+          "type": "signature",
+          "label": "Reviewed at management review",
+          "width": "half"
+        },
+        {
+          "id": "review_date",
+          "type": "date",
+          "label": "Management review date",
+          "width": "half"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "requireVerification": false,
+    "instanceTitleTemplate": "{inspection_date} — GMP / Food Safety Inspection"
+  }
+}
