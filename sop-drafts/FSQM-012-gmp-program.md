@@ -164,9 +164,12 @@ depends on, and correct deficiencies raised by GMP inspection.
   immediately inside the personnel access point into the production area from the office, break
   room and reception. Each is supplied with hot and cold running potable water, a paper towel
   dispenser, and a bin for used paper towels.
-- Each station shall also provide **liquid soap in a fixed dispenser** and **paper towels in a
-  hands-free, cleanable dispenser**, and shall be of stainless steel or a similar non-corrosive
-  material (11.3.2.3).
+- **Soap is supplied from a hands-free dispenser** — more than the fixed dispenser 11.3.2.3 (ii)
+  asks for. **Paper towels are presented so that a towel can be taken without touching the
+  dispenser housing or anything else.** What 11.3.2.3 (iii) is protecting is clean hands on the
+  way to being dried: hands washed and then pressed against a housing that dirty hands last
+  touched are no longer clean. Taking the towel without contact meets that, and no member of staff
+  need touch the dispenser to dry their hands.
 - Handwashing stations are for handwashing only. They shall not be used to wash equipment,
   utensils or cloths.
 - **Signage** instructing people to wash their hands before entering food processing areas is
@@ -438,7 +441,8 @@ site is never without an active personnel hygiene document.
 SITE ARRANGEMENTS CONFIRMED 2026-09-01 by Richard Mercer. The facility facts in this program are
 the site's own answers, not assumptions: three handwashing stations (one in each lavatory, one
 immediately inside the production access point) with hot and cold potable water, towel dispensers
-and waste bins; handwash signage in the break room, at its exit, in both toilet rooms and at the
+and waste bins, soap from a hands-free dispenser and towels that can be taken without touching the
+housing; handwash signage in the break room, at its exit, in both toilet rooms and at the
 production entrance, in English and Spanish; no designated high-risk area; protective clothing
 laundered by employees at home with detergent and hung to dry; footwear controlled by two
 sanitizing foot baths, at the production entrance and at the walkthrough to the inventory and
@@ -465,10 +469,12 @@ room closes it.
 water for washing utensils. The break room has none; the adjacent lavatory has a handwash basin,
 which is a different fixture for a different purpose. Either install a small sink or carry this
 into the exemption analysis with a justification for how utensils are washed instead.
-4. CONFIRM — handwash station fittings. The stations have water, towel dispensers and bins.
-11.3.2.3 also asks for liquid soap in a FIXED dispenser, paper towels in a HANDS-FREE cleanable
-dispenser, and construction in stainless steel or similar non-corrosive material. Confirm each,
-since a pump bottle on a ledge and a fixed dispenser read differently at audit.
+4. CONFIRM — handwash station construction. Water, soap, towels and waste bins are confirmed. What
+is left of 11.3.2.3 is the fixture itself: stainless steel or a similar non-corrosive material,
+and dispensers that can be cleaned. Also worth settling for 13.6: the towel dispenser has no
+no-touch MECHANISM, and an auditor reading 'hands-free dispenser' strictly could call that out
+even though a towel is taken without contact. The exemption analysis is where that argument is
+made once, in writing, rather than at the audit.
 5. CONFIRM — handwash coverage in production. 11.3.2.2 asks for a station adjacent to every
 personnel access point AND at accessible locations throughout food handling and processing areas
 as required. One station serves the whole production area. Confirm that is adequate for the
