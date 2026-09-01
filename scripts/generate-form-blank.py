@@ -459,3 +459,26 @@ if __name__ == "__main__":
     b913 = blocks_from_schema(s913)
     build_pdf("sop-drafts/FRM-913-blank.pdf", meta913, b913, landscape_page=True)
     build_docx("sop-drafts/FRM-913-blank.docx", meta913, b913, landscape_page=True)
+
+    # FRM-905 / FRM-906 - the visitor pair. PORTRAIT: both are one-visitor-per-sheet records with
+    # scalar fields and signatures, no wide grids. FRM-906 carries the ten rules as a printed
+    # reference table, which is the whole point of it - a signed acknowledgement that does not show
+    # what was acknowledged is weak evidence.
+    #
+    # Both rev v2, effective 2026-09-01: made fillable by 20260901000016. They had been active
+    # since 2026-07-12 as attachments with no schema and no entries.
+    s905 = load_schema("sop-drafts/FRM-905-visitor-signin-schema.json")
+    meta905 = {"form_no": "FRM-905", "title": "Visitor Sign-In Log",
+               "revision": "v2", "eff": "2026-09-01", "appr": "GJM",
+               "sqf": "11.3.4", "footer": FOOT.format(no="FRM-905")}
+    b905 = blocks_from_schema(s905)
+    build_pdf("sop-drafts/FRM-905-blank.pdf", meta905, b905)
+    build_docx("sop-drafts/FRM-905-blank.docx", meta905, b905)
+
+    s906 = load_schema("sop-drafts/FRM-906-visitor-gmp-acknowledgement-schema.json")
+    meta906 = {"form_no": "FRM-906", "title": "Visitor GMP Acknowledgement",
+               "revision": "v2", "eff": "2026-09-01", "appr": "GJM",
+               "sqf": "11.3.4", "footer": FOOT.format(no="FRM-906")}
+    b906 = blocks_from_schema(s906)
+    build_pdf("sop-drafts/FRM-906-blank.pdf", meta906, b906)
+    build_docx("sop-drafts/FRM-906-blank.docx", meta906, b906)
