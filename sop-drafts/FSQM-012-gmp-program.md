@@ -170,6 +170,10 @@ depends on, and correct deficiencies raised by GMP inspection.
   way to being dried: hands washed and then pressed against a housing that dirty hands last
   touched are no longer clean. Taking the towel without contact meets that, and no member of staff
   need touch the dispenser to dry their hands.
+- **One station serves the production floor**, immediately inside its personnel access point,
+  which is the floor's only entrance from non-production space. 11.3.2.2 asks for further stations
+  throughout food handling and processing areas *as required*; at this floor's size and layout one
+  is sufficient, and that judgement is revisited if the layout changes or the floor grows.
 - Handwashing stations are for handwashing only. They shall not be used to wash equipment,
   utensils or cloths.
 - **Signage** instructing people to wash their hands before entering food processing areas is
@@ -209,6 +213,14 @@ depends on, and correct deficiencies raised by GMP inspection.
   and one at the walkthrough between the production area and the inventory and packaging area.
   External soilage — dirt, faecal matter, decomposing material or other foreign matter — shall not
   be carried into production or storage areas.
+- **Foot bath strength — Noble Sani-512 at 1:160**, which is 4.0 fluid ounces of product per 5
+  gallons of water, or 0.8 fl oz per gallon. **This is deliberately stronger than the 1:512
+  food-contact dilution** used on equipment and utensils in the SSOPs. A foot bath carries heavy
+  organic soil off the floor, and that soil consumes quat: made up at the weaker food-contact
+  ratio the solution deactivates and leaves footwear unsanitized. **The two strengths are for two
+  different jobs — never make a foot bath at the food-contact dilution, and never sanitize a
+  food-contact surface at the foot-bath dilution.** The foot-bath dilution is not a no-rinse
+  food-contact strength.
 - **Disposable gloves and aprons shall be changed after each break, on every re-entry to the
   processing area, and whenever damaged.** They are not washed and re-used.
 - Non-disposable aprons and gloves shall be cleaned and sanitized as required. When not in use
@@ -307,15 +319,16 @@ depends on, and correct deficiencies raised by GMP inspection.
 - **Sanitary drainage** is not connected to any other drain within the premises and discharges to
   the sewerage system in accordance with regulations.
 - The **break room** is separate from all food contact and handling zones, is lit, and is
-  ventilated by the site's heating and cooling system. It holds the personal-item lockers and is
-  kept clean and free from waste materials and pests.
-- The break room shall also be equipped with a **sink served with hot and cold potable water for
-  washing utensils**, and with **refrigeration and heating** so staff can store or heat their own
-  food and prepare non-alcoholic beverages (11.3.5.9 iii and iv). **Staff food is not stored in
-  the production walk-in refrigerator** — personal food held among ingredients is a contamination
-  and allergen route, so the break room carries its own refrigeration rather than borrowing the
-  walk-in. The handwash basin in the adjacent lavatory is a handwash basin, not the utensil sink
-  this clause asks for.
+  ventilated by the site's heating and cooling system. It has **a refrigerator**, and **a table
+  with seating for all employees at one sitting** (11.3.5.9 i, ii, iv). It holds the personal-item
+  lockers and is kept clean and free from waste materials and pests.
+- The break room does **not** have a **sink served with hot and cold potable water for washing
+  utensils** (11.3.5.9 iii). The handwash basin in the adjacent lavatory is a handwash basin, not
+  the utensil sink that clause asks for. Whether a means of heating food is provided is not yet
+  recorded (11.3.5.9 iv).
+- **Staff food is not stored in the production walk-in refrigerator.** Personal food held among
+  ingredients is a contamination and allergen route, which is why the break room carries its own
+  refrigeration rather than borrowing the walk-in.
 - Where an outside eating area is provided it is kept clean and free from waste materials and
   maintained so it does not attract pests or introduce contamination to the site.
 
@@ -440,48 +453,43 @@ site is never without an active personnel hygiene document.
 
 SITE ARRANGEMENTS CONFIRMED 2026-09-01 by Richard Mercer. The facility facts in this program are
 the site's own answers, not assumptions: three handwashing stations (one in each lavatory, one
-immediately inside the production access point) with hot and cold potable water, towel dispensers
-and waste bins, soap from a hands-free dispenser and towels that can be taken without touching the
-housing; handwash signage in the break room, at its exit, in both toilet rooms and at the
-production entrance, in English and Spanish; no designated high-risk area; protective clothing
-laundered by employees at home with detergent and hung to dry; footwear controlled by two
-sanitizing foot baths, at the production entrance and at the walkthrough to the inventory and
-packaging area; changing done in the toilet rooms, personal items in break room lockers; the
-employee lavatory reached through a vented airlock; sanitary drainage separate and compliant; the
-break room separate from food zones, lit and ventilated; no fixed illness exclusion interval —
-supervisor clearance is the control; product tasting carried out in the office adjacent to
-production, never on the floor.
+immediately inside the production access point, which is the floor's only entrance from
+non-production space) with hot and cold potable water, waste bins, soap from a hands-free
+dispenser and towels that can be taken without touching the housing; handwash signage in the break
+room, at its exit, in both toilet rooms and at the production entrance, in English and Spanish; no
+designated high-risk area; protective clothing laundered by employees at home with detergent and
+hung to dry; footwear controlled by two sanitizing foot baths, at the production entrance and at
+the walkthrough to the inventory and packaging area, dosed with Sani-512 at 1:160; changing done
+in the toilet rooms, personal items in break room lockers; the employee lavatory reached through a
+vented airlock; sanitary drainage separate and compliant; the break room separate from food zones,
+lit, ventilated, with a refrigerator and a table seating all employees at one sitting; no fixed
+illness exclusion interval — supervisor clearance is the control; product tasting carried out in
+the office adjacent to production, never on the floor.
 
-OPEN BEFORE ACTIVATION — seven items remain, and the first three are actions rather than
-questions. Where the site chooses not to provide something, that is an input to the Module 11
-exemption analysis required by 2.4.2.1, not a silent omission.
+OPEN BEFORE ACTIVATION — four items. Where the site chooses not to provide something, that is an
+input to the Module 11 exemption analysis required by 2.4.2.1, not a silent omission.
 1. ACTION — protective clothing racks. These do not exist yet. 11.3.3.7 wants them at or adjacent
 to the personnel access doorway AND the handwashing facilities, so the right place is the
 production entrance beside the existing handwash station and foot bath, not by the walk-in fridge:
 the garment comes off, the foot bath is crossed and the hands are washed at one point. A simple
 coat rack satisfies the clause.
-2. ACTION — break room refrigeration. 11.3.5.9 (iv) asks the break room itself to be equipped with
-refrigeration so staff can store their own food. The production walk-in does not substitute: staff
-food held among ingredients is a contamination and allergen route, and an auditor reading
-11.3.5.4's separation principle will treat it as one. A small domestic refrigerator in the break
-room closes it.
-3. DECISION — break room sink. 11.3.5.9 (iii) asks for a sink served with hot and cold potable
+2. DECISION — break room sink. 11.3.5.9 (iii) asks for a sink served with hot and cold potable
 water for washing utensils. The break room has none; the adjacent lavatory has a handwash basin,
 which is a different fixture for a different purpose. Either install a small sink or carry this
-into the exemption analysis with a justification for how utensils are washed instead.
-4. CONFIRM — handwash station construction. Water, soap, towels and waste bins are confirmed. What
-is left of 11.3.2.3 is the fixture itself: stainless steel or a similar non-corrosive material,
-and dispensers that can be cleaned. Also worth settling for 13.6: the towel dispenser has no
-no-touch MECHANISM, and an auditor reading 'hands-free dispenser' strictly could call that out
-even though a towel is taken without contact. The exemption analysis is where that argument is
+into the exemption analysis with a justification for how utensils are washed instead. While
+settling this, also record whether the break room has a means of HEATING food (11.3.5.9 iv) — the
+refrigerator is confirmed, heating is not.
+3. CONFIRM — handwash station construction: stainless steel or a similar non-corrosive material,
+with dispensers that can be cleaned (11.3.2.3). Also worth settling for 13.6: the towel dispenser
+has no no-touch MECHANISM, and an auditor reading 'hands-free dispenser' strictly could call that
+out even though a towel is taken without contact. The exemption analysis is where that argument is
 made once, in writing, rather than at the audit.
-5. CONFIRM — handwash coverage in production. 11.3.2.2 asks for a station adjacent to every
-personnel access point AND at accessible locations throughout food handling and processing areas
-as required. One station serves the whole production area. Confirm that is adequate for the
-floor's size and layout, or add one.
-6. CONFIRM — the foot baths' sanitizer and change frequency. A foot bath with no stated strength
-and no change interval is a tray of water, not a control. Name the sanitizer (Sani-512 is the
-house product), its dilution, and how often the baths are changed — then it belongs on FRM-901 as
-a scheduled task.
-7. CONFIRM — break room tables and seating adequate for the maximum number of staff at one sitting
-(11.3.5.9 ii).
+4. CONFIRM — the foot baths, on two points. (a) HOW OFTEN THEY ARE CHANGED. The dilution is now
+specified; a correctly dosed bath that is never changed is still not a control, because the soil
+it collects is what spends the quat. Set an interval and put it on FRM-901 as a scheduled task,
+with the strength verified on a test strip the way the SSOPs already do. (b) THE 1:160 FIGURE
+AGAINST THE PRODUCT LABEL. The 1:512 food-contact dilution was checked against the Sani-512 label
+on 2026-08-25; this foot-bath ratio has not been. A sanitizer used at a dilution its label does
+not carry is a label-use problem before it is an SQF problem, so confirm 1:160 appears on the
+label for this use — and while doing it, add the label and SDS to the Chemical Safety Data Sheets
+collection, which still holds only a generated summary.
