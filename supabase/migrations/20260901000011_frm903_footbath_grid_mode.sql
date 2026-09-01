@@ -1,3 +1,72 @@
+-- FRM-903 - the Foot baths grid was missing rows.mode, so it would have rendered dynamic.
+--
+-- A DEFECT IN 20260901000008, found while generating the printable blank. The grid was authored
+-- with rows = {labelHeader, deletable, labels} and no `mode`. Every other fixed grid in this form
+-- carries "mode": "fixed", and GridFieldInput.tsx decides what to render with exactly that:
+--
+--     const fixed = field.rows.mode === "fixed";
+--
+-- With `mode` absent the comparison is false, so the app would have treated it as a DYNAMIC grid:
+-- no leading "Foot bath" label column, neither configured row rendered, one blank row for the
+-- filler to type into. The two baths this program distinguishes - the production entrance and the
+-- walkthrough to inventory and packaging - would not have appeared, and the daily check would have
+-- been recorded against nothing in particular.
+--
+-- WHY THE SCHEMA CHECKS DID NOT CATCH IT. The schema was validated through the app's own
+-- buildZodSchema, emptyValues and valueFields, and passed - because a dynamic grid is a perfectly
+-- valid grid. Those helpers verify a schema is WELL-FORMED, not that it is the shape that was
+-- intended, and a missing optional-looking key reads as a deliberate choice rather than an
+-- omission. What surfaced it was generate-form-blank.py, which reads rows["mode"] unconditionally
+-- and raised a KeyError. The print path was stricter than the app.
+--
+-- THE SAME EXERCISE FOUND A SECOND PROBLEM, ON PAPER. The high-range-strip warning lived in the
+-- grid's LABEL, and the blank-form generator never prints a grid label - only its column headers.
+-- On the printed sheet the warning simply vanished, leaving a table headed "Foot bath | Reading
+-- (ppm) | At strength?" under a section called "Detergent & Sanitizer Verification", with nothing
+-- to tell the person holding the strip that the 200 ppm one cannot read this bath. The warning
+-- moves into an `info` field ahead of the grid, which renders on BOTH surfaces - the app already
+-- uses info fields this way on FRM-907 - and the grid label shortens to "Foot baths - Sani-512 at
+-- 1:160". A warning that only exists on the screen is no use to somebody filling in paper.
+--
+-- addLabel matches the sibling grids ("Add item", "Add equipment", "Add check").
+--
+-- No revision bump. FRM-903 v6 was issued hours ago with this grid intended as fixed and this
+-- warning intended to be visible; this corrects the row to what v6 was meant to say rather than
+-- issuing a v7 for a key nobody has filled a form against. The single existing entry predates v6
+-- and resolves against its own revision snapshot either way.
+--
+-- The schema below is DERIVED from the live row, not retyped, so the only differences are the three
+-- above. It is written with jsonb_set on the form_schema key alone, keeping content->'attachments'
+-- out of the write path.
+
+begin;
+
+do $$
+declare
+  st   text;
+  rev  text;
+  mode text;
+  note boolean;
+begin
+  select status, revision,
+         content->'form_schema'->'sections'->3->'fields'->8->'rows'->>'mode',
+         content::text like '%footbath_note%'
+    into st, rev, mode, note
+    from public.sop_documents where sop_number = 'FRM-903';
+
+  if st is distinct from 'active' or rev is distinct from 'v6' then
+    raise exception 'FRM-903 is % at revision % - expected an active v6. Run 20260901000008 first, or re-derive.', st, rev;
+  end if;
+  if mode is not null then
+    raise exception 'FRM-903 footbath_check already has rows.mode = % - this fix has been applied.', mode;
+  end if;
+  if note then
+    raise exception 'FRM-903 already carries a footbath_note field.';
+  end if;
+end $$;
+
+update public.sop_documents
+   set content = jsonb_set(content, '{form_schema}', $j903b$
 {
   "sections": [
     {
@@ -404,3 +473,47 @@
   },
   "schemaVersion": 1
 }
+$j903b$::jsonb)
+ where sop_number = 'FRM-903'
+   and status = 'active'
+   and revision = 'v6';
+
+do $$
+declare
+  r record;
+begin
+  select (select count(*) from jsonb_array_elements(content->'form_schema'->'sections') sec,
+                              jsonb_array_elements(sec->'fields') f
+           where f->>'type' = 'grid')                                          as grids,
+         (select count(*) from jsonb_array_elements(content->'form_schema'->'sections') sec,
+                              jsonb_array_elements(sec->'fields') f
+           where f->>'type' = 'grid' and f->'rows'->>'mode' = 'fixed')         as fixed_grids,
+         content::text like '%footbath_note%'                                as note,
+         content::text like '%HIGH-RANGE quat strip%'                        as warning,
+         revision, jsonb_array_length(content->'attachments')                  as attachments,
+         (select f->'rows'->>'mode'
+            from jsonb_array_elements(content->'form_schema'->'sections') sec,
+                 jsonb_array_elements(sec->'fields') f
+           where f->>'id' = 'footbath_check')                                  as fb_mode,
+         (select jsonb_array_length(f->'rows'->'labels')
+            from jsonb_array_elements(content->'form_schema'->'sections') sec,
+                 jsonb_array_elements(sec->'fields') f
+           where f->>'id' = 'footbath_check')                                  as fb_labels
+    into r
+    from public.sop_documents where sop_number = 'FRM-903';
+
+  if r.fb_mode is distinct from 'fixed' or r.fb_labels <> 2 then
+    raise exception 'footbath_check not fixed with two rows: mode=%, labels=%.', r.fb_mode, r.fb_labels;
+  end if;
+  if r.grids <> 5 or r.fixed_grids <> 5 then
+    raise exception 'FRM-903 has % grids of which % are fixed - expected 5 and 5.', r.grids, r.fixed_grids;
+  end if;
+  if not (r.note and r.warning) then
+    raise exception 'The strip warning did not land: info field=%, warning text=%.', r.note, r.warning;
+  end if;
+  if r.revision <> 'v6' or r.attachments is null then
+    raise exception 'FRM-903 metadata disturbed: revision %, attachments %.', r.revision, r.attachments;
+  end if;
+end $$;
+
+commit;

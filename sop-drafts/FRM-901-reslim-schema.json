@@ -3,55 +3,136 @@
     {
       "id": "schedule",
       "title": "Master Sanitation Schedule (reference)",
-      "description": "Defines the scheduled cleaning of the facility, equipment, and storage areas — what is cleaned, how, when, and who is responsible (SQF 11.2.5.1). Daily production-day cleaning is recorded on the Daily Sanitation & Pre-Operation Record (FRM-903) and each machine's SSOP log; periodic cleaning is recorded below as it is completed (SQF 11.2.5.8, 11.2.5.9).",
       "fields": [
         {
           "id": "schedule_ref",
+          "rows": [
+            [
+              "Food contact surfaces",
+              "Clean; sanitize with Sani-512 (1:512, no-rinse)",
+              "Sanitation / Production",
+              "Daily (production days)"
+            ],
+            [
+              "Equipment used for production",
+              "Cleaned & sanitized per each machine's SOP/SSOP; recorded on its own log",
+              "Sanitation / Production",
+              "Daily (production days)"
+            ],
+            [
+              "Utensils used for production",
+              "Wash, rinse, sanitize (Sani-512)",
+              "Sanitation / Production",
+              "Daily (production days)"
+            ],
+            [
+              "Floors in processing room",
+              "Sweep, wash",
+              "Sanitation",
+              "Daily (production days)"
+            ],
+            [
+              "Floors in storage areas",
+              "Sweep, wash",
+              "Sanitation",
+              "Daily (production days)"
+            ],
+            [
+              "Under pallets / bottom rack spaces in storage",
+              "Clear and clean",
+              "Sanitation",
+              "Monthly"
+            ],
+            [
+              "Dock areas",
+              "Sweep, clean",
+              "Sanitation",
+              "Monthly"
+            ],
+            [
+              "Overheads",
+              "Clean",
+              "Sanitation",
+              "Every 6 months"
+            ],
+            [
+              "Racking in storage areas",
+              "Clean",
+              "Sanitation",
+              "Every 6 months"
+            ],
+            [
+              "Sanitizing foot baths (production entrance; walkthrough to inventory & packaging)",
+              "Drain, strip and scrub; recharge with Sani-512 at 1:160 (4.0 fl oz per 5 gal). Verify with a HIGH-RANGE quat strip — not the 200 ppm food-contact strip.",
+              "Sanitation",
+              "Monthly (daily check on FRM-903)"
+            ]
+          ],
           "type": "reference_table",
           "label": "Cleaning schedule",
-          "columns": ["Area / item to clean", "Cleaning method & chemical", "Responsible", "Frequency"],
-          "rows": [
-            ["Food contact surfaces", "Clean; sanitize with Sani-512 (1:512, no-rinse)", "Sanitation / Production", "Daily (production days)"],
-            ["Equipment used for production", "Cleaned & sanitized per each machine's SOP/SSOP; recorded on its own log", "Sanitation / Production", "Daily (production days)"],
-            ["Utensils used for production", "Wash, rinse, sanitize (Sani-512)", "Sanitation / Production", "Daily (production days)"],
-            ["Floors in processing room", "Sweep, wash", "Sanitation", "Daily (production days)"],
-            ["Floors in storage areas", "Sweep, wash", "Sanitation", "Daily (production days)"],
-            ["Under pallets / bottom rack spaces in storage", "Clear and clean", "Sanitation", "Monthly"],
-            ["Dock areas", "Sweep, clean", "Sanitation", "Monthly"],
-            ["Overheads", "Clean", "Sanitation", "Every 6 months"],
-            ["Racking in storage areas", "Clean", "Sanitation", "Every 6 months"]
+          "columns": [
+            "Area / item to clean",
+            "Cleaning method & chemical",
+            "Responsible",
+            "Frequency"
           ]
         }
-      ]
+      ],
+      "description": "Defines the scheduled cleaning of the facility, equipment, and storage areas — what is cleaned, how, when, and who is responsible (SQF 11.2.5.1). Daily production-day cleaning is recorded on the Daily Sanitation & Pre-Operation Record (FRM-903) and each machine's SSOP log; periodic cleaning is recorded below as it is completed (SQF 11.2.5.8, 11.2.5.9)."
     },
     {
       "id": "completion",
       "title": "Periodic Cleaning — Completion Record",
-      "description": "Record each scheduled periodic (monthly / 6-month) cleaning as it is completed, and have it verified. This forms part of the cleaning records required by SQF 11.2.5.9. One record per completed task; the Records report shows completions over time.",
       "fields": [
         {
           "id": "task_area",
           "type": "select",
           "label": "Task / area cleaned",
           "width": "half",
-          "required": true,
-          "showInList": true,
           "options": [
             "Under pallets / bottom rack spaces in storage",
             "Dock areas",
             "Overheads",
             "Racking in storage areas",
+            "Sanitizing foot baths (strip-down & recharge)",
             "Other (note in comments)"
           ],
-          "allowOther": true
+          "required": true,
+          "allowOther": true,
+          "showInList": true
         },
-        { "id": "frequency", "type": "select", "label": "Frequency", "width": "third", "options": ["Monthly", "Every 6 months", "Other"], "required": true, "showInList": true },
-        { "id": "date_completed", "type": "date", "label": "Date completed", "width": "third", "required": true, "showInList": true, "defaultToday": true },
-        { "id": "comments", "type": "textarea", "label": "Method / chemical / comments", "width": "full" },
+        {
+          "id": "frequency",
+          "type": "select",
+          "label": "Frequency",
+          "width": "third",
+          "options": [
+            "Monthly",
+            "Every 6 months",
+            "Other"
+          ],
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "date_completed",
+          "type": "date",
+          "label": "Date completed",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "defaultToday": true
+        },
+        {
+          "id": "comments",
+          "type": "textarea",
+          "label": "Method / chemical / comments",
+          "width": "full"
+        },
         {
           "id": "completed_by",
-          "type": "signature",
           "role": "filler",
+          "type": "signature",
           "label": "Completed by",
           "width": "half",
           "required": true,
@@ -59,13 +140,14 @@
         },
         {
           "id": "verified_by",
-          "type": "signature",
           "role": "verifier",
+          "type": "signature",
           "label": "Verified by",
           "width": "half",
           "statement": "I verified this cleaning task was completed to standard."
         }
-      ]
+      ],
+      "description": "Record each scheduled periodic (monthly / 6-month) cleaning as it is completed, and have it verified. This forms part of the cleaning records required by SQF 11.2.5.9. One record per completed task; the Records report shows completions over time."
     }
   ],
   "settings": {

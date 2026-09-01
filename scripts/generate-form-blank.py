@@ -376,15 +376,15 @@ FOOT = "Adventure Bakery, LLC · Confidential · {no} · Handwritten entries are
 if __name__ == "__main__":
     # FRM-903 — one sheet per production day
     s903 = load_schema("sop-drafts/FRM-903-consolidated-daily-record-schema.json")
-    # Document-control values mirror the live sop_documents row for FRM-903: rev v3,
-    # effective 2026-08-25, active - bumped from v2 by migration 20260825000001 when the site
-    # detergent changed from Dazzle to Dawn Professional. sqf_reference is the completed
-    # five-clause list applied by migration 20260821000001 (one clause per section).
+    # Document-control values mirror the live sop_documents row for FRM-903: rev v6,
+    # effective 2026-09-01, active - bumped from v5 by migration 20260901000008, which added the
+    # Foot baths grid to section 3. sqf_reference is the completed five-clause list applied by
+    # migration 20260821000001 (one clause per section).
     # Re-check all of these against the row whenever the schema changes - a blank printed
     # with a revision the quality system does not have is a document-control finding, not
     # a cosmetic one.
     meta903 = {"form_no": "FRM-903", "title": "Daily Sanitation, Pre-Operation & Release Record",
-               "revision": "v5", "eff": "2026-08-27", "appr": "GJM",
+               "revision": "v6", "eff": "2026-09-01", "appr": "GJM",
                "sqf": "11.2.5.1, 11.2.5.3, 11.2.5.7, 11.2.5.9, 11.7.3.4",
                "footer": FOOT.format(no="FRM-903")}
     b903 = blocks_from_schema(s903)
@@ -393,12 +393,16 @@ if __name__ == "__main__":
 
     # FRM-901 — schedule (printed) + periodic completion LOG (each row -> one digital entry)
     s901 = load_schema("sop-drafts/FRM-901-reslim-schema.json")
+    # rev v2, effective 2026-09-01: migration 20260901000008 added the monthly foot bath
+    # strip-down to the schedule and the task picker, and 20260901000010 relabelled the revision
+    # from 'B' to 'v2' so the form matches the house numbering. sqf_reference is the live value.
     meta901 = {"form_no": "FRM-901", "title": "Master Sanitation Schedule",
-               "revision": "A", "eff": "2026-06-01", "appr": "GJM",
-               "sqf": "11.2.5.1, 11.2.5.8, 11.2.5.9", "footer": FOOT.format(no="FRM-901")}
+               "revision": "v2", "eff": "2026-09-01", "appr": "GJM",
+               "sqf": "11.2.5.1, 11.2.5.8", "footer": FOOT.format(no="FRM-901")}
     completion_log = {"completion": {
         "columns": ["Task / area cleaned", "Frequency", "Date completed", "Method / chemical / comments", "Completed by", "Verified by / date"],
         "weights": [2.4, 1.1, 1.1, 2.3, 1.2, 1.4], "nrows": 12}}
+    # nrows 12 is the paper log depth, unrelated to how many tasks the schedule lists.
     b901 = blocks_from_schema(s901, completion_as_log=completion_log)
     build_pdf("sop-drafts/FRM-901-blank.pdf", meta901, b901)
     build_docx("sop-drafts/FRM-901-blank.docx", meta901, b901)
@@ -419,3 +423,19 @@ if __name__ == "__main__":
     b004 = blocks_from_schema(s004)
     build_pdf("sop-drafts/FRM-004-blank.pdf", meta004, b004, landscape_page=True)
     build_docx("sop-drafts/FRM-004-blank.docx", meta004, b004, landscape_page=True)
+
+    # FRM-907 - glass & brittle plastic register. LANDSCAPE: the register grid is a leading
+    # Location label plus six columns, two of which (Condition/Comments and Resolved/Action) are
+    # written in by hand at inspection. Portrait would give those about an inch each, which is
+    # not enough room to record a chip and what was done about it.
+    #
+    # rev v2, effective 2026-09-01: migration 20260901000008 added the ceramic handwash basin at
+    # the production entrance, and Ceramic as a Material option - the select had offered only
+    # Glass and Plastic, so the basin could not have been recorded correctly without it.
+    s907 = load_schema("sop-drafts/FRM-907-glass-brittle-register-schema.json")
+    meta907 = {"form_no": "FRM-907", "title": "Glass & Brittle Plastic Register",
+               "revision": "v2", "eff": "2026-09-01", "appr": "GJM",
+               "sqf": "11.7.3", "footer": FOOT.format(no="FRM-907")}
+    b907 = blocks_from_schema(s907)
+    build_pdf("sop-drafts/FRM-907-blank.pdf", meta907, b907, landscape_page=True)
+    build_docx("sop-drafts/FRM-907-blank.docx", meta907, b907, landscape_page=True)

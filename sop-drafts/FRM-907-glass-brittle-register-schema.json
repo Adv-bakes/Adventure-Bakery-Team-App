@@ -1,0 +1,232 @@
+{
+  "sections": [
+    {
+      "id": "purpose_scope",
+      "title": "Purpose & Scope",
+      "fields": [
+        {
+          "id": "purpose_scope_info",
+          "text": "This register lists all glass and brittle-plastic items present in food handling, processing, and storage zones at Adventure Bakery, LLC, including their location and condition (SQF 11.7.3.2). It is inspected on a regular basis to detect any change in condition or breakage (SQF 11.7.3.3).\n\nSQF references: 11.7.3.1 (foreign-matter control) · 11.7.3.2 (glass inventory with location & condition) · 11.7.3.3 (regular condition inspections) · 11.7.3.5 (breakage response).",
+          "type": "info",
+          "label": "Purpose & Scope"
+        }
+      ]
+    },
+    {
+      "id": "risk_rating_key",
+      "title": "Risk Rating Key",
+      "fields": [
+        {
+          "id": "risk_rating_key_table",
+          "rows": [
+            [
+              "1",
+              "Slight Risk – no action required."
+            ],
+            [
+              "2",
+              "Medium Risk – action when opportunity occurs."
+            ],
+            [
+              "3",
+              "Urgent – action or removal of object required."
+            ]
+          ],
+          "type": "reference_table",
+          "label": "Risk Rating Key",
+          "columns": [
+            "Risk",
+            "Rating"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glass_brittle_plastic_register",
+      "title": "Glass & Brittle Plastic Register",
+      "fields": [
+        {
+          "id": "inspection_date",
+          "type": "date",
+          "label": "Inspection Date",
+          "width": "half"
+        },
+        {
+          "id": "checked_by",
+          "role": "filler",
+          "type": "signature",
+          "label": "Checked By",
+          "width": "half"
+        },
+        {
+          "id": "inspection_note",
+          "text": "Record Intact (Y/N) and any change in condition at each inspection. Any \"N\" or breakage must follow the breakage response in SOP-11.7.3 (isolate, clean, inspect, and clear before resuming, and be recorded on FRM-908 – SQF 11.7.3.5).",
+          "type": "info",
+          "label": "Inspection Note"
+        },
+        {
+          "id": "register",
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "Storage Warehouse",
+              "Storage Warehouse",
+              "Processing Room",
+              "Processing Room",
+              "Processing Room",
+              "Processing Room",
+              "Storage Room",
+              "Processing Room & Storage Warehouse",
+              "Processing Room",
+              "Processing Room",
+              "Processing Room",
+              "Cooler",
+              "Freezer",
+              "Processing Room"
+            ],
+            "deletable": true,
+            "labelHeader": "Location",
+            "defaultValues": [
+              {
+                "item": "Light bulbs (12)",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Flow wrap screens (2)",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Light bulbs (48)",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Pan scrubber dials",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Oven controls and door glass",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Emergency lights",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Emergency lights",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Cameras",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Clocks",
+                "risk": 1,
+                "material": "Plastic"
+              },
+              {
+                "item": "Lids for ingredient containers (12)",
+                "risk": 1,
+                "material": "Plastic"
+              },
+              {
+                "item": "Office window",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Light bulbs (covered)",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Light bulbs",
+                "risk": 1,
+                "material": "Glass"
+              },
+              {
+                "item": "Handwash basin — ceramic (production entrance)",
+                "risk": 1,
+                "material": "Ceramic"
+              }
+            ]
+          },
+          "type": "grid",
+          "label": "Glass & Brittle Plastic Register",
+          "columns": [
+            {
+              "id": "item",
+              "type": "text",
+              "label": "Item"
+            },
+            {
+              "id": "material",
+              "type": "select",
+              "label": "Material",
+              "options": [
+                "Glass",
+                "Plastic",
+                "Ceramic"
+              ]
+            },
+            {
+              "id": "intact",
+              "type": "pass_fail",
+              "label": "Intact (Y/N)"
+            },
+            {
+              "id": "risk",
+              "type": "number",
+              "label": "Risk"
+            },
+            {
+              "id": "condition_comments",
+              "type": "text",
+              "label": "Condition / Comments"
+            },
+            {
+              "id": "resolved_action",
+              "type": "text",
+              "label": "Resolved / Action"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "title": "Review",
+      "fields": [
+        {
+          "id": "reviewed_by",
+          "role": "verifier",
+          "type": "signature",
+          "label": "Reviewed by",
+          "width": "half"
+        },
+        {
+          "id": "review_date",
+          "type": "date",
+          "label": "Date",
+          "width": "half"
+        },
+        {
+          "id": "records_maintained_note",
+          "text": "Records are maintained for a minimum of 2 years (SOP-11.7.3).",
+          "type": "info",
+          "label": "Records Maintained Note"
+        }
+      ]
+    }
+  ],
+  "settings": {},
+  "schemaVersion": 1
+}
