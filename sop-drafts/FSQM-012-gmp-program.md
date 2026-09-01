@@ -170,6 +170,12 @@ depends on, and correct deficiencies raised by GMP inspection.
   way to being dried: hands washed and then pressed against a housing that dirty hands last
   touched are no longer clean. Taking the towel without contact meets that, and no member of staff
   need touch the dispenser to dry their hands.
+- **The basins are ceramic** — impervious, non-corrosive and easily cleaned, which is what
+  11.3.2.3 means by "stainless steel or similar non-corrosive material". Ceramic is also
+  **brittle**, so a ceramic fixture inside a food handling area is controlled as a brittle item:
+  listed on **FRM-907** (Glass & Brittle Plastic Register) and inspected for chips and cracks with
+  the rest of that register under **SOP-11.7.3**. A chipped basin over a hand-washing point is a
+  foreign-material route, not just a maintenance job.
 - **One station serves the production floor**, immediately inside its personnel access point,
   which is the floor's only entrance from non-production space. 11.3.2.2 asks for further stations
   throughout food handling and processing areas *as required*; at this floor's size and layout one
@@ -474,23 +480,18 @@ designated high-risk area; protective clothing laundered by employees at home wi
 hung to dry; footwear controlled by two sanitizing foot baths, at the production entrance and at
 the walkthrough to the inventory and packaging area, dosed with Sani-512 at 1:160, made up in
 separate clearly labelled containers from the 1:512 food-contact solution, and thoroughly cleaned
-monthly; changing done in the toilet rooms, personal items in break room lockers; the employee
+monthly; ceramic handwash basins, and the protective clothing rack installed at the production
+entrance; changing done in the toilet rooms, personal items in break room lockers; the employee
 lavatory reached through a vented airlock; sanitary drainage separate and compliant; the break
 room separate from food zones, lit, ventilated, with a refrigerator, a microwave and a table
 seating all employees at one sitting, and with disposable utensils so nothing is washed up there;
 no fixed illness exclusion interval — supervisor clearance is the control; product tasting carried
 out in the office adjacent to production, never on the floor.
 
-OPEN BEFORE ACTIVATION — three items.
-1. ACTION — protective clothing racks. These do not exist yet. 11.3.3.7 wants them at or adjacent
-to the personnel access doorway AND the handwashing facilities, so the right place is the
-production entrance beside the existing handwash station and foot bath, not by the walk-in fridge:
-the garment comes off, the foot bath is crossed and the hands are washed at one point. A simple
-coat rack satisfies the clause. This is the last physical item outstanding.
-2. CONFIRM — handwash station construction: stainless steel or a similar non-corrosive material,
-with dispensers that can be cleaned (11.3.2.3). A five-minute look at the three stations settles
-it.
-3. CONFIRM — the foot baths, on two points. (a) THE DAILY CHANGE. This program states the solution
+OPEN BEFORE ACTIVATION — two items. The protective clothing rack is installed and the handwash
+basins are confirmed as ceramic, which closes the last physical item and the last fixture
+question.
+1. CONFIRM — the foot baths, on two points. (a) THE DAILY CHANGE. This program states the solution
 is made up fresh at the start of each production day and sooner when visibly soiled or below strip
 target, with a thorough clean monthly. The monthly clean is the site's own answer; the daily
 change is written here because a concentration without a change interval is not a control — the
@@ -502,6 +503,11 @@ on 2026-08-25; this foot-bath ratio has not been. A sanitizer used at a dilution
 not carry is a label-use problem before it is an SQF problem, so confirm 1:160 appears on the
 label for this use — and while doing it, add the label and SDS to the Chemical Safety Data Sheets
 collection, which still holds only a generated summary.
+2. ACTION — add the ceramic basin at the production entrance to FRM-907, the Glass and Brittle
+Plastic Register. Ceramic is brittle and that basin sits inside the food handling area, so it
+belongs on the register SOP-11.7.3 already runs. This is one line on a form that exists, not a new
+control — but a brittle fixture over a handwashing point that nobody is inspecting is the kind of
+omission an auditor finds by looking up.
 
 CARRIED INTO THE MODULE 11 EXEMPTION ANALYSIS (task 13.6). Two arrangements meet what a clause
 protects without being the fixture it names. 2.4.2.1 allows exactly that, in exchange for a
