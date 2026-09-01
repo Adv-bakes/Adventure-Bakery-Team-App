@@ -499,12 +499,11 @@ sitting, and with disposable utensils so nothing is washed up there; no fixed il
 interval — supervisor clearance is the control; product tasting carried out in the office adjacent
 to production, never on the floor.
 
-OPEN BEFORE ACTIVATION — three items, all small. The foot bath change interval is settled: the
-site checks daily and changes on condition rather than replacing the solution on a fixed schedule.
-SQF prescribes no interval for a foot bath, and a bath still at strength and still clean is doing
-its job, so a condition trigger with a scheduled check is the defensible shape. That decision
-creates items 2 and 3 below — if the strip is the trigger, the strip has to be able to read the
-solution, and the check has to land somewhere.
+OPEN BEFORE ACTIVATION — two items. The forms now carry every check this program states: the daily
+foot bath check is a grid in section 3 of FRM-903, the monthly strip-down is on the FRM-901
+schedule and in its task picker, and the ceramic basin at the production entrance is on the
+FRM-907 register (FRM-901 rev B, FRM-903 rev v6, FRM-907 rev v2, all effective 2026-09-01). What
+is left is one confirmation and one purchase.
 1. CONFIRM — the 1:160 figure against the product label. The 1:512 food-contact dilution was
 checked against the Sani-512 label on 2026-08-25; this foot-bath ratio has not been. A sanitizer
 used at a dilution its label does not carry is a label-use problem before it is an SQF problem, so
@@ -512,14 +511,10 @@ confirm 1:160 appears on the label for this use — and while doing it, add the 
 Chemical Safety Data Sheets collection, which still holds only a generated summary.
 2. ACTION — high-range quat test strips for the foot baths. At 1:160 the bath runs at roughly
 three times the food-contact strength, which is off the top of the 0-400 ppm strips used on
-equipment: those will simply read high and tell the checker nothing. Buy a high-range strip and
-keep it with the baths, separately from the food-contact strips so the two are not confused — the
-same reasoning as the separately labelled containers.
-3. ACTION — three one-line additions to forms that already exist: the daily foot bath check on
-FRM-903; the monthly foot bath strip-down on FRM-901; and the ceramic basin at the production
-entrance on FRM-907, the Glass and Brittle Plastic Register. None is a new control. But a daily
-check with nowhere to record it is not evidence, and a brittle fixture over a handwashing point
-that nobody inspects is the kind of omission an auditor finds by looking up.
+equipment: those will simply read high and tell the checker nothing. FRM-903's foot bath grid now
+carries that warning on its own label, so the person holding the strip sees it — but the strip
+still has to exist. Keep it with the baths, separate from the food-contact strips, for the same
+reason the two dilutions are made up in separately labelled containers.
 
 CARRIED INTO THE MODULE 11 EXEMPTION ANALYSIS (task 13.6). Two arrangements meet what a clause
 protects without being the fixture it names. 2.4.2.1 allows exactly that, in exchange for a
