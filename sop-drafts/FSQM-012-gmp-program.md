@@ -231,11 +231,21 @@ depends on, and correct deficiencies raised by GMP inspection.
   solution and the food-contact solution are never drawn from the same vessel. That labelling is
   the control which keeps two strengths of one product from reaching the wrong job — the solutions
   look identical, and only the label distinguishes them.
-- **Foot bath maintenance.** The solution is made up fresh at the start of each production day,
-  and sooner whenever it is visibly soiled or a test strip reads below target. The baths are
-  stripped and thoroughly cleaned **monthly**, and sooner if required. The change interval matters
-  as much as the dilution: the soil a bath lifts off the floor is exactly what spends the quat, so
-  a bath left standing is weaker than its label says however carefully it was mixed.
+- **Foot bath maintenance — the check is scheduled, the change is conditional.** Each bath is
+  checked **at the start of every production day**: looked at, and read with a quat test strip.
+  The solution is **changed when the strip reads below target, when the bath is visibly soiled, or
+  when it has been diluted** by water carried in on footwear or by washdown. It is not replaced on
+  a fixed schedule — a bath still at strength and still clean is doing its job, and dumping it
+  regardless spends chemical without adding control. The baths are stripped and thoroughly cleaned
+  **monthly**, and sooner if required.
+- The daily check is what makes the conditional change a control rather than a guess. The soil a
+  bath lifts off the floor is exactly what spends the quat, so an unchecked bath is weaker than
+  its label says however carefully it was mixed — and nobody can tell by looking at it. **The
+  strip must be able to read this solution:** at 1:160 the bath is roughly three times the
+  strength of the 1:512 food-contact solution, so the 0-400 ppm strips used on food-contact
+  surfaces will saturate and read "high" whatever the true value. A high-range quat strip is
+  required for the baths. The daily check is recorded on **FRM-903**; the monthly strip-down is
+  scheduled on **FRM-901**.
 - **Disposable gloves and aprons shall be changed after each break, on every re-entry to the
   processing area, and whenever damaged.** They are not washed and re-used.
 - Non-disposable aprons and gloves shall be cleaned and sanitized as required. When not in use
@@ -480,34 +490,36 @@ designated high-risk area; protective clothing laundered by employees at home wi
 hung to dry; footwear controlled by two sanitizing foot baths, at the production entrance and at
 the walkthrough to the inventory and packaging area, dosed with Sani-512 at 1:160, made up in
 separate clearly labelled containers from the 1:512 food-contact solution, and thoroughly cleaned
-monthly; ceramic handwash basins, and the protective clothing rack installed at the production
-entrance; changing done in the toilet rooms, personal items in break room lockers; the employee
-lavatory reached through a vented airlock; sanitary drainage separate and compliant; the break
-room separate from food zones, lit, ventilated, with a refrigerator, a microwave and a table
-seating all employees at one sitting, and with disposable utensils so nothing is washed up there;
-no fixed illness exclusion interval — supervisor clearance is the control; product tasting carried
-out in the office adjacent to production, never on the floor.
+monthly, with the solution changed on condition rather than on a fixed interval; ceramic handwash
+basins, and the protective clothing rack installed at the production entrance; changing done in
+the toilet rooms, personal items in break room lockers; the employee lavatory reached through a
+vented airlock; sanitary drainage separate and compliant; the break room separate from food zones,
+lit, ventilated, with a refrigerator, a microwave and a table seating all employees at one
+sitting, and with disposable utensils so nothing is washed up there; no fixed illness exclusion
+interval — supervisor clearance is the control; product tasting carried out in the office adjacent
+to production, never on the floor.
 
-OPEN BEFORE ACTIVATION — two items. The protective clothing rack is installed and the handwash
-basins are confirmed as ceramic, which closes the last physical item and the last fixture
-question.
-1. CONFIRM — the foot baths, on two points. (a) THE DAILY CHANGE. This program states the solution
-is made up fresh at the start of each production day and sooner when visibly soiled or below strip
-target, with a thorough clean monthly. The monthly clean is the site's own answer; the daily
-change is written here because a concentration without a change interval is not a control — the
-soil a bath lifts off the floor is what spends the quat, so a bath left standing is weaker than
-its label says however carefully it was mixed. Confirm the daily interval or set a different one,
-then put both it and the monthly clean on FRM-901 with a test strip check. (b) THE 1:160 FIGURE
-AGAINST THE PRODUCT LABEL. The 1:512 food-contact dilution was checked against the Sani-512 label
-on 2026-08-25; this foot-bath ratio has not been. A sanitizer used at a dilution its label does
-not carry is a label-use problem before it is an SQF problem, so confirm 1:160 appears on the
-label for this use — and while doing it, add the label and SDS to the Chemical Safety Data Sheets
-collection, which still holds only a generated summary.
-2. ACTION — add the ceramic basin at the production entrance to FRM-907, the Glass and Brittle
-Plastic Register. Ceramic is brittle and that basin sits inside the food handling area, so it
-belongs on the register SOP-11.7.3 already runs. This is one line on a form that exists, not a new
-control — but a brittle fixture over a handwashing point that nobody is inspecting is the kind of
-omission an auditor finds by looking up.
+OPEN BEFORE ACTIVATION — three items, all small. The foot bath change interval is settled: the
+site checks daily and changes on condition rather than replacing the solution on a fixed schedule.
+SQF prescribes no interval for a foot bath, and a bath still at strength and still clean is doing
+its job, so a condition trigger with a scheduled check is the defensible shape. That decision
+creates items 2 and 3 below — if the strip is the trigger, the strip has to be able to read the
+solution, and the check has to land somewhere.
+1. CONFIRM — the 1:160 figure against the product label. The 1:512 food-contact dilution was
+checked against the Sani-512 label on 2026-08-25; this foot-bath ratio has not been. A sanitizer
+used at a dilution its label does not carry is a label-use problem before it is an SQF problem, so
+confirm 1:160 appears on the label for this use — and while doing it, add the label and SDS to the
+Chemical Safety Data Sheets collection, which still holds only a generated summary.
+2. ACTION — high-range quat test strips for the foot baths. At 1:160 the bath runs at roughly
+three times the food-contact strength, which is off the top of the 0-400 ppm strips used on
+equipment: those will simply read high and tell the checker nothing. Buy a high-range strip and
+keep it with the baths, separately from the food-contact strips so the two are not confused — the
+same reasoning as the separately labelled containers.
+3. ACTION — three one-line additions to forms that already exist: the daily foot bath check on
+FRM-903; the monthly foot bath strip-down on FRM-901; and the ceramic basin at the production
+entrance on FRM-907, the Glass and Brittle Plastic Register. None is a new control. But a daily
+check with nowhere to record it is not evidence, and a brittle fixture over a handwashing point
+that nobody inspects is the kind of omission an auditor finds by looking up.
 
 CARRIED INTO THE MODULE 11 EXEMPTION ANALYSIS (task 13.6). Two arrangements meet what a clause
 protects without being the fixture it names. 2.4.2.1 allows exactly that, in exchange for a
