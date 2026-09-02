@@ -126,6 +126,11 @@ copy and run against `sop_document_responses`.
   (`param.column`). Renaming a column header re-slugs its id and cascades into any param that points at it.
 - **`sourceStatus`.** Default `submitted` (finalized only). A complaint-style register often wants `all` so
   every *received* complaint appears, with the Status column conveying progress — that is a per-form call.
+  **Get this wrong and the report is silently backwards, not broken.** REP-007 (CAPA Log) sets `all`: a
+  corrective action is a *draft* entry for exactly as long as it is open, so under the default an open CAPA
+  would be invisible until the day it closed and the register would answer the opposite of "show me your
+  open corrective actions". The rule of thumb: if the report's value is in what is still *outstanding*, it
+  needs `all`; if it is a record of what has been *filed* (REP-003, REP-201), `submitted` is right.
 - **Client-side & unbounded fetch.** `loadReportBase` fetches the source responses with **no `created_at`
   bound**, because the date param filters a *data* field (e.g. `date_received`) that can differ from
   `created_at`. Fine for log-sized data; revisit with an RPC if a source form ever grows huge.
@@ -148,9 +153,12 @@ The seeded Customer Complaint Log maps as:
 | Complaint Summary | field | `complaint_description_text` |
 | Class. (C / NC) | map | `classification` → C / NC |
 | Root Cause | field | `root_cause_sqf_2_5_3_1` |
-| CAPA Ref | const | *blank* — FRM-002 has no CAPA/CAR-number field yet |
+| CAPA Ref | field | `capa_ref` |
 | Status | cases | `closure_date` → Closed; else `investigation_findings` → Under Investigation; else Open |
 | Date Closed | field | `closure_date` |
 
-**Known gap:** to fill **CAPA Ref**, add a `capa_ref` field to FRM-002 and switch that column from `const`
-to `field`. This is the general pattern for any log column the source form doesn't yet capture.
+**CAPA Ref was a `const` blank until 2026-09-02** — FRM-002 had no CAPA-number field, because there were no
+CAPA numbers to write. `20260902000004_frm002_capa_ref.sql` added the field and flipped the column, once
+D-07 gave the site a numbered corrective-action record (FRM-007) to point at. That is the general pattern
+for any log column the source form doesn't yet capture: **add the field first, then flip `const` → `field`.**
+Flipping it against a field that doesn't exist renders an empty column with no error anywhere.

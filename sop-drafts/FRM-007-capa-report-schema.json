@@ -1,0 +1,564 @@
+{
+  "settings": {
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "requireVerification": true,
+    "deletable": false,
+    "instanceTitleTemplate": "Corrective action {capa_no} — {source}"
+  },
+  "sections": [
+    {
+      "id": "identification",
+      "title": "1. Identification",
+      "fields": [
+        {
+          "id": "threshold_info",
+          "type": "info",
+          "label": "What a CAPA is, and when to open one",
+          "text": "CAPA stands for Corrective and Preventive Action. One CAPA covers one thing that went wrong, from start to finish: what was done straight away to make it safe (the correction), what was done so it does not happen again (the corrective action), what was done so the same cause cannot bite somewhere it has not yet (the preventive action), and the check that those actually worked.\n\nFSQM-009 Part 3. A CAPA is opened for: product already released or requiring hold, rework, downgrade or destruction; any critical-limit or CCP deviation; a critical complaint or one alleging illness, injury, foreign material or an undeclared allergen; any repeat within twelve months; any audit, certification body or regulatory finding; any inspection finding not corrected on the spot; any withdrawal or recall including a test; a presumptive positive or adverse environmental trend; a glass or brittle plastic breakage where product or a food-contact surface was exposed; or anything the SQF Practitioner judges to warrant one.\n\nA routine non-conformance corrected on the spot is recorded on the form that found it and does not open a CAPA. When in doubt, open one."
+        },
+        {
+          "id": "capa_no",
+          "type": "text",
+          "label": "CAPA No.",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "placeholder": "CAPA-2026-001",
+          "help": "Year and next sequential number in that year. Numbers are never reused."
+        },
+        {
+          "id": "date_raised",
+          "type": "date",
+          "label": "Date raised",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "defaultToday": true
+        },
+        {
+          "id": "raised_by",
+          "type": "text",
+          "label": "Raised by",
+          "width": "third",
+          "required": true
+        },
+        {
+          "id": "source",
+          "type": "select",
+          "label": "Source",
+          "width": "half",
+          "options": [
+            "Customer or consumer complaint",
+            "Supplier non-conformance",
+            "Non-conforming material or product",
+            "Non-conforming equipment",
+            "Critical limit / CCP deviation",
+            "Internal audit",
+            "External audit or regulatory inspection",
+            "GMP or pre-operational inspection",
+            "Environmental monitoring",
+            "Glass or brittle plastic breakage",
+            "Withdrawal or recall",
+            "Other"
+          ],
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "source_ref",
+          "type": "text",
+          "label": "Source record reference",
+          "width": "half",
+          "help": "The complaint no., SCAR no., hold tag no., inspection date or audit reference. Write this CAPA number back onto that record."
+        },
+        {
+          "id": "severity",
+          "type": "select",
+          "label": "Severity",
+          "width": "third",
+          "options": [
+            "Critical",
+            "Major",
+            "Minor"
+          ],
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "capa_owner",
+          "type": "text",
+          "label": "CAPA owner",
+          "width": "third",
+          "required": true,
+          "help": "The one person accountable for this CAPA reaching closure."
+        },
+        {
+          "id": "target_close_date",
+          "type": "date",
+          "label": "Target closure date",
+          "width": "third",
+          "required": true
+        },
+        {
+          "id": "is_repeat",
+          "type": "checkbox",
+          "width": "half",
+          "label": "This is a repeat of an earlier non-conformance"
+        },
+        {
+          "id": "repeat_of",
+          "type": "text",
+          "label": "Earlier CAPA no., if a repeat",
+          "width": "half",
+          "help": "A repeat means the earlier correction was never followed by a corrective action. Say so in the investigation."
+        }
+      ]
+    },
+    {
+      "id": "what_happened",
+      "title": "2. What happened",
+      "fields": [
+        {
+          "id": "description",
+          "type": "textarea",
+          "label": "What was observed",
+          "rows": 4,
+          "width": "full",
+          "required": true,
+          "help": "What was seen, not what is assumed to have caused it."
+        },
+        {
+          "id": "detected_when",
+          "type": "datetime",
+          "label": "Detected on",
+          "width": "third"
+        },
+        {
+          "id": "detected_where",
+          "type": "text",
+          "label": "Where / which line or area",
+          "width": "third"
+        },
+        {
+          "id": "detected_how",
+          "type": "text",
+          "label": "How it was detected",
+          "width": "third"
+        },
+        {
+          "id": "product_affected",
+          "type": "text",
+          "label": "Product affected",
+          "width": "half"
+        },
+        {
+          "id": "lots_affected",
+          "type": "text",
+          "label": "Lot / batch codes affected",
+          "width": "half"
+        },
+        {
+          "id": "qty_affected",
+          "type": "text",
+          "label": "Quantity affected",
+          "width": "third"
+        },
+        {
+          "id": "released_product",
+          "type": "pass_fail",
+          "width": "full",
+          "required": true,
+          "naAllowed": true,
+          "label": "Product already released may be affected",
+          "labels": {
+            "pass": "Yes",
+            "fail": "No",
+            "na": "Unknown"
+          },
+          "help": "If Yes or Unknown, invoke the recall and withdrawal procedure now. It does not wait for this investigation to finish (FSQM-009 Part 4)."
+        }
+      ]
+    },
+    {
+      "id": "containment",
+      "title": "3. Immediate correction and containment",
+      "fields": [
+        {
+          "id": "containment_info",
+          "type": "info",
+          "label": "Containment comes first",
+          "text": "Before anything is analysed, make the product safe. Hold and tag affected material on FRM-702, stop the process where it is still running, and isolate the area or equipment. Record it here before starting the investigation."
+        },
+        {
+          "id": "correction_taken",
+          "type": "textarea",
+          "label": "Correction taken (what was done now)",
+          "rows": 3,
+          "width": "full",
+          "required": true
+        },
+        {
+          "id": "product_held",
+          "type": "pass_fail",
+          "width": "half",
+          "naAllowed": true,
+          "label": "Affected product held / tagged on FRM-702",
+          "labels": {
+            "pass": "Yes",
+            "fail": "No",
+            "na": "N/A"
+          }
+        },
+        {
+          "id": "hold_tag_no",
+          "type": "text",
+          "label": "Hold tag no., if held",
+          "width": "half"
+        },
+        {
+          "id": "recall_invoked",
+          "type": "pass_fail",
+          "width": "half",
+          "naAllowed": true,
+          "label": "Recall / withdrawal procedure invoked",
+          "labels": {
+            "pass": "Yes",
+            "fail": "No",
+            "na": "N/A"
+          }
+        },
+        {
+          "id": "contained_by",
+          "type": "text",
+          "label": "Contained by",
+          "width": "third"
+        },
+        {
+          "id": "contained_at",
+          "type": "datetime",
+          "label": "Date / time contained",
+          "width": "third"
+        }
+      ]
+    },
+    {
+      "id": "investigation",
+      "title": "4. Investigation and root cause",
+      "fields": [
+        {
+          "id": "investigation_info",
+          "type": "info",
+          "label": "Getting to a real root cause",
+          "text": "\"Operator error\" and \"training issue\" are not root causes — they are where an investigation stopped. If an operator made an error, ask why the process let that error reach product undetected.\n\nAnswer both questions: why the control failed, and why it was not detected sooner. The second is usually where the real corrective action lies.\n\nHOW THE FIVE WHYS TABLE IS USED. Start from what you wrote in Section 2 and ask why that happened; the answer goes in Why 1. Then ask why THAT happened, and so on. Each row answers the row above it, not the original problem. Five is a rule of thumb, not a target — stop when you reach a cause the site can actually change.\n\nWORKED EXAMPLE. Observed: the pre-operation check found the sanitizer at the depositor reading below the required concentration.\nWhy 1 — the solution had been in the bucket since the previous shift.\nWhy 2 — it is mixed once a day at start-up and not re-made during the shift.\nWhy 3 — the SSOP sets a mixing frequency but gives no trigger for re-making it.\nWhy 4 and 5 — left blank; Why 3 is already something the site can change.\nRoot cause: the SSOP says when to mix sanitizer but not when to re-make it, so a solution that degrades during the shift stays in use until the next day.\nNot detected sooner because: strips are only used at pre-op, so nothing checks concentration mid-shift.\n\nNotice where that leads, because the three are different and only the first is about today. The correction is to dump and re-make the bucket. The corrective action is to give the SSOP a re-make trigger. The preventive action is to make the same change to the other machines' SSOPs, which share the gap.\n\nA weak investigation would have stopped at Why 1 and written \"remind staff to check the sanitizer\". That closes the CAPA and changes nothing, and the finding comes back."
+        },
+        {
+          "id": "five_whys",
+          "type": "grid",
+          "label": "Five Whys",
+          "columns": [
+            {
+              "id": "because",
+              "label": "Because…",
+              "type": "text",
+              "width": 6
+            }
+          ],
+          "rows": {
+            "mode": "fixed",
+            "labelHeader": "Step",
+            "labels": [
+              "Why 1",
+              "Why 2",
+              "Why 3",
+              "Why 4",
+              "Why 5"
+            ]
+          },
+          "help": "Not every chain runs to five. Stop when you reach a cause the site can act on."
+        },
+        {
+          "id": "other_method",
+          "type": "textarea",
+          "width": "full",
+          "rows": 2,
+          "label": "Other analysis used, if five whys was not adequate",
+          "help": "A recurring failure, or one with several contributing causes, needs a cause-and-effect (fishbone) analysis. Attach it to this entry."
+        },
+        {
+          "id": "root_cause",
+          "type": "textarea",
+          "label": "Root cause",
+          "rows": 3,
+          "width": "full",
+          "required": true
+        },
+        {
+          "id": "why_not_detected",
+          "type": "textarea",
+          "rows": 2,
+          "width": "full",
+          "label": "Why was it not detected sooner"
+        },
+        {
+          "id": "investigated_by",
+          "type": "text",
+          "label": "Investigated by",
+          "width": "half",
+          "required": true,
+          "help": "A person knowledgeable about the incident and, where practical, not the person whose work is under examination."
+        },
+        {
+          "id": "investigation_date",
+          "type": "date",
+          "label": "Investigation completed",
+          "width": "half"
+        }
+      ]
+    },
+    {
+      "id": "corrective",
+      "title": "5. Corrective action",
+      "fields": [
+        {
+          "id": "corrective_info",
+          "type": "info",
+          "label": "Written against the cause",
+          "text": "Corrective action is what is done so this does not happen again. It addresses the root cause above, not the symptom. Every action carries a named owner and a due date — an action without both is not an action."
+        },
+        {
+          "id": "corrective_actions",
+          "type": "grid",
+          "label": "Corrective actions",
+          "columns": [
+            {
+              "id": "action",
+              "label": "Action",
+              "type": "text",
+              "required": true,
+              "width": 5
+            },
+            {
+              "id": "owner",
+              "label": "Owner",
+              "type": "text",
+              "required": true,
+              "width": 2
+            },
+            {
+              "id": "due_date",
+              "label": "Due",
+              "type": "date",
+              "required": true,
+              "width": 2
+            },
+            {
+              "id": "completed_date",
+              "label": "Completed",
+              "type": "date",
+              "width": 2
+            }
+          ],
+          "rows": {
+            "mode": "dynamic",
+            "min": 1,
+            "addLabel": "Add corrective action"
+          }
+        }
+      ]
+    },
+    {
+      "id": "preventive",
+      "title": "6. Preventive action",
+      "fields": [
+        {
+          "id": "preventive_info",
+          "type": "info",
+          "label": "Where else could this happen",
+          "text": "Preventive action asks where the same cause could produce a non-conformance that has not occurred yet — another line, another product, another shift, another supplier, another machine with the same failure mode. Where the answer is nowhere, record that as the answer."
+        },
+        {
+          "id": "preventive_actions",
+          "type": "grid",
+          "label": "Preventive actions",
+          "columns": [
+            {
+              "id": "action",
+              "label": "Action",
+              "type": "text",
+              "width": 5
+            },
+            {
+              "id": "owner",
+              "label": "Owner",
+              "type": "text",
+              "width": 2
+            },
+            {
+              "id": "due_date",
+              "label": "Due",
+              "type": "date",
+              "width": 2
+            },
+            {
+              "id": "completed_date",
+              "label": "Completed",
+              "type": "date",
+              "width": 2
+            }
+          ],
+          "rows": {
+            "mode": "dynamic",
+            "addLabel": "Add preventive action"
+          }
+        },
+        {
+          "id": "documents_updated",
+          "type": "textarea",
+          "rows": 2,
+          "width": "full",
+          "label": "Documents, programs or specifications changed",
+          "help": "Name the document and the revision it moved to. The change is made under document control."
+        },
+        {
+          "id": "training_required",
+          "type": "textarea",
+          "rows": 2,
+          "width": "full",
+          "label": "Training required, and who received it",
+          "help": "Name the module. Assign it in the Team Portal."
+        },
+        {
+          "id": "sqf_system_review",
+          "type": "pass_fail",
+          "width": "full",
+          "naAllowed": true,
+          "label": "This change affects the site's ability to deliver safe food, so the applicable aspects of the SQF System were reviewed (2.5.4.4)",
+          "labels": {
+            "pass": "Reviewed",
+            "fail": "Not reviewed",
+            "na": "Does not affect it"
+          }
+        }
+      ]
+    },
+    {
+      "id": "verification",
+      "title": "7. Verification of effectiveness",
+      "fields": [
+        {
+          "id": "verification_info",
+          "type": "info",
+          "label": "Doing the work is not verifying it",
+          "text": "2.5.3.1 requires actions to be determined, implemented AND verified. A CAPA is not closed because the work was done; it is closed because someone checked that it worked.\n\nSet the method and the date when the action is agreed, not after it is finished. The date must be at least one full cycle of whatever failed — verifying a monthly check after one week proves nothing."
+        },
+        {
+          "id": "verification_method",
+          "type": "textarea",
+          "rows": 2,
+          "width": "full",
+          "required": true,
+          "label": "How effectiveness will be verified",
+          "help": "Re-inspect at the next GMP inspection; review the next N records or batches; re-test; re-audit the clause; watch the complaint category for a quarter."
+        },
+        {
+          "id": "verification_due",
+          "type": "date",
+          "label": "Verification due",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "verification_result",
+          "type": "select",
+          "label": "Result",
+          "width": "half",
+          "options": [
+            "Effective — no further action",
+            "Not effective — reopen the investigation"
+          ]
+        },
+        {
+          "id": "verification_findings",
+          "type": "textarea",
+          "rows": 3,
+          "width": "full",
+          "label": "What the verification found",
+          "help": "If not effective, the CAPA is not closed. Either the root cause was wrong or the action was insufficient — the investigation resumes at Section 4 and this record of the failed verification stays."
+        },
+        {
+          "id": "verified_by",
+          "type": "signature",
+          "label": "Verified by",
+          "width": "half",
+          "role": "verifier",
+          "statement": "I have checked that the actions above were effective, by the method stated."
+        },
+        {
+          "id": "verification_date",
+          "type": "date",
+          "label": "Date verified",
+          "width": "half"
+        }
+      ]
+    },
+    {
+      "id": "closure",
+      "title": "8. Closure",
+      "fields": [
+        {
+          "id": "closure_info",
+          "type": "info",
+          "label": "A CAPA closes only when all of these hold",
+          "text": "The correction is done and recorded; the root cause is documented; every corrective and preventive action is complete; effectiveness has been verified and signed; any affected document, program or record has been updated; and the disposition of any affected product is resolved."
+        },
+        {
+          "id": "all_actions_complete",
+          "type": "pass_fail",
+          "width": "half",
+          "label": "All corrective and preventive actions complete"
+        },
+        {
+          "id": "disposition_resolved",
+          "type": "pass_fail",
+          "width": "half",
+          "naAllowed": true,
+          "label": "Disposition of affected product resolved",
+          "labels": {
+            "pass": "Yes",
+            "fail": "No",
+            "na": "No product affected"
+          }
+        },
+        {
+          "id": "closure_summary",
+          "type": "textarea",
+          "rows": 3,
+          "width": "full",
+          "label": "Closure summary",
+          "help": "Where a CAPA is closed because it was unnecessary, that reason is recorded here. CAPAs are never deleted."
+        },
+        {
+          "id": "closed_by",
+          "type": "signature",
+          "label": "Closed by (SQF Practitioner)",
+          "width": "half",
+          "role": "verifier",
+          "statement": "I confirm this corrective action is complete, verified and closed."
+        },
+        {
+          "id": "closure_date",
+          "type": "date",
+          "label": "Closure date",
+          "width": "half"
+        },
+        {
+          "id": "retention_note",
+          "type": "info",
+          "label": "Retention",
+          "text": "Retained a minimum of two years, or the shelf life of the affected product plus twelve months, whichever is longer. A CAPA relating to a withdrawal or recall is retained permanently (FSQM-009 Part 10)."
+        }
+      ]
+    }
+  ]
+}
