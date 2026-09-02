@@ -151,6 +151,27 @@ DOCS = [
             ],
         },
     },
+    {
+        "json": "sop-drafts/FSQM-018-non-conforming-product.json",
+        "md":   "sop-drafts/FSQM-018-non-conforming-product.md",
+        "meta": {
+            "number": "FSQM-018",
+            "title": "Non-Conforming Product and Equipment",
+            "type": "fsqm (Food Safety Quality Manual)",
+            "category": "Food Safety Quality Manual",
+            "status": "draft — not approved, not in force",
+            "revision": "New",
+            "effective": None,
+            "sqf": "(none set — see Revision History)",
+            "extra": [
+                ("Origin", "Scanned Compass Blending hardcopy, imported 2026-06-17"),
+                ("Hold record",
+                 "**FRM-702** Non-Conforming Material Hold & Tagging Record (active)"),
+                ("Corrective action", "**FSQM-009** CAPA Program (issued 2026-09-02)"),
+                ("Reformatted by", "`20260902000011_fsqm018_reformat_scanned_body.sql`"),
+            ],
+        },
+    },
 ]
 
 
@@ -162,8 +183,16 @@ def main():
         content = json.load(io.open(d["json"], encoding="utf-8"))
         md = render(d["meta"], content)
         io.open(d["md"], "w", encoding="utf-8", newline="\n").write(md)
-        parts = [l for l in content.get("procedure", []) if not l.startswith(BULLET)]
-        print("wrote %-38s %6d bytes  %d Parts" % (d["md"], len(md.encode("utf-8")), len(parts)))
+        proc = content.get("procedure", [])
+        parts   = [l for l in proc if not l.startswith(BULLET) and not l.startswith(PARA)]
+        bullets = [l for l in proc if l.startswith(BULLET)]
+        prose   = [l for l in proc if l.startswith(PARA)]
+        # Every line has exactly one form. Counting parts as "not a bullet" silently counted
+        # prose as Parts once the third form was added.
+        assert len(parts) + len(bullets) + len(prose) == len(proc), \
+            "%s: a procedure line has two forms or none" % d["meta"]["number"]
+        print("wrote %-40s %6d bytes  %d Parts, %d bullets, %d prose"
+              % (d["md"], len(md.encode("utf-8")), len(parts), len(bullets), len(prose)))
 
 
 if __name__ == "__main__":
