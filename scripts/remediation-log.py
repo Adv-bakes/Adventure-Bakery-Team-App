@@ -18,7 +18,7 @@ drawings, printer settings, header/footer images and all.
 The 100-word cap is enforced, not advisory: the column exists so a reader can see at a
 glance what changed, and a wall of text defeats that.
 """
-import argparse, datetime, os, re, shutil, sys, zipfile
+import argparse, datetime, os, re, shutil, sys, xml.dom.minidom, zipfile
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -159,11 +159,25 @@ STYLES = "xl/styles.xml"
 GREEN_RGB = "FF81D41A"   # the fill already on completed rows in this workbook, matched exactly
 
 
+# A cellXfs entry is either self-closing or a container with <alignment>/<protection> children.
+# The self-closing branch MUST come first and the container branch MUST end at a real </xf>:
+# a single non-greedy `<xf .*?(?:/>|</xf>)` stops at the first `/>` it meets, which for a styled
+# entry is the end of its <alignment/> CHILD. That returns a truncated element, and appending a
+# truncated copy writes an <xf> with no closing tag - which is how this script corrupted the
+# workbook on 2026-09-01 (styles.xml unparseable, count bumped to 71 with only 70 real entries,
+# Excel offering to "repair" the file by stripping the formatting). Keep the two branches.
+XF_RE = r"<xf\b[^>]*/>|<xf\b[^>]*>.*?</xf>"
+
+
 def _cell_xfs(styles):
     m = re.search(r'(<cellXfs count=")(\d+)(">)(.*?)(</cellXfs>)', styles, re.S)
     if not m:
         raise SystemExit("no <cellXfs> in %s" % STYLES)
-    return m, re.findall(r"<xf .*?(?:/>|</xf>)", m.group(4), re.S)
+    xfs = re.findall(XF_RE, m.group(4), re.S)
+    for e in xfs:                     # cheap invariant: every captured entry is balanced
+        if not (e.endswith("/>") or e.endswith("</xf>")):
+            raise SystemExit("parsed an unbalanced <xf> from %s - refusing to edit styles" % STYLES)
+    return m, xfs
 
 
 def green_fill_id(styles):
@@ -406,6 +420,21 @@ def main():
     sheet, styles_xml, greened, minted = green_completed_rows(sheet, styles_xml, strings)
     parts[SHEET] = sheet.encode("utf-8")
     parts[STYLES] = styles_xml.encode("utf-8")
+
+    # Nothing malformed reaches the workbook. A broken part does not fail loudly - Excel offers to
+    # "repair" the file and silently strips whatever it could not parse, so the damage shows up as
+    # missing formatting days later rather than as an error here. Both checks are microseconds.
+    for part in (SHEET, STYLES):
+        try:
+            xml.dom.minidom.parseString(parts[part])
+        except Exception as exc:
+            raise SystemExit("refusing to write: %s is not well-formed XML (%s). "
+                             "The workbook is untouched." % (part, exc))
+    sm = re.search(r'<cellXfs count="(\d+)">(.*?)</cellXfs>', styles_xml, re.S)
+    if sm and int(sm.group(1)) != len(re.findall(XF_RE, sm.group(2), re.S)):
+        raise SystemExit("refusing to write: cellXfs says %s entries but %d are present. "
+                         "The workbook is untouched."
+                         % (sm.group(1), len(re.findall(XF_RE, sm.group(2), re.S))))
 
     if not a.no_backup:
         bak = "%s.%s.bak" % (a.workbook, datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
