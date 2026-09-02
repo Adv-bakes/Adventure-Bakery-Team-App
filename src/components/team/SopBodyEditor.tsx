@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Save, Bold, Italic, List } from "lucide-react";
 import { toast } from "sonner";
 import { patchModuleContent } from "@/lib/training";
-import { SECTION_LABELS, groupProcedureSteps, parseInlineMarks } from "@/lib/sopDocxParser";
+import { SECTION_LABELS, groupProcedureSteps, procBlockRuns, parseInlineMarks } from "@/lib/sopDocxParser";
 
 // Renders plain text with **bold** / *italic* inline marks as formatted spans.
 function Inline({ text }: { text: string }) {
@@ -146,10 +146,19 @@ export function SopBodyEditor({ sopId, content, docType, onChange }: Props) {
                         {numbered.map((g, i) => (
                           <li key={i}>
                             <Inline text={g.text} />
-                            {g.bullets.length > 0 && (
-                              <ul className="list-disc pl-5 mt-1 space-y-0.5">
-                                {g.bullets.map((b, j) => <li key={j}><Inline text={b} /></li>)}
-                              </ul>
+                            {/* Consecutive bullets share one <ul>; prose renders as a
+                                paragraph, so a step's explanation is visibly not a list
+                                item. */}
+                            {procBlockRuns(g.blocks).map((run, j) =>
+                              run.kind === "bullet" ? (
+                                <ul key={j} className="list-disc pl-5 mt-1 space-y-0.5">
+                                  {run.texts.map((b, k) => <li key={k}><Inline text={b} /></li>)}
+                                </ul>
+                              ) : (
+                                run.texts.map((t, k) => (
+                                  <p key={`${j}-${k}`} className="mt-1"><Inline text={t} /></p>
+                                ))
+                              ),
                             )}
                           </li>
                         ))}

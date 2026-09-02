@@ -58,24 +58,70 @@ export function stripBulletMarker(line: string): string {
   return line.replace(BULLET_LINE, "").trim();
 }
 
+// A line whose first non-space char is ">" followed by whitespace is PROSE under the step
+// above it, not a list item. Without this there were only two forms — a numbered step, or a
+// bullet — so a program document's explanatory sentences had to be written as bullets too,
+// and a long section became an undifferentiated wall of them with no way to tell the list
+// items from the sentences around them.
+//
+// The marker requires whitespace after ">" deliberately. Across all 606 stored procedure
+// lines exactly one begins with ">", a scanned SOP's ">10ppm shall not be reworked" — no
+// space, so it is untouched and still renders as its own step.
+const PARA_LINE = /^\s*>\s+/;
+
+export function isParagraphStep(line: string): boolean {
+  return PARA_LINE.test(line);
+}
+
+export function stripParagraphMarker(line: string): string {
+  return line.replace(PARA_LINE, "").trim();
+}
+
+/** One piece of content under a numbered step: a list item, or a paragraph of prose. */
+export type ProcBlock = { kind: "bullet" | "para"; text: string };
+
+export interface ProcGroup {
+  text: string;
+  blocks: ProcBlock[];
+  /** Bullet blocks only. Kept so callers that just want the list items don't re-filter. */
+  bullets: string[];
+}
+
 /**
- * Groups a flat procedure string[] into numbered steps, each carrying any bullet lines that
- * follow it as sub-bullets. Bullet lines render under their step (own line, no number); a
- * leading bullet block (before any numbered step) becomes a step with empty text.
+ * Groups a flat procedure string[] into numbered steps, each carrying the bullet and prose
+ * lines that follow it. Bullets render as a list and prose as a paragraph, both under their
+ * step (own line, no number); a leading block before any numbered step becomes a step with
+ * empty text.
  */
-export function groupProcedureSteps(steps: string[]): { text: string; bullets: string[] }[] {
-  const groups: { text: string; bullets: string[] }[] = [];
+export function groupProcedureSteps(steps: string[]): ProcGroup[] {
+  const groups: ProcGroup[] = [];
+  const push = (block: ProcBlock) => {
+    if (groups.length === 0) groups.push({ text: "", blocks: [], bullets: [] });
+    const g = groups[groups.length - 1];
+    g.blocks.push(block);
+    if (block.kind === "bullet") g.bullets.push(block.text);
+  };
   for (const raw of steps) {
     const line = String(raw);
-    if (isBulletStep(line)) {
-      if (groups.length === 0) groups.push({ text: "", bullets: [] });
-      groups[groups.length - 1].bullets.push(stripBulletMarker(line));
-    } else {
+    if (isBulletStep(line)) push({ kind: "bullet", text: stripBulletMarker(line) });
+    else if (isParagraphStep(line)) push({ kind: "para", text: stripParagraphMarker(line) });
+    else {
       // Strip any stored leading "N." / "N)" so the rendered list owns the numbering.
-      groups.push({ text: line.replace(/^\s*\d+[.)]\s*/, "").trim(), bullets: [] });
+      groups.push({ text: line.replace(/^\s*\d+[.)]\s*/, "").trim(), blocks: [], bullets: [] });
     }
   }
   return groups;
+}
+
+/** Consecutive blocks of the same kind, so a renderer can emit one <ul> per bullet run. */
+export function procBlockRuns(blocks: ProcBlock[]): { kind: "bullet" | "para"; texts: string[] }[] {
+  const runs: { kind: "bullet" | "para"; texts: string[] }[] = [];
+  for (const b of blocks) {
+    const last = runs[runs.length - 1];
+    if (last && last.kind === b.kind) last.texts.push(b.text);
+    else runs.push({ kind: b.kind, texts: [b.text] });
+  }
+  return runs;
 }
 
 // One run of text with its inline formatting flags. Both the on-screen renderer and the

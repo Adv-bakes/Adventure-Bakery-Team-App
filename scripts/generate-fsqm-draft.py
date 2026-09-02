@@ -39,21 +39,37 @@ BULLET = "•"
 MD_SPECIALS = "|"
 
 
+PARA = ">"
+
+
 def render_procedure(lines):
-    """A plain line is a numbered step; a line starting with the bullet marker is a
-    sub-bullet of the step above it. Same rule as groupProcedureSteps() in
-    sopDocxParser.ts, which is what the app and the PDF both route through."""
+    """Three forms, matching groupProcedureSteps() in sopDocxParser.ts - which is what the
+    app and the PDF both route through, so this mirror shows what they will show:
+
+      plain line   -> a numbered step (a Part heading, in these documents)
+      "<bullet> x" -> a list item under the step above it
+      "> x"        -> a paragraph of prose under the step above it
+
+    The third form exists because without it every explanatory sentence had to be written
+    as a bullet, and a long Part became an undifferentiated wall of them."""
     out, n = [], 0
     for raw in lines:
         if raw.startswith(BULLET):
-            body = raw[len(BULLET):].lstrip()
-            out.append("  - " + body)
+            out.append("  - " + raw[len(BULLET):].lstrip())
+        elif raw.startswith(PARA):
+            out.append("")
+            out.append("  " + raw[len(PARA):].lstrip())
+            out.append("")
         else:
             n += 1
             out.append("")
             out.append("**%d. %s**" % (n, raw))
             out.append("")
-    return "\n".join(out).strip("\n") + "\n"
+    # collapse the blank lines a paragraph adds next to a heading's own
+    txt = "\n".join(out)
+    while "\n\n\n" in txt:
+        txt = txt.replace("\n\n\n", "\n\n")
+    return txt.strip("\n") + "\n"
 
 
 def render(meta, content):

@@ -493,6 +493,16 @@ Component in `src/components/team/`, rendered in the SOPs Library drawer's **Ref
 
 Component in `src/components/team/`, rendered in the drawer's **Document** tab. Edits/renders the structured SOP body in `content` (sop/form/**fsqm**: `purpose, scope, definitions, responsibility, procedure[], form_references, records, governing_reference, revision_history`; policy: `statement`). Section order/labels reuse `SECTION_LABELS` (exported from `sopDocxParser.ts`) — adding a key there propagates to both the parser and this editor. `isPolicy` (the single free-form statement view) keys on `docType === "policy"` only; `fsqm` renders the structured sections. Admin: editable fields + "Save Document" (`updateModuleContent`, merges so `attachments` are preserved). Non-admin: read-only formatted sections (procedure as a numbered list), empty sections hidden.
 
+**`procedure[]` has three line forms**, all decided by `groupProcedureSteps()` in `sopDocxParser.ts` — the single function this editor *and* `generateSopPdf()` both route through, so screen and paper cannot disagree:
+
+| Line | Renders as |
+|---|---|
+| plain text | a **numbered step** (in FSQM programs, a Part heading) |
+| `• text` (`•◦‣·-*` + space) | a **list item** under the step above it |
+| `> text` (`>` + space) | a **paragraph of prose** under the step above it |
+
+`procBlockRuns()` collapses consecutive bullets into one `<ul>`, so prose between two lists splits them correctly. **The `>` form exists because without it there were only two:** every explanatory sentence had to be written as a bullet, and a long program rendered as an undifferentiated wall of them — FSQM-009 was 69 bullets over 10 Parts with nothing to distinguish "here are the ten triggers" from "here is why the rule reads this way". A bullet is for a short, parallel, enumerable item; anything explanatory or narrative is prose. The marker **requires whitespace after `>`** deliberately: of all 606 stored procedure lines exactly one starts with `>`, a scanned SOP's `>10ppm shall not be reworked`, and it has no space so it is untouched.
+
 ---
 
 ## SOP PDF Export — `lib/sopPdf.ts`
@@ -705,7 +715,7 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `utils.ts` | `cn()` — class merging |
 | `training.ts` | Types, fetchers, `scoreQuiz`, `submitQuizResult` (4th arg `complete=false` saves score only, deferring completion to acknowledgment), `saveAssignmentProgress`, `markAssignmentComplete`, `parseQuizCsv`, `computeExpiry`, `getAssignmentStatus`, `getTrainingSlideUrl`, `uploadTrainingSlide`, `replaceTrainingSlide`, `deleteTrainingSlide`, `updateModuleContent`, `saveQuizQuestions`, `computeSlideDuration`, `generateModuleAudio` (renders+caches ElevenLabs voice MP3s into `content.audio[]`), `getTrainingAudioUrl`, `audioPathFor`, **reference/attachment helpers** (`Attachment` type, `uploadSopFile`, `removeSopFile`, `resolveFileUrl`, `getSourceDeckUrl`, `fetchReferenceDocuments`, `hasReferenceDocs`, `hasSopBody`) |
 | `materialCalc.ts` | `runMaterialCalc()` — ingredient/packaging needs for an order batch |
-| `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP/FSQM data from a .docx upload (scanned-hardcopy robust: merged-header splitting, running-header/noise filtering, list-rendered headings, trailing revision-history table, `Compass Blending`→`Adventure Bakery` rebrand); exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`) and `SopType` (`sop`/`form`/`policy`/`fsqm`) |
+| `sopDocxParser.ts` | `parseSopDocx()` — extracts structured SOP/FSQM data from a .docx upload (scanned-hardcopy robust: merged-header splitting, running-header/noise filtering, list-rendered headings, trailing revision-history table, `Compass Blending`→`Adventure Bakery` rebrand); exports `SECTION_LABELS` (body section keys/labels/order, reused by `SopBodyEditor`), `SopType` (`sop`/`form`/`policy`/`fsqm`), and the procedure line-form helpers `groupProcedureSteps`/`procBlockRuns`/`isBulletStep`/`isParagraphStep` (numbered step vs `•` list item vs `>` prose paragraph — see "SOP Body" above) |
 | `pptxNotes.ts` | `extractSpeakerNotes(file)` — pulls per-slide speaker notes from a .pptx (JSZip, presentation order); throw-safe (degrades to nulls → AI narration fallback) |
 | `prfPdfImport.ts` | `extractPrfFromPdf(file)` — reads a filled Form 009-1 PRF PDF into proposed `prf_submissions` values (Arial answer layer + pixel-measured checkbox ticks, located by label not coordinate); also exports `splitMeasure`/`splitDimensions`. Dynamic-imports `pdfjs-dist`. See "PRF PDF Import" above |
 | `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. Also exports `loadLogoDataUrl`, `confidentialFooter`, `DISCLAIMER`, `PDF_GOLD` for reuse by `formPdf.ts`. See "SOP PDF Export" above |

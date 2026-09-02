@@ -1,7 +1,7 @@
 import pdfMake from "pdfmake/build/pdfmake";
 import * as pdfFonts from "pdfmake/build/vfs_fonts";
 import type { TDocumentDefinitions, Content } from "pdfmake/interfaces";
-import { SECTION_LABELS, groupProcedureSteps, parseInlineMarks } from "@/lib/sopDocxParser";
+import { SECTION_LABELS, groupProcedureSteps, procBlockRuns, parseInlineMarks } from "@/lib/sopDocxParser";
 
 // Converts plain text with **bold**/*italic* marks into a pdfmake text-run array.
 const inline = (s: string) => ({
@@ -193,11 +193,20 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
       }
       if (numbered.length > 0) {
         body.push({
-          ol: numbered.map(g =>
-            g.bullets.length > 0
-              ? { stack: [inline(g.text), { ul: g.bullets.map(inline), margin: [0, 2, 0, 0] }] }
-              : inline(g.text),
-          ),
+          ol: numbered.map(g => {
+            if (g.blocks.length === 0) return inline(g.text);
+            // Consecutive bullets share one ul; prose renders as its own paragraph, so a
+            // step's explanation is not forced to look like a list item.
+            const parts: any[] = [inline(g.text)];
+            for (const run of procBlockRuns(g.blocks)) {
+              if (run.kind === "bullet") {
+                parts.push({ ul: run.texts.map(inline), margin: [0, 2, 0, 0] });
+              } else {
+                for (const t of run.texts) parts.push({ ...inline(t), margin: [0, 2, 0, 0] });
+              }
+            }
+            return { stack: parts };
+          }),
           margin: [0, 0, 0, 4],
         });
       }
