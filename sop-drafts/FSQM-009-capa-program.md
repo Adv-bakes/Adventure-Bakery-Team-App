@@ -83,7 +83,17 @@ Senior management — reviews CAPA trends, overdue actions and repeat findings a
 **3. PART 3 — WHEN A CAPA IS OPENED (SQF 2.1.3.3, 2.5.3.1)**
 
   - 2.1.3.3 requires corrective and preventive action to be implemented **based on the seriousness of the incident and the root cause analysis**. Escalation is therefore risk-based. Not every non-conformance becomes a CAPA; the ones below always do.
-  - **A CAPA shall be opened for any of the following.** (i) Any non-conformance affecting product that has already been released, or that requires product to be held, reworked, downgraded or destroyed. (ii) Any non-compliance with a critical food safety limit, or any deviation at a CCP. (iii) Any complaint classified critical, and any complaint alleging illness, injury, foreign material or an undeclared allergen. (iv) Any **repeat** — the same or substantially the same non-conformance within twelve months. (v) Any finding from an internal or external audit, a certification body audit, or a regulatory inspection. (vi) Any finding at a GMP or pre-operational inspection that is not corrected on the spot, or that the person who found it cannot correct. (vii) Any withdrawal or recall, actual or from a test. (viii) Any presumptive-positive or adverse trend in environmental monitoring. (ix) Any glass or brittle plastic breakage where product or a food-contact surface was exposed. (x) Anything the SQF Practitioner judges to warrant one.
+  - **A CAPA shall be opened for any of the following:**
+  - (i) Any non-conformance affecting product that has already been released, or that requires product to be held, reworked, downgraded or destroyed.
+  - (ii) Any non-compliance with a critical food safety limit, or any deviation at a CCP.
+  - (iii) Any complaint classified critical, and any complaint alleging illness, injury, foreign material or an undeclared allergen.
+  - (iv) Any **repeat** — the same or substantially the same non-conformance within twelve months.
+  - (v) Any finding from an internal or external audit, a certification body audit, or a regulatory inspection.
+  - (vi) Any finding at a GMP or pre-operational inspection that is not corrected on the spot, or that the person who found it cannot correct.
+  - (vii) Any withdrawal or recall, actual or from a test.
+  - (viii) Any presumptive-positive or adverse trend in environmental monitoring.
+  - (ix) Any glass or brittle plastic breakage where product or a food-contact surface was exposed.
+  - (x) Anything the SQF Practitioner judges to warrant one.
   - **A routine non-conformance corrected on the spot, and not caught by the list above, is recorded on the form that found it and does not open a CAPA.** That record still states what was seen and what was done — a same-day fix is still a finding, and an inspection record showing only unresolved items misrepresents how the site runs.
   - **When in doubt, open one.** An unnecessary CAPA costs an hour. A missed one costs a repeat finding, discovered by an auditor rather than by this site.
 
@@ -121,7 +131,13 @@ Senior management — reviews CAPA trends, overdue actions and repeat findings a
 
 **8. PART 8 — CLOSURE (SQF 2.5.3.1)**
 
-  - A CAPA closes only when **all** of the following are true: the correction is done and recorded; the root cause is documented; every corrective and preventive action is complete; effectiveness has been verified and signed; any affected document, program or record has been updated; and the disposition of any affected product is resolved.
+  - A CAPA closes only when **all** of the following are true:
+  - (i) The correction is done and recorded.
+  - (ii) The root cause is documented.
+  - (iii) Every corrective and preventive action is complete.
+  - (iv) Effectiveness has been verified and signed.
+  - (v) Any affected document, program or record has been updated.
+  - (vi) The disposition of any affected product is resolved.
   - Closure is signed and dated by the SQF Practitioner on FRM-007.
   - **Open and overdue CAPAs are reviewed at least monthly** against REP-007. An overdue action is followed up with its owner and a revised date is recorded with the reason — a due date that silently moves is not a controlled record.
 
