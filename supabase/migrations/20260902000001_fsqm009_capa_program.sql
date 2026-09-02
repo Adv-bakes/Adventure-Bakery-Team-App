@@ -175,8 +175,11 @@ begin
          (content->'procedure')::text like '%Completing an action is not verification%' as verification,
          (content->'procedure')::text like '%CAPA-YYYY-NNN%'                            as numbering,
          (content->>'revision_history') like '%OPEN BEFORE ACTIVATION%'                 as open_list,
-         -- the two adjacent programs must NOT be claimed
-         (content->>'revision_history') like '%those two programs are separate deliverables%'
+         -- The two adjacent programs (Internal Audit, Recall & Withdrawal) must NOT be claimed.
+         -- LIKE is case-sensitive, so this starts mid-sentence: matching from the sentence's
+         -- first word made the assertion turn on a capital letter, and it failed on the first
+         -- push against a document that was perfectly correct.
+         (content->>'revision_history') like '%are separate deliverables and this one does not claim them%'
                                                                                         as scoped,
          -- FSQM-018 must be named as a draft, not cited as approved (the Form-0010 mistake)
          (content->>'scope') like '%unapproved draft%'                                  as draft_named
