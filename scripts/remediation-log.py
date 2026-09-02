@@ -262,6 +262,14 @@ TASK_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
 INTERNAL_BANNER = ("Internally identified — gaps found during the work, not raised in the "
                    "consultant's gap assessment")
 
+# The Task Detail tab only breaks down the 11 deliverables that close 7+ findings or run to
+# 5+ days; the other 25 exist solely as a row on the Remediation Plan tab. When one of those
+# is completed there is nowhere to record what was built, and filing it under the banner above
+# would be a lie about where it came from - it IS on the consultant's list. So an appended row
+# can take its own banner instead.
+DELIVERABLE_BANNER = ("From the gap assessment, below the Task Detail breakdown threshold — "
+                      "deliverables the consultant raised but did not break into tasks")
+
 
 def last_row(sheet):
     return max(int(m) for m in re.findall(r'<row r="(\d+)"', sheet))
@@ -295,9 +303,9 @@ def append_row(sheet, values, style, height, merged=False):
     return sheet, n
 
 
-def ensure_internal_group(sheet, strings):
-    """The banner row that marks these as internally found. Added once."""
-    if sheet_has_text(sheet, INTERNAL_BANNER[:40], strings):
+def ensure_internal_group(sheet, strings, banner=INTERNAL_BANNER):
+    """The banner row a group of appended tasks sits under. Added once per banner text."""
+    if sheet_has_text(sheet, banner[:40], strings):
         return sheet, False
     # style of an existing group banner, taken from a row the header row is not
     style = cell_style(sheet, HEADER_ROW, "A")
@@ -308,14 +316,14 @@ def ensure_internal_group(sheet, strings):
             style = s
             break
     sheet, _ = append_row(sheet, [(c, "") for c in TASK_COLS[:-1]]
-                          + [(DOCS_COL, INTERNAL_BANNER)], style, 30, merged=False)
+                          + [(DOCS_COL, banner)], style, 30, merged=False)
     # rewrite that row so the banner text sits in A and the row is merged across
     n = last_row(sheet)
     sheet = re.sub(r'<row r="%d".*?</row>' % n,
                    '<row r="%d" customFormat="false" ht="30" hidden="false" customHeight="true" '
                    'outlineLevel="0" collapsed="false">'
                    '<c r="A%d"%s t="inlineStr"><is><t xml:space="preserve">%s</t></is></c></row>'
-                   % (n, n, ' s="%s"' % style if style else "", esc(INTERNAL_BANNER)), sheet,
+                   % (n, n, ' s="%s"' % style if style else "", esc(banner)), sheet,
                    flags=re.S)
     sheet = sheet.replace("</mergeCells>", '<mergeCell ref="A%d:%s%d"/></mergeCells>'
                           % (n, DOCS_COL, n), 1)
@@ -347,6 +355,13 @@ def main():
                     help="append a NEW task row instead of updating an existing one. Lands under "
                          "an 'Internally identified' banner at the bottom of the sheet, so a task "
                          "found during the work is never mistaken for one the assessment raised.")
+    ap.add_argument("--deliverable", default="",
+                    help="new-task: the deliverable id for column A, e.g. D-07. Leave empty for "
+                         "an internally identified task, which belongs to no deliverable.")
+    ap.add_argument("--banner", choices=("internal", "deliverable"), default="internal",
+                    help="new-task: which section to append under. 'internal' = found during the "
+                         "work; 'deliverable' = on the consultant's list but never broken into "
+                         "tasks. Filing one under the other misstates where the work came from.")
     ap.add_argument("--name", help="new-task: the task name (column C)")
     ap.add_argument("--artifact", help="new-task: what it produces (column D)")
     ap.add_argument("--clauses", help="new-task: clauses served (column E)")
@@ -393,16 +408,17 @@ def main():
         if row is not None:
             raise SystemExit("task %r already exists at row %d - drop --new-task to update it."
                              % (a.task, row))
-        sheet, banner_added = ensure_internal_group(sheet, strings)
+        banner = INTERNAL_BANNER if a.banner == "internal" else DELIVERABLE_BANNER
+        sheet, banner_added = ensure_internal_group(sheet, strings, banner)
         body_style = cell_style(sheet, HEADER_ROW + 3, "K") or cell_style(sheet, HEADER_ROW + 3, "A")
-        vals = [("A", ""), ("B", a.task), ("C", a.name), ("D", a.artifact), ("E", a.clauses),
+        vals = [("A", a.deliverable), ("B", a.task), ("C", a.name), ("D", a.artifact), ("E", a.clauses),
                 ("F", a.days), ("G", a.owner), ("H", a.depends), ("I", a.app_fit),
                 ("J", a.capability), ("K", a.notes), ("L", a.status or "Not started")]
         # tall enough for the widest wrapped cell among the pre-M columns
         h = max(30, max((-(-len(v) // 44) for _, v in vals if v), default=1) * 13.5 + 6)
         sheet, row = append_row(sheet, vals, body_style, h)
         if banner_added:
-            print("added the 'Internally identified' section")
+            print("added the %r section" % banner[:46])
     elif row is None:
         raise SystemExit("task %r not found in column B of the Task Detail sheet. Use --new-task "
                          "to append it." % a.task)
