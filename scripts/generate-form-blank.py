@@ -500,3 +500,22 @@ if __name__ == "__main__":
     b007 = blocks_from_schema(s007)
     build_pdf("sop-drafts/FRM-007-blank.pdf", meta007, b007)
     build_docx("sop-drafts/FRM-007-blank.docx", meta007, b007)
+
+    # FRM-002 - Customer Complaint Report. PORTRAIT: 38 scalar fields over seven sections and no
+    # grids at all, so nothing is fighting for horizontal room.
+    #
+    # This form had no block here until 20260902000004 gave it a CAPA No. field, at which point the
+    # PDF and Word copies attached to the record - which predate the change - stopped matching the
+    # form. They were authored elsewhere and had never been generated, so the schema was pulled down
+    # from the live row into sop-drafts/ to build from. That makes this blank reproducible: re-run
+    # the script rather than hand-editing a Word file the next time the schema moves.
+    #
+    # rev v2, effective 2026-09-02, approved GJM: mirrors the live sop_documents row.
+    s002 = load_schema("sop-drafts/FRM-002-customer-complaint-schema.json")
+    meta002 = {"form_no": "FRM-002", "title": "Customer Complaint Report",
+               "revision": "v2", "eff": "2026-09-02", "appr": "GJM",
+               "sqf": "2.1.3, 2.1.3.3, 2.5.3.1",
+               "footer": FOOT.format(no="FRM-002")}
+    b002 = blocks_from_schema(s002)
+    build_pdf("sop-drafts/FRM-002-blank.pdf", meta002, b002)
+    build_docx("sop-drafts/FRM-002-blank.docx", meta002, b002)
