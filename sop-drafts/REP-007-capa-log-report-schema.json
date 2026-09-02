@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "sourceSopNumber": "FRM-007",
+  "sourceStatus": "all",
+  "defaultDateField": "date_raised",
+  "columns": [
+    {
+      "id": "capa_no",
+      "header": "CAPA No.",
+      "source": {
+        "kind": "field",
+        "field": "capa_no"
+      }
+    },
+    {
+      "id": "raised",
+      "header": "Raised",
+      "source": {
+        "kind": "field",
+        "field": "date_raised"
+      }
+    },
+    {
+      "id": "source",
+      "header": "Source",
+      "source": {
+        "kind": "field",
+        "field": "source"
+      }
+    },
+    {
+      "id": "source_ref",
+      "header": "Source ref",
+      "source": {
+        "kind": "field",
+        "field": "source_ref"
+      }
+    },
+    {
+      "id": "severity",
+      "header": "Severity",
+      "source": {
+        "kind": "field",
+        "field": "severity"
+      }
+    },
+    {
+      "id": "summary",
+      "header": "What happened",
+      "source": {
+        "kind": "field",
+        "field": "description"
+      }
+    },
+    {
+      "id": "root_cause",
+      "header": "Root cause",
+      "source": {
+        "kind": "field",
+        "field": "root_cause"
+      }
+    },
+    {
+      "id": "owner",
+      "header": "Owner",
+      "source": {
+        "kind": "field",
+        "field": "capa_owner"
+      }
+    },
+    {
+      "id": "due",
+      "header": "Target close",
+      "source": {
+        "kind": "field",
+        "field": "target_close_date"
+      }
+    },
+    {
+      "id": "repeat",
+      "header": "Repeat",
+      "source": {
+        "kind": "map",
+        "field": "is_repeat",
+        "map": {
+          "true": "Yes",
+          "false": "",
+          "Yes": "Yes",
+          "No": ""
+        },
+        "fallback": ""
+      }
+    },
+    {
+      "id": "status",
+      "header": "Status",
+      "source": {
+        "kind": "cases",
+        "default": "Open",
+        "cases": [
+          {
+            "field": "closure_date",
+            "op": "notEmpty",
+            "then": "Closed"
+          },
+          {
+            "field": "verification_result",
+            "op": "equals",
+            "value": "Not effective — reopen the investigation",
+            "then": "Reopened"
+          },
+          {
+            "field": "verification_result",
+            "op": "equals",
+            "value": "Effective — no further action",
+            "then": "Verified - awaiting closure"
+          },
+          {
+            "field": "root_cause",
+            "op": "notEmpty",
+            "then": "Under investigation"
+          },
+          {
+            "field": "correction_taken",
+            "op": "notEmpty",
+            "then": "Contained"
+          }
+        ]
+      }
+    },
+    {
+      "id": "closed",
+      "header": "Closed",
+      "source": {
+        "kind": "field",
+        "field": "closure_date"
+      }
+    }
+  ],
+  "params": [
+    {
+      "id": "raised_between",
+      "label": "Raised between",
+      "type": "date-range",
+      "field": "date_raised"
+    },
+    {
+      "id": "status",
+      "label": "Status",
+      "type": "select",
+      "column": "status"
+    },
+    {
+      "id": "source",
+      "label": "Source",
+      "type": "select",
+      "column": "source"
+    },
+    {
+      "id": "severity",
+      "label": "Severity",
+      "type": "select",
+      "column": "severity"
+    }
+  ],
+  "legend": [
+    "Every corrective and preventive action raised under FSQM-009, from any source. Open entries appear as soon as they are raised - the register is not limited to closed items.",
+    "Status: Open, Contained, Under investigation, Verified - awaiting closure, Reopened, Closed. A CAPA closes only when effectiveness has been verified (FSQM-009 Parts 7 and 8).",
+    "Retained a minimum of two years, or shelf life plus twelve months where longer; permanently for a CAPA relating to a withdrawal or recall."
+  ]
+}

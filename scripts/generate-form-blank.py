@@ -449,11 +449,12 @@ if __name__ == "__main__":
     # the clause range it covers - see 20260901000012. Re-run that generator, not this file, if the
     # clause map is ever refreshed from a new edition of the code.
     #
-    # rev New, draft: seeded by 20260901000012 alongside the FSQM-022 rewrite that references it.
-    # Both are approved together under INT-7, so this blank carries the draft revision until then.
+    # rev v2, effective 2026-09-02: seeded draft by 20260901000012 alongside the FSQM-022 rewrite
+    # that references it, then given a fourth grid column - CAPA No. - by 20260902000005, so an
+    # escalated finding carries the FRM-007 number rather than a bare note in the action column.
     s913 = load_schema("sop-drafts/FRM-913-gmp-inspection-schema.json")
     meta913 = {"form_no": "FRM-913", "title": "GMP / Food Safety Inspection Record",
-               "revision": "New", "eff": "(draft)", "appr": "(pending)",
+               "revision": "v2", "eff": "2026-09-02", "appr": "(pending)",
                "sqf": "2.4.2.1, 2.4.2.2, 2.5.4.3, 11.1-11.8",
                "footer": FOOT.format(no="FRM-913")}
     b913 = blocks_from_schema(s913)
@@ -482,3 +483,20 @@ if __name__ == "__main__":
     b906 = blocks_from_schema(s906)
     build_pdf("sop-drafts/FRM-906-blank.pdf", meta906, b906)
     build_docx("sop-drafts/FRM-906-blank.docx", meta906, b906)
+
+    # FRM-007 - Corrective & Preventive Action (CAPA) Report. PORTRAIT, despite carrying grids:
+    # this is one CAPA per sheet, and its three grids are narrow (the Five Whys is a label column
+    # plus one free-text column; the action grids are Action / Owner / Due / Completed). Landscape
+    # would waste the page on eight sections of mostly scalar fields and signatures.
+    #
+    # rev New, draft: seeded by 20260902000002 with FSQM-009 and REP-007, all approved together.
+    # A CAPA raised on the floor may well start on paper before it is entered, which is why this
+    # blank exists at all.
+    s007 = load_schema("sop-drafts/FRM-007-capa-report-schema.json")
+    meta007 = {"form_no": "FRM-007", "title": "Corrective & Preventive Action (CAPA) Report",
+               "revision": "New", "eff": "(draft)", "appr": "(pending)",
+               "sqf": "2.1.3.3, 2.5.3.1, 2.5.3.2, 2.5.4.4, 2.6.3.3",
+               "footer": FOOT.format(no="FRM-007")}
+    b007 = blocks_from_schema(s007)
+    build_pdf("sop-drafts/FRM-007-blank.pdf", meta007, b007)
+    build_docx("sop-drafts/FRM-007-blank.docx", meta007, b007)

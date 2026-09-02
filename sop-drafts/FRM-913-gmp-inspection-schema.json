@@ -82,6 +82,12 @@
               "type": "text",
               "label": "Corrective action, owner & due date",
               "width": 3
+            },
+            {
+              "id": "capa_no",
+              "type": "text",
+              "label": "CAPA No.",
+              "width": 1
             }
           ],
           "rows": {
@@ -130,6 +136,12 @@
               "type": "text",
               "label": "Corrective action, owner & due date",
               "width": 3
+            },
+            {
+              "id": "capa_no",
+              "type": "text",
+              "label": "CAPA No.",
+              "width": 1
             }
           ],
           "rows": {
@@ -175,6 +187,12 @@
               "type": "text",
               "label": "Corrective action, owner & due date",
               "width": 3
+            },
+            {
+              "id": "capa_no",
+              "type": "text",
+              "label": "CAPA No.",
+              "width": 1
             }
           ],
           "rows": {
@@ -220,6 +238,12 @@
               "type": "text",
               "label": "Corrective action, owner & due date",
               "width": 3
+            },
+            {
+              "id": "capa_no",
+              "type": "text",
+              "label": "CAPA No.",
+              "width": 1
             }
           ],
           "rows": {
@@ -261,6 +285,12 @@
               "type": "text",
               "label": "Corrective action, owner & due date",
               "width": 3
+            },
+            {
+              "id": "capa_no",
+              "type": "text",
+              "label": "CAPA No.",
+              "width": 1
             }
           ],
           "rows": {
@@ -306,6 +336,12 @@
               "type": "text",
               "label": "Corrective action, owner & due date",
               "width": 3
+            },
+            {
+              "id": "capa_no",
+              "type": "text",
+              "label": "CAPA No.",
+              "width": 1
             }
           ],
           "rows": {
@@ -351,6 +387,12 @@
               "type": "text",
               "label": "Corrective action, owner & due date",
               "width": 3
+            },
+            {
+              "id": "capa_no",
+              "type": "text",
+              "label": "CAPA No.",
+              "width": 1
             }
           ],
           "rows": {
@@ -395,6 +437,12 @@
               "type": "text",
               "label": "Corrective action, owner & due date",
               "width": 3
+            },
+            {
+              "id": "capa_no",
+              "type": "text",
+              "label": "CAPA No.",
+              "width": 1
             }
           ],
           "rows": {
