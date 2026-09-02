@@ -175,7 +175,11 @@ begin
   into r
   from public.sop_documents where sop_number = 'FSQM-018';
 
-  select b.h = md5((d.content - 'procedure' - 'responsibility' - 'revision_history')::text)
+  -- The key list here MUST match the one the temporary table above hashes, and must cover every
+  -- key the update writes. It did not: form_references was added to the write path and to the
+  -- before-hash but not to this one, so the two hashes could never agree and the migration
+  -- rejected its own correct work. scripts/check-migration-hashes.py now checks all three lists.
+  select b.h = md5((d.content - 'procedure' - 'responsibility' - 'form_references' - 'revision_history')::text)
     into untouched
     from public.sop_documents d, fsqm018_before b where d.sop_number = 'FSQM-018';
 
@@ -223,7 +227,7 @@ begin
     raise exception 'The longest procedure line is % characters - a run-on has reappeared.', r.longest;
   end if;
   if not untouched then
-    raise exception 'A section other than procedure/responsibility/revision_history changed. Rolled back.';
+    raise exception 'A section other than procedure/responsibility/form_references/revision_history changed. Rolled back.';
   end if;
 end $$;
 
