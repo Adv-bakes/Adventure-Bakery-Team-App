@@ -67,6 +67,9 @@ begin
            where s ~ '^\s*\d+(\.\d+)*[.)]?\s')                                      as numbered,
          (select count(*) from jsonb_array_elements_text(content->'procedure') s
            where s = 'NON-CONFORMING PRODUCT')                                        as headers,
+         -- the specific damage: a number the old stripper would have mangled into a different one
+         (select count(*) from jsonb_array_elements_text(content->'procedure') s
+           where s ~ '^\s*\d+\.\d')                                                   as multilevel,
          content->>'form_references'                                                  as form_ref,
          content ? 'attachments'                                                      as has_attachments
     into r
@@ -90,9 +93,15 @@ begin
     raise exception 'FSQM-018 has % procedure lines, expected the 41 the importer left. Someone has already edited it.',
       r.lines;
   end if;
-  if r.numbered < 30 or r.headers <> 2 then
-    raise exception 'FSQM-018 does not look like the un-repaired scan: % numbered lines, % stray headers.',
-      r.numbered, r.headers;
+  -- 27 / 2 / 12 are COUNTED from sop-drafts/FSQM-018-imported-body.json, which is the raw
+  -- importer output this migration was derived from, using this same regex. The first push of
+  -- this migration failed on "numbered < 30" - a threshold estimated rather than counted,
+  -- against a document that was entirely correct. That is the second time a guess in a guard
+  -- has rejected a good document (20260902000001 failed on a LIKE pattern whose case was
+  -- wrong), so the snapshot is committed and the numbers are exact.
+  if r.numbered <> 27 or r.headers <> 2 or r.multilevel <> 12 then
+    raise exception 'FSQM-018 does not look like the un-repaired scan: % numbered lines, % stray headers, % multi-level (expected 27 / 2 / 12).',
+      r.numbered, r.headers, r.multilevel;
   end if;
   if r.form_ref is distinct from 'Form-0021 Quality Hold Report' then
     raise exception 'Linked Form reads %, not the Compass number this replaces. Someone has already changed it.',
