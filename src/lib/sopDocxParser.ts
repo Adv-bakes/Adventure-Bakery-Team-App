@@ -77,6 +77,22 @@ export function stripParagraphMarker(line: string): string {
   return line.replace(PARA_LINE, "").trim();
 }
 
+// A step number the source document already carries, which the rendered list would otherwise
+// number a second time. Two shapes, and the difference between them is deliberate:
+//
+//   "1." / "1)"        a single number MUST carry punctuation, because a step may legitimately
+//                      open with a bare quantity - "2 hours after mixing, check..." - and
+//                      stripping that would silently delete a requirement.
+//   "2.1" / "15.1.1"   a multi-level number needs none. Nothing else in a procedure line looks
+//                      like that, so there is nothing to confuse it with.
+//
+// The single-number form on its own used to match the FIRST COMPONENT of a multi-level number
+// and leave the remainder behind: FSQM-018's "2.1 Upon identification..." printed as "1 Upon
+// identification...", under a list number of its own. Renumbering a clause is worse than
+// double-numbering it, because the result still looks plausible - the scanned document appeared
+// to restart its numbering four times, and the numbering was never the thing that was wrong.
+const STEP_NUMBER = /^\s*(?:\d+(?:\.\d+)+[.)]?|\d+[.)])\s*/;
+
 /** One piece of content under a numbered step: a list item, or a paragraph of prose. */
 export type ProcBlock = { kind: "bullet" | "para"; text: string };
 
@@ -106,8 +122,8 @@ export function groupProcedureSteps(steps: string[]): ProcGroup[] {
     if (isBulletStep(line)) push({ kind: "bullet", text: stripBulletMarker(line) });
     else if (isParagraphStep(line)) push({ kind: "para", text: stripParagraphMarker(line) });
     else {
-      // Strip any stored leading "N." / "N)" so the rendered list owns the numbering.
-      groups.push({ text: line.replace(/^\s*\d+[.)]\s*/, "").trim(), blocks: [], bullets: [] });
+      // Strip a stored leading step number so the rendered list owns the numbering.
+      groups.push({ text: line.replace(STEP_NUMBER, "").trim(), blocks: [], bullets: [] });
     }
   }
   return groups;
