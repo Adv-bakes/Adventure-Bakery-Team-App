@@ -5,9 +5,14 @@ The migration writes exactly three content keys - procedure, responsibility and
 revision_history - and the DO block afterwards hashes everything else before and after, so
 purpose/scope/definitions/form_references/attachments are provably untouched.
 
-Refuses to overwrite an existing migration file: an applied migration is history.
+SPENT. This produced 20260902000013's predecessor from the draft JSON as it stood on
+2026-09-02, and the JSON has since moved on under 20260902000013 (roles + the CAPA
+reference). Re-running it would emit a migration claiming to write a body it never wrote.
+The existing-file check below is what stops that, and it is the point of the check rather
+than a convenience - the same trap nearly rewrote 20260902000001. To change the body again,
+write a new migration against the CURRENT state; do not regenerate this one.
 
-Usage:  python scripts/build-fsqm018-reformat.py
+Usage:  python scripts/build-fsqm018-reformat.py   (refuses - see above)
 """
 import io, json, os, re, sys
 

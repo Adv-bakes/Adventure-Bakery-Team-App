@@ -167,8 +167,10 @@ DOCS = [
                 ("Origin", "Scanned Compass Blending hardcopy, imported 2026-06-17"),
                 ("Hold record",
                  "**FRM-702** Non-Conforming Material Hold & Tagging Record (active)"),
-                ("Corrective action", "**FSQM-009** CAPA Program (issued 2026-09-02)"),
-                ("Reformatted by", "`20260902000011_fsqm018_reformat_scanned_body.sql`"),
+                ("Corrective action",
+                 "**FSQM-009** CAPA Program (issued 2026-09-02), recorded on **FRM-007**"),
+                ("Built by", "`20260902000011` (format/OCR) · `20260902000012` (FRM-702 "
+                             "CAPA field) · `20260902000013` (roles + CAPA reference)"),
             ],
         },
     },

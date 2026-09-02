@@ -16,8 +16,8 @@ body through a migration and re-run the script; never edit this file directly.
 | SQF reference | `(none set — see Revision History)` |
 | Origin | Scanned Compass Blending hardcopy, imported 2026-06-17 |
 | Hold record | **FRM-702** Non-Conforming Material Hold & Tagging Record (active) |
-| Corrective action | **FSQM-009** CAPA Program (issued 2026-09-02) |
-| Reformatted by | `20260902000011_fsqm018_reformat_scanned_body.sql` |
+| Corrective action | **FSQM-009** CAPA Program (issued 2026-09-02), recorded on **FRM-007** |
+| Built by | `20260902000011` (format/OCR) · `20260902000012` (FRM-702 CAPA field) · `20260902000013` (roles + CAPA reference) |
 
 ---
 
@@ -35,85 +35,74 @@ Quarantine Area: Warehouse designated for the segregation of hold, rejected and 
 
 ## Responsibility
 
-1. QC personnel are responsible for product segregation and final disposition decisions of raw materials, work in progress, finished products, and equipment suspected of non conformance with quality specifications.
-2. Warehouse personnel are responsible for proper storage of the non-conforming product or equipment.
-3. Production and Quality are responsible for root cause analysis and corrective and preventive action implementation.
-4. The Customer Services and Sales Supply specialist is responsible for completing inventory transactions of hold or scrapped materials in the inventory system.
+SQF Practitioner — owns this procedure. Decides what is placed on Hold, determines the final disposition of held product and equipment, determines rework formulations, and confirms reworked material meets the finished product specification before release. Raises and owns any CAPA arising, under FSQM-009.
+Quality Team — places suspect material on Hold, raises and completes FRM-702, applies the hold tag, sets any additional sampling, and reviews held and rework inventory biweekly.
+All staff — report suspected non-conforming material to the SQF Practitioner immediately. No employee is disadvantaged for raising one.
+Production staff — segregate held product and equipment into the Quarantine area on notification, and store it so that it cannot be used or shipped.
+Management team — is notified of every hold and of its final disposition, and is responsible for the resources needed to hold, rework or dispose of material.
+Admin — completes the inventory transactions for held, reworked and scrapped material, discards material on a disposal disposition, and locates the remaining inventory of a suspect lot on request.
 
 ## Procedure
 
-**1. Upon completion of inspection and/or testing of raw material, work in progress, finished product samples, and equipment, Quality personnel shall determine the disposition of the product inspected or tested.**
+**1. Upon completion of inspection and/or testing of raw material, work in progress, finished product samples, and equipment, the Quality Team shall determine the disposition of the product inspected or tested.**
 
 **2. Investigation of suspected non-conforming product can be initiated due to raw materials, intermediate materials, finished products, or equipment found to be non-compliant during receiving, storage, production, QC testing, shipping or routine food safety inspections.**
 
   Observation of product defect, damage or shelf life, QC result deviations, or customer complaints may lead to the disposition of a product as non-compliant.
 
-**3. Upon identification of non-compliant raw material, work in progress material, finished product, or packaging material that can affect the quality, food safety or legality of a food product, the Production associate shall immediately notify Quality personnel in order to place questionable material on Hold.**
+**3. Upon identification of non-compliant raw material, work in progress material, finished product, or packaging material that can affect the quality, food safety or legality of a food product, any employee shall immediately notify the SQF Practitioner in order to place questionable material on Hold.**
 
   - For certified Gluten Free products, and for ingredients used in certified Gluten Free products, confirmation of a positive gluten result (>10 ppm) shall be followed by the hold, notification and segregation steps set out below, to ensure proper segregation of affected product.
-  - GFCO shall be notified at testing@gluten.org.
+  - The SQF Practitioner shall notify GFCO at testing@gluten.org.
 
-**4. Upon receipt of a customer complaint, Quality personnel shall notify the Customer Services and Sales Supply specialist to request the location of all remaining inventory of the suspected lot. Quality personnel shall place suspect inventory on Hold.**
+**4. Upon receipt of a customer complaint, the Quality Team shall establish with Admin the location of all remaining inventory of the suspected lot, and shall place suspect inventory on Hold.**
 
-**5. When Quality personnel is notified of suspected non-conforming material, or is working with a QC result that deviates from specifications, the questionable lot or batch shall be placed on Hold for investigation. For finished products, Product Sample Analysis records shall be reviewed for accuracy, completeness, and compliance.**
+**5. When the Quality Team is notified of suspected non-conforming material, or is working with a QC result that deviates from specifications, the questionable lot or batch shall be placed on Hold for investigation. For finished products, Product Sample Analysis records shall be reviewed for accuracy, completeness, and compliance.**
 
-**6. If a suspected material is found to be expired, damaged, or shows signs of contamination or infestation, Quality personnel shall place the lot on Hold upon notification.**
+**6. If a suspected material is found to be expired, damaged, or shows signs of contamination or infestation, the Quality Team shall place the lot on Hold upon notification.**
 
-**7. Quality personnel shall raise a Non-Conforming Material Hold & Tagging Record (FRM-702) immediately and communicate the incident to the following parties:**
+**7. The Quality Team shall raise a Non-Conforming Material Hold & Tagging Record (FRM-702) immediately and notify the SQF Practitioner and the Management team of the incident.**
 
-  - Plant Manager
-  - Customer Services and Sales Supply specialist
-  - Quality Technicians
-  - Quality Leader
+**8. The Quality Team shall also label the Hold product or equipment with a hold tag and record the tag number, the material status and the segregated storage location on FRM-702.**
 
-**8. Quality personnel shall also label the Hold product or equipment with a hold tag and record the tag number, the material status and the segregated storage location on FRM-702.**
+**9. Production staff shall physically segregate the Hold product or equipment into the Quarantine area immediately to prevent accidental usage or shipping.**
 
-**9. Warehouse personnel shall physically segregate the Hold product or equipment into the Quarantine area immediately to prevent accidental usage or shipping.**
+**10. Admin shall complete the necessary transactions in the inventory system immediately.**
 
-**10. Customer Services and Sales Supply specialists shall complete the necessary transactions in the inventory system immediately.**
+**11. The Quality Team may determine a new sampling plan for further investigation of the product or equipment.**
 
-**11. Quality personnel may determine a new sampling plan for further investigation of the product or equipment.**
+**12. Test and inspection results shall be provided to the SQF Practitioner for completion of the investigation, as applicable.**
 
-**12. Test and inspection results shall be provided to Quality Management for completion of the investigation, as applicable.**
+**13. A Corrective and Preventive Action shall be raised under FSQM-009 Corrective and Preventive Action (CAPA) Program and recorded on FRM-007. The CAPA number shall be recorded on FRM-702 so that the hold and its investigation are traceable to each other.**
 
-**13. The appropriate functional area manager shall lead the root cause analysis by reviewing the raw material records, batch sheets, lab records and any other documentation associated with the questionable lot during the investigation.**
+  FSQM-009 Part 3 states when a CAPA is required, and non-conforming product is one of its triggers, so that decision is not taken again here. The investigation reviews the raw material records, batch sheets, lab records and any other documentation associated with the questionable lot. Root cause, the corrective and preventive actions with their owners and due dates, verification of effectiveness, closure and record retention are all governed by FSQM-009 and recorded on FRM-007. This procedure does not restate them, so the two documents cannot give different answers.
 
-**14. Root Cause Analyses shall be conducted at Management discretion based on:**
+**14. The SQF Practitioner shall determine the final disposition of the product or equipment.**
 
-  - Food Safety risk
-  - Product quality impact
-  - Service impact
-  - Cost
+**15. The Quality Team shall complete the Final Disposition and Release Authorization section of FRM-702, and the Management team shall be notified of the final disposition.**
 
-**15. Root Cause Analyses, corrective and preventive action records shall be maintained.**
+**16. If the disposition is disposal, Admin shall discard the held product or equipment and complete the necessary inventory transactions.**
 
-**16. The Plant Manager and Quality Leader shall determine final disposition of the product or equipment.**
-
-**17. Quality personnel shall complete the Final Disposition and Release Authorization section of FRM-702 and notify management of the final product or equipment disposition.**
-
-**18. If Management determines that the product or equipment should be disposed of, the Customer Services and Sales Supply specialist shall discard the Hold product or equipment and complete the necessary inventory transactions.**
-
-**19. If the Plant Manager and Quality Leader determine that the product or equipment might be safe to rework, Quality shall immediately examine and review product records and samples for food safety risks (micro, age, damage, etc.) prior to making a rework decision.**
+**17. If the SQF Practitioner determines that the product or equipment may be safe to rework, the product records and samples shall first be examined for food safety risks (micro, age, damage, etc.) before the rework decision is made.**
 
   - All finished product rework shall be performed on a "like into like" basis. Certified Gluten Free products that are segregated due to gluten results >10 ppm shall not be reworked into other certified Gluten Free products.
-  - R&D shall determine the appropriate rework formulation with careful consideration to product specifications, functionality and potential impact on product performance.
-  - R&D shall communicate the rework formula to the Plant Manager. Rework material shall be clearly identified in the batch sheet and traceable.
-  - Rework quantities in the Quarantine Area shall be reviewed every two weeks at a minimum by the Customer Services and Sales Supply specialist to ensure rework inventory is maintained at a minimum level. Review shall consider manufacturing dates and product age, possible packaging damage, infestation, microbial risk and other food safety concerns. Some products may need to be retested to determine an appropriate rework formulation, if necessary.
+  - The SQF Practitioner shall determine the rework formulation, with careful consideration to product specifications, functionality and potential impact on product performance. The rework material and the formulation used shall be clearly identified in the batch sheet and traceable.
+  - Rework quantities in the Quarantine Area shall be reviewed every two weeks at a minimum by the Quality Team to ensure rework inventory is maintained at a minimum level. Review shall consider manufacturing dates and product age, possible packaging damage, infestation, microbial risk and other food safety concerns. Some products may need to be retested to determine an appropriate rework formulation, if necessary.
   - Reworked material shall be inspected or analyzed as needed according to the finished product specifications. Its final disposition shall be determined as established by the Positive Release Procedure.
 
-**20. The Plant Manager and Quality personnel shall implement and follow up on corrective and preventive actions derived from the non-conformances to prevent recurrence. The Plant Manager and Quality Leader shall verify effectiveness of the corrective and preventive measures.**
+**18. The hold is closed when the final disposition is complete and recorded on FRM-702. A CAPA raised from the hold remains open under FSQM-009 until its actions are verified effective; the two are tracked separately, because FSQM-009 requires the disposition of affected product to be resolved before a CAPA can be closed.**
 
-**21. Hold inventory in the Quarantine warehouse shall be reviewed biweekly by Quality personnel to ensure rework materials are processed in a timely manner as permitted by product demand.**
+**19. Hold inventory in the Quarantine warehouse shall be reviewed biweekly by the Quality Team to ensure rework materials are processed in a timely manner as permitted by product demand.**
 
 ## Form References
 
-FRM-702 Non-Conforming Material Hold & Tagging Record
+FRM-702 Non-Conforming Material Hold & Tagging Record; FRM-007 Corrective and Preventive Action (CAPA) Report
 
 ## Revision History
 
 Rev New — imported 2026-06-17 from a scanned hardcopy of the Compass Blending original through the Word importer. DRAFT. Not approved, not in force, and not yet reconciled with the programs issued around it.
 
-FORMATTING AND OCR REPAIR, 2026-09-02. Presentation only. The stored body was raw importer output and did not print: it was 41 lines carrying the source document's own numbering, which the renderer numbered a second time on top. No requirement was added, removed or reworded, with the two exceptions recorded under RECONSTRUCTIONS below. What changed:
+FORMATTING AND OCR REPAIR, 2026-09-02. Presentation only. The stored body was raw importer output and did not print: it was 41 lines carrying the source document's own numbering, which the renderer numbered a second time on top. No requirement was added, removed or reworded in that pass, with the two exceptions recorded under RECONSTRUCTIONS below. What changed:
 
 • The source numbering was removed from every step. The rendered list owns the numbering now, which is how every other document here is stored. Nothing else in the body cites a step number, so nothing was left pointing at an old one.
 
@@ -125,11 +114,44 @@ FORMATTING AND OCR REPAIR, 2026-09-02. Presentation only. The stored body was ra
 
 • The running header "NON-CONFORMING PRODUCT" appeared twice in the middle of the body as though it were a step. Both were removed.
 
-• The four Root Cause Analysis criteria (Food Safety risk, product quality impact, service impact, cost) were unmarked and so printed as four numbered steps. They are a list and are marked as one, matching the four notification recipients, which already were.
+• The four Root Cause Analysis criteria (Food Safety risk, product quality impact, service impact, cost) were unmarked and so printed as four numbered steps. They were marked as the list they are; they have since been removed altogether — see CORRECTIVE ACTION below.
 
 THE HOLD RECORD IS NAMED. Linked Form read "Form-0021 Quality Hold Report", a Compass Blending number that does not exist in this register, and the body called that record a "Hold Action Report" in three steps. Both now name FRM-702 Non-Conforming Material Hold & Tagging Record, which is active. This is not a find-and-replace on a similar-sounding title: FRM-702's three sections are the three moments this procedure describes. Section 1 Initial Hold Identification raises the hold and carries the hold tag number, the material status and the segregated storage location, which is what the "issue a report" and "label with a tag" steps do. Section 3 Final Disposition and Release Authorization carries the disposition decision, its justification, a verification check and an authorising signature, which is what the "revise the report" step does. The three steps now say which section they complete.
 
 One limitation of that mapping, which is a question about the form rather than about this procedure: FRM-702 Section 1 is written around material received from a supplier — Supplier Name, P.O. Number, Supplier Lot / Batch Number. This procedure also covers work in progress and finished product, where those fields have no answer. They are not marked required, so an internal hold can be recorded today with them left blank, but the form should be reviewed against the wider scope before this document is issued.
+
+ROLES, 2026-09-02. This changes who does what. It is not a formatting pass.
+
+The body named eleven actors: QC personnel, Quality personnel, Quality Technicians, Quality Leader, Quality Management, Plant Manager, Production associate, Warehouse personnel, R&D, the Customer Services and Sales Supply specialist, and "the appropriate functional area manager". That is a Compass Blending organisation chart. None of those posts exists here, so no responsibility in this document was assigned to anybody. They are replaced by the six roles the issued programs already use — SQF Practitioner, Quality Team, Management team, Production staff, Admin and All staff — so that FSQM-009, FSQM-012, FSQM-013, FSQM-022 and this document describe one organisation rather than two. As in those documents, no individual is named: a document that names a person has to be reissued when the person changes.
+
+• QC personnel, Quality personnel and Quality Technicians become the Quality Team.
+• Quality Leader and Quality Management become the SQF Practitioner.
+• Plant Manager, and the bare "Management", become the Management team.
+• The Production associate becomes All staff, matching FSQM-009, which already says any employee may raise a non-conformance and must report it immediately.
+• Warehouse personnel become Production staff. There is no separate warehouse function.
+• The Customer Services and Sales Supply specialist becomes Admin.
+• "The appropriate functional area manager" becomes the SQF Practitioner, which is what FSQM-009 Part 5 already says.
+• R&D becomes the SQF Practitioner. The site confirmed on 2026-09-02 that the SQF Practitioner and R&D are the same person.
+
+THREE STEPS DID NOT SURVIVE THE SUBSTITUTION, and rewriting them is why this was not done as a find-and-replace. Each described a hand-off between two posts that turn out to be one person, and a step nobody can evidence is worse than no step at all.
+
+• Step 7 required the incident to be communicated to four named parties. After substitution that list is the SQF Practitioner and the Management team, and it read as an instruction to notify oneself. It is now one sentence — raise FRM-702, notify the SQF Practitioner and the Management team — and the four-name list is deleted.
+
+• Final disposition was given to "the Plant Manager and Quality Leader", written as two posts agreeing. It is the SQF Practitioner alone. A quorum of one is not a control, and writing it as though it were invites an auditor to test a separation of duties that does not exist.
+
+• The rework formulation was determined by R&D and then communicated by R&D to the Plant Manager. Both are the same person. The two steps are merged into one, which keeps what SQF 2.4.6.1 actually requires — a qualified person determines the formulation, and the material and formulation are identified in the batch sheet and traceable — and drops only the hand-off.
+
+CORRECTIVE ACTION NOW DEFERS TO FSQM-009 INSTEAD OF RESTATING IT. Four steps covered root cause analysis, when an analysis is done, records, and verification of effectiveness. FSQM-009 Corrective and Preventive Action (CAPA) Program was issued on 2026-09-02 and governs all four, and the two documents had already diverged on both of the things that matter:
+
+• This procedure said root cause analyses are conducted "at Management discretion" based on food safety risk, product quality impact, service impact and cost. FSQM-009 Part 3 lists ten triggers and non-conforming product is one of them. As written, this document permitted skipping an investigation that FSQM-009 requires, and an auditor holding both would fairly take the weaker rule as the site's practice. The four discretion criteria are removed; when a CAPA is raised is FSQM-009's decision, in one place.
+
+• This procedure gave verification of effectiveness to the Plant Manager and Quality Leader. FSQM-009 gives it to the SQF Practitioner, or to someone independent of the action owner. There is now one answer, in one document.
+
+The investigation steps are replaced by a reference: a CAPA is raised under FSQM-009, recorded on FRM-007, and its number is written onto FRM-702 so the hold and the investigation are traceable to each other. FRM-702 had nowhere to hold that number — Section 2 offered only an Associated SCAR Number, which a CAPA is not — so it gains an Associated CAPA Number field in migration 20260902000012, taken now while it still has zero entries. This is the gap FRM-908's car_ref had and the fix FRM-913 received in the same wave.
+
+THE HOLD DOES NOT WAIT ON THE CAPA. FSQM-009 Part 8 cannot close a CAPA until the disposition of affected product is resolved. Requiring the hold to stay open until its CAPA closes would deadlock the two documents against each other, so the closing step says plainly that the hold closes on final disposition and the CAPA continues separately under FSQM-009.
+
+The body is 27 lines: 19 steps, 6 list items and 2 paragraphs.
 
 RECONSTRUCTIONS — two places where the scan was not legible and the text was repaired rather than transcribed. Both need confirming before this document is issued:
 
@@ -139,14 +161,10 @@ RECONSTRUCTIONS — two places where the scan was not legible and the text was r
 
 One further wording change: step 1 read "Quality personnel shall dispose of the product inspected/tested", which on its face directs that everything inspected be thrown away. Read in context it means a disposition decision, and it is written as "shall determine the disposition of". Confirm this is what the original intended.
 
-OPEN BEFORE ISSUE — content questions this pass deliberately did not answer, because they are decisions about what the document should say rather than about what it already says:
+OPEN BEFORE ISSUE — content questions still unanswered, because they are decisions about what the document should say rather than about what it already says:
 
-1. The body assigns work to a Plant Manager, a Quality Leader, Quality Technicians, an R&D function and a Customer Services and Sales Supply specialist. Those are Compass Blending roles. They need mapping onto the roles that exist here before anyone can follow this procedure.
+1. Records, Governing Reference and the SQF clause reference are all empty. The clauses are not in doubt: Quality Code 2.4.5 Non-conforming Product or Equipment and 2.4.6 Product Rework; Food Manufacturing 2.4.5.1, 2.4.5.2 and 11.1.7.9, the last covering non-conforming equipment specifically, which this document's title claims. Two of those require records to be maintained, and the body requires records without saying which or for how long. Records should name FRM-702, FRM-007 and REP-701, with the retention period FSQM-009 already sets.
 
-2. Corrective and preventive action is described here in general terms. FSQM-009 Corrective and Preventive Action (CAPA) Program was issued 2026-09-02 and is now the governing procedure for investigation, root cause and verification of effectiveness, recorded on FRM-007. This document should reference it rather than restate it, and its own root-cause steps should say when a CAPA is raised.
-
-3. Records, Governing Reference and the SQF clause reference are all empty. A controlled document with no stated records and no clause reference cannot be audited against anything.
-
-4. "Positive Release Procedure" is named as the authority for final disposition of reworked material but is not numbered, and FSQM-019 Rework Procedure is itself an unapproved draft covering the same ground as the rework steps here. The overlap between the two needs settling before either is issued.
+2. "Positive Release Procedure" is named as the authority for the final disposition of reworked material, and it does not exist — the phrase appears in no other document. Product Release is Mandatory in the Food Manufacturing code (2.4.7), and Quality Code 2.4.7.1 requires a documented positive product release procedure, so this is a real gap rather than a renamed document; REP-701 QA Product & Material Release Log is a log, not a procedure. Separately, FSQM-019 Rework Procedure is a four-line draft while the substantive rework rules sit in this document, and the two name different authorities for authorising rework. Whether rework lives here or in FSQM-019 needs settling before either is issued.
 
 UNTIL THIS DOCUMENT IS ISSUED it is not in force, whatever it now says. FRM-702 is active and is the record actually in use for holding and tagging non-conforming material, and FSQM-009 governs the corrective action that follows. That is the position FSQM-009's own Scope states, and naming FRM-702 here does not change it.
