@@ -10,13 +10,14 @@ body through a migration and re-run the script; never edit this file directly.
 | Number | `FSQM-009` |
 | Type | `fsqm (Food Safety Quality Manual)` |
 | Category | Food Safety Quality Manual |
-| Status | draft |
+| Status | active |
 | Revision | New |
-| Effective | *(draft)* |
+| Effective | 2026-09-02 |
 | SQF reference | `2.1.3.3, 2.5.3.1, 2.5.3.2, 2.5.4.4, 2.6.3.3` |
+| Approved by | GJM |
 | Record | **FRM-007** Corrective & Preventive Action (CAPA) Report |
 | Register | **REP-007** CAPA Log |
-| Seeded by | `20260902000001_fsqm009_capa_program.sql` |
+| Built by | `20260902000001` (seed) · `20260902000006`-`0009` (formatting) · `20260902000010` (issue) |
 
 ---
 

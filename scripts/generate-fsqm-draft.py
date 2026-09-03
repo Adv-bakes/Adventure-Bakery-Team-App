@@ -121,14 +121,15 @@ DOCS = [
             "title": "Corrective and Preventive Action (CAPA) Program",
             "type": "fsqm (Food Safety Quality Manual)",
             "category": "Food Safety Quality Manual",
-            "status": "draft",
+            "status": "active",
             "revision": "New",
-            "effective": None,
+            "effective": "2026-09-02",
             "sqf": "2.1.3.3, 2.5.3.1, 2.5.3.2, 2.5.4.4, 2.6.3.3",
             "extra": [
+                ("Approved by", "GJM"),
                 ("Record", "**FRM-007** Corrective & Preventive Action (CAPA) Report"),
                 ("Register", "**REP-007** CAPA Log"),
-                ("Seeded by", "`20260902000001_fsqm009_capa_program.sql`"),
+                ("Built by", "`20260902000001` (seed) · `20260902000006`-`0009` (formatting) · `20260902000010` (issue)"),
             ],
         },
     },
@@ -170,7 +171,8 @@ DOCS = [
                 ("Corrective action",
                  "**FSQM-009** CAPA Program (issued 2026-09-02), recorded on **FRM-007**"),
                 ("Built by", "`20260902000011` (format/OCR) · `20260902000012` (FRM-702 "
-                             "CAPA field) · `20260902000013` (roles + CAPA reference)"),
+                             "CAPA field) · `20260902000013` (roles + CAPA reference) · "
+                             "`20260902000014` (disposition coverage)"),
             ],
         },
     },
