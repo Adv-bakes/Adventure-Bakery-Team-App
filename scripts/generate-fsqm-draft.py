@@ -153,6 +153,29 @@ DOCS = [
         },
     },
     {
+        "json": "sop-drafts/FSQM-020-product-release-program.json",
+        "md":   "sop-drafts/FSQM-020-product-release-program.md",
+        "meta": {
+            "number": "FSQM-020",
+            "title": "Product Release Program",
+            "type": "fsqm (Food Safety Quality Manual)",
+            "category": "Food Safety Quality Manual",
+            "status": "draft — not approved, not in force",
+            "revision": "New",
+            "effective": None,
+            "sqf": "2.4.7.1, 2.4.7.2, 2.4.7.3  (2.4.7 is **Mandatory**)",
+            "extra": [
+                ("Record", "**FRM-701** Finished Product Release Record"),
+                ("Failure path",
+                 "**FSQM-018** Non-Conforming Product and Equipment — a batch that fails a "
+                 "release check is held, not released"),
+                ("Label approval",
+                 "**SOP-2.3.2.3** Label Control — referenced, deliberately not repeated"),
+                ("Seeded by", "`20260903000001` (program) · `20260903000002` (FRM-701)"),
+            ],
+        },
+    },
+    {
         "json": "sop-drafts/FSQM-019-rework-procedure.json",
         "md":   "sop-drafts/FSQM-019-rework-procedure.md",
         "meta": {

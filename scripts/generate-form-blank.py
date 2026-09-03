@@ -501,6 +501,23 @@ if __name__ == "__main__":
     build_pdf("sop-drafts/FRM-007-blank.pdf", meta007, b007)
     build_docx("sop-drafts/FRM-007-blank.docx", meta007, b007)
 
+    # FRM-701 - Finished Product Release Record. PORTRAIT: one batch per sheet, five sections of
+    # mostly scalar fields, and a single grid that is a label column plus Result and Note. Landscape
+    # would leave two thirds of the page empty.
+    #
+    # rev New, draft: seeded by 20260903000002 alongside FSQM-020 Product Release Program, against
+    # SQF 2.4.7 Product Release (Mandatory). The printed blank matters more here than for most
+    # forms: release happens at the dock, and a release that waits for someone to reach a tablet is
+    # a release that gets done afterwards - which is the one thing FSQM-020 Part 10 forbids.
+    s701 = load_schema("sop-drafts/FRM-701-product-release-schema.json")
+    meta701 = {"form_no": "FRM-701", "title": "Finished Product Release Record",
+               "revision": "New", "eff": "(draft)", "appr": "(pending)",
+               "sqf": "2.4.7.1, 2.4.7.2, 2.4.7.3",
+               "footer": FOOT.format(no="FRM-701")}
+    b701 = blocks_from_schema(s701)
+    build_pdf("sop-drafts/FRM-701-blank.pdf", meta701, b701)
+    build_docx("sop-drafts/FRM-701-blank.docx", meta701, b701)
+
     # FRM-002 - Customer Complaint Report. PORTRAIT: 38 scalar fields over seven sections and no
     # grids at all, so nothing is fighting for horizontal room.
     #
