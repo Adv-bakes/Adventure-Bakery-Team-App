@@ -1,0 +1,215 @@
+-- Issue FSQM-018: fill the three empty fields, then activate. Approved GJM, 2026-09-02.
+--
+-- WHAT ISSUING ADOPTS, stated plainly because activation is the moment a draft's caveats become
+-- requirements. Three items in the Revision History asked for confirmation "before issue" and are
+-- rewritten to record what was decided:
+--
+--   the GFCO address       NOT adopted. The scan read "testing(4Iuten.org"; the draft carried
+--                          testing@gluten.org as a reconstruction. An ACTIVE controlled document
+--                          must not assert a fact nobody has verified, so the invented address is
+--                          REMOVED and the step points at the current GFCO certification
+--                          agreement. That is the better authority regardless - a certifier's
+--                          contact details change without this document being revised.
+--   the cross-reference    adopted as written. "The hold, notification and segregation steps set
+--                          out below" cannot go stale the way a numeric range can.
+--   step 1's wording       adopted. The literal scan read "shall dispose of the product
+--                          inspected/tested", which directs that everything inspected be thrown
+--                          away. No procedure can have meant that.
+--
+-- THE THREE EMPTY FIELDS ARE FILLED, because that is what activation requires rather than an
+-- improvement taken alongside it. A controlled document with no clause reference and no records
+-- list cannot be audited against anything, and two of the clauses here require records to be
+-- MAINTAINED (Food Manufacturing 2.4.5.2 and 11.1.7.9) while the body required records without
+-- saying which or for how long.
+--
+--   sqf_reference          2.4.5.1, 2.4.5.2, 2.4.6.1, 11.1.7.9. The last covers non-conforming
+--                          EQUIPMENT specifically, which this document's title claims and which no
+--                          other document here covers. 2.4.7 Product Release is deliberately NOT
+--                          claimed - see the exposure below.
+--   records                FRM-702, FRM-007, REP-701, batch sheets, and retention at two years or
+--                          shelf life plus twelve months. That period is FSQM-009 Part 10's, on
+--                          purpose: a hold and the investigation arising from it should not be
+--                          retained on two different bases.
+--   governing_reference    both code editions plus FSQM-009. FSQM-019 is deliberately omitted - an
+--                          active document may not cite an unapproved draft as governing.
+--
+-- ONE ITEM IS CARRIED FORWARD AND IT IS A KNOWN EXPOSURE. The rework steps make a "Positive
+-- Release Procedure" the authority for final disposition of reworked material, and no such
+-- document exists - the phrase appears nowhere else in the register. Product Release is MANDATORY
+-- in the Food Manufacturing code (2.4.7) and Quality Code 2.4.7.1 requires a documented positive
+-- release procedure, so this is a real gap and not a renamed document. An auditor reading the
+-- rework steps will ask to see it and there is not one.
+--
+-- It is issued anyway, and the Revision History says why in those words: the alternative was
+-- leaving the site with no approved procedure at all for holding and dispositioning non-conforming
+-- product, which is the larger gap. Until a release procedure exists, final disposition of reworked
+-- material rests on the authority this document already gives the SQF Practitioner, recorded on
+-- FRM-702 and logged on REP-701. Naming the exposure in the document is what makes issuing it a
+-- decision rather than an oversight.
+--
+-- REVISION STAYS AT New. First issue, not a revision - the same as FSQM-009 under 20260902000010
+-- and FSQM-012 under 20260901000015. Nothing is superseded and nothing is archived: this document
+-- replaces none. FRM-702 and FRM-007 are asserted still active below, because an active procedure
+-- requiring a record that is not available is the exact finding this wave exists to close.
+--
+-- Writes procedure, records, governing_reference and revision_history, plus the status/approver/
+-- effective-date/clause-reference columns. The DO block hashes the rest of content before and
+-- after, so purpose, scope, definitions, responsibility, form_references and attachments are
+-- provably untouched. scripts/check-migration-hashes.py verifies the two key lists agree.
+
+begin;
+
+do $$
+declare
+  r record;
+begin
+  select status, revision, type, sqf_reference,
+         jsonb_array_length(content->'procedure')                                     as lines,
+         coalesce(content->>'records','')                                             as records,
+         coalesce(content->>'governing_reference','')                                 as govref,
+         (content->'procedure')::text like '%testing@gluten.org%'                     as invented_addr,
+         (content->>'revision_history') like '%OPEN BEFORE ISSUE%'                     as open_head,
+         (select count(*) from public.sop_documents
+           where sop_number in ('FRM-702','FRM-007') and status = 'active')           as records_live
+    into r
+    from public.sop_documents where sop_number = 'FSQM-018';
+
+  if r is null then
+    raise exception 'FSQM-018 does not exist.';
+  end if;
+  if r.status <> 'draft' then
+    raise exception 'FSQM-018 is already % - it cannot be issued twice.', r.status;
+  end if;
+  if r.revision <> 'New' or r.type <> 'fsqm' then
+    raise exception 'FSQM-018 is revision % / type %, not New / fsqm.', r.revision, r.type;
+  end if;
+  if r.lines <> 27 then
+    raise exception 'FSQM-018 has % procedure lines, expected the 27 left by 20260902000013. Run that first.',
+      r.lines;
+  end if;
+  if r.records <> '' or r.govref <> '' then
+    raise exception 'Records or Governing Reference is already populated - re-derive before overwriting it.';
+  end if;
+  if r.sqf_reference is not null then
+    raise exception 'sqf_reference already reads % - re-derive before overwriting it.', r.sqf_reference;
+  end if;
+  if not r.invented_addr then
+    raise exception 'The body no longer carries the reconstructed GFCO address this migration removes.';
+  end if;
+  if not r.open_head then
+    raise exception 'FSQM-018 does not carry the OPEN BEFORE ISSUE heading this migration rewrites.';
+  end if;
+  -- an active procedure may not require a record that is not available
+  if r.records_live <> 2 then
+    raise exception 'Only % of FRM-702 and FRM-007 are active. Do not issue a procedure that requires them.',
+      r.records_live;
+  end if;
+end $$;
+
+create temporary table fsqm018_issue_before on commit drop as
+select md5((content - 'procedure' - 'records' - 'governing_reference' - 'revision_history')::text) as h
+  from public.sop_documents where sop_number = 'FSQM-018';
+
+update public.sop_documents
+   set content = jsonb_set(
+                   jsonb_set(
+                     jsonb_set(
+                       jsonb_set(content, '{procedure}', $j$["Upon completion of inspection and/or testing of raw material, work in progress, finished product samples, and equipment, the Quality Team shall determine the disposition of the product inspected or tested.", "Investigation of suspected non-conforming product can be initiated due to raw materials, intermediate materials, finished products, or equipment found to be non-compliant during receiving, storage, production, QC testing, shipping or routine food safety inspections.", "> Observation of product defect, damage or shelf life, QC result deviations, or customer complaints may lead to the disposition of a product as non-compliant.", "Upon identification of non-compliant raw material, work in progress material, finished product, or packaging material that can affect the quality, food safety or legality of a food product, any employee shall immediately notify the SQF Practitioner in order to place questionable material on Hold.", "• For certified Gluten Free products, and for ingredients used in certified Gluten Free products, confirmation of a positive gluten result (>10 ppm) shall be followed by the hold, notification and segregation steps set out below, to ensure proper segregation of affected product.", "• The SQF Practitioner shall notify GFCO, using the contact details in the current GFCO certification agreement.", "Upon receipt of a customer complaint, the Quality Team shall establish with Admin the location of all remaining inventory of the suspected lot, and shall place suspect inventory on Hold.", "When the Quality Team is notified of suspected non-conforming material, or is working with a QC result that deviates from specifications, the questionable lot or batch shall be placed on Hold for investigation. For finished products, Product Sample Analysis records shall be reviewed for accuracy, completeness, and compliance.", "If a suspected material is found to be expired, damaged, or shows signs of contamination or infestation, the Quality Team shall place the lot on Hold upon notification.", "The Quality Team shall raise a Non-Conforming Material Hold & Tagging Record (FRM-702) immediately and notify the SQF Practitioner and the Management team of the incident.", "The Quality Team shall also label the Hold product or equipment with a hold tag and record the tag number, the material status and the segregated storage location on FRM-702.", "Production staff shall physically segregate the Hold product or equipment into the Quarantine area immediately to prevent accidental usage or shipping.", "Admin shall complete the necessary transactions in the inventory system immediately.", "The Quality Team may determine a new sampling plan for further investigation of the product or equipment.", "Test and inspection results shall be provided to the SQF Practitioner for completion of the investigation, as applicable.", "A Corrective and Preventive Action shall be raised under FSQM-009 Corrective and Preventive Action (CAPA) Program and recorded on FRM-007. The CAPA number shall be recorded on FRM-702 so that the hold and its investigation are traceable to each other.", "> FSQM-009 Part 3 states when a CAPA is required, and non-conforming product is one of its triggers, so that decision is not taken again here. The investigation reviews the raw material records, batch sheets, lab records and any other documentation associated with the questionable lot. Root cause, the corrective and preventive actions with their owners and due dates, verification of effectiveness, closure and record retention are all governed by FSQM-009 and recorded on FRM-007. This procedure does not restate them, so the two documents cannot give different answers.", "The SQF Practitioner shall determine the final disposition of the product or equipment.", "The Quality Team shall complete the Final Disposition and Release Authorization section of FRM-702, and the Management team shall be notified of the final disposition.", "If the disposition is disposal, Admin shall discard the held product or equipment and complete the necessary inventory transactions.", "If the SQF Practitioner determines that the product or equipment may be safe to rework, the product records and samples shall first be examined for food safety risks (micro, age, damage, etc.) before the rework decision is made.", "• All finished product rework shall be performed on a \"like into like\" basis. Certified Gluten Free products that are segregated due to gluten results >10 ppm shall not be reworked into other certified Gluten Free products.", "• The SQF Practitioner shall determine the rework formulation, with careful consideration to product specifications, functionality and potential impact on product performance. The rework material and the formulation used shall be clearly identified in the batch sheet and traceable.", "• Rework quantities in the Quarantine Area shall be reviewed every two weeks at a minimum by the Quality Team to ensure rework inventory is maintained at a minimum level. Review shall consider manufacturing dates and product age, possible packaging damage, infestation, microbial risk and other food safety concerns. Some products may need to be retested to determine an appropriate rework formulation, if necessary.", "• Reworked material shall be inspected or analyzed as needed according to the finished product specifications. Its final disposition shall be determined as established by the Positive Release Procedure.", "The hold is closed when the final disposition is complete and recorded on FRM-702. A CAPA raised from the hold remains open under FSQM-009 until its actions are verified effective; the two are tracked separately, because FSQM-009 requires the disposition of affected product to be resolved before a CAPA can be closed.", "Hold inventory in the Quarantine warehouse shall be reviewed biweekly by the Quality Team to ensure rework materials are processed in a timely manner as permitted by product demand."]$j$::jsonb),
+                       '{records}', $j$"FRM-702 Non-Conforming Material Hold & Tagging Record — one per hold. Identification of the material or equipment, the hold tag number, the segregated storage location, the final disposition and its authorisation.\nFRM-007 Corrective and Preventive Action (CAPA) Report — the investigation, where a CAPA is raised under FSQM-009. Its number is recorded on FRM-702 so the hold and the investigation are traceable to each other.\nREP-701 QA Product & Material Release Log — release of held or reworked material.\nBatch sheets — identify rework material and the formulation used, and carry its traceability.\nRetention: two years, or the shelf life of the product plus twelve months, whichever is longer. This is the period set by FSQM-009 Part 10, so a hold and the investigation arising from it are retained on the same basis."$j$::jsonb),
+                     '{governing_reference}', $j$"SQF Food Safety Code: Food Manufacturing, Edition 9 — 2.4.5 Non-conforming Materials and Product; 2.4.6 Product Rework; 11.1.7.9 non-conforming equipment.\nSQF Quality Code, Edition 9 — 2.4.5 Non-conforming Product or Equipment; 2.4.6 Product Rework.\nFSQM-009 Corrective and Preventive Action (CAPA) Program — governs the investigation, root cause, corrective and preventive action, verification of effectiveness and closure of any CAPA raised from a hold under this procedure."$j$::jsonb),
+                   '{revision_history}', $j$"Rev New — imported 2026-06-17 from a scanned hardcopy of the Compass Blending original through the Word importer. DRAFT. Not approved, not in force, and not yet reconciled with the programs issued around it.\n\nFORMATTING AND OCR REPAIR, 2026-09-02. Presentation only. The stored body was raw importer output and did not print: it was 41 lines carrying the source document's own numbering, which the renderer numbered a second time on top. No requirement was added, removed or reworded in that pass, with the two exceptions recorded under RECONSTRUCTIONS below. What changed:\n\n• The source numbering was removed from every step. The rendered list owns the numbering now, which is how every other document here is stored. Nothing else in the body cites a step number, so nothing was left pointing at an old one.\n\n• The document was flattened to one level. The renderer has exactly two: a numbered step, and a list item or paragraph beneath it. The source ran three deep (2, 2.1, 2.1.1), so the sub-steps of the hold triggers and of the rework rules were promoted to steps and to bullets respectively. The reading order is unchanged; only the depth is.\n\n• Three steps had been split across a scan page break and were rejoined: \"...finished product / samples, and equipment\", the gluten-free segregation step, and \"...gluten results / >10ppm shall not be reworked\".\n\n• Two steps had been merged into one line, which also carried a stray OCR character (\"n 6.4 ... 6.5 ...\"). They are two steps again — labelling the Hold product, and segregating it into Quarantine — and the stray character is gone.\n\n• The running header \"NON-CONFORMING PRODUCT\" appeared twice in the middle of the body as though it were a step. Both were removed.\n\n• The four Root Cause Analysis criteria (Food Safety risk, product quality impact, service impact, cost) were unmarked and so printed as four numbered steps. They were marked as the list they are; they have since been removed altogether — see CORRECTIVE ACTION below.\n\nTHE HOLD RECORD IS NAMED. Linked Form read \"Form-0021 Quality Hold Report\", a Compass Blending number that does not exist in this register, and the body called that record a \"Hold Action Report\" in three steps. Both now name FRM-702 Non-Conforming Material Hold & Tagging Record, which is active. This is not a find-and-replace on a similar-sounding title: FRM-702's three sections are the three moments this procedure describes. Section 1 Initial Hold Identification raises the hold and carries the hold tag number, the material status and the segregated storage location, which is what the \"issue a report\" and \"label with a tag\" steps do. Section 3 Final Disposition and Release Authorization carries the disposition decision, its justification, a verification check and an authorising signature, which is what the \"revise the report\" step does. The three steps now say which section they complete.\n\nOne limitation of that mapping, which is a question about the form rather than about this procedure: FRM-702 Section 1 is written around material received from a supplier — Supplier Name, P.O. Number, Supplier Lot / Batch Number. This procedure also covers work in progress and finished product, where those fields have no answer. They are not marked required, so an internal hold can be recorded today with them left blank, but the form should be reviewed against the wider scope before this document is issued.\n\nROLES, 2026-09-02. This changes who does what. It is not a formatting pass.\n\nThe body named eleven actors: QC personnel, Quality personnel, Quality Technicians, Quality Leader, Quality Management, Plant Manager, Production associate, Warehouse personnel, R&D, the Customer Services and Sales Supply specialist, and \"the appropriate functional area manager\". That is a Compass Blending organisation chart. None of those posts exists here, so no responsibility in this document was assigned to anybody. They are replaced by the six roles the issued programs already use — SQF Practitioner, Quality Team, Management team, Production staff, Admin and All staff — so that FSQM-009, FSQM-012, FSQM-013, FSQM-022 and this document describe one organisation rather than two. As in those documents, no individual is named: a document that names a person has to be reissued when the person changes.\n\n• QC personnel, Quality personnel and Quality Technicians become the Quality Team.\n• Quality Leader and Quality Management become the SQF Practitioner.\n• Plant Manager, and the bare \"Management\", become the Management team.\n• The Production associate becomes All staff, matching FSQM-009, which already says any employee may raise a non-conformance and must report it immediately.\n• Warehouse personnel become Production staff. There is no separate warehouse function.\n• The Customer Services and Sales Supply specialist becomes Admin.\n• \"The appropriate functional area manager\" becomes the SQF Practitioner, which is what FSQM-009 Part 5 already says.\n• R&D becomes the SQF Practitioner. The site confirmed on 2026-09-02 that the SQF Practitioner and R&D are the same person.\n\nTHREE STEPS DID NOT SURVIVE THE SUBSTITUTION, and rewriting them is why this was not done as a find-and-replace. Each described a hand-off between two posts that turn out to be one person, and a step nobody can evidence is worse than no step at all.\n\n• Step 7 required the incident to be communicated to four named parties. After substitution that list is the SQF Practitioner and the Management team, and it read as an instruction to notify oneself. It is now one sentence — raise FRM-702, notify the SQF Practitioner and the Management team — and the four-name list is deleted.\n\n• Final disposition was given to \"the Plant Manager and Quality Leader\", written as two posts agreeing. It is the SQF Practitioner alone. A quorum of one is not a control, and writing it as though it were invites an auditor to test a separation of duties that does not exist.\n\n• The rework formulation was determined by R&D and then communicated by R&D to the Plant Manager. Both are the same person. The two steps are merged into one, which keeps what SQF 2.4.6.1 actually requires — a qualified person determines the formulation, and the material and formulation are identified in the batch sheet and traceable — and drops only the hand-off.\n\nCORRECTIVE ACTION NOW DEFERS TO FSQM-009 INSTEAD OF RESTATING IT. Four steps covered root cause analysis, when an analysis is done, records, and verification of effectiveness. FSQM-009 Corrective and Preventive Action (CAPA) Program was issued on 2026-09-02 and governs all four, and the two documents had already diverged on both of the things that matter:\n\n• This procedure said root cause analyses are conducted \"at Management discretion\" based on food safety risk, product quality impact, service impact and cost. FSQM-009 Part 3 lists ten triggers and non-conforming product is one of them. As written, this document permitted skipping an investigation that FSQM-009 requires, and an auditor holding both would fairly take the weaker rule as the site's practice. The four discretion criteria are removed; when a CAPA is raised is FSQM-009's decision, in one place.\n\n• This procedure gave verification of effectiveness to the Plant Manager and Quality Leader. FSQM-009 gives it to the SQF Practitioner, or to someone independent of the action owner. There is now one answer, in one document.\n\nThe investigation steps are replaced by a reference: a CAPA is raised under FSQM-009, recorded on FRM-007, and its number is written onto FRM-702 so the hold and the investigation are traceable to each other. FRM-702 had nowhere to hold that number — Section 2 offered only an Associated SCAR Number, which a CAPA is not — so it gains an Associated CAPA Number field in migration 20260902000012, taken now while it still has zero entries. This is the gap FRM-908's car_ref had and the fix FRM-913 received in the same wave.\n\nTHE HOLD DOES NOT WAIT ON THE CAPA. FSQM-009 Part 8 cannot close a CAPA until the disposition of affected product is resolved. Requiring the hold to stay open until its CAPA closes would deadlock the two documents against each other, so the closing step says plainly that the hold closes on final disposition and the CAPA continues separately under FSQM-009.\n\nThe body is 27 lines: 19 steps, 6 list items and 2 paragraphs.\n\nRECONSTRUCTIONS — two places where the scan was not legible and the text was repaired rather than transcribed. Both were resolved at issue, one by removing the reconstruction rather than adopting it:\n\n1. The GFCO notification address read \"testing(4Iuten.org\", which is not an address. The draft carried testing@gluten.org as a reconstruction awaiting confirmation. AT ISSUE THE INVENTED ADDRESS WAS REMOVED rather than adopted: the step now says to notify GFCO using the contact details in the current GFCO certification agreement. An active controlled document must not assert a fact nobody has verified, and a certifier's contact details change without this document being revised, so the agreement is the better authority in any case.\n\n2. The cross-reference \"steps described in sections 6.3 thru 6.11\" pointed at the source document's numbering, which no longer exists anywhere in this document. It reads \"the hold, notification and segregation steps set out below\". ADOPTED AT ISSUE as written; the descriptive form cannot go stale the way a numeric range can. If a narrower range was meant, it is a revision to make against the paper original.\n\nOne further wording change: step 1 read \"Quality personnel shall dispose of the product inspected/tested\", which on its face directs that everything inspected be thrown away. Read in context it means a disposition decision, and it is written as \"shall determine the disposition of\". ADOPTED AT ISSUE: the literal reading directs that everything inspected be thrown away, which no procedure can have meant.\n\nISSUED 2026-09-02, approved GJM. Status active, revision New — a first issue, not a revision, so nothing is superseded and nothing is archived.\n\nSETTLED AT ISSUE. Records, Governing Reference and the SQF clause reference were empty, and a controlled document with no stated records and no clause reference cannot be audited against anything. All three are now filled. The clause reference is 2.4.5.1, 2.4.5.2, 2.4.6.1 and 11.1.7.9 — the last covering non-conforming EQUIPMENT specifically, which this document's title claims and which nothing else here covers. Records name FRM-702, FRM-007, REP-701 and the batch sheets, and set retention at two years or shelf life plus twelve months, which is FSQM-009's period: a hold and the investigation arising from it should not be retained on two different bases. Governing Reference deliberately omits FSQM-019, because an active document may not cite an unapproved draft as governing.\n\nSTILL OPEN AFTER ISSUE — one item, and issuing this document cannot close it because it is not about this document.\n\n\"Positive Release Procedure\" is named as the authority for the final disposition of reworked material, and it does not exist — the phrase appears in no other document. Product Release is Mandatory in the Food Manufacturing code (2.4.7), and Quality Code 2.4.7.1 requires a documented positive product release procedure, so this is a real gap rather than a renamed document; REP-701 QA Product & Material Release Log is a log, not a procedure. Separately, FSQM-019 Rework Procedure is a four-line draft while the substantive rework rules sit in this document, and the two name different authorities for authorising rework. Whether rework lives here or in FSQM-019 needs settling. ISSUING THIS DOCUMENT WITH THAT REFERENCE IN IT IS A KNOWN EXPOSURE, accepted deliberately: an auditor reading the rework steps will ask to see the Positive Release Procedure and there is not one. It was issued anyway because the alternative was leaving the site with no approved procedure at all for holding and dispositioning non-conforming product, which is the larger gap. Until a release procedure exists, final disposition of reworked material rests on the authority this document already gives the SQF Practitioner, recorded on FRM-702 and logged on REP-701.\n\nUNTIL THIS DOCUMENT IS ISSUED it is not in force, whatever it now says. FRM-702 is active and is the record actually in use for holding and tagging non-conforming material, and FSQM-009 governs the corrective action that follows. That is the position FSQM-009's own Scope states, and naming FRM-702 here does not change it."$j$::jsonb),
+       status = 'active',
+       approved_by = 'GJM',
+       effective_date = date '2026-09-02',
+       sqf_reference = '2.4.5.1, 2.4.5.2, 2.4.6.1, 11.1.7.9'
+ where sop_number = 'FSQM-018' and status = 'draft' and revision = 'New';
+
+do $$
+declare
+  r record;
+  untouched boolean;
+begin
+  select status, revision, approved_by, effective_date, sqf_reference,
+    jsonb_array_length(content->'procedure')                                          as lines,
+    (select count(*) from jsonb_array_elements_text(content->'procedure') s
+      where s not like '• %' and s not like '> %')                                    as steps,
+    (select count(*) from jsonb_array_elements_text(content->'procedure') s
+      where s like '• %')                                                             as bullets,
+    (select count(*) from jsonb_array_elements_text(content->'procedure') s
+      where s like '> %')                                                             as prose,
+    -- the invented address is gone from the body but its history is not
+    (content->'procedure')::text like '%testing@gluten.org%'                          as invented_addr,
+    (content->'procedure')::text like '%GFCO certification agreement%'                as agreement_ref,
+    (content->>'revision_history') like '%testing@gluten.org%'                        as recon_recorded,
+    -- the three fields activation required
+    (content->>'records') like '%REP-701%'                                            as rec_release,
+    (content->>'records') like '%Retention%'                                          as rec_retention,
+    (content->>'governing_reference') like '%FSQM-009%'                               as gov_capa,
+    (content->>'governing_reference') like '%FSQM-019%'                               as gov_cites_draft,
+    -- the open list is rewritten, not left sitting in an active document
+    (content->>'revision_history') like '%OPEN BEFORE ISSUE%'                          as stale_head,
+    (content->>'revision_history') like '%ISSUED 2026-09-02, approved GJM%'           as issue_note,
+    (content->>'revision_history') like '%SETTLED AT ISSUE%'                          as settled,
+    (content->>'revision_history') like '%STILL OPEN AFTER ISSUE%'                    as still_open,
+    (content->>'revision_history') like '%KNOWN EXPOSURE%'                            as exposure_named,
+    -- and the body must be otherwise unchanged by an issue
+    (content->'procedure')::text like '%before a CAPA can be closed%'                 as deadlock_note,
+    (content->'procedure')::text like '%Positive Release Procedure%'                  as positive_release,
+    (select count(*) from jsonb_array_elements_text(content->'procedure') s
+      where s like '%FRM-702%')                                                       as frm702_steps
+  into r
+  from public.sop_documents where sop_number = 'FSQM-018';
+
+  select b.h = md5((d.content - 'procedure' - 'records' - 'governing_reference' - 'revision_history')::text)
+    into untouched
+    from public.sop_documents d, fsqm018_issue_before b where d.sop_number = 'FSQM-018';
+
+  if r.status <> 'active' or r.approved_by <> 'GJM'
+     or r.effective_date <> date '2026-09-02' or r.revision <> 'New' then
+    raise exception 'FSQM-018 not issued as expected: % / % / % / %.',
+      r.status, r.approved_by, r.effective_date, r.revision;
+  end if;
+  if r.sqf_reference is distinct from '2.4.5.1, 2.4.5.2, 2.4.6.1, 11.1.7.9' then
+    raise exception 'sqf_reference reads %, expected 2.4.5.1, 2.4.5.2, 2.4.6.1, 11.1.7.9.', coalesce(r.sqf_reference,'null');
+  end if;
+  if r.lines <> 27 or r.steps <> 19
+     or r.bullets <> 6 or r.prose <> 2 then
+    raise exception 'Body changed shape during issue: % lines, % steps, % bullets, % prose.',
+      r.lines, r.steps, r.bullets, r.prose;
+  end if;
+  if r.invented_addr then
+    raise exception 'An active document still asserts the reconstructed GFCO address.';
+  end if;
+  if not r.agreement_ref then
+    raise exception 'The GFCO step does not point at the certification agreement.';
+  end if;
+  if not r.recon_recorded then
+    raise exception 'The revision history no longer records what the reconstruction was.';
+  end if;
+  if not (r.rec_release and r.rec_retention and r.gov_capa) then
+    raise exception 'Required fields incomplete: REP-701=%, retention=%, FSQM-009 in govref=%.',
+      r.rec_release, r.rec_retention, r.gov_capa;
+  end if;
+  if r.gov_cites_draft then
+    raise exception 'Governing Reference cites FSQM-019, which is an unapproved draft.';
+  end if;
+  if r.stale_head then
+    raise exception 'FSQM-018 is active but still says OPEN BEFORE ISSUE.';
+  end if;
+  if not (r.issue_note and r.settled and r.still_open and r.exposure_named) then
+    raise exception 'Revision history wrong: issue note=%, settled=%, still-open=%, exposure named=%.',
+      r.issue_note, r.settled, r.still_open, r.exposure_named;
+  end if;
+  if not (r.deadlock_note and r.positive_release) then
+    raise exception 'Body altered during issue: deadlock sentence=%, positive release=%.',
+      r.deadlock_note, r.positive_release;
+  end if;
+  if r.frm702_steps <> 5 then
+    raise exception 'FRM-702 is named in % steps, expected 5.', r.frm702_steps;
+  end if;
+  if not untouched then
+    raise exception 'A section other than the four written changed. Rolled back.';
+  end if;
+end $$;
+
+commit;

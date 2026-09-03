@@ -89,7 +89,7 @@ def render(meta, content):
         ("Status", meta["status"]),
         ("Revision", meta["revision"]),
         ("Effective", meta.get("effective") or "*(draft)*"),
-        ("SQF reference", "`%s`" % meta["sqf"]),
+        ("SQF reference", "`%s`" % (content.get("_sqf_reference") or meta["sqf"])),
     ]
     for k, v in meta.get("extra", []):
         rows.append((k, v))
@@ -121,14 +121,16 @@ DOCS = [
             "title": "Corrective and Preventive Action (CAPA) Program",
             "type": "fsqm (Food Safety Quality Manual)",
             "category": "Food Safety Quality Manual",
-            "status": "draft",
+            "status": "active",
             "revision": "New",
-            "effective": None,
+            "effective": "2026-09-02",
             "sqf": "2.1.3.3, 2.5.3.1, 2.5.3.2, 2.5.4.4, 2.6.3.3",
             "extra": [
+                ("Approved by", "GJM"),
                 ("Record", "**FRM-007** Corrective & Preventive Action (CAPA) Report"),
                 ("Register", "**REP-007** CAPA Log"),
-                ("Seeded by", "`20260902000001_fsqm009_capa_program.sql`"),
+                ("Built by", "`20260902000001` (seed) · `20260902000006`-`0009` (formatting, "
+                             "Five Whys example) · `20260902000010` (issue)"),
             ],
         },
     },
@@ -159,18 +161,20 @@ DOCS = [
             "title": "Non-Conforming Product and Equipment",
             "type": "fsqm (Food Safety Quality Manual)",
             "category": "Food Safety Quality Manual",
-            "status": "draft — not approved, not in force",
+            "status": "active",
             "revision": "New",
-            "effective": None,
-            "sqf": "(none set — see Revision History)",
+            "effective": "2026-09-02",
+            "sqf": "(set at issue)",
             "extra": [
+                ("Approved by", "GJM"),
                 ("Origin", "Scanned Compass Blending hardcopy, imported 2026-06-17"),
                 ("Hold record",
                  "**FRM-702** Non-Conforming Material Hold & Tagging Record (active)"),
                 ("Corrective action",
                  "**FSQM-009** CAPA Program (issued 2026-09-02), recorded on **FRM-007**"),
                 ("Built by", "`20260902000011` (format/OCR) · `20260902000012` (FRM-702 "
-                             "CAPA field) · `20260902000013` (roles + CAPA reference)"),
+                             "CAPA field) · `20260902000013` (roles + CAPA reference) · "
+                             "`20260902000014` (issue)"),
             ],
         },
     },
