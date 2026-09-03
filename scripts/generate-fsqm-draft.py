@@ -89,7 +89,7 @@ def render(meta, content):
         ("Status", meta["status"]),
         ("Revision", meta["revision"]),
         ("Effective", meta.get("effective") or "*(draft)*"),
-        ("SQF reference", "`%s`" % meta["sqf"]),
+        ("SQF reference", "`%s`" % (content.get("_sqf_reference") or meta["sqf"])),
     ]
     for k, v in meta.get("extra", []):
         rows.append((k, v))
@@ -153,6 +153,27 @@ DOCS = [
         },
     },
     {
+        "json": "sop-drafts/FSQM-019-rework-procedure.json",
+        "md":   "sop-drafts/FSQM-019-rework-procedure.md",
+        "meta": {
+            "number": "FSQM-019",
+            "title": "Rework Procedure",
+            "type": "fsqm (Food Safety Quality Manual)",
+            "category": "Food Safety Quality Manual",
+            "status": "draft — aligned, not approved, not in force",
+            "revision": "New",
+            "effective": None,
+            "sqf": "(none set — see Revision History)",
+            "extra": [
+                ("Origin", "Scanned Compass Blending hardcopy, imported 2026-06-17"),
+                ("Rework authority", "**SQF Practitioner** (site decision, 2026-09-02)"),
+                ("Detailed rework rules",
+                 "**FSQM-018** Non-Conforming Product and Equipment — not restated here"),
+                ("Built by", "`20260902000015` (rework authority + roles)"),
+            ],
+        },
+    },
+    {
         "json": "sop-drafts/FSQM-018-non-conforming-product.json",
         "md":   "sop-drafts/FSQM-018-non-conforming-product.md",
         "meta": {
@@ -160,11 +181,12 @@ DOCS = [
             "title": "Non-Conforming Product and Equipment",
             "type": "fsqm (Food Safety Quality Manual)",
             "category": "Food Safety Quality Manual",
-            "status": "draft — not approved, not in force",
+            "status": "active",
             "revision": "New",
-            "effective": None,
-            "sqf": "(none set — see Revision History)",
+            "effective": "2026-09-02",
+            "sqf": "(set at issue)",
             "extra": [
+                ("Approved by", "GJM"),
                 ("Origin", "Scanned Compass Blending hardcopy, imported 2026-06-17"),
                 ("Hold record",
                  "**FRM-702** Non-Conforming Material Hold & Tagging Record (active)"),
@@ -172,7 +194,8 @@ DOCS = [
                  "**FSQM-009** CAPA Program (issued 2026-09-02), recorded on **FRM-007**"),
                 ("Built by", "`20260902000011` (format/OCR) · `20260902000012` (FRM-702 "
                              "CAPA field) · `20260902000013` (roles + CAPA reference) · "
-                             "`20260902000014` (disposition coverage)"),
+                             "`20260902000014` (disposition coverage) · "
+                             "`20260902000016` (issue)"),
             ],
         },
     },
