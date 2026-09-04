@@ -14,7 +14,7 @@
           "id": "release_info",
           "type": "info",
           "label": "Before you start",
-          "text": "One record per batch or lot released. Nothing ships, is collected, or is transferred into off-site storage until this record is complete and signed — not afterwards.\n\nOnly the SQF Practitioner may release finished product (FSQM-020 Part 2). If any check below fails, do not release: place the batch on Hold under FSQM-018 and record it on FRM-702."
+          "text": "One record per batch or lot released. Nothing is made available for collection until this record is complete and signed — not afterwards. The customer's carrier will not wait, so this is done before it arrives.\n\nOnly the SQF Practitioner may release finished product (FSQM-020 Part 2). If any check below fails, do not release: place the batch on Hold under FSQM-018 and record it on FRM-702."
         },
         {
           "id": "product_name",
@@ -64,19 +64,6 @@
           "label": "Customer",
           "width": "third",
           "showInList": true
-        },
-        {
-          "id": "destination",
-          "type": "select",
-          "label": "Destination",
-          "width": "third",
-          "required": true,
-          "options": [
-            "Shipped from our dock",
-            "Collected by the customer",
-            "Transferred to customer-owned or third-party storage"
-          ],
-          "help": "The last option requires Section 4 to be completed as well."
         }
       ]
     },
@@ -166,36 +153,6 @@
           "type": "checkbox",
           "label": "Product is supplied in bulk or unlabeled — safe-use information provided to the customer with the consignment",
           "width": "full"
-        }
-      ]
-    },
-    {
-      "id": "offsite_storage",
-      "title": "4. Transfer to off-site storage",
-      "fields": [
-        {
-          "id": "offsite_info",
-          "type": "info",
-          "label": "Only where the destination is off-site storage",
-          "text": "Release happens before transfer, never after arrival. Stock held outside our control could otherwise be drawn down before it was released. Leave this section blank for product shipped from our dock or collected by the customer."
-        },
-        {
-          "id": "storage_location",
-          "type": "text",
-          "label": "Storage location",
-          "width": "half"
-        },
-        {
-          "id": "requirement_communicated",
-          "type": "checkbox",
-          "label": "This location holds our written instruction that only released product may be drawn from the stock",
-          "width": "full"
-        },
-        {
-          "id": "instruction_date",
-          "type": "date",
-          "label": "Date that instruction was last issued or reconfirmed",
-          "width": "third"
         }
       ]
     },
