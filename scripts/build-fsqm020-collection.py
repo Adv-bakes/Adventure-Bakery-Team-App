@@ -30,8 +30,21 @@ for f in (OUT20, OUT701):
         raise SystemExit("%s already exists - refusing to overwrite an applied migration." % f)
 
 def dollar(v, tag):
-    s = v if isinstance(v, str) else json.dumps(v, ensure_ascii=False)
-    assert tag not in s
+    """Dollar-quote a value as JSON for a `::jsonb` cast.
+
+    ALWAYS json.dumps, including for strings. An earlier version here passed str through
+    unchanged, on the theory that a caller might hand it pre-serialized JSON. The list and
+    dict payloads were unaffected, so the migration looked right - but `responsibility` and
+    `revision_history` are plain strings, and they came out as bare prose cast to ::jsonb:
+
+        '{responsibility}', $r20$SQF Practitioner — the only person who...$r20$::jsonb
+
+    which Postgres rejects with 'invalid input syntax for type json ... Token "SQF" is
+    invalid'. A JSON string needs its quotes. If a caller ever does hold pre-serialized
+    JSON, it should parse it first rather than this function guessing.
+    """
+    s = json.dumps(v, ensure_ascii=False)
+    assert tag not in s, "payload contains the dollar-quote tag"
     return tag + s + tag
 
 def like_check(sql, payload, absent=()):

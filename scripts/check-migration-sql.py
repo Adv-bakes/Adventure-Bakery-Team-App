@@ -1,23 +1,28 @@
 # -*- coding: utf-8 -*-
-"""Flag calls to functions that do not exist, in migrations that have not been applied yet.
+"""Static checks on migrations before they are pushed.
 
-WHY. A DO block's guards are only executed when the migration runs, so a typo in one is not
-found until `supabase db push` hits production. This session shipped two such bugs to a push
-already - a guessed numeric threshold, and an after-hash that omitted a key the update wrote -
-and a third was caught only by re-reading the generated SQL: `already_done_check(r.already_done)`,
-a function invented while writing the guard, which would have failed at apply time with
-"function already_done_check(boolean) does not exist".
+WHY. Nothing in a migration is executed until `supabase db push` runs it against production,
+so a mistake in a guard or a payload is found there rather than here. This workstream has now
+produced four: a guessed numeric threshold, an after-hash that omitted a key the update wrote,
+an invented function `already_done_check(...)`, and a dollar-quoted payload of plain prose cast
+to ::jsonb. Three of the four reached a push.
 
-WHAT IT DOES. Scans each migration for identifiers used in call position and reports any that
-are neither a known Postgres function nor a PL/pgSQL keyword. It is a spell-check, not a parser:
-it cannot prove a migration is valid, only that it does not call something obviously invented.
+TWO CHECKS, both aimed at that class:
 
-Exit code is non-zero if any unknown call is found.
+  functions   identifiers used in call position that are neither a known Postgres function nor
+              a PL/pgSQL keyword. A spell-check, not a parser: it cannot prove a migration is
+              valid, only that it does not call something obviously invented.
+  payloads    every $tag$...$tag$::jsonb payload must parse as JSON. The failing case looked
+              like prose in the diff because it WAS prose - a builder's helper had passed str
+              through without json.dumps, so only the string-valued keys were affected while
+              the lists and objects beside them were fine.
+
+Exit code is non-zero if either check finds anything.
 
 Usage:  python scripts/check-migration-sql.py [migration.sql ...]
         with no arguments, checks every file under supabase/migrations/
 """
-import glob, io, os, re, sys
+import glob, io, json, os, re, sys
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -72,6 +77,28 @@ def strip_noise(sql):
     sql = re.sub(r"'(?:[^']|'')*'", " ", sql)                          # string literals
     return sql
 
+# A dollar-quoted payload immediately cast to ::jsonb must actually be JSON.
+JSONB_PAYLOAD = re.compile(r"\$([a-z0-9_]+)\$(.*?)\$\1\$\s*::\s*jsonb", re.S)
+
+def check_jsonb_payloads(path):
+    """Every $tag$…$tag$::jsonb payload must parse as JSON.
+
+    This exists because of a real failed push. A builder's dollar-quote helper passed str
+    values through without json.dumps, so a plain-text section came out as bare prose cast to
+    ::jsonb and Postgres rejected it with 'Token "SQF" is invalid'. The list and dict payloads
+    in the same statement were fine, which is exactly why reading the migration did not catch
+    it - the broken one looked like prose because it was prose.
+    """
+    sql = io.open(path, encoding="utf-8").read()
+    bad = []
+    for m in JSONB_PAYLOAD.finditer(sql):
+        try:
+            json.loads(m.group(2))
+        except ValueError as e:
+            head = m.group(2).strip()[:60].replace("\n", " ")
+            bad.append((m.group(1), head, str(e).split(":")[0]))
+    return bad
+
 def check(path):
     sql = strip_noise(io.open(path, encoding="utf-8").read())
     # A DO block's body is itself dollar-quoted; keep it by only stripping tagged payloads above.
@@ -105,12 +132,16 @@ def main(argv):
     total = 0
     for f in files:
         bad = check(f)
-        if bad:
+        payloads = check_jsonb_payloads(f)
+        if bad or payloads:
             total += 1
             print("FAIL  %s" % os.path.basename(f))
             for name, n in bad:
                 print("        unknown function %r (%d call%s)" % (name, n, "" if n == 1 else "s"))
-    print("\n%d migration%s scanned, %d call something unknown."
+            for tag, head, why in payloads:
+                print("        $%s$ payload cast to ::jsonb is not JSON (%s)" % (tag, why))
+                print("          starts: %s..." % head)
+    print("\n%d migration%s scanned, %d with a problem."
           % (len(files), "" if len(files) == 1 else "s", total))
     return 1 if total else 0
 
