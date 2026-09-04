@@ -147,12 +147,6 @@
           "type": "checkbox",
           "label": "Label compliance with applicable food law confirmed (country of manufacture, and of sale where known)",
           "width": "full"
-        },
-        {
-          "id": "bulk_unlabeled",
-          "type": "checkbox",
-          "label": "Product is supplied in bulk or unlabeled — safe-use information provided to the customer with the consignment",
-          "width": "full"
         }
       ]
     },

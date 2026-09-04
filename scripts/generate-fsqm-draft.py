@@ -160,18 +160,21 @@ DOCS = [
             "title": "Product Release Program",
             "type": "fsqm (Food Safety Quality Manual)",
             "category": "Food Safety Quality Manual",
-            "status": "draft — not approved, not in force",
+            "status": "active",
             "revision": "New",
-            "effective": None,
+            "effective": "2026-09-04",
             "sqf": "2.4.7.1, 2.4.7.2, 2.4.7.3  (2.4.7 is **Mandatory**)",
             "extra": [
-                ("Record", "**FRM-701** Finished Product Release Record"),
+                ("Approved by", "GJM"),
+                ("Record", "**FRM-701** Finished Product Release Record (active)"),
                 ("Failure path",
                  "**FSQM-018** Non-Conforming Product and Equipment — a batch that fails a "
                  "release check is held, not released"),
                 ("Label approval",
                  "**SOP-2.3.2.3** Label Control — referenced, deliberately not repeated"),
-                ("Seeded by", "`20260903000001` (program) · `20260903000002` (FRM-701)"),
+                ("Built by", "`20260903000001`/`2` (seed) · `20260904000001`/`2` (collection "
+                             "model) · `20260904000003`/`4` (no bulk product) · "
+                             "`20260904000005` (issue)"),
             ],
         },
     },

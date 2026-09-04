@@ -10,14 +10,15 @@ body through a migration and re-run the script; never edit this file directly.
 | Number | `FSQM-020` |
 | Type | `fsqm (Food Safety Quality Manual)` |
 | Category | Food Safety Quality Manual |
-| Status | draft — not approved, not in force |
+| Status | active |
 | Revision | New |
-| Effective | *(draft)* |
+| Effective | 2026-09-04 |
 | SQF reference | `2.4.7.1, 2.4.7.2, 2.4.7.3  (2.4.7 is **Mandatory**)` |
-| Record | **FRM-701** Finished Product Release Record |
+| Approved by | GJM |
+| Record | **FRM-701** Finished Product Release Record (active) |
 | Failure path | **FSQM-018** Non-Conforming Product and Equipment — a batch that fails a release check is held, not released |
 | Label approval | **SOP-2.3.2.3** Label Control — referenced, deliberately not repeated |
-| Seeded by | `20260903000001` (program) · `20260903000002` (FRM-701) |
+| Built by | `20260903000001`/`2` (seed) · `20260904000001`/`2` (collection model) · `20260904000003`/`4` (no bulk product) · `20260904000005` (issue) |
 
 ---
 
@@ -80,21 +81,21 @@ Management team — is notified of any batch not released, and is responsible fo
 
   The label control system does this work: labels are approved under SOP-2.3.2.3 Label Control on FRM-601, the approved version is held on REP-602 and changes are tracked on REP-603. This program does not repeat it. The release check confirms that the label actually applied is the approved one; this Part confirms that the approved one is lawful.
 
-**7. Where product is supplied in bulk or unlabeled, the information a customer needs for its safe use — identity, allergens, lot code, date of manufacture, and storage and handling requirements — shall be provided to the customer with the consignment.**
+  All finished product leaves the site labelled and in its finished pack. The site supplies no product in bulk or unlabeled, so the requirement in the second half of SQF 2.4.7.2 — that product information be made available to inform customers or consumers of the requirements for safe use — does not arise.
 
-**8. The site does not use off-site or contract warehouses. Finished product is collected from the site by a carrier the customer arranges, and responsibility for the product passes to the customer on collection.**
+**7. The site does not use off-site or contract warehouses. Finished product is collected from the site by a carrier the customer arranges, and responsibility for the product passes to the customer on collection.**
 
   SQF 2.4.7.3 requires release requirements to be communicated to off-site or contract warehouses and verified as being followed, where such warehouses are used. They are not used here, so that requirement does not arise. This is stated rather than left silent, for the same reason Part 5 states that positive release on testing is not used: a reader should not have to work out for themselves which limbs of a clause apply to this site.
 
   What collection does change is the timing. Release has to be complete before the carrier arrives, not while it waits on the dock. Once product is loaded it has left, and a release recorded afterwards records nothing.
 
-**9. If any check fails, the batch shall not be released. It shall be placed on Hold under FSQM-018 Non-Conforming Product and Equipment, recorded on FRM-702, and dispositioned there.**
+**8. If any check fails, the batch shall not be released. It shall be placed on Hold under FSQM-018 Non-Conforming Product and Equipment, recorded on FRM-702, and dispositioned there.**
 
   A batch that fails a release check is non-conforming product. The release record ends at "not released" and the hold record takes over. A CAPA is raised under FSQM-009 where its Part 3 requires one.
 
-**10. Released product may then be made available for collection. FRM-701 shall be completed and signed before that happens, not afterwards.**
+**9. Released product may then be made available for collection. FRM-701 shall be completed and signed before that happens, not afterwards.**
 
-**11. Records are retained as set out in the Records section of this program.**
+**10. Records are retained as set out in the Records section of this program.**
 
 ## Form References
 
@@ -137,8 +138,14 @@ LABEL COMPLIANCE IS REFERENCED, NOT REPEATED. Labels are approved under SOP-2.3.
 
 ONE PERSON RELEASES. 2.4.7.1 requires release by authorised personnel, and here that is the SQF Practitioner alone. Naming a second signature that does not exist would be a control in name only.
 
-OPEN BEFORE ISSUE — two things the site must settle. Neither blocks issue; the one item that did was Part 8's written instruction, withdrawn on 2026-09-04 when the collection model was corrected:
+NO BULK OR UNLABELED PRODUCT, CONFIRMED 2026-09-04. The site was asked whether it ships any, because Part 7 required safe-use information to travel with such a consignment and a Part describing something that never happens is worse than no Part at all — it is the first thing an auditor tests and the first thing the floor learns to ignore. It ships none. Part 7 is therefore gone as a step and its clause limb is stated in prose under Part 6, with the labelling content it belongs with: all finished product leaves labelled and in its finished pack, so the second half of 2.4.7.2 does not arise. That is the same treatment Part 5 gives positive release on testing and Part 8 gives off-site storage — three limbs of 2.4.7 that do not apply here, each said so rather than left silent.
+
+ISSUED 2026-09-04, approved GJM. Status active, revision New — a first issue, not a revision, so nothing is superseded and nothing is archived. FRM-701 Finished Product Release Record is activated in the SAME TRANSACTION: this program requires a release to be recorded on it, and an active procedure requiring a record that is not available is the finding this wave exists to close.
+
+SETTLED AT ISSUE. Both questions this document carried were answered by the site on 2026-09-04. It ships no bulk or unlabeled product, so Part 7 became a scope statement under Part 6. It uses no off-site or contract warehouse — the customer collects with their own carrier — so Part 8's written instruction, the one item that genuinely blocked issue, was withdrawn. Neither answer was assumed; both were asked for and given.
+
+WHAT ISSUING ADOPTS. Three limbs of 2.4.7 are stated as not applying here: positive release on pathogen or chemical testing (Part 5), off-site and contract warehouses (Part 8), and bulk or unlabeled supply (Part 6). Issuing this document adopts those three scope statements as the site's position. Each names what would have to change first — Part 5 in terms, and the other two by describing the practice they depend on — so none of them can quietly stop being true.
+
+STILL OPEN AFTER ISSUE — one item, and it is not about this document:
 
 1. There is no documented product sampling, inspection and analysis method (SQF 2.4.4.1), and no finished product specification in the register beyond SOP-2.3.1 New Product and Specification Process. The release check reads "the customer's agreed specification" and "the product's appearance and sensory standard". Confirm where those live, because this procedure points at them and an auditor will follow the pointer.
-
-2. Part 7 requires safe-use information to travel with bulk or unlabeled product. Confirm whether the site ships any bulk or unlabeled product at all. If it does not, that Part should be removed at issue rather than describing something that never happens.
