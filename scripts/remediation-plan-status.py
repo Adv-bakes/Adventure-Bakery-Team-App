@@ -70,8 +70,25 @@ def main():
     ap.add_argument("--deliverable", required=True, help="id in column A, e.g. D-27")
     ap.add_argument("--status", required=True, help="Completed / WIP / Not started")
     ap.add_argument("--docs", help="rewrite column D, e.g. 'FSQM-020 + FRM-701 (issued …)'")
+    ap.add_argument("--set", action="append", default=[], metavar="COL=VALUE",
+                    help="rewrite any other cell on the row, repeatable, e.g. --set "
+                         "C='HACCP Plan Build'. Every column except K is mid-row, so these go "
+                         "in place. Reading the current value first and editing it is usually "
+                         "right: these cells carry the deliverable's whole description, and "
+                         "replacing one wholesale is how a detail gets dropped.")
     ap.add_argument("--no-backup", action="store_true")
     a = ap.parse_args()
+
+    sets = []
+    for pair in a.set:
+        if "=" not in pair:
+            raise SystemExit("--set wants COL=VALUE, got %r" % pair)
+        col, val = pair.split("=", 1)
+        col = col.strip().upper()
+        if not re.fullmatch(r"[A-J]", col):
+            raise SystemExit("--set column %r: use --status for K, and A is the deliverable id "
+                             "this tool looks the row up by" % col)
+        sets.append((col, val))
 
     zin = zipfile.ZipFile(a.workbook)
     parts = {i.filename: zin.read(i.filename) for i in zin.infolist()}
@@ -90,6 +107,8 @@ def main():
                          style=RL.cell_style(sheet, row, STATUS_COL), grow_height=False)
     if a.docs:
         sheet = replace_in_place(sheet, row, DOCS_COL, a.docs)
+    for col, val in sets:
+        sheet = replace_in_place(sheet, row, col, val)
 
     # Green the completed rows, with the sibling script's constants pointed at this sheet.
     RL.STATUS_COL, RL.HEADER_ROW = STATUS_COL, HEADER_ROW
@@ -111,7 +130,9 @@ def main():
     os.replace(tmp, a.workbook)
 
     print("%s -> row %d  status %r -> %r%s"
-          % (a.deliverable, row, was, a.status, "  (documents rewritten)" if a.docs else ""))
+          % (a.deliverable, row, was, a.status,
+             "  (rewrote %s)" % ", ".join(([DOCS_COL] if a.docs else []) + [c for c,_ in sets])
+             if (a.docs or sets) else ""))
     if greened:
         print("  green fill on completed row%s %s%s"
               % ("" if len(greened) == 1 else "s", ", ".join(map(str, greened)),
