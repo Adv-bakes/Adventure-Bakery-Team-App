@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Thermometer, ChevronRight, Download, FileText, Sheet as SheetIcon, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { fetchReferenceDocuments, resolveFileUrl, type Attachment } from "@/lib/training";
+import TemperatureAlertsPanel from "@/components/team/TemperatureAlertsPanel";
 import { subDays, subHours, format } from "date-fns";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Legend, ResponsiveContainer,
@@ -486,6 +487,11 @@ export default function TemperatureReport() {
           </p>
         </div>
       )}
+
+      {/* Alerts + limits (D-34). Above the summary on purpose: this is the part that says
+          what "good" means and what was done when it wasn't, which is what SQF 11.6.2.3
+          asks for. Everything below it is descriptive. */}
+      <TemperatureAlertsPanel />
 
       {/* Summary table */}
       <Card className="p-4">
