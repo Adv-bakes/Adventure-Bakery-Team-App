@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adventure Bakery - Temperature Monitoring Operations Guide</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm 12mm;
+            background-color: #ffffff;
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #8c8c8c;
+            }
+            @bottom-left {
+                content: "Adventure Bakery • Documentation";
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 8pt;
+                color: #8c8c8c;
+            }
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #2c3e50;
+            line-height: 1.5;
+            font-size: 10pt;
+        }
+
+        /* Full bleed decorative header on Page 1 using negative margins */
+        .header-banner {
+            margin: -15mm -12mm 25px -12mm;
+            padding: 25px 12mm;
+            background-color: #1e3a5f; /* Deep Navy corporate/facility theme */
+            color: #ffffff;
+        }
+
+        .header-banner h1 {
+            margin: 0;
+            font-size: 20pt;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-banner .subtitle {
+            margin: 5px 0 0 0;
+            font-size: 11pt;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 13pt;
+            color: #1e3a5f;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #e2e8f0;
+            page-break-after: avoid;
+        }
+
+        h3 {
+            font-size: 11pt;
+            color: #2c3e50;
+            margin-top: 15px;
+            margin-bottom: 6px;
+            page-break-after: avoid;
+        }
+
+        p {
+            margin: 0 0 10px 0;
+        }
+
+        .meta-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 10px 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .meta-table {
+            display: table;
+            width: 100%;
+        }
+
+        .meta-row {
+            display: table-row;
+        }
+
+        .meta-cell {
+            display: table-cell;
+            padding: 4px 8px;
+            font-size: 9pt;
+        }
+
+        .meta-label {
+            font-weight: bold;
+            color: #475569;
+        }
+
+        /* Service Config Code Block styling */
+        pre {
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 8.5pt;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f1f5f9;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+        }
+
+        th {
+            background-color: #475569;
+            color: #ffffff;
+            text-align: left;
+            font-weight: 600;
+            font-size: 9.5pt;
+            padding: 8px 10px;
+            border: 1px solid #475569;
+        }
+
+        td {
+            padding: 7px 10px;
+            border: 1px solid #e2e8f0;
+            font-size: 9pt;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        /* Cheat Sheet Region Callout */
+        .cheat-sheet-box {
+            background-color: #fffbeb; /* Light Amber tint for operational warnings */
+            border-left: 4px solid #d97706;
+            border-top: 1px solid #fef3c7;
+            border-right: 1px solid #fef3c7;
+            border-bottom: 1px solid #fef3c7;
+            padding: 12px 15px;
+            margin-top: 25px;
+            border-radius: 0 4px 4px 0;
+            page-break-inside: avoid;
+        }
+
+        .cheat-sheet-box h2 {
+            color: #92400e;
+            border-bottom: 1px solid #fde68a;
+            margin-top: 0;
+        }
+
+        .cmd-table td {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 8.5pt;
+        }
+
+        .cmd-desc {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+            font-size: 9pt !important;
+        }
+
+        ul, ol {
+            margin: 0 0 12px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 4px;
+        }
+
+        /* Critical fix callout (token expiry) */
+        .critical-box {
+            background-color: #fef2f2;
+            border-left: 4px solid #dc2626;
+            border-top: 1px solid #fecaca;
+            border-right: 1px solid #fecaca;
+            border-bottom: 1px solid #fecaca;
+            padding: 12px 15px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            page-break-inside: avoid;
+        }
+
+        .critical-box h3 {
+            color: #991b1b;
+            margin-top: 0;
+        }
+
+        .repo-table td:first-child {
+            font-weight: bold;
+            color: #475569;
+            width: 24%;
+        }
+
+        /* Alerting section callout - green, so it reads as "this is the safety net" rather
+           than as another warning box. */
+        .alert-box {
+            background-color: #f0fdf4;
+            border-left: 4px solid #16a34a;
+            border-top: 1px solid #dcfce7;
+            border-right: 1px solid #dcfce7;
+            border-bottom: 1px solid #dcfce7;
+            padding: 12px 15px;
+            margin: 12px 0;
+            border-radius: 0 4px 4px 0;
+            page-break-inside: avoid;
+        }
+
+        .alert-box h3 { color: #166534; margin-top: 0; }
+
+        .page-break { page-break-before: always; }
+
+        .note { font-size: 8.5pt; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <!-- Header Banner -->
+    <div class="header-banner">
+        <h1>Temperature Monitoring System</h1>
+        <div class="subtitle">Operations & Maintenance Documentation</div>
+    </div>
+
+    <!-- Metadata Section -->
+    <div class="meta-box">
+        <div class="meta-table">
+            <div class="meta-row">
+                <div class="meta-cell"><span class="meta-label">Facility:</span> Adventure Bakery</div>
+                <div class="meta-cell"><span class="meta-label">Host Infrastructure:</span> Hostinger VPS (srv1472620)</div>
+            </div>
+            <div class="meta-row">
+                <div class="meta-cell"><span class="meta-label">Database Backend:</span> Supabase (PostgreSQL)</div>
+                <div class="meta-cell"><span class="meta-label">Service Architecture:</span> Permanent Python MQTT Daemon</div>
+            </div>
+        </div>
+    </div>
+
+    <h2>System Overview</h2>
+    <p>This deployment establishes a permanent, secure data-collection pipeline mapping telemetry from physical YoLink wireless environment sensors directly into a central Supabase relational table. An asynchronous background process runs under systemd supervision on a dedicated Hostinger Virtual Private Server. The captured readings power the Team Portal <strong>Temperature Monitoring</strong> report (Compliance &rarr; Temperature Logs).</p>
+
+    <p>The system has <strong>two halves</strong>, and this document covers both:</p>
+    <ol>
+        <li><strong>Ingestion</strong> &mdash; the VPS daemon that receives sensor telemetry and writes it to <code>temperature_logs</code>. Everything up to the cheat sheet below.</li>
+        <li><strong>Alerting</strong> &mdash; a scheduled check that reads those rows every fifteen minutes, judges each in-service unit against a written limit, and emails somebody when a unit is out of range, has stopped reporting, or has a flat battery. See <em>Automatic Alerting &amp; Escalation</em>.</li>
+    </ol>
+    <p>Collecting readings is not the same as monitoring them. Until the alerting was added, a walk-in could sit warm &mdash; or a sensor could stop reporting entirely &mdash; and nothing would say so until somebody happened to open the report. In the first ten weeks of logging, transmission stopped three times, once for more than three days, and nobody noticed.</p>
+
+    <h2>Source Code &amp; Repository</h2>
+    <p>The logger source is version-controlled in the Adventure Bakery Team App repository. The copy running on the VPS should always match what is in git &mdash; treat git as the source of truth and deploy changes from there.</p>
+
+    <table class="repo-table">
+        <thead>
+            <tr>
+                <th style="width: 24%;">Item</th>
+                <th style="width: 76%;">Location</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>GitHub repository</td>
+                <td><code>github.com/Adv-bakes/Adventure-Bakery-Team-App</code></td>
+            </tr>
+            <tr>
+                <td>Path within repo</td>
+                <td><code>vps/yolink-logger/</code></td>
+            </tr>
+            <tr>
+                <td>Tracked files</td>
+                <td><code>main.py</code> &nbsp;&bull;&nbsp; <code>requirements.txt</code> &nbsp;&bull;&nbsp; <code>.env.example</code> &nbsp;&bull;&nbsp; <code>.gitignore</code> &nbsp;&bull;&nbsp; <code>README.md</code></td>
+            </tr>
+            <tr>
+                <td>Live copy on VPS</td>
+                <td><code>/root/yolink-logger/</code> (running under systemd)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong>Important:</strong> the real <code>.env</code> (YoLink UAID/Secret, Supabase service-role key) is <strong>never</strong> committed to git &mdash; it exists only on the VPS. The repo ships a <code>.env.example</code> listing the required variable names, and the repo <code>README.md</code> has full setup and deploy steps.</p>
+
+    <h3>Deploy an updated main.py from git to the server</h3>
+    <pre># Option A - copy the file straight up
+scp vps/yolink-logger/main.py root@srv1472620:~/yolink-logger/main.py
+ssh root@srv1472620 'sudo systemctl restart yolink-logger.service'
+
+# Option B - if the VPS folder is itself a git clone
+cd ~/yolink-logger && git pull && sudo systemctl restart yolink-logger.service</pre>
+
+    <h2>Hardware & Database Mapping</h2>
+    <p>The Python application maps arriving telemetry packets from hex-encoded physical hardware IDs to human-readable names (via <code>DEVICE_MAPPING</code> in <code>main.py</code>) before validating parameters and inserting rows. Update that dictionary when a sensor is added or replaced.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">Device Hardware ID</th>
+                <th style="width: 35%;">Mapped Room Label</th>
+                <th style="width: 30%;">Database Assignment</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>d88b4c010010b5da</code></td>
+                <td>Walk-In Refrigerator</td>
+                <td><code>public.temperature_logs</code></td>
+            </tr>
+            <tr>
+                <td><code>d88b4c010010b513</code></td>
+                <td>Walk-In Freezer</td>
+                <td><code>public.temperature_logs</code></td>
+            </tr>
+            <tr>
+                <td><code>d88b4c010010b70a</code></td>
+                <td>Bakery Floor</td>
+                <td><code>public.temperature_logs</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="critical-box">
+        <h3>The mapped room label is a join key &mdash; do not rename it casually</h3>
+        <p>Each name in <code>DEVICE_MAPPING</code> is written into <code>temperature_logs.equipment_name</code>, and the alerting matches limits to readings <strong>by that exact string</strong> (<code>temperature_limits.equipment_name</code>). There is no foreign key and no constraint tying the two together.</p>
+        <p style="margin-bottom:0;">So if you rename a unit in <code>main.py</code> &mdash; or add a sensor without adding its limits row &mdash; readings keep arriving and the report keeps drawing them, but <strong>the alerting silently stops covering that unit</strong>. Nothing errors; the run simply reports fewer units checked. <strong>Change both sides together</strong>, then confirm with the query in troubleshooting item&nbsp;F.</p>
+    </div>
+
+    <h2>Operational Architecture Deployment</h2>
+    <h3>1. Project Directory & Environment Structure</h3>
+    <pre>/root/yolink-logger/
+|-- venv/           isolated Python deps (paho-mqtt v2, supabase-py)
+|-- .env            protected credentials (NOT in git)
+`-- main.py       execution core script</pre>
+
+    <h3>2. Linux Background Daemon Integration (systemd)</h3>
+    <p>Defined at <code>/etc/systemd/system/yolink-logger.service</code>. <code>Restart=always</code> revives the process after crashes or reboots.</p>
+    <pre>[Unit]
+Description=YoLink MQTT Temperature Logger to Supabase
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/yolink-logger
+ExecStart=/root/yolink-logger/venv/bin/python main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target</pre>
+
+    <h2 class="page-break">Automatic Alerting &amp; Escalation</h2>
+    <p>Everything above gets readings into the database. This section is what turns those readings into <em>monitoring</em>: a scheduled job judges each in-service unit against a written limit and tells somebody when it fails.</p>
+
+    <h3>Components</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 32%;">Component</th>
+                <th style="width: 68%;">What it is</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>public.temperature_limits</code></td>
+                <td>One row per sensor: the limit, whether the unit is in service, how long a silence is tolerated (<code>stale_hours</code>), and who gets emailed. Edited in the app &mdash; see below.</td>
+            </tr>
+            <tr>
+                <td><code>public.temperature_alerts</code></td>
+                <td>One row per excursion, opened and closed automatically. <strong>Append-only:</strong> no client may INSERT, UPDATE or DELETE. The only writable part is the acknowledgement, through a database function.</td>
+            </tr>
+            <tr>
+                <td><code>temperature-alert</code></td>
+                <td>Supabase Edge Function holding the logic. Deploy with <code>supabase functions deploy temperature-alert</code>. Needs <code>RESEND_API_KEY</code> in the project's Edge Function secrets to send mail.</td>
+            </tr>
+            <tr>
+                <td><code>temperature-alert-check</code></td>
+                <td><code>pg_cron</code> job on <code>*/15 * * * *</code> that calls the function. Inspect with <code>select * from cron.job;</code>, history in <code>cron.job_run_details</code>.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>What raises an alert</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 22%;">Kind</th>
+                <th style="width: 78%;">Condition</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>out_of_range</code></td>
+                <td>The <strong>two most recent</strong> readings are both beyond the unit's limit. Two rather than one, so a door held open while ingredients are carried out does not page anyone. A reading exactly <em>at</em> the limit passes; beyond it fails.</td>
+            </tr>
+            <tr>
+                <td><code>no_data</code></td>
+                <td>Nothing logged for longer than the unit's <code>stale_hours</code> (default 6). <strong>This is the one that matters most.</strong> A dead sensor reads as perfect compliance, so an alert that fired only on a bad reading would have stayed silent through all three historical logging gaps.</td>
+            </tr>
+            <tr>
+                <td><code>low_battery</code></td>
+                <td>The sensor reports a low battery, or level 1 of 4 &mdash; which is how <code>no_data</code> usually begins.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="alert-box">
+        <h3>Behaviour worth knowing before you debug it</h3>
+        <ul style="margin-bottom:0;">
+            <li><strong>One open alert per unit per kind.</strong> Enforced by a partial unique index in the database rather than by the function, so a unit sitting warm for six hours produces one alert and one email &mdash; not twenty-four &mdash; and two overlapping runs cannot both open one.</li>
+            <li><strong>Unacknowledged alerts are re-sent every 24 hours</strong> until somebody responds, so one missed email does not mean a warm walk-in goes unnoticed indefinitely.</li>
+            <li><strong>A stale sensor is not also judged against its limit.</strong> Its last reading may be three days old; treating that as current would raise a second, misleading alert and send the responder to the wrong problem.</li>
+            <li><strong>Out-of-service units and the Bakery Floor raise nothing.</strong> The Bakery Floor is ambient monitoring, not a storage unit, and has no limit by design. A unit is placed out of service when it is switched off, not when it merely happens to be empty.</li>
+            <li><strong>Alerts close themselves</strong> when readings return within limits, and send a short "Resolved" email.</li>
+        </ul>
+    </div>
+
+    <h3>Configuring limits and recipients</h3>
+    <p>In the Team Portal: <strong>Compliance &rarr; Temperature Monitoring &rarr; Temperature Alerts &rarr; Limits</strong>. The editor is visible to <strong>admin and owner accounts only</strong>; staff see the limits as a read-only table, deliberately &mdash; a limit is what compliance <em>means</em>, so changing one is not a floor-level action. Each storage unit carries its own limit, staleness tolerance and recipient list.</p>
+    <p><strong>Leaving the recipient list blank falls back to every admin and owner account's email address.</strong> That default exists so alerting works from the moment it is deployed rather than after somebody remembers to fill in a column &mdash; but it tracks whoever currently holds an admin role, so it drifts: grant somebody admin next year for an unrelated reason and they begin receiving walk-in temperature alerts. <strong>Set recipients explicitly per unit</strong> once the system is in routine use.</p>
+    <p class="note">Testing tip: before deliberately tripping an alert, pin the unit's recipients to a single address &mdash; and leave the pin in place until the alert has <em>cleared</em>. The resolution email uses whatever the list says at the moment it closes, not what it said when it opened.</p>
+
+    <h3>Responding to an alert</h3>
+    <p>Open the alert on the Temperature Monitoring page and <strong>acknowledge it with what you found and what you did</strong>. That sentence is the corrective-action record; it is written once and <strong>cannot be edited afterwards</strong>, so record the actual time and the probe reading. An alert nobody acknowledged is only a notification &mdash; the acknowledgement is what makes it evidence.</p>
+    <p>The procedure governing the response, the limits and the monthly review is <strong>SOP-401 Temperature-Controlled Storage</strong>, recorded on <strong>FRM-401 Temperature Monitoring Review</strong>. <span class="note">(Both are drafts at the time of writing and not yet in force; this guide describes the system they will govern.)</span> Product whose safety is in doubt after an excursion is placed on Hold under <strong>FSQM-018</strong> and recorded on <strong>FRM-702</strong> &mdash; that decision belongs to the SQF Practitioner, not to whoever happens to answer the email.</p>
+
+    <!-- Quick Reference Cheat Sheet Section -->
+    <div class="cheat-sheet-box">
+        <h2>CRITICAL RESET &amp; RESTART CHEAT SHEET</h2>
+        <p>Use these operational diagnostics if readings stall in Supabase, after a server reboot, or when credentials change. <strong>Restarting the service fixes most problems</strong>, because it forces a fresh YoLink token.</p>
+
+        <table class="cmd-table">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">Linux System Action</th>
+                    <th style="width: 55%;">Terminal Command to Execute</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="cmd-desc"><strong>Restart the service</strong> (apply changes / fix lockups)</td>
+                    <td>sudo systemctl restart yolink-logger.service</td>
+                </tr>
+                <tr>
+                    <td class="cmd-desc"><strong>Check active stream status</strong> (is it green/running?)</td>
+                    <td>sudo systemctl status yolink-logger.service</td>
+                </tr>
+                <tr>
+                    <td class="cmd-desc"><strong>View live execution logs</strong> (debug packet arrivals)</td>
+                    <td>sudo journalctl -u yolink-logger.service -f</td>
+                </tr>
+                <tr>
+                    <td class="cmd-desc"><strong>Stop the daemon</strong> (perform code maintenance)</td>
+                    <td>sudo systemctl stop yolink-logger.service</td>
+                </tr>
+                <tr>
+                    <td class="cmd-desc"><strong>Reload background configs</strong> (if modifying service files)</td>
+                    <td>sudo systemctl daemon-reload</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Standard Troubleshooting Protocols</h3>
+
+        <div class="critical-box">
+            <h3>A. MQTT &ldquo;Not authorized&rdquo; / readings stop after ~2 hours</h3>
+            <p><strong>Symptom:</strong> the logs show <code>Connected to YoLink MQTT Broker with result code Not authorized</code>, and rows stop landing in <code>temperature_logs</code> &mdash; often after the service has been up for a couple of hours.</p>
+            <p><strong>Cause:</strong> a YoLink access token is valid for only <strong>2 hours (7200s)</strong> and is used as the MQTT username. If the client reconnects using the <em>same</em> cached token after it has expired, the broker rejects it as &ldquo;Not authorized&rdquo; on every retry.</p>
+            <p style="margin-bottom:0;"><strong>Fix (already in main.py):</strong> the daemon proactively fetches a <strong>fresh token and rebuilds the connection every 100 minutes</strong> (<code>TOKEN_REFRESH_SECONDS</code>), staying under the 2-hour expiry, and refuses to &ldquo;subscribe&rdquo; on a failed connection. If you see this again: first <strong>restart the service</strong> (forces a new token). If it recurs <em>immediately</em> after a restart &mdash; not hours later &mdash; the credentials are stale; re-issue them (item&nbsp;B) and update <code>.env</code>.</p>
+        </div>
+
+        <ol type="A" start="2">
+            <li><strong>YoLink Credential (UAID / Secret) Problems</strong> A token response of <code>{"state":"error","msg":"client_id not existed"}</code> means the UAID sent was blank or unrecognized. Re-issue credentials in the YoLink app: <strong>Settings &rarr; Account &rarr; Advanced Settings &rarr; User Access Credentials</strong> (re-issuing invalidates the previous pair), then update <code>YOLINK_UAID</code> and <code>YOLINK_SECRET_KEY</code> in <code>.env</code> and restart. Verify a token can be obtained (run on the VPS with the values loaded):
+                <pre>curl -s -X POST https://api.yosmart.com/open/yolink/token \
+  -d "grant_type=client_credentials&client_id=$YOLINK_UAID&client_secret=$YOLINK_SECRET_KEY"</pre>
+                A JSON body containing <code>access_token</code> = credentials good; an error body = env/credential problem. Note: <code>.env</code> is read by the <em>service</em>, not your login shell &mdash; <code>echo $YOLINK_UAID</code> in a plain terminal looks empty even when the service is configured correctly.</li>
+            <li><strong>Database Authentication Failures (401 Errors)</strong> Verify that the secret <code>service_role</code> API key remains populated inside <code>.env</code> (<code>SUPABASE_KEY</code>). The <code>anon</code> key is blocked by Row-Level-Security and will fail every insert; it is never safe to expose.</li>
+            <li><strong>Sensors Not Updating</strong> YoLink equipment transmits selectively on temperature change or on a 30–60 min heartbeat to conserve battery, so gaps are normal. Press the physical <strong>SET</strong> button on the sensor to force an instant broadcast. If one sensor is persistently silent, check its battery gauge on the Temperature Monitoring report &mdash; a low battery (level 1) can stop transmissions.
+                <br><strong>Since alerting was added:</strong> short gaps of 30&ndash;60 min remain normal and raise nothing, but a silence longer than the unit's <code>stale_hours</code> (default 6) now opens a <code>no_data</code> alert and emails the recipients. A <code>no_data</code> alert means the unit is <em>unmonitored</em>, not that it is warm &mdash; take manual probe readings until logging resumes.</li>
+            <li><strong>Verifying Raw Transmission Packets</strong> Stop the daemon and run the script by hand inside the virtualenv to watch raw JSON hit the pipeline live; restart the service when finished:
+                <pre>sudo systemctl stop yolink-logger.service
+cd /root/yolink-logger &amp;&amp; source venv/bin/activate &amp;&amp; python main.py
+# Ctrl-C when done, then:
+sudo systemctl start yolink-logger.service</pre></li>
+            <li><strong>No alert emails arriving</strong> when readings are clearly out of limits. Work down this list in order &mdash; each step tells you which half failed.
+                <pre>-- (a) did the job run at all?
+select status, start_time, return_message from cron.job_run_details d
+  join cron.job j using (jobid)
+ where j.jobname = 'temperature-alert-check'
+ order by start_time desc limit 5;
+
+-- (b) did it open an alert?
+select equipment_name, kind, opened_at, worst_value, cleared_at, notify_count
+  from public.temperature_alerts order by opened_at desc limit 5;
+
+-- (c) did it try to send, and what happened?
+select status, recipient_email, error_message, created_at
+  from public.email_send_log
+ where template_name = 'temperature-alert' order by created_at desc limit 5;
+
+-- (d) is the unit even eligible? only kind='storage' AND in_service are checked
+select equipment_name, kind, in_service, min_f, max_f, stale_hours, notify_emails
+  from public.temperature_limits order by equipment_name;</pre>
+                A row in (c) reading <code>not_configured</code> means either <code>RESEND_API_KEY</code> is missing from the Edge Function secrets, or the unit has no recipients <em>and</em> no admin/owner account has an email on file. If (d) shows the unit missing entirely, see the join-key warning under <em>Hardware &amp; Database Mapping</em>. The function's own response reports <code>checked</code> and <code>skipped</code> counts, which is the quickest way to confirm coverage.</li>
+            <li><strong>An alert is stuck open</strong> Alerts close on their own once readings are back inside the limit &mdash; confirm the unit is genuinely within range and that readings are still arriving. A <code>no_data</code> alert necessarily stays open while the sensor is silent, because a sensor that is not reporting cannot demonstrate recovery. Alerts are <strong>never</strong> closed by editing the table: it has no UPDATE policy at all, and acknowledging an alert is not the same as closing it.</li>
+        </ol>
+
+        <h3>First-Response Quick Guide</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 42%;">If you see...</th>
+                    <th style="width: 58%;">Do this first</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Report data looks stale / no recent readings</td>
+                    <td><code>systemctl status</code>, then restart the service; watch <code>journalctl -f</code></td>
+                </tr>
+                <tr>
+                    <td>Logs say &ldquo;Not authorized&rdquo;</td>
+                    <td>Restart service (new token). If instant on restart, re-issue YoLink credentials.</td>
+                </tr>
+                <tr>
+                    <td>Logs say insert / 401 / RLS error</td>
+                    <td>Check <code>SUPABASE_KEY</code> is the service-role key in <code>.env</code></td>
+                </tr>
+                <tr>
+                    <td>One sensor missing, others fine</td>
+                    <td>Press <strong>SET</strong> on that sensor; check its battery level on the report</td>
+                </tr>
+                <tr>
+                    <td>After a server reboot</td>
+                    <td>Service auto-starts (<code>Restart=always</code>); confirm with <code>systemctl status</code></td>
+                </tr>
+                <tr>
+                    <td>A <code>no_data</code> alert email arrived</td>
+                    <td>The unit is <strong>unmonitored</strong>, not necessarily warm. Probe it by hand and record the reading, then fix the sensor or the daemon</td>
+                </tr>
+                <tr>
+                    <td>An <code>out_of_range</code> alert arrived</td>
+                    <td>Check the door and airflow, probe the unit, correct the cause, then <strong>acknowledge the alert with what you did</strong> &mdash; that is the record</td>
+                </tr>
+                <tr>
+                    <td>Out of limits, but no email came</td>
+                    <td>Troubleshooting item&nbsp;F: cron ran? alert opened? <code>email_send_log</code>? unit in service?</td>
+                </tr>
+                <tr>
+                    <td>Alerts for a unit stopped entirely</td>
+                    <td>Check its <code>temperature_limits</code> row still exists and its <code>equipment_name</code> matches <code>DEVICE_MAPPING</code> exactly</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
