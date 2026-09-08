@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { createResponse } from "@/lib/formResponses";
+import { ALERT_KIND_LABEL, formatWorstValue, type TemperatureAlert } from "@/lib/temperatureAlerts";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,7 @@ type SummaryRow = { name: string; count: number; min: number | null; max: number
 function deriveFrm401Prefill(
   schema: any,
   summary: SummaryRow[],
+  alertRows: Record<string, any>[],
   monthLabel: string,
   todayStr: string,
 ): Record<string, any> {
@@ -69,6 +71,12 @@ function deriveFrm401Prefill(
       return row;
     });
   }
+
+  // Alerts raised this month, one grid row each (the objective columns only —
+  // whether the response was adequate stays the reviewer's call). A month with
+  // no alerts gets the single "No alerts raised" row the form asks for, so a
+  // quiet month reads differently from an unreviewed one.
+  prefill.alert_log = alertRows.length ? alertRows : [{ kind: "No alerts raised" }];
   return prefill;
 }
 
@@ -232,6 +240,21 @@ export default function TemperatureReport() {
       if (logErr) throw logErr;
       const monthSummary = summarize((logs ?? []) as unknown as TempRow[]);
 
+      // Alerts opened during the month, for the "Alerts raised this month" grid.
+      const { data: alertData, error: alertErr } = await supabase
+        .from("temperature_alerts" as any)
+        .select("*")
+        .gte("opened_at", startTs)
+        .lte("opened_at", endTs)
+        .order("opened_at", { ascending: true });
+      if (alertErr) throw alertErr;
+      const alertRows = ((alertData ?? []) as unknown as TemperatureAlert[]).map((a) => ({
+        unit: a.equipment_name,
+        kind: ALERT_KIND_LABEL[a.kind] ?? "",
+        opened: a.opened_at ? a.opened_at.slice(0, 10) : "",
+        worst: formatWorstValue(a),
+      }));
+
       const { data: doc, error } = await supabase
         .from("sop_documents")
         .select("id, sop_number, revision, content")
@@ -243,6 +266,7 @@ export default function TemperatureReport() {
       const prefill = deriveFrm401Prefill(
         (doc as any).content?.form_schema,
         monthSummary,
+        alertRows,
         label,
         format(new Date(), "yyyy-MM-dd"),
       );
@@ -590,7 +614,7 @@ export default function TemperatureReport() {
                   return (
                     <p className="text-xs text-muted-foreground">
                       Figures from {format(new Date(`${r.start}T00:00:00`), "MMM d")} – {format(new Date(`${r.end}T00:00:00`), "MMM d, yyyy")}
-                      {r.toDate ? " (month to date)" : ""}. Min/Max/Avg per unit are filled in; you complete the rest.
+                      {r.toDate ? " (month to date)" : ""}. Per-unit Min/Max/Avg and the month's alerts are filled in; you complete the rest.
                     </p>
                   );
                 })()}
