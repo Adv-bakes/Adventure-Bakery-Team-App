@@ -23,6 +23,8 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MIG = os.path.join(HERE, "supabase", "migrations")
 
+LF, CRLF = chr(10), chr(13) + chr(10)
+
 SOP_JSON = "sop-drafts/SOP-401-temperature-controlled-storage.json"
 FRM_JSON = "sop-drafts/FRM-401-temperature-monitoring-review.json"
 
@@ -67,8 +69,31 @@ def fill(template, **tokens):
 
 
 def write(name, sql):
+    """Write a seed migration, REFUSING to change one that already exists differently.
+
+    Both seed migrations were applied to production on 2026-09-08. Applied migrations are
+    history: a content change is a NEW migration, never an edit to an old one. But this
+    script regenerates its output from the JSON sources, so editing a document body and
+    re-running it silently rewrites an APPLIED file - the diff looks like an ordinary
+    rebuild, and the change never reaches the database, because that version row is already
+    recorded. That is not hypothetical: it happened on 2026-09-08 while the freezer wording
+    was being changed, and was caught only by noticing the byte count had moved.
+
+    scripts/build-sop401-amend.py is how a body change is delivered instead.
+    """
     path = os.path.join(MIG, name)
-    io.open(path, "w", encoding="utf-8", newline="\n").write(sql)
+    if os.path.exists(path):
+        # newline="" so the comparison is not confused by a CRLF checkout on Windows.
+        current = io.open(path, encoding="utf-8", newline="").read()
+        if current.replace(CRLF, LF) == sql:
+            print("unchanged %-54s (already applied)" % name)
+            return
+        raise SystemExit(
+            "%s already exists and WOULD CHANGE.%s"
+            "  It is an APPLIED migration - rewriting it would edit history, and the change%s"
+            "  would never reach the database. Deliver the edit as a new migration:%s"
+            "      python scripts/build-sop401-amend.py" % (name, LF, LF, LF))
+    io.open(path, "w", encoding="utf-8", newline=LF).write(sql)
     print("wrote %-58s %6d bytes" % (name, len(sql.encode("utf-8"))))
 
 

@@ -41,11 +41,38 @@ UPDATE = re.compile(r"set\s+content\s*=(.*?)\n[ \t]*where\b", re.S | re.I)
 PATH   = re.compile(r"'\{([a-z_]+)\}'")           # jsonb_set path literal
 ARRPTH = re.compile(r"array\[\s*'([a-z_]+)'")     # jsonb_insert / #> array path
 
+# One migration can guard TWO documents independently - a change that must not apply by
+# halves, e.g. a procedure and the form that records it. Each guarded document opens with its
+# own "create temporary table <x>_before", so splitting there separates the groups; without
+# this the checker pools every hash in the file and reports two correct, unrelated guards as
+# disagreeing with each other. Files with one group (or none) split into a single segment and
+# behave exactly as before.
+SEGMENT = re.compile(r"create\s+temporary\s+table", re.I)
+
+
+def segments(sql):
+    marks = [m.start() for m in SEGMENT.finditer(sql)]
+    if len(marks) < 2:
+        return [sql]
+    return [sql[a:b] for a, b in zip(marks, marks[1:] + [len(sql)])]
+
+
 def check(path):
     sql = io.open(path, encoding="utf-8").read()
-    hashes = [frozenset(KEY.findall(m.group(1))) for m in HASH.finditer(sql)]
-    if len(hashes) < 2:
+    if not HASH.search(sql):
         return None                      # not this pattern
+    problems = []
+    groups = 0
+    for seg in segments(sql):
+        if len(HASH.findall(seg)) < 2:
+            continue
+        groups += 1
+        problems += check_segment(seg)
+    return problems if groups else None
+
+
+def check_segment(sql):
+    hashes = [frozenset(KEY.findall(m.group(1))) for m in HASH.finditer(sql)]
     written = set()
     for m in UPDATE.finditer(sql):
         written |= set(PATH.findall(m.group(1)))
