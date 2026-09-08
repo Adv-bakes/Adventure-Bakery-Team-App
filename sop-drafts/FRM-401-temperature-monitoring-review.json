@@ -35,7 +35,6 @@
         }
       ]
     },
-
     {
       "id": "limits_ref",
       "title": "Limits this review is judged against",
@@ -44,16 +43,35 @@
           "id": "limits_table",
           "type": "reference_table",
           "label": "Unit limits (SOP-401 Part 2)",
-          "columns": ["Unit", "Sensor", "Limit", "Notes"],
+          "columns": [
+            "Unit",
+            "Sensor",
+            "Limit",
+            "Notes"
+          ],
           "rows": [
-            ["Walk-In Refrigerator", "d88b4c010010b5da", "At or below 41 °F", "TCS ingredients — butter, liquid eggs"],
-            ["Walk-In Freezer", "d88b4c010010b513", "At or below 10 °F", "Only while in service. See SOP-401 Part 7"],
-            ["Bakery Floor", "d88b4c010010b70a", "No limit", "Ambient production area, not a storage unit"]
+            [
+              "Walk-In Refrigerator",
+              "d88b4c010010b5da",
+              "At or below 41 °F",
+              "TCS ingredients — butter, liquid eggs"
+            ],
+            [
+              "Walk-In Freezer",
+              "d88b4c010010b513",
+              "At or below 10 °F",
+              "Only while in service. See SOP-401 Part 7"
+            ],
+            [
+              "Bakery Floor",
+              "d88b4c010010b70a",
+              "No limit",
+              "Ambient production area, not a storage unit"
+            ]
           ]
         }
       ]
     },
-
     {
       "id": "unit_month",
       "title": "The month, by unit",
@@ -67,11 +85,21 @@
             "mode": "fixed",
             "labelHeader": "Unit",
             "deletable": true,
-            "labels": ["Walk-In Refrigerator", "Walk-In Freezer", "Bakery Floor"],
+            "labels": [
+              "Walk-In Refrigerator",
+              "Walk-In Freezer",
+              "Bakery Floor"
+            ],
             "defaultValues": [
-              { "state": "In service" },
-              { "state": "Out of service" },
-              { "state": "Not a storage unit" }
+              {
+                "state": "In service"
+              },
+              {
+                "state": "In service"
+              },
+              {
+                "state": "Not a storage unit"
+              }
             ]
           },
           "columns": [
@@ -81,11 +109,31 @@
               "label": "State this month",
               "width": 2,
               "required": true,
-              "options": ["In service", "Out of service", "Not a storage unit", "Changed during the month"]
+              "options": [
+                "In service",
+                "Out of service",
+                "Not a storage unit",
+                "Changed during the month"
+              ]
             },
-            { "id": "min_f", "type": "text", "label": "Min °F", "width": 1 },
-            { "id": "max_f", "type": "text", "label": "Max °F", "width": 1 },
-            { "id": "avg_f", "type": "text", "label": "Avg °F", "width": 1 },
+            {
+              "id": "min_f",
+              "type": "text",
+              "label": "Min °F",
+              "width": 1
+            },
+            {
+              "id": "max_f",
+              "type": "text",
+              "label": "Max °F",
+              "width": 1
+            },
+            {
+              "id": "avg_f",
+              "type": "text",
+              "label": "Avg °F",
+              "width": 1
+            },
             {
               "id": "held_limit",
               "type": "pass_fail",
@@ -103,7 +151,6 @@
         }
       ]
     },
-
     {
       "id": "alerts",
       "title": "Alerts raised this month",
@@ -118,18 +165,41 @@
           "id": "alert_log",
           "type": "grid",
           "label": "Alerts",
-          "rows": { "mode": "dynamic", "addLabel": "Add alert" },
+          "rows": {
+            "mode": "dynamic",
+            "addLabel": "Add alert"
+          },
           "columns": [
-            { "id": "unit", "type": "text", "label": "Unit", "width": 2 },
+            {
+              "id": "unit",
+              "type": "text",
+              "label": "Unit",
+              "width": 2
+            },
             {
               "id": "kind",
               "type": "select",
               "label": "Alert",
               "width": 2,
-              "options": ["Out of range", "No data", "Low battery", "No alerts raised"]
+              "options": [
+                "Out of range",
+                "No data",
+                "Low battery",
+                "No alerts raised"
+              ]
             },
-            { "id": "opened", "type": "date", "label": "Opened", "width": 2 },
-            { "id": "worst", "type": "text", "label": "Worst reading", "width": 1 },
+            {
+              "id": "opened",
+              "type": "date",
+              "label": "Opened",
+              "width": 2
+            },
+            {
+              "id": "worst",
+              "type": "text",
+              "label": "Worst reading",
+              "width": 1
+            },
             {
               "id": "acknowledged",
               "type": "pass_fail",
@@ -153,7 +223,6 @@
         }
       ]
     },
-
     {
       "id": "accuracy",
       "title": "Device accuracy check",
@@ -172,20 +241,52 @@
             "mode": "fixed",
             "labelHeader": "Unit",
             "deletable": true,
-            "labels": ["Walk-In Refrigerator", "Walk-In Freezer"]
+            "labels": [
+              "Walk-In Refrigerator",
+              "Walk-In Freezer"
+            ]
           },
           "columns": [
-            { "id": "checked_on", "type": "date", "label": "Checked", "width": 2 },
-            { "id": "sensor_f", "type": "text", "label": "Sensor °F", "width": 1 },
-            { "id": "probe_f", "type": "text", "label": "Probe °F", "width": 1 },
-            { "id": "difference", "type": "text", "label": "Difference °F", "width": 1 },
-            { "id": "within_tolerance", "type": "pass_fail", "label": "Within ±2 °F", "width": 1 },
-            { "id": "action", "type": "text", "label": "Action if outside tolerance", "width": 3 }
+            {
+              "id": "checked_on",
+              "type": "date",
+              "label": "Checked",
+              "width": 2
+            },
+            {
+              "id": "sensor_f",
+              "type": "text",
+              "label": "Sensor °F",
+              "width": 1
+            },
+            {
+              "id": "probe_f",
+              "type": "text",
+              "label": "Probe °F",
+              "width": 1
+            },
+            {
+              "id": "difference",
+              "type": "text",
+              "label": "Difference °F",
+              "width": 1
+            },
+            {
+              "id": "within_tolerance",
+              "type": "pass_fail",
+              "label": "Within ±2 °F",
+              "width": 1
+            },
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Action if outside tolerance",
+              "width": 3
+            }
           ]
         }
       ]
     },
-
     {
       "id": "manual_state",
       "title": "Manual readings and changes of state",
@@ -195,13 +296,41 @@
           "type": "grid",
           "label": "Manual readings taken while a sensor was down (SOP-401 Part 5)",
           "help": "Start and end of each production day, for each affected in-service unit. Leave empty if no sensor was down this month.",
-          "rows": { "mode": "dynamic", "addLabel": "Add reading" },
+          "rows": {
+            "mode": "dynamic",
+            "addLabel": "Add reading"
+          },
           "columns": [
-            { "id": "taken_at", "type": "datetime", "label": "Date & time", "width": 2 },
-            { "id": "unit", "type": "text", "label": "Unit", "width": 2 },
-            { "id": "reading_f", "type": "text", "label": "Reading °F", "width": 1 },
-            { "id": "within_limit", "type": "pass_fail", "label": "Within limit", "width": 1 },
-            { "id": "taken_by", "type": "text", "label": "Taken by", "width": 2 }
+            {
+              "id": "taken_at",
+              "type": "datetime",
+              "label": "Date & time",
+              "width": 2
+            },
+            {
+              "id": "unit",
+              "type": "text",
+              "label": "Unit",
+              "width": 2
+            },
+            {
+              "id": "reading_f",
+              "type": "text",
+              "label": "Reading °F",
+              "width": 1
+            },
+            {
+              "id": "within_limit",
+              "type": "pass_fail",
+              "label": "Within limit",
+              "width": 1
+            },
+            {
+              "id": "taken_by",
+              "type": "text",
+              "label": "Taken by",
+              "width": 2
+            }
           ]
         },
         {
@@ -209,30 +338,55 @@
           "type": "grid",
           "label": "Units placed in or out of service this month (SOP-401 Part 7)",
           "help": "Leave empty if nothing changed. A return to service needs the 24-hour hold at limit recorded before food went in.",
-          "rows": { "mode": "dynamic", "addLabel": "Add change of state" },
+          "rows": {
+            "mode": "dynamic",
+            "addLabel": "Add change of state"
+          },
           "columns": [
-            { "id": "unit", "type": "text", "label": "Unit", "width": 2 },
+            {
+              "id": "unit",
+              "type": "text",
+              "label": "Unit",
+              "width": 2
+            },
             {
               "id": "change",
               "type": "select",
               "label": "Change",
               "width": 2,
-              "options": ["Placed out of service", "Returned to service"]
+              "options": [
+                "Placed out of service",
+                "Returned to service"
+              ]
             },
-            { "id": "changed_on", "type": "date", "label": "Date", "width": 2 },
-            { "id": "reason", "type": "text", "label": "Reason", "width": 3 },
+            {
+              "id": "changed_on",
+              "type": "date",
+              "label": "Date",
+              "width": 2
+            },
+            {
+              "id": "reason",
+              "type": "text",
+              "label": "Reason",
+              "width": 3
+            },
             {
               "id": "return_conditions",
               "type": "pass_fail",
               "label": "Return conditions met (clean, inspected, reporting, 24 h at limit)",
               "width": 2
             },
-            { "id": "food_placed_on", "type": "date", "label": "Food first placed in unit", "width": 2 }
+            {
+              "id": "food_placed_on",
+              "type": "date",
+              "label": "Food first placed in unit",
+              "width": 2
+            }
           ]
         }
       ]
     },
-
     {
       "id": "conclusion",
       "title": "Conclusion and signature",

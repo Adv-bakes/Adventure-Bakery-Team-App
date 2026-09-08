@@ -18,7 +18,8 @@ body through a migration and re-run the script; never edit this file directly.
 | Monitoring | The Team App checks every in-service unit every 15 minutes and records the response — built first, in `20260908000001`/`2` |
 | Excursion path | **FSQM-018** Non-Conforming Product and Equipment on **FRM-702**; CAPA under **FSQM-009** |
 | Unit condition | **FRM-913**'s existing `11.6.2 Cold Storage` line — reused rather than duplicated |
-| Built by | `20260908000003` (seed) · `20260908000004` (FRM-401) |
+| Freezer | In service while it is **running** — out of service turns on being switched off, not on being empty (site decision 2026-09-08) |
+| Built by | `20260908000003` (seed) · `20260908000004` (FRM-401) · `20260908000005` (freezer in service while running) |
 
 ---
 
@@ -61,7 +62,7 @@ Management team — provides the resources to repair or replace a unit that cann
   The site has three temperature sensors. Two are in storage units that are judged against a limit; the third monitors the production area and is not a storage unit.
 
   - Walk-In Refrigerator (sensor d88b4c010010b5da) — holds butter, liquid eggs and other refrigerated ingredients. In service.
-  - Walk-In Freezer (sensor d88b4c010010b513) — out of service. It holds no product and may be switched off. See Part 7 before any food is placed in it.
+  - Walk-In Freezer (sensor d88b4c010010b513) — in service and monitored. It currently holds no product, but it is running and holding a temperature, so it is judged against its limit. It is placed out of service when it is switched off, not when it happens to be empty.
   - Bakery Floor (sensor d88b4c010010b70a) — ambient monitoring of the production area. It is not a storage unit, no temperature limit applies to it, and it raises no alert.
 
   The current state of every unit, its limit and who its alerts go to are held in the Team App under Compliance → Temperature Monitoring. That page is the controlled record of those settings; this procedure states them so that a reader on paper knows what they should be.
@@ -125,7 +126,7 @@ Management team — provides the resources to repair or replace a unit that cann
 
 **7. Out of service, and return to service**
 
-  A storage unit that holds no food may be placed out of service so that it is not alerted on, and may then be switched off. This is a recorded decision, not simply switching a unit off.
+  A storage unit is placed out of service when it holds no food AND has been switched off. A unit that is still running stays in service and is judged against its limit whether or not there is product in it that day: it is holding a temperature, and a failure to hold it is worth knowing about before product goes back in. Placing a unit out of service is a recorded decision, not simply switching it off.
 
   - Only the SQF Practitioner places a unit in or out of service, in the Team App, recording the reason.
   - While a unit is out of service its readings are not judged against its limit and no alert is raised for it.
@@ -178,7 +179,7 @@ WHY THE MONTHLY REVIEW IS MONTHLY. Once the system watches continuously, the hum
 
 WHY 41 °F. The refrigerator has never exceeded 41 °F in the logged history and reached exactly 41 only once. A tighter limit would ship already breached, and a limit that fails on an ordinary day teaches staff to ignore alerts.
 
-OUT OF SERVICE IS A STATE, NOT A GAP. The freezer holds no product since the vegan burger line was discontinued and may be switched off. Rather than leaving it silently unmonitored or alerting on an empty unit, Part 7 makes it a recorded decision with stated conditions for coming back — including holding at limit for twenty-four hours before food goes in. The procedure survives that decision going either way.
+OUT OF SERVICE TURNS ON BEING SWITCHED OFF, NOT ON BEING EMPTY (site decision, 2026-09-08). The freezer has held no product since the vegan burger line was discontinued, but it is still running, so it stays in service and is judged against its limit. A running unit that fails to hold its temperature is worth knowing about whether or not there is product in it that day, and an empty unit is the cheapest possible time to discover the unit is failing. It will be placed out of service when it is actually switched off. Part 7 makes that a recorded decision with stated conditions for coming back — including holding at limit for twenty-four hours before food goes in.
 
 CONDITION AND DRAINAGE REUSE AN EXISTING RECORD. 11.6.2.1, .2 and .4 are one-time confirmations plus ongoing re-inspection, and FRM-913 already inspects facility condition monthly under an 11.6.2 Cold Storage line. Part 8 uses it rather than creating a second inspection, so a defect in a walk-in is found and closed the same way as a defect anywhere else in the plant.
 
@@ -194,7 +195,7 @@ OPEN BEFORE ISSUE — seven things that must be done on the floor before this pr
 
 5. Obtain the YoLink sensor's stated accuracy and the probe thermometer's make and accuracy. Part 6's ±2 °F tolerance is written to be reasonable but has not been checked against either device's specification; confirm it, and change it if the devices cannot support it.
 
-6. Confirm the freezer's intended state and the date the vegan burger line was discontinued. That date is also owed to the D-35 scope determination and to four shelf-life records that still read "Frozen, 18 months".
+6. Establish the date the vegan burger line was discontinued. It is owed to the D-35 scope determination and to four shelf-life records that still read "Frozen, 18 months". The freezer's service state is no longer open: it was settled on 2026-09-08 — it stays in service while it is running.
 
 7. Establish what caused the three logging gaps, so that Part 5 addresses the real failure mode rather than assuming a flat battery.
 

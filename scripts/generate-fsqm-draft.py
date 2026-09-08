@@ -248,7 +248,11 @@ DOCS = [
                 ("Unit condition",
                  "**FRM-913**'s existing `11.6.2 Cold Storage` line — reused rather than "
                  "duplicated"),
-                ("Built by", "`20260908000003` (seed) · `20260908000004` (FRM-401)"),
+                ("Freezer",
+                 "In service while it is **running** — out of service turns on being switched "
+                 "off, not on being empty (site decision 2026-09-08)"),
+                ("Built by", "`20260908000003` (seed) · `20260908000004` (FRM-401) · "
+                             "`20260908000005` (freezer in service while running)"),
             ],
         },
     },
