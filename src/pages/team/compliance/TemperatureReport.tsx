@@ -253,6 +253,12 @@ export default function TemperatureReport() {
         kind: ALERT_KIND_LABEL[a.kind] ?? "",
         opened: a.opened_at ? a.opened_at.slice(0, 10) : "",
         worst: formatWorstValue(a),
+        // The system recorded an acknowledgement, so mark it acknowledged (a
+        // fact) and carry the recorded action — which usually states the product
+        // disposition — into that column. Whether the action was *appropriate*
+        // stays the reviewer's call (action_adequate left blank).
+        acknowledged: a.acknowledged_at ? "pass" : "",
+        product_affected: a.action_taken ?? "",
       }));
 
       const { data: doc, error } = await supabase
