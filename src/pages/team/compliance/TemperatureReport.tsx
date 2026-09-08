@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
+import { createResponse } from "@/lib/formResponses";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Thermometer, ChevronRight, Download, FileText, Sheet as SheetIcon, AlertTriangle } from "lucide-react";
+import { Thermometer, ChevronRight, Download, FileText, Sheet as SheetIcon, AlertTriangle, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import { fetchReferenceDocuments, resolveFileUrl, type Attachment } from "@/lib/training";
 import TemperatureAlertsPanel from "@/components/team/TemperatureAlertsPanel";
@@ -24,6 +27,49 @@ import type { TDocumentDefinitions } from "pdfmake/interfaces";
 (pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs ?? (pdfFonts as any).vfs ?? (pdfFonts as any).default?.pdfMake?.vfs;
 
 const GOLD = "#C89B3C";
+
+type SummaryRow = { name: string; count: number; min: number | null; max: number | null; avg: number | null };
+
+// Build the FRM-401 (monthly temperature review) prefill from the page's own
+// per-unit summary: the objective figures a reviewer would otherwise copy by
+// hand — month, date, and each unit's Min/Max/Avg °F. Everything that is a
+// judgement or needs off-system evidence (held-limit pass/fail, logging gaps,
+// the alert log, the probe accuracy check, findings, signature) is left blank.
+// Unit rows are read from the form's own grid definition so they stay in sync
+// with the schema, matched to a summary row by unit name (== equipment_name).
+function deriveFrm401Prefill(
+  schema: any,
+  summary: SummaryRow[],
+  monthLabel: string,
+  todayStr: string,
+): Record<string, any> {
+  const fmt1 = (n: number | null) => (n == null ? "" : n.toFixed(1));
+  const byName = new Map(summary.map((s) => [s.name, s]));
+
+  let grid: any = null;
+  for (const sec of schema?.sections ?? []) {
+    for (const f of sec.fields ?? []) if (f.id === "unit_summary") grid = f;
+  }
+
+  const prefill: Record<string, any> = { review_month: monthLabel, review_date: todayStr };
+  if (grid?.rows?.mode === "fixed") {
+    const { labels = [], defaultValues, deletable } = grid.rows;
+    prefill.unit_summary = labels.map((label: string, i: number) => {
+      const row: Record<string, any> = {
+        ...(deletable ? { _label: label } : {}),
+        ...(defaultValues?.[i] ?? {}),
+      };
+      const s = byName.get(label);
+      if (s && s.count) {
+        row.min_f = fmt1(s.min);
+        row.max_f = fmt1(s.max);
+        row.avg_f = fmt1(s.avg);
+      }
+      return row;
+    });
+  }
+  return prefill;
+}
 
 type TempRow = {
   id: number;
@@ -106,12 +152,48 @@ export default function TemperatureReport() {
   const [loading, setLoading] = useState(false);
   const [drilldown, setDrilldown] = useState<string | null>(null);
   const [guide, setGuide] = useState<Attachment | null>(null);
+  const [startingReview, setStartingReview] = useState(false);
+
+  const navigate = useNavigate();
+  const { hasRole } = useUserRole();
+  // Auditors can read this page but must not fill forms.
+  const canFill = hasRole("staff") || hasRole("admin") || hasRole("owner");
 
   // When the period tab changes, reset the date inputs to that period's default window.
   function changePeriod(p: Period) {
     setPeriod(p);
     setStart(toDateInput(PERIOD_CONFIG[p].rangeStart()));
     setEnd(toDateInput(new Date()));
+  }
+
+  // Open a new FRM-401 monthly review, prefilled with the figures derived from
+  // the currently-selected range, then jump to the entry editor.
+  async function startFrm401Review() {
+    setStartingReview(true);
+    try {
+      const { data: doc, error } = await supabase
+        .from("sop_documents")
+        .select("id, sop_number, revision, content")
+        .eq("sop_number", "FRM-401")
+        .maybeSingle();
+      if (error) throw error;
+      if (!doc) throw new Error("FRM-401 (Temperature Monitoring Review) form not found.");
+
+      // "Month reviewed" from the end of the selected range (parsed as local, not UTC).
+      const monthLabel = end ? format(new Date(`${end}T00:00:00`), "MMMM yyyy") : "";
+      const prefill = deriveFrm401Prefill(
+        (doc as any).content?.form_schema,
+        summary,
+        monthLabel,
+        format(new Date(), "yyyy-MM-dd"),
+      );
+      const resp = await createResponse(doc as any, prefill);
+      navigate(`/team/compliance/forms/${(doc as any).id}/entries/${resp.id}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Couldn't start the review");
+    } finally {
+      setStartingReview(false);
+    }
   }
 
   useEffect(() => {
@@ -448,6 +530,17 @@ export default function TemperatureReport() {
             <Label className="text-xs text-muted-foreground">To</Label>
             <Input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} />
           </div>
+          {canFill && (
+            <Button
+              onClick={startFrm401Review}
+              disabled={startingReview}
+              className="bg-[#C89B3C] hover:bg-[#B8892C] text-black"
+              title="Start a monthly FRM-401 review, prefilled from the selected range"
+            >
+              <ClipboardCheck className="h-4 w-4 mr-2" />
+              {startingReview ? "Starting…" : "Start FRM-401 Review"}
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" disabled={rows.length === 0}>
