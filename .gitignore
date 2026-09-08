@@ -55,3 +55,7 @@ __pycache__/
 # .json form schemas — stay tracked; only the rendered output is ignored.
 sop-drafts/*.docx
 sop-drafts/*.pdf
+# Exception: the YoLink/temperature Operations & Maintenance guide is a delivered
+# reference doc (surfaced in the Temperature report), not a locally-regenerated
+# render, so both its HTML source and PDF are tracked.
+!sop-drafts/yolink_operations_guide.pdf
