@@ -125,7 +125,7 @@ begin
   select count(*) into n
     from public.sop_documents
    where sop_number = 'FRM-401'
-     and content -> 'form_schema' :: text like '%Out of service%';
+     and (content -> 'form_schema')::text like '%Out of service%';
   if n <> 1 then
     raise exception 'FRM-401 does not carry the old freezer default; found % row(s).', n;
   end if;
@@ -228,7 +228,7 @@ begin
 
   select count(*) into n from public.sop_documents
    where sop_number = 'FRM-401'
-     and content -> 'form_schema' :: text like '%Out of service%';
+     and (content -> 'form_schema')::text like '%Out of service%';
   if n <> 0 then
     raise exception 'FRM-401 still defaults the freezer to Out of service.';
   end if;

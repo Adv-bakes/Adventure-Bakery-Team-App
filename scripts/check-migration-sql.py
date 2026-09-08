@@ -80,6 +80,29 @@ def strip_noise(sql):
 # A dollar-quoted payload immediately cast to ::jsonb must actually be JSON.
 JSONB_PAYLOAD = re.compile(r"\$([a-z0-9_]+)\$(.*?)\$\1\$\s*::\s*jsonb", re.S)
 
+# `content -> 'k' :: text` parses as `content -> ('k'::text)`, because :: binds TIGHTER than
+# ->. The result is still jsonb, so the next operator sees jsonb where text was intended and
+# Postgres rejects it - "operator does not exist: jsonb ~~ unknown" for a LIKE. The author
+# meant `(content -> 'k')::text`, and the spacing makes it read that way.
+#
+# This cost a push on 2026-09-08: two before/after guards compared a form_schema against
+# '%Out of service%' and the migration died on statement 1. Nothing was applied - it is inside
+# the transaction - but the round trip to production is the expensive part.
+#
+# ->> is NOT flagged: `content ->> 'k' :: text` is a pointless cast of an already-text result,
+# not a type error. Only -> is.
+ARROW_CAST = re.compile(r"(?<!>)->\s*'[^']+'\s*::\s*(text|varchar|char)\b", re.I)
+
+
+def check_arrow_casts(path):
+    """Find `-> 'key' :: text` that is missing the parentheses it needs."""
+    out = []
+    for n, line in enumerate(io.open(path, encoding="utf-8"), 1):
+        stripped = re.sub(r"--.*$", "", line)
+        for m in ARROW_CAST.finditer(stripped):
+            out.append((n, m.group(0).strip()))
+    return out
+
 def check_jsonb_payloads(path):
     """Every $tag$…$tag$::jsonb payload must parse as JSON.
 
@@ -133,7 +156,8 @@ def main(argv):
     for f in files:
         bad = check(f)
         payloads = check_jsonb_payloads(f)
-        if bad or payloads:
+        arrows = check_arrow_casts(f)
+        if bad or payloads or arrows:
             total += 1
             print("FAIL  %s" % os.path.basename(f))
             for name, n in bad:
@@ -141,6 +165,10 @@ def main(argv):
             for tag, head, why in payloads:
                 print("        $%s$ payload cast to ::jsonb is not JSON (%s)" % (tag, why))
                 print("          starts: %s..." % head)
+            for line_no, snippet in arrows:
+                print("        line %d: %s" % (line_no, snippet))
+                print("          :: binds tighter than ->, so this casts the KEY and stays jsonb.")
+                print("          Write (content -> 'key')::text instead.")
     print("\n%d migration%s scanned, %d with a problem."
           % (len(files), "" if len(files) == 1 else "s", total))
     return 1 if total else 0
