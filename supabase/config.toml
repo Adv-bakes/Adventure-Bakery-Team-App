@@ -19,3 +19,9 @@ verify_jwt = true
 # validates it before touching anything.
 [functions.accept-invitation]
 verify_jwt = false
+
+# Runs from pg_cron every 15 minutes, which posts a service-role bearer token, so the
+# default JWT check is correct here and is stated rather than assumed: this function opens
+# alerts and sends mail, and must never be callable anonymously.
+[functions.temperature-alert]
+verify_jwt = true

@@ -225,6 +225,33 @@ DOCS = [
             ],
         },
     },
+    {
+        "json": "sop-drafts/SOP-401-temperature-controlled-storage.json",
+        "md":   "sop-drafts/SOP-401-temperature-controlled-storage.md",
+        "meta": {
+            "number": "SOP-401",
+            "title": "Temperature-Controlled Storage",
+            "type": "sop",
+            "category": "Storage & Inventory",
+            "status": "draft — seven OPEN BEFORE ISSUE items, not approved, not in force",
+            "revision": "New",
+            "effective": None,
+            "sqf": "11.6.2.1, 11.6.2.2, 11.6.2.3, 11.6.2.4, 2.5.2.1",
+            "extra": [
+                ("Record", "**FRM-401** Temperature Monitoring Review (draft)"),
+                ("Monitoring",
+                 "The Team App checks every in-service unit every 15 minutes and records the "
+                 "response — built first, in `20260908000001`/`2`"),
+                ("Excursion path",
+                 "**FSQM-018** Non-Conforming Product and Equipment on **FRM-702**; CAPA under "
+                 "**FSQM-009**"),
+                ("Unit condition",
+                 "**FRM-913**'s existing `11.6.2 Cold Storage` line — reused rather than "
+                 "duplicated"),
+                ("Built by", "`20260908000003` (seed) · `20260908000004` (FRM-401)"),
+            ],
+        },
+    },
 ]
 
 
