@@ -122,12 +122,24 @@ begin
     raise exception 'Expected exactly 1 procedure line with the old freezer wording, found %.', n;
   end if;
 
+  -- The freezer's OWN default, located by its position in the grid's labels rather than by a
+  -- hardcoded index. NOT a substring search over the whole schema: "Out of service" also
+  -- appears as a selectable OPTION in that dropdown and must stay there - the review has to be
+  -- able to record a unit as out of service. An earlier version of this guard asserted the
+  -- string was absent from the document entirely, which could only ever be true of a form that
+  -- cannot record the state at all.
   select count(*) into n
-    from public.sop_documents
-   where sop_number = 'FRM-401'
-     and (content -> 'form_schema')::text like '%Out of service%';
+    from public.sop_documents d,
+         jsonb_array_elements(d.content -> 'form_schema' -> 'sections') s,
+         jsonb_array_elements(s -> 'fields') f,
+         jsonb_array_elements_text(coalesce(f -> 'rows' -> 'labels', '[]'::jsonb))
+           with ordinality as lab(label, idx)
+   where d.sop_number = 'FRM-401'
+     and f ->> 'id' = 'unit_summary'
+     and lab.label = 'Walk-In Freezer'
+     and (f -> 'rows' -> 'defaultValues' -> (lab.idx::int - 1) ->> 'state') = 'Out of service';
   if n <> 1 then
-    raise exception 'FRM-401 does not carry the old freezer default; found % row(s).', n;
+    raise exception 'FRM-401 freezer default is not "Out of service" (matched % row(s)); it may already be amended.', n;
   end if;
 end $$;
 
@@ -226,11 +238,35 @@ begin
       n_sections, n_fields;
   end if;
 
-  select count(*) into n from public.sop_documents
-   where sop_number = 'FRM-401'
-     and (content -> 'form_schema')::text like '%Out of service%';
-  if n <> 0 then
-    raise exception 'FRM-401 still defaults the freezer to Out of service.';
+  -- Same precise path as the before-guard: the freezer's own default must now read In service.
+  -- "Out of service" remains elsewhere in the schema as a dropdown OPTION, deliberately.
+  select count(*) into n
+    from public.sop_documents d,
+         jsonb_array_elements(d.content -> 'form_schema' -> 'sections') s,
+         jsonb_array_elements(s -> 'fields') f,
+         jsonb_array_elements_text(coalesce(f -> 'rows' -> 'labels', '[]'::jsonb))
+           with ordinality as lab(label, idx)
+   where d.sop_number = 'FRM-401'
+     and f ->> 'id' = 'unit_summary'
+     and lab.label = 'Walk-In Freezer'
+     and (f -> 'rows' -> 'defaultValues' -> (lab.idx::int - 1) ->> 'state') = 'In service';
+  if n <> 1 then
+    raise exception 'FRM-401 freezer default did not become "In service" (matched % row(s)).', n;
+  end if;
+
+  -- And the option must survive, or the form can no longer record a unit going out of service.
+  select count(*) into n
+    from public.sop_documents d,
+         jsonb_array_elements(d.content -> 'form_schema' -> 'sections') s,
+         jsonb_array_elements(s -> 'fields') f,
+         jsonb_array_elements(coalesce(f -> 'columns', '[]'::jsonb)) c,
+         jsonb_array_elements_text(coalesce(c -> 'options', '[]'::jsonb)) o
+   where d.sop_number = 'FRM-401'
+     and f ->> 'id' = 'unit_summary'
+     and c ->> 'id' = 'state'
+     and o = 'Out of service';
+  if n <> 1 then
+    raise exception 'FRM-401 lost the "Out of service" option from the state dropdown.';
   end if;
 end $$;
 
