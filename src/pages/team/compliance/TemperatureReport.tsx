@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Thermometer, ChevronRight, Download, FileText, Sheet as SheetIcon, AlertTriangle, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import { fetchReferenceDocuments, resolveFileUrl, type Attachment } from "@/lib/training";
@@ -28,7 +29,7 @@ import type { TDocumentDefinitions } from "pdfmake/interfaces";
 
 const GOLD = "#C89B3C";
 
-type SummaryRow = { name: string; count: number; min: number | null; max: number | null; avg: number | null };
+type SummaryRow = { name: string; count: number; min: number | null; max: number | null; avg: number | null; humidity: number | null };
 
 // Build the FRM-401 (monthly temperature review) prefill from the page's own
 // per-unit summary: the objective figures a reviewer would otherwise copy by
@@ -90,6 +91,49 @@ const PERIOD_CONFIG: Record<Period, { label: string; rangeStart: () => Date; buc
   weekly: { label: "Weekly", rangeStart: () => subDays(new Date(), 7), bucketFmt: "MMM d" },
   monthly: { label: "Monthly", rangeStart: () => subDays(new Date(), 30), bucketFmt: "MMM d" },
 };
+
+// Per-unit min/max/avg °F (+ humidity) over a set of readings. Shared by the
+// on-screen Summary table and the FRM-401 derivation so the two never drift.
+function summarize(rows: TempRow[]): SummaryRow[] {
+  const map = new Map<string, { count: number; min: number; max: number; sum: number; humSum: number; humCount: number }>();
+  for (const r of rows) {
+    const key = r.equipment_name || r.device_id || "Unknown";
+    const f = r.temperature_fahrenheit;
+    if (f === null) continue;
+    const cur = map.get(key) ?? { count: 0, min: Infinity, max: -Infinity, sum: 0, humSum: 0, humCount: 0 };
+    cur.count++;
+    cur.min = Math.min(cur.min, f);
+    cur.max = Math.max(cur.max, f);
+    cur.sum += f;
+    if (r.humidity !== null) { cur.humSum += r.humidity; cur.humCount++; }
+    map.set(key, cur);
+  }
+  return Array.from(map.entries())
+    .map(([name, s]) => ({
+      name,
+      count: s.count,
+      min: s.count ? s.min : null,
+      max: s.count ? s.max : null,
+      avg: s.count ? s.sum / s.count : null,
+      humidity: s.humCount ? s.humSum / s.humCount : null,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// Resolve a picked "YYYY-MM" to the calendar-month range FRM-401 reviews:
+// month-to-date for the current month, the full month for a past one.
+function monthRange(ym: string): { start: string; end: string; label: string; toDate: boolean } {
+  const [y, m] = ym.split("-").map(Number);
+  const startD = new Date(y, m - 1, 1);
+  const isCurrent = ym === format(new Date(), "yyyy-MM");
+  const endD = isCurrent ? new Date() : new Date(y, m, 0); // last day of that month
+  return {
+    start: format(startD, "yyyy-MM-dd"),
+    end: format(endD, "yyyy-MM-dd"),
+    label: format(startD, "MMMM yyyy"),
+    toDate: isCurrent,
+  };
+}
 
 // Warm bakery palette for chart lines
 const LINE_COLORS = ["#C89B3C", "#8B5E3C", "#5C7A4A", "#A33B3B", "#3C6E8B", "#7A5C8B"];
@@ -153,6 +197,8 @@ export default function TemperatureReport() {
   const [drilldown, setDrilldown] = useState<string | null>(null);
   const [guide, setGuide] = useState<Attachment | null>(null);
   const [startingReview, setStartingReview] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewMonth, setReviewMonth] = useState<string>(() => format(new Date(), "yyyy-MM"));
 
   const navigate = useNavigate();
   const { hasRole } = useUserRole();
@@ -166,11 +212,26 @@ export default function TemperatureReport() {
     setEnd(toDateInput(new Date()));
   }
 
-  // Open a new FRM-401 monthly review, prefilled with the figures derived from
-  // the currently-selected range, then jump to the entry editor.
+  // Open a new FRM-401 review for the picked calendar month, prefilled with that
+  // month's figures (fetched here so they're the month's, not the page's rolling
+  // range), then jump to the entry editor.
   async function startFrm401Review() {
     setStartingReview(true);
     try {
+      const { start: mStart, end: mEnd, label } = monthRange(reviewMonth);
+
+      const startTs = new Date(`${mStart}T00:00:00`).toISOString();
+      const endTs = new Date(`${mEnd}T23:59:59.999`).toISOString();
+      const { data: logs, error: logErr } = await supabase
+        .from("temperature_logs" as any)
+        .select("id, created_at, device_id, equipment_name, temperature_celsius, temperature_fahrenheit, humidity, battery_level, low_battery_alarm")
+        .gte("created_at", startTs)
+        .lte("created_at", endTs)
+        .order("created_at", { ascending: true })
+        .limit(10000);
+      if (logErr) throw logErr;
+      const monthSummary = summarize((logs ?? []) as unknown as TempRow[]);
+
       const { data: doc, error } = await supabase
         .from("sop_documents")
         .select("id, sop_number, revision, content")
@@ -179,15 +240,16 @@ export default function TemperatureReport() {
       if (error) throw error;
       if (!doc) throw new Error("FRM-401 (Temperature Monitoring Review) form not found.");
 
-      // "Month reviewed" from the end of the selected range (parsed as local, not UTC).
-      const monthLabel = end ? format(new Date(`${end}T00:00:00`), "MMMM yyyy") : "";
       const prefill = deriveFrm401Prefill(
         (doc as any).content?.form_schema,
-        summary,
-        monthLabel,
+        monthSummary,
+        label,
         format(new Date(), "yyyy-MM-dd"),
       );
       const resp = await createResponse(doc as any, prefill);
+      // Point the page at the reviewed month so the Summary matches on return.
+      setStart(mStart);
+      setEnd(mEnd);
       navigate(`/team/compliance/forms/${(doc as any).id}/entries/${resp.id}`);
     } catch (e: any) {
       toast.error(e.message ?? "Couldn't start the review");
@@ -264,31 +326,7 @@ export default function TemperatureReport() {
   }, [rows]);
 
   // Per-equipment summary
-  const summary = useMemo(() => {
-    const map = new Map<string, { count: number; min: number; max: number; sum: number; humSum: number; humCount: number }>();
-    for (const r of rows) {
-      const key = r.equipment_name || r.device_id || "Unknown";
-      const f = r.temperature_fahrenheit;
-      if (f === null) continue;
-      const cur = map.get(key) ?? { count: 0, min: Infinity, max: -Infinity, sum: 0, humSum: 0, humCount: 0 };
-      cur.count++;
-      cur.min = Math.min(cur.min, f);
-      cur.max = Math.max(cur.max, f);
-      cur.sum += f;
-      if (r.humidity !== null) { cur.humSum += r.humidity; cur.humCount++; }
-      map.set(key, cur);
-    }
-    return Array.from(map.entries())
-      .map(([name, s]) => ({
-        name,
-        count: s.count,
-        min: s.count ? s.min : null,
-        max: s.count ? s.max : null,
-        avg: s.count ? s.sum / s.count : null,
-        humidity: s.humCount ? s.humSum / s.humCount : null,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
+  const summary = useMemo(() => summarize(rows), [rows]);
 
   // Latest battery state per equipment (rows are ascending, so the last seen wins).
   // battery_level is 1 (low) .. 4 (high).
@@ -531,15 +569,40 @@ export default function TemperatureReport() {
             <Input type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} />
           </div>
           {canFill && (
-            <Button
-              onClick={startFrm401Review}
-              disabled={startingReview}
-              className="bg-[#C89B3C] hover:bg-[#B8892C] text-black"
-              title="Start a monthly FRM-401 review, prefilled from the selected range"
-            >
-              <ClipboardCheck className="h-4 w-4 mr-2" />
-              {startingReview ? "Starting…" : "Start FRM-401 Review"}
-            </Button>
+            <Popover open={reviewOpen} onOpenChange={setReviewOpen}>
+              <PopoverTrigger asChild>
+                <Button className="bg-[#C89B3C] hover:bg-[#B8892C] text-black">
+                  <ClipboardCheck className="h-4 w-4 mr-2" /> Start FRM-401 Review
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-72 space-y-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Month to review</Label>
+                  <Input
+                    type="month"
+                    value={reviewMonth}
+                    max={format(new Date(), "yyyy-MM")}
+                    onChange={(e) => setReviewMonth(e.target.value)}
+                  />
+                </div>
+                {(() => {
+                  const r = monthRange(reviewMonth);
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      Figures from {format(new Date(`${r.start}T00:00:00`), "MMM d")} – {format(new Date(`${r.end}T00:00:00`), "MMM d, yyyy")}
+                      {r.toDate ? " (month to date)" : ""}. Min/Max/Avg per unit are filled in; you complete the rest.
+                    </p>
+                  );
+                })()}
+                <Button
+                  onClick={startFrm401Review}
+                  disabled={startingReview || !reviewMonth}
+                  className="w-full bg-[#C89B3C] hover:bg-[#B8892C] text-black"
+                >
+                  {startingReview ? "Starting…" : "Start review"}
+                </Button>
+              </PopoverContent>
+            </Popover>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
