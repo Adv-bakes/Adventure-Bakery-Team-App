@@ -83,7 +83,7 @@ def build_pdf(out, meta, blocks, landscape_page=False):
     from reportlab.lib.pagesizes import letter, landscape
     from reportlab.lib.units import inch
     from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, CondPageBreak, KeepTogether
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_CENTER
     from reportlab.pdfbase import pdfmetrics
@@ -92,13 +92,23 @@ def build_pdf(out, meta, blocks, landscape_page=False):
 
     pdfmetrics.registerFont(TTFont("Sym", "C:/Windows/Fonts/seguisym.ttf"))
     box = '<font name="Sym">☐</font>'
+    # Arial (a full Unicode TTF) instead of the core Helvetica for the body: core
+    # Helvetica has no em-dash/arrow glyph, so "—" and "→" in a form's text render
+    # as a missing-glyph box. Arial carries both (plus °, ±), with near-identical
+    # metrics, so nothing else in the layout shifts.
+    from reportlab.pdfbase.pdfmetrics import registerFontFamily
+    pdfmetrics.registerFont(TTFont("Arial", "C:/Windows/Fonts/arial.ttf"))
+    pdfmetrics.registerFont(TTFont("Arial-Bold", "C:/Windows/Fonts/arialbd.ttf"))
+    pdfmetrics.registerFont(TTFont("Arial-Italic", "C:/Windows/Fonts/ariali.ttf"))
+    pdfmetrics.registerFont(TTFont("Arial-BoldItalic", "C:/Windows/Fonts/arialbi.ttf"))
+    registerFontFamily("Arial", normal="Arial", bold="Arial-Bold", italic="Arial-Italic", boldItalic="Arial-BoldItalic")
     GOLD = colors.HexColor(GOLD_HEX); CREAM = colors.HexColor("#" + CREAM_HEX); CREAM2 = colors.HexColor("#" + CREAM2_HEX)
     st = getSampleStyleSheet()
-    base = ParagraphStyle("base", parent=st["Normal"], fontName="Helvetica", fontSize=9, leading=12)
-    lbl = ParagraphStyle("lbl", parent=base, fontName="Helvetica-Bold")
-    sec = ParagraphStyle("sec", parent=base, fontName="Helvetica-Bold", fontSize=11, textColor=GOLD, spaceBefore=8, spaceAfter=2)
-    info = ParagraphStyle("info", parent=base, fontName="Helvetica-Oblique", fontSize=8, textColor=colors.HexColor("#" + GREY_HEX))
-    cellb = ParagraphStyle("cellb", parent=base, fontName="Helvetica-Bold", fontSize=8.5)
+    base = ParagraphStyle("base", parent=st["Normal"], fontName="Arial", fontSize=9, leading=12)
+    lbl = ParagraphStyle("lbl", parent=base, fontName="Arial-Bold")
+    sec = ParagraphStyle("sec", parent=base, fontName="Arial-Bold", fontSize=11, textColor=GOLD, spaceBefore=8, spaceAfter=2)
+    info = ParagraphStyle("info", parent=base, fontName="Arial-Italic", fontSize=8, textColor=colors.HexColor("#" + GREY_HEX))
+    cellb = ParagraphStyle("cellb", parent=base, fontName="Arial-Bold", fontSize=8.5)
     cell = ParagraphStyle("cell", parent=base, fontSize=8.5)
     ctr = ParagraphStyle("ctr", parent=cell, alignment=TA_CENTER)
 
@@ -134,6 +144,9 @@ def build_pdf(out, meta, blocks, landscape_page=False):
     for b in blocks:
         k = b["k"]
         if k == "section":
+            # Don't strand a section header at the very bottom of a page — if less
+            # than ~1.4in remains, break first so the header lands with its content.
+            E.append(CondPageBreak(100))
             if b["title"]:
                 E.append(Paragraph(b["title"].replace("&", "&amp;"), sec))
             if b["desc"]:
@@ -188,7 +201,8 @@ def build_pdf(out, meta, blocks, landscape_page=False):
                   ("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 1), (-1, -1), 4), ("BOTTOMPADDING", (0, 1), (-1, -1), 4)]
             t.setStyle(TableStyle(gs)); E.append(t); E.append(Spacer(1, 6))
         elif k == "grid":
-            header, body, weights, fixed = grid_layout(b["field"])
+            f = b["field"]
+            header, body, weights, fixed = grid_layout(f)
             tot = sum(weights); cw = [W * w / tot for w in weights]
             # Wide grids: reportlab's default 6pt side padding costs 12pt of every column, and at
             # 8.5pt a one-weight column cannot hold "Sanitation" - reportlab then splits the word
@@ -210,7 +224,18 @@ def build_pdf(out, meta, blocks, landscape_page=False):
             if fixed:
                 for i in range(1, len(data)):
                     gs.append(("BACKGROUND", (0, i), (0, i), CREAM2))
-            t.setStyle(TableStyle(gs)); E.append(t); E.append(Spacer(1, 6))
+            t.setStyle(TableStyle(gs))
+            # Title each grid: a section can hold more than one (e.g. manual
+            # readings AND changes of state), so the column headers alone don't
+            # say which table is which. Keep the title from stranding at a page
+            # bottom above a table that flowed onto the next page.
+            E.append(CondPageBreak(85))
+            if f.get("label"):
+                E.append(Paragraph(f["label"].replace("&", "&amp;"), lbl))
+            if f.get("help"):
+                E.append(Paragraph(f["help"].replace("&", "&amp;").replace("\n", "<br/>"), info))
+            E.append(Spacer(1, 2))
+            E.append(t); E.append(Spacer(1, 6))
         elif k == "logtable":
             cols = b["columns"]; nrows = b.get("nrows", 12); weights = b.get("weights", [1] * len(cols))
             tot = sum(weights); cw = [W * w / tot for w in weights]
@@ -285,7 +310,8 @@ def build_docx(out, meta, blocks, landscape_page=False):
     d.add_paragraph()
 
     def sec_head(t):
-        h = d.add_paragraph(); r = h.add_run(t); r.bold = True; r.font.size = Pt(12); r.font.color.rgb = GOLD
+        h = d.add_paragraph(); h.paragraph_format.keep_with_next = True
+        r = h.add_run(t); r.bold = True; r.font.size = Pt(12); r.font.color.rgb = GOLD
 
     def opt_cell(c, f):
         if f["type"] == "select":
@@ -343,7 +369,16 @@ def build_docx(out, meta, blocks, landscape_page=False):
                     t.rows[ri].cells[i].vertical_alignment = VA.TOP; para(t.rows[ri].cells[i], val, size=8)
             d.add_paragraph()
         elif k == "grid":
-            header, body, weights, fixed = grid_layout(b["field"]); tot = sum(weights)
+            f = b["field"]
+            # Title each grid (a section can hold more than one); keep_with_next
+            # holds the label above its table across a page break.
+            if f.get("label"):
+                q = d.add_paragraph(); q.paragraph_format.keep_with_next = True
+                r = q.add_run(f["label"]); r.bold = True; r.font.size = Pt(9)
+            if f.get("help"):
+                q = d.add_paragraph(); q.paragraph_format.keep_with_next = True
+                r = q.add_run(f["help"]); r.italic = True; r.font.size = Pt(8); r.font.color.rgb = GREY
+            header, body, weights, fixed = grid_layout(f); tot = sum(weights)
             ws = [PAGEW * w / tot for w in weights]
             gfs = 7.5 if len(header) >= 8 else 8.5  # match the PDF's wide-grid type size
             t = d.add_table(rows=1 + len(body), cols=len(header)); t.style = "Table Grid"; widths(t, ws)
@@ -536,3 +571,19 @@ if __name__ == "__main__":
     b002 = blocks_from_schema(s002)
     build_pdf("sop-drafts/FRM-002-blank.pdf", meta002, b002)
     build_docx("sop-drafts/FRM-002-blank.docx", meta002, b002)
+
+    # FRM-401 - Temperature Monitoring Review. LANDSCAPE: five grids, the widest
+    # (Alerts) seven columns, so portrait would crush them. One record per month
+    # (allowMultipleDrafts=false) - the monthly 2.5.2.1 verification that the automatic
+    # monitoring worked. The printed blank exists for a review done away from a tablet.
+    #
+    # rev New, effective 2026-09-08, approved GJM: mirrors the live sop_documents row,
+    # issued alongside SOP-401 under 20260908000007 (D-34).
+    s401 = load_schema("sop-drafts/FRM-401-temperature-monitoring-review.json")
+    meta401 = {"form_no": "FRM-401", "title": "Temperature Monitoring Review",
+               "revision": "New", "eff": "2026-09-08", "appr": "GJM",
+               "sqf": "11.6.2.3, 2.5.2.1",
+               "footer": FOOT.format(no="FRM-401")}
+    b401 = blocks_from_schema(s401)
+    build_pdf("sop-drafts/FRM-401-blank.pdf", meta401, b401, landscape_page=True)
+    build_docx("sop-drafts/FRM-401-blank.docx", meta401, b401, landscape_page=True)
