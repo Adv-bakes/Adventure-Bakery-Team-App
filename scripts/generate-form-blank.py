@@ -587,3 +587,32 @@ if __name__ == "__main__":
     b401 = blocks_from_schema(s401)
     build_pdf("sop-drafts/FRM-401-blank.pdf", meta401, b401, landscape_page=True)
     build_docx("sop-drafts/FRM-401-blank.docx", meta401, b401, landscape_page=True)
+
+    # FRM-703 - Retention Sample Log. PORTRAIT, and the easy call of the set: twenty fields, no
+    # grids at all, so there is nothing competing for horizontal room.
+    #
+    # ONE SHEET IS ONE SAMPLE, and the two sections are filled MONTHS APART. Section 1 goes on the
+    # sheet when the sample is put on the shelf; Section 2 when it comes off, which under FSQM-014
+    # Part 6 is thirty days past the date printed on the pack. The digital form models that as a
+    # draft that stays open for the life of the sample, so the drafts list is the shelf. On paper
+    # the equivalent is a sheet that lives WITH the sample rather than in a binder - which is the
+    # argument for this blank existing at all, because a retention shelf in an ambient warehouse is
+    # nowhere near a tablet.
+    #
+    # Discard due is a blank box here and not a computed one. On screen it fills itself from the
+    # printed date and follows any correction to it; paper cannot, so whoever fills this counts the
+    # thirty days themselves - from the LAST day of the month where a pack is coded to a month
+    # only, which is the convention Part 6 states and the field's help repeats.
+    #
+    # rev New, draft: seeded by 20260909000010 alongside FSQM-014, then reshaped by 000011 (UPC,
+    # scan pins, derived discard date), 000012 (entries left deletable at the owner's request) and
+    # 000013 (retention is per PRODUCT, and the shelf is named). The schema JSON beside this is
+    # assembled from those migrations, so it matches the live row once 000013 is applied.
+    s703 = load_schema("sop-drafts/FRM-703-retention-sample-log-schema.json")
+    meta703 = {"form_no": "FRM-703", "title": "Retention Sample Log",
+               "revision": "New", "eff": "(draft)", "appr": "(pending)",
+               "sqf": "2.4.4.5",
+               "footer": FOOT.format(no="FRM-703")}
+    b703 = blocks_from_schema(s703)
+    build_pdf("sop-drafts/FRM-703-blank.pdf", meta703, b703)
+    build_docx("sop-drafts/FRM-703-blank.docx", meta703, b703)
