@@ -83,7 +83,7 @@ def build_pdf(out, meta, blocks, landscape_page=False):
     from reportlab.lib.pagesizes import letter, landscape
     from reportlab.lib.units import inch
     from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, CondPageBreak, KeepTogether
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_CENTER
     from reportlab.pdfbase import pdfmetrics
@@ -144,6 +144,9 @@ def build_pdf(out, meta, blocks, landscape_page=False):
     for b in blocks:
         k = b["k"]
         if k == "section":
+            # Don't strand a section header at the very bottom of a page — if less
+            # than ~1.4in remains, break first so the header lands with its content.
+            E.append(CondPageBreak(100))
             if b["title"]:
                 E.append(Paragraph(b["title"].replace("&", "&amp;"), sec))
             if b["desc"]:
@@ -198,7 +201,8 @@ def build_pdf(out, meta, blocks, landscape_page=False):
                   ("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 1), (-1, -1), 4), ("BOTTOMPADDING", (0, 1), (-1, -1), 4)]
             t.setStyle(TableStyle(gs)); E.append(t); E.append(Spacer(1, 6))
         elif k == "grid":
-            header, body, weights, fixed = grid_layout(b["field"])
+            f = b["field"]
+            header, body, weights, fixed = grid_layout(f)
             tot = sum(weights); cw = [W * w / tot for w in weights]
             # Wide grids: reportlab's default 6pt side padding costs 12pt of every column, and at
             # 8.5pt a one-weight column cannot hold "Sanitation" - reportlab then splits the word
@@ -220,7 +224,18 @@ def build_pdf(out, meta, blocks, landscape_page=False):
             if fixed:
                 for i in range(1, len(data)):
                     gs.append(("BACKGROUND", (0, i), (0, i), CREAM2))
-            t.setStyle(TableStyle(gs)); E.append(t); E.append(Spacer(1, 6))
+            t.setStyle(TableStyle(gs))
+            # Title each grid: a section can hold more than one (e.g. manual
+            # readings AND changes of state), so the column headers alone don't
+            # say which table is which. Keep the title from stranding at a page
+            # bottom above a table that flowed onto the next page.
+            E.append(CondPageBreak(85))
+            if f.get("label"):
+                E.append(Paragraph(f["label"].replace("&", "&amp;"), lbl))
+            if f.get("help"):
+                E.append(Paragraph(f["help"].replace("&", "&amp;").replace("\n", "<br/>"), info))
+            E.append(Spacer(1, 2))
+            E.append(t); E.append(Spacer(1, 6))
         elif k == "logtable":
             cols = b["columns"]; nrows = b.get("nrows", 12); weights = b.get("weights", [1] * len(cols))
             tot = sum(weights); cw = [W * w / tot for w in weights]
@@ -295,7 +310,8 @@ def build_docx(out, meta, blocks, landscape_page=False):
     d.add_paragraph()
 
     def sec_head(t):
-        h = d.add_paragraph(); r = h.add_run(t); r.bold = True; r.font.size = Pt(12); r.font.color.rgb = GOLD
+        h = d.add_paragraph(); h.paragraph_format.keep_with_next = True
+        r = h.add_run(t); r.bold = True; r.font.size = Pt(12); r.font.color.rgb = GOLD
 
     def opt_cell(c, f):
         if f["type"] == "select":
@@ -353,7 +369,16 @@ def build_docx(out, meta, blocks, landscape_page=False):
                     t.rows[ri].cells[i].vertical_alignment = VA.TOP; para(t.rows[ri].cells[i], val, size=8)
             d.add_paragraph()
         elif k == "grid":
-            header, body, weights, fixed = grid_layout(b["field"]); tot = sum(weights)
+            f = b["field"]
+            # Title each grid (a section can hold more than one); keep_with_next
+            # holds the label above its table across a page break.
+            if f.get("label"):
+                q = d.add_paragraph(); q.paragraph_format.keep_with_next = True
+                r = q.add_run(f["label"]); r.bold = True; r.font.size = Pt(9)
+            if f.get("help"):
+                q = d.add_paragraph(); q.paragraph_format.keep_with_next = True
+                r = q.add_run(f["help"]); r.italic = True; r.font.size = Pt(8); r.font.color.rgb = GREY
+            header, body, weights, fixed = grid_layout(f); tot = sum(weights)
             ws = [PAGEW * w / tot for w in weights]
             gfs = 7.5 if len(header) >= 8 else 8.5  # match the PDF's wide-grid type size
             t = d.add_table(rows=1 + len(body), cols=len(header)); t.style = "Table Grid"; widths(t, ws)
