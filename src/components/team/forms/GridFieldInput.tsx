@@ -587,9 +587,10 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                 ? (rowsRef.current[dialogRow]?._label ?? fixedLabels[dialogRow])
                 : undefined
             }
-            onScan={scanEnabled && !disabled ? () => {
+            rowKey={dialogRow != null ? rows[dialogRow]?.id : undefined}
+            onScanFile={scanEnabled && !disabled ? file => {
               scanTargetRef.current = dialogRow;
-              scanInputRef.current?.click();
+              runScan(file);
             } : undefined}
             scanning={dialogRow != null && scanningRow === dialogRow}
           />
