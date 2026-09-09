@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "settings": {
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "instanceTitleTemplate": "Retention {lot_code} — {product_name}"
+  },
+  "sections": [
+    {
+      "id": "sample_taken",
+      "title": "1. Sample taken",
+      "fields": [
+        {
+          "id": "how_this_works",
+          "type": "info",
+          "label": "How this record works",
+          "text": "One record per retention sample.\n\nComplete this section when the sample is taken and SAVE IT AS A DRAFT. The entry stays a draft for as long as the sample is physically on the shelf, so the list of drafts on this form is the list of samples the site is holding, and it can be sorted by Discard due to see what is now due. Complete Section 2 and submit the entry when the sample leaves the shelf.\n\nWHAT IS RETAINED — a sealed unit of each finished product, in the pack it shipped in, held on the reserved retention shelf in the ambient warehouse, identified as a retention sample and kept separate from saleable stock so that it cannot be picked and shipped. Record the lot it came from: a sample speaks for its own lot and no other.\n\nHOW LONG — until thirty days after the best-by or expiration date printed on the pack, then discarded; unless a customer agreement requires longer for that customer's product, in which case the longer period applies. Where the pack is coded with a month and year only, count the thirty days from the LAST day of that month.\n\nRetention samples are not required of this site by any customer or by any regulation. The site keeps them anyway, and FSQM-014 Part 6 states the basis."
+        },
+        {
+          "id": "product_name",
+          "type": "text",
+          "label": "Product",
+          "width": "half",
+          "required": true,
+          "showInList": true,
+          "scanFact": "product_name"
+        },
+        {
+          "id": "lot_code",
+          "type": "text",
+          "label": "Lot / batch code",
+          "width": "half",
+          "required": true,
+          "showInList": true,
+          "help": "Exactly as coded on the pack — the same code as this batch's FRM-701 release record.",
+          "scanFact": "lot_code"
+        },
+        {
+          "id": "upc",
+          "type": "text",
+          "label": "UPC / barcode digits",
+          "width": "third",
+          "scanFact": "barcode",
+          "help": "The digits printed under the barcode. Self-checking — a UPC carries a check digit, so a misread is detectable in a way a lot code never is."
+        },
+        {
+          "id": "customer",
+          "type": "text",
+          "label": "Customer",
+          "width": "third",
+          "scanFact": "none"
+        },
+        {
+          "id": "date_produced",
+          "type": "date",
+          "label": "Date produced",
+          "width": "third"
+        },
+        {
+          "id": "date_taken",
+          "type": "date",
+          "label": "Date sample taken",
+          "width": "third",
+          "required": true,
+          "defaultToday": true
+        },
+        {
+          "id": "pack_description",
+          "type": "text",
+          "label": "Pack retained",
+          "width": "third",
+          "help": "The pack and count as retained, e.g. one 12-count case.",
+          "scanFact": "none"
+        },
+        {
+          "id": "units_retained",
+          "type": "number",
+          "label": "Units retained",
+          "width": "third",
+          "min": 1,
+          "defaultValue": 1,
+          "help": "One sealed unit unless a customer agreement requires more."
+        },
+        {
+          "id": "printed_date",
+          "type": "text",
+          "label": "Best-by or expiration date printed on the pack",
+          "width": "half",
+          "required": true,
+          "help": "Copy it EXACTLY as printed, off the pack being retained — if the pack says only a month and year, write that. Do not convert it to a day.",
+          "scanFact": "best_by"
+        },
+        {
+          "id": "discard_due",
+          "type": "date",
+          "label": "Discard due",
+          "width": "half",
+          "required": true,
+          "showInList": true,
+          "help": "Filled from the printed date — thirty days, counting from the last day of the month where the pack is coded to a month only (FSQM-014 Part 6). It updates if you correct the printed date. Change it by hand only where a customer agreement requires a longer period, and name that agreement in the next field.",
+          "derive": {
+            "fromField": "printed_date",
+            "addDays": 30,
+            "monthOnly": "last",
+            "label": "Due"
+          }
+        },
+        {
+          "id": "longer_period_required",
+          "type": "text",
+          "label": "Customer agreement requiring a longer period",
+          "width": "full",
+          "help": "Name the customer and the period where one applies. Leave blank where the standard period is used."
+        },
+        {
+          "id": "storage_location",
+          "type": "text",
+          "label": "Storage location",
+          "width": "half",
+          "required": true,
+          "showInList": true,
+          "help": "The standard location is the reserved retention shelf in the ambient warehouse. Change it only if this sample is held somewhere else. It must be identified as a retention sample and kept separate from saleable stock.",
+          "defaultValue": "Reserved retention shelf, ambient warehouse"
+        },
+        {
+          "id": "taken_by",
+          "type": "signature",
+          "label": "Sample taken by",
+          "width": "half",
+          "required": true,
+          "statement": "I took this sample from the batch recorded above and placed it in the location recorded here."
+        }
+      ],
+      "scanLabel": true,
+      "scanMode": "finished_goods"
+    },
+    {
+      "id": "disposal",
+      "title": "2. Disposal",
+      "fields": [
+        {
+          "id": "disposal_info",
+          "type": "info",
+          "label": "Complete this section when the sample leaves the shelf",
+          "text": "A sample leaves the shelf at the end of its retention period, or earlier if it is needed for a complaint or an investigation. Record what happened to it here, then SUBMIT the entry.\n\nDo not submit while the sample is still being held — a submitted entry reads as a sample that is gone.\n\nIf a sample cannot be found, say so. A missing sample recorded honestly is something the site can act on; a missing sample with no record is something nobody can explain."
+        },
+        {
+          "id": "disposition",
+          "type": "select",
+          "label": "What happened to the sample",
+          "width": "half",
+          "required": true,
+          "options": [
+            "Discarded at the end of the retention period",
+            "Used for a complaint or an investigation",
+            "Sent to the customer on request",
+            "Discarded before the end of the retention period",
+            "Lost or unaccounted for",
+            "Record raised in error — no sample was taken"
+          ]
+        },
+        {
+          "id": "disposal_date",
+          "type": "date",
+          "label": "Date",
+          "width": "half",
+          "required": true,
+          "help": "The date the sample actually left the shelf."
+        },
+        {
+          "id": "complaint_or_capa_ref",
+          "type": "text",
+          "label": "Complaint / CAPA reference",
+          "width": "third",
+          "help": "Where the sample was used for an investigation — the FRM-002 complaint number or the FRM-007 CAPA number."
+        },
+        {
+          "id": "disposal_reason",
+          "type": "textarea",
+          "label": "Reason / notes",
+          "rows": 3,
+          "width": "full",
+          "help": "Required in substance for anything other than discard at the end of the retention period."
+        },
+        {
+          "id": "disposed_by",
+          "type": "signature",
+          "label": "Disposed by",
+          "width": "half",
+          "required": true,
+          "statement": "I disposed of this sample as recorded above."
+        }
+      ]
+    }
+  ]
+}
