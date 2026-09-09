@@ -90,7 +90,7 @@ export async function createResponse(doc: {
   sop_number: string | null;
   revision: string | null;
   content: any;
-}): Promise<FormResponse> {
+}, prefill?: Record<string, any>): Promise<FormResponse> {
   const schema = getFormSchema(doc.content);
   if (!schema) throw new Error("This form has no fields defined yet.");
 
@@ -108,15 +108,21 @@ export async function createResponse(doc: {
       .limit(1)
       .maybeSingle();
     if (exErr) throw exErr;
+    // Reuse the existing draft untouched — never clobber in-progress answers
+    // with a fresh prefill.
     if (existing) return existing as FormResponse;
   }
+
+  // prefill (e.g. figures derived from another data source) overlays the empty
+  // values field-by-field; anything it omits keeps the schema's empty default.
+  const data0 = prefill ? { ...emptyValues(schema), ...prefill } : emptyValues(schema);
 
   const { data, error } = await table()
     .insert({
       document_id: doc.id,
       form_number: doc.sop_number,
       form_revision: doc.revision,
-      data: emptyValues(schema),
+      data: data0,
       created_by: userId,
     })
     .select("*")

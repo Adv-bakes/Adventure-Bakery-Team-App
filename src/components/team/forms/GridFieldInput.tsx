@@ -211,6 +211,15 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
   // ---- Scan a package label into a row ----
   const scanEnabled = !!field.scanLabel && !disabled && !!onScanLabel;
   const scanInputRef = useRef<HTMLInputElement>(null);
+
+  // Floor for the table under table-fixed: the sum of each column's minimum so a
+  // narrow viewport scrolls the grid horizontally instead of collapsing columns
+  // below their header text (which then overflows and overlaps its neighbours).
+  const tableMinWidth =
+    (scanEnabled ? 40 : 0) +
+    (fixed ? 140 : 0) +
+    field.columns.reduce((s, c) => s + (c.type === "pass_fail" ? 130 : 90), 0) +
+    (!disabled ? 32 : 0);
   const scanTargetRef = useRef<number | null>(null);   // which row opened the camera
   const [scanningRow, setScanningRow] = useState<number | null>(null);
   const [scan, setScan] = useState<ScanOutcome | null>(null);
@@ -283,23 +292,23 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
             {field.required && <span className="text-red-600 ml-0.5">*</span>}
           </Label>
           <div className="rounded-md border overflow-x-auto" style={{ borderColor: "rgba(200,155,60,0.35)" }}>
-            <Table className="[&_td]:py-1.5 [&_td]:px-2 [&_th]:h-8 [&_th]:px-2 table-fixed w-full">
+            <Table className="[&_td]:py-1.5 [&_td]:px-2 [&_th]:px-2 [&_th]:align-bottom table-fixed w-full" style={{ minWidth: tableMinWidth }}>
               <TableHeader>
                 <TableRow className="bg-[#C89B3C]/8">
                   {scanEnabled && <TableHead className="w-10" />}
                   {fixed && (
                     <TableHead
-                      className="text-[#2A1F0E]/80 text-xs font-semibold"
+                      className="text-[#2A1F0E]/80 text-xs font-semibold whitespace-normal break-words leading-tight"
                       style={{ width: `${(labelWeight / totalWeight) * 100}%`, minWidth: 140 }}
                     >
                       {sortable ? (
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1 hover:text-[#9A6F1E]"
+                          className="flex w-full items-start gap-1 text-left hover:text-[#9A6F1E]"
                           onClick={() => handleSort(LABEL_SORT_KEY)}
                         >
-                          {labelHeader}
-                          <SortIcon sortKey={LABEL_SORT_KEY} />
+                          <span>{labelHeader}</span>
+                          <span className="shrink-0 pt-0.5"><SortIcon sortKey={LABEL_SORT_KEY} /></span>
                         </button>
                       ) : labelHeader}
                     </TableHead>
@@ -307,18 +316,20 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
                   {field.columns.map(col => (
                     <TableHead
                       key={col.id}
-                      className="text-[#2A1F0E]/80 text-xs font-semibold whitespace-nowrap"
+                      className="text-[#2A1F0E]/80 text-xs font-semibold whitespace-normal break-words leading-tight"
                       style={{ width: `${((col.width ?? 1) / totalWeight) * 100}%`, minWidth: col.type === "pass_fail" ? 130 : 90 }}
                     >
                       {sortable ? (
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1 hover:text-[#9A6F1E]"
+                          className="flex w-full items-start gap-1 text-left hover:text-[#9A6F1E]"
                           onClick={() => handleSort(col.id)}
                         >
-                          {col.label}
-                          {col.unit && <span className="font-normal text-[#2A1F0E]/55">({col.unit})</span>}
-                          <SortIcon sortKey={col.id} />
+                          <span>
+                            {col.label}
+                            {col.unit && <span className="font-normal text-[#2A1F0E]/55"> ({col.unit})</span>}
+                          </span>
+                          <span className="shrink-0 pt-0.5"><SortIcon sortKey={col.id} /></span>
                         </button>
                       ) : (
                         <>
