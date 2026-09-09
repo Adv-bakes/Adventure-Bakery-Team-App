@@ -1,0 +1,11 @@
+# Migrations are executed as RAW TEXT by `supabase db push`, and a dollar-quoted multi-line
+# string in one carries the FILE's line endings straight into the database. This repo is
+# developed on Windows with core.autocrlf=true, so without this every migration is checked out
+# CRLF and every such string writes \r into controlled-document text — invisible on screen,
+# but it breaks any later exact-match guard and leaves the database disagreeing with the repo
+# by a byte per line. Found on 2026-09-09 after 21 stray CRs had accumulated across five
+# documents. JSON payloads were never affected: their newlines are \n escapes, not line breaks.
+supabase/migrations/*.sql text eol=lf
+
+# Same reasoning for the SQL helper scripts that generate or check those migrations.
+scripts/*.sql text eol=lf
