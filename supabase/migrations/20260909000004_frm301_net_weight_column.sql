@@ -70,9 +70,18 @@ begin
   end if;
 end $$;
 
+-- Snapshot the columns WITHOUT net_weight, selected by id rather than by index. Capturing the
+-- raw array and stripping index 7 afterwards only compares correctly on a first apply: on the
+-- idempotent re-run the column is already there, so a 14-element before would be compared with
+-- a 13-element after and the migration would fail claiming drift that had not happened. (It
+-- did exactly that once this migration had been applied.) Selecting by id is symmetric - the
+-- same 13 columns come out of both sides whether or not the insert has already run.
 create temporary table frm301_weight_before on commit drop as
 select md5((content #- '{form_schema,sections,0,fields,0,columns}')::text) as rest_h,
-       (content #> '{form_schema,sections,0,fields,0,columns}')            as cols
+       (select jsonb_agg(c.col order by c.ord)
+          from jsonb_array_elements(content #> '{form_schema,sections,0,fields,0,columns}')
+               with ordinality c(col, ord)
+         where c.col->>'id' <> 'net_weight')                               as cols_without_new
   from public.sop_documents where sop_number = 'FRM-301';
 
 update public.sop_documents
@@ -143,8 +152,10 @@ begin
     from public.sop_documents d, frm301_weight_before b
    where d.sop_number = 'FRM-301'
      and (md5((d.content #- '{form_schema,sections,0,fields,0,columns}')::text) is distinct from b.rest_h
-       or (d.content #> '{form_schema,sections,0,fields,0,columns}')
-          #- '{7}' is distinct from b.cols);
+       or (select jsonb_agg(c.col order by c.ord)
+             from jsonb_array_elements(d.content #> '{form_schema,sections,0,fields,0,columns}')
+                  with ordinality c(col, ord)
+            where c.col->>'id' <> 'net_weight') is distinct from b.cols_without_new);
   if drift <> 0 then
     raise exception 'FRM-301 changed beyond inserting one column. Rolled back.';
   end if;

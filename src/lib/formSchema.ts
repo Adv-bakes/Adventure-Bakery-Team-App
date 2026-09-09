@@ -480,13 +480,58 @@ export function scanWantedFacts(grid: GridField): LabelFact[] {
 }
 
 /** Coerce a scanned string to a column's type; undefined = don't write it. */
+/**
+ * Unit spellings that mean the same thing, so "5 lbs" fills a column whose unit
+ * is "lb". Only the units that actually appear on a food package label — this is
+ * a safety check, not a units library, and an unknown token simply fails to
+ * match, which leaves the cell empty rather than filling it wrongly.
+ */
+const UNIT_SYNONYMS: Record<string, string> = {
+  lb: "lb", lbs: "lb", pound: "lb", pounds: "lb",
+  oz: "oz", ounce: "oz", ounces: "oz",
+  g: "g", gram: "g", grams: "g", gr: "g",
+  kg: "kg", kilogram: "kg", kilograms: "kg", kilo: "kg", kilos: "kg",
+  ml: "ml", milliliter: "ml", milliliters: "ml", millilitre: "ml", millilitres: "ml",
+  l: "l", liter: "l", liters: "l", litre: "l", litres: "l",
+  ct: "ct", count: "ct", pc: "ct", pcs: "ct", piece: "ct", pieces: "ct",
+  ea: "ea", each: "ea",
+};
+
+const normalizeUnit = (u: string): string => {
+  const key = u.trim().toLowerCase().replace(/[.()\[\]]/g, "").trim();
+  return UNIT_SYNONYMS[key] ?? key;
+};
+
+/** Do a scanned unit and a column's configured unit denote the same thing? */
+function sameUnit(scanned: string, columnUnit: string): boolean {
+  const a = normalizeUnit(scanned);
+  const b = normalizeUnit(columnUnit);
+  return a !== "" && a === b;
+}
+
 function coerceToColumn(column: GridColumn, raw: string | undefined): any {
   const value = typeof raw === "string" ? raw.trim() : "";
   if (!value) return undefined;
   switch (column.type) {
     case "number": {
-      const n = Number(value.replace(/[^0-9.\-]/g, ""));
-      return Number.isFinite(n) ? n : undefined;
+      // A scanned label value usually carries its unit — "5 lb", "16 oz", "750 ml".
+      // Stripping the unit and keeping the digits stored 5 for "5 lb" and 16 for
+      // "16 oz" as though they were the same kind of quantity, silently, with
+      // nothing on the record to show a unit had ever been read. On a receiving
+      // log that is the worst failure available: plausible, and invisible.
+      //
+      // So a number is written only when the unit is absent (nothing to lose) or
+      // provably the column's own. Otherwise the cell is left alone, the fact
+      // stays unclaimed, and applyLabelScan appends it to the notes column —
+      // where a human reads "Net weight: 16 oz" and decides what it means.
+      const m = value.match(/^[^\d.\-]*(-?\d+(?:\.\d+)?)\s*(.*)$/);
+      if (!m) return undefined;
+      const n = Number(m[1]);
+      if (!Number.isFinite(n)) return undefined;
+      const scanned = m[2].trim();
+      if (!scanned) return n;                 // a bare number carries no unit to lose
+      if (!column.unit) return undefined;     // it has a unit; the column cannot say which
+      return sameUnit(scanned, column.unit) ? n : undefined;
     }
     case "date":
       // The extractor normalizes to YYYY-MM-DD; anything else would render blank
