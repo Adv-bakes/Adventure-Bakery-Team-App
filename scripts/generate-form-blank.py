@@ -536,3 +536,19 @@ if __name__ == "__main__":
     b002 = blocks_from_schema(s002)
     build_pdf("sop-drafts/FRM-002-blank.pdf", meta002, b002)
     build_docx("sop-drafts/FRM-002-blank.docx", meta002, b002)
+
+    # FRM-401 - Temperature Monitoring Review. LANDSCAPE: five grids, the widest
+    # (Alerts) seven columns, so portrait would crush them. One record per month
+    # (allowMultipleDrafts=false) - the monthly 2.5.2.1 verification that the automatic
+    # monitoring worked. The printed blank exists for a review done away from a tablet.
+    #
+    # rev New, effective 2026-09-08, approved GJM: mirrors the live sop_documents row,
+    # issued alongside SOP-401 under 20260908000007 (D-34).
+    s401 = load_schema("sop-drafts/FRM-401-temperature-monitoring-review.json")
+    meta401 = {"form_no": "FRM-401", "title": "Temperature Monitoring Review",
+               "revision": "New", "eff": "2026-09-08", "appr": "GJM",
+               "sqf": "11.6.2.3, 2.5.2.1",
+               "footer": FOOT.format(no="FRM-401")}
+    b401 = blocks_from_schema(s401)
+    build_pdf("sop-drafts/FRM-401-blank.pdf", meta401, b401, landscape_page=True)
+    build_docx("sop-drafts/FRM-401-blank.docx", meta401, b401, landscape_page=True)
