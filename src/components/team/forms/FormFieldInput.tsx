@@ -1,13 +1,15 @@
-import { Controller, type Control } from "react-hook-form";
-import { format } from "date-fns";
+import { useEffect, useRef } from "react";
+import { Controller, useWatch, type Control } from "react-hook-form";
+import { format, parseISO } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { deriveDateValue, nextDerivedFill } from "@/lib/formSchema";
 import type {
-  FormField, NumberField, SelectField, PassFailField, SignatureField,
-  TextField, TextareaField,
+  DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
+  PassFailField, SignatureField, TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
@@ -17,6 +19,57 @@ const PASS_FAIL_STYLE: Record<string, string> = {
   fail: "data-[on=true]:bg-red-500/15 data-[on=true]:text-red-700 data-[on=true]:border-red-600/40",
   na:   "data-[on=true]:bg-[#2A1F0E]/10 data-[on=true]:text-[#2A1F0E]/70 data-[on=true]:border-[#2A1F0E]/30",
 };
+
+/**
+ * A date computed from another field — e.g. FRM-703's Discard due, thirty days
+ * past the best-by printed on the pack, counting from the last day of a
+ * month-coded pack (FSQM-014 Part 6).
+ *
+ * IT FILLS ITSELF, and STAYS IN STEP while it does. A one-shot fill is the trap
+ * here: fill on scan, the filler then corrects the printed date, and the discard
+ * date is silently stale — worse than leaving it empty, because the draft list
+ * sorts by it. So the value is recomputed whenever the source changes, for as
+ * long as the field still holds what this put there.
+ *
+ * The moment the filler types their own date it is THEIRS and this stops
+ * touching it — the customer-agreement-requires-longer case is a real one, and
+ * an override that kept being overwritten would be unusable. The link then
+ * reappears offering the standard period back, which also tells a reader what
+ * the standard period would have been.
+ *
+ * A source that cannot be parsed produces nothing at all: no fill, no link, and
+ * the date is typed. `parsePrintedDate` returns null rather than guessing, so
+ * the failure mode is an empty field, never a plausible wrong one.
+ */
+function DerivedDate({ derive, control, value, onChange }: {
+  derive: DateDerivation;
+  control: Control<Record<string, any>>;
+  value: unknown;
+  onChange: (value: string) => void;
+}) {
+  const source = useWatch({ control, name: derive.fromField });
+  const computed = deriveDateValue(derive, source);
+  const fill = useRef<DerivedFillState>({});
+
+  useEffect(() => {
+    const { write, state } = nextDerivedFill(typeof value === "string" ? value : "", computed, fill.current);
+    fill.current = state;
+    if (write !== undefined) onChange(write);
+  }, [computed, value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Nothing to offer when the field already agrees with the computation.
+  if (!computed || value === computed) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => { fill.current = { ours: computed, seeded: true }; onChange(computed); }}
+      className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0 whitespace-nowrap"
+      title={`The standard period, computed from ${derive.fromField.replace(/_/g, " ")}`}
+    >
+      {derive.label ?? "Due"} {format(parseISO(computed), "d MMM yyyy")}
+    </button>
+  );
+}
 
 /** Segmented Pass / Fail / N/A control shared by scalar fields and grid cells. */
 export function PassFailInput({ field, value, onChange, disabled, compact }: {
@@ -146,6 +199,14 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
                   >
                     Today
                   </button>
+                )}
+                {field.type === "date" && !disabled && (field as DateField).derive && (
+                  <DerivedDate
+                    derive={(field as DateField).derive!}
+                    control={control}
+                    value={rhf.value}
+                    onChange={rhf.onChange}
+                  />
                 )}
               </div>
             );

@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import {
   answerManifest, buildZodSchema, emptyValues, getFormSchema, initialsFromName, instanceTitle,
   mergeScanAnswers, valueFields,
-  type FillContext, type FormSchema, type LabelFact, type LabelScanResult,
+  type FillContext, type FormSchema, type LabelScanResult,
 } from "@/lib/formSchema";
 import {
   StaleResponseError, deleteResponse, extractFormAnswers, extractPackageLabel, fetchProfileNames,
@@ -27,6 +27,7 @@ import {
   type FormResponse, type ResolvedSchema, type ResponseAttachment,
 } from "@/lib/formResponses";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
+import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
@@ -231,20 +232,22 @@ export default function FormEntry() {
     }
   };
 
-  // Photograph ONE ingredient package → fill the grid row it was scanned from
-  // (supplier, lot code, …). Distinct from scanAndFill above, which reads a
-  // photo of the completed PAPER FORM and pre-fills the whole entry.
+  // Photograph ONE package → fill the grid row, or the form section, it was
+  // scanned from (supplier, lot code, …). Distinct from scanAndFill above, which
+  // reads a photo of the completed PAPER FORM and pre-fills the whole entry.
   //
   // The model needs a URL it can fetch, so the photo is always uploaded — but
-  // it only becomes part of the record when the grid opts in via scanKeepPhoto.
+  // it only becomes part of the record when the caller opts in via keepPhoto.
   // Otherwise the upload is transient and the file is removed once read: the
   // scanned values land in visible cells that get reviewed, so keeping every
-  // image would bury a 20-ingredient entry in redundant photos.
+  // image would bury a 20-ingredient entry in redundant photos. A SECTION scan
+  // does keep it, because there the pack photographed is the single subject of
+  // the whole record rather than one line of many.
   //
-  // The grid owns applying the values and the Undo; this only fetches them.
+  // The caller owns applying the values and the Undo; this only fetches them.
   const scanLabelIntoRow = async (
     file: File,
-    ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[]; keepPhoto: boolean },
+    ctx: ScanRequest,
   ): Promise<LabelScanResult | null> => {
     if (!response) return null;
     let transientPath: string | null = null;
@@ -255,7 +258,9 @@ export default function FormEntry() {
       if (ctx.keepPhoto) {
         const photo: ResponseAttachment = {
           ...uploaded,
-          note: `Label photo — ${ctx.gridLabel} row ${ctx.rowIndex + 1}`,
+          note: ctx.rowIndex == null
+            ? `Label photo — ${ctx.label}`
+            : `Label photo — ${ctx.label} row ${ctx.rowIndex + 1}`,
         };
         // Adopt the returned row (fresh updated_at) exactly as scanAndFill does,
         // or the next Save Draft trips the optimistic-concurrency guard.
@@ -265,7 +270,7 @@ export default function FormEntry() {
       }
 
       const url = await getResponseAttachmentUrl(uploaded.path);
-      const result = await extractPackageLabel([url], ctx.wanted);
+      const result = await extractPackageLabel([url], ctx.wanted, ctx.mode);
       if (Object.keys(result.facts).length === 0) {
         toast.warning("Nothing readable on that label photo — the row was left as it was.");
       }
