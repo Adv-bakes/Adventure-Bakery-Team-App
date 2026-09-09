@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Maximize2, Plus, Trash2 } from "lucide-react";
 import {
   applyLabelScan, newGridRow, resolveScanFact, scanWantedFacts,
   type FillContext, type GridColumn, type GridField, type GridRowValue,
@@ -15,6 +15,7 @@ import {
 } from "@/lib/formSchema";
 import { PassFailInput } from "./FormFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
+import { GridRowDialog } from "./GridRowDialog";
 
 /** How long the "label scan filled …" chip stays up before fading out. */
 const SCAN_UNDO_MS = 12000;
@@ -31,12 +32,19 @@ function compareCellValues(a: any, b: any): number {
   return String(a).localeCompare(String(b));
 }
 
-function GridCell({ column, value, onChange, disabled }: {
+/**
+ * One cell's input. Shared by the table (compact, one row tall) and by
+ * GridRowDialog (`stacked`, where there is room to breathe and a free-text answer
+ * should not be a 32px slot).
+ */
+export function GridCell({ column, value, onChange, disabled, stacked }: {
   column: GridColumn;
   value: any;
   onChange: (v: any) => void;
   disabled?: boolean;
+  stacked?: boolean;
 }) {
+  const inputClass = stacked ? "h-9 text-sm" : "h-8 text-xs";
   switch (column.type) {
     case "checkbox":
       return (
@@ -47,19 +55,19 @@ function GridCell({ column, value, onChange, disabled }: {
     case "select":
       return (
         <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+          <SelectTrigger className={inputClass}><SelectValue placeholder="—" /></SelectTrigger>
           <SelectContent>
             {(column.options ?? []).map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
           </SelectContent>
         </Select>
       );
     case "pass_fail":
-      return <PassFailInput field={{}} value={value} onChange={onChange} disabled={disabled} compact />;
+      return <PassFailInput field={{}} value={value} onChange={onChange} disabled={disabled} compact={!stacked} />;
     case "number":
       return (
         <Input
           type="number"
-          className="h-8 text-xs"
+          className={inputClass}
           value={value ?? ""}
           disabled={disabled}
           step="any"
@@ -72,7 +80,7 @@ function GridCell({ column, value, onChange, disabled }: {
         <div className="flex items-center gap-1">
           <Input
             type={column.type}
-            className="h-8 text-xs flex-1"
+            className={`${inputClass} flex-1`}
             value={value ?? ""}
             disabled={disabled}
             onChange={e => onChange(e.target.value)}
@@ -91,12 +99,14 @@ function GridCell({ column, value, onChange, disabled }: {
     default:
       return (
         <DictationTextarea
-          className="min-h-[32px] text-xs py-1.5 px-2 leading-snug break-words"
-          rows={1}
+          className={stacked
+            ? "min-h-[72px] text-sm leading-normal break-words"
+            : "min-h-[32px] text-xs py-1.5 px-2 leading-snug break-words"}
+          rows={stacked ? 3 : 1}
           value={value}
           disabled={disabled}
           onChange={onChange}
-          compact
+          compact={!stacked}
         />
       );
   }
@@ -219,11 +229,20 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   const scanEnabled = !!field.scanLabel && !disabled && !!onScanLabel;
   const scanInputRef = useRef<HTMLInputElement>(null);
 
+  // A grid narrow enough to read across does not need a second way to edit a row, and a
+  // three-column checklist would just gain a control nobody presses. Six is where the table
+  // starts outgrowing a tablet in portrait: six columns hit the 90px floor at ~570px plus
+  // gutters, and every column past that is scrolled to rather than seen.
+  const ROW_DIALOG_MIN_COLUMNS = 6;
+  const rowDialogEnabled = field.columns.length >= ROW_DIALOG_MIN_COLUMNS;
+  const [dialogRow, setDialogRow] = useState<number | null>(null);
+
   // Floor for the table under table-fixed: the sum of each column's minimum so a
   // narrow viewport scrolls the grid horizontally instead of collapsing columns
   // below their header text (which then overflows and overlaps its neighbours).
   const tableMinWidth =
     (scanEnabled ? 40 : 0) +
+    (rowDialogEnabled ? 40 : 0) +
     (fixed ? 140 : 0) +
     field.columns.reduce((s, c) => s + (c.type === "pass_fail" ? 130 : 90), 0) +
     (!disabled ? 32 : 0);
@@ -266,6 +285,10 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
         alternates: result.alternates?.lot_code ?? [],
         warnings: result.warnings ?? [],
       });
+      // A scan fills three or four cells and leaves the rest — quantity, temperature, the
+      // pass/fail checks — to the person. Opening the vertical view lands them exactly where
+      // that work is, and puts what the model guessed in front of a human before it is saved.
+      if (rowDialogEnabled) setDialogRow(rowIndex);
     } catch {
       /* the caller owns error messaging; just drop the spinner */
     } finally {
@@ -303,6 +326,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
               <TableHeader>
                 <TableRow className="bg-[#C89B3C]/8">
                   {scanEnabled && <TableHead className="w-10" />}
+                  {rowDialogEnabled && <TableHead className="w-10" />}
                   {fixed && (
                     <TableHead
                       className="text-[#2A1F0E]/80 text-xs font-semibold whitespace-normal break-words leading-tight"
@@ -374,6 +398,23 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                           {scanningRow === rowIdx
                             ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9A6F1E]" />
                             : <Camera className="w-3.5 h-3.5 text-[#9A6F1E]" />}
+                        </Button>
+                      </TableCell>
+                    )}
+                    {/* Open this row as a top-to-bottom form. On a grid this wide the
+                        filler cannot see the cell they are typing into and the one they
+                        just filled at the same time. */}
+                    {rowDialogEnabled && (
+                      <TableCell className="w-10 align-top">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => setDialogRow(rowIdx)}
+                          title="Open this row as a form"
+                        >
+                          <Maximize2 className="w-3.5 h-3.5 text-[#9A6F1E]" />
                         </Button>
                       </TableCell>
                     )}
@@ -534,6 +575,24 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
           )}
           {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           {fieldState.error?.message && <p className="text-xs text-red-600">{fieldState.error.message}</p>}
+
+          <GridRowDialog
+            field={field}
+            control={control}
+            rowIndex={dialogRow}
+            onClose={() => setDialogRow(null)}
+            disabled={disabled}
+            rowLabel={
+              dialogRow != null && fixed
+                ? (rowsRef.current[dialogRow]?._label ?? fixedLabels[dialogRow])
+                : undefined
+            }
+            onScan={scanEnabled && !disabled ? () => {
+              scanTargetRef.current = dialogRow;
+              scanInputRef.current?.click();
+            } : undefined}
+            scanning={dialogRow != null && scanningRow === dialogRow}
+          />
         </div>
       )}
     />
