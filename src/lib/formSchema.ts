@@ -834,6 +834,36 @@ export function parsePrintedDate(raw: string | undefined | null): PrintedDate | 
   return null;
 }
 
+/**
+ * What a derived date field should do on one render. Pure, so the part that
+ * fails SILENTLY when it is wrong can be tested.
+ *
+ * The rule in one line: keep the field in step with the computation for as long
+ * as it still holds what we put there, and never touch it again once the filler
+ * has typed their own date.
+ *
+ * `seeded` exists for a reopened entry. It loads holding a value we derived on a
+ * previous visit, but `ours` is empty on a fresh mount — so without adopting a
+ * value that already matches the computation, correcting the printed date on a
+ * reopened draft would leave the derived date stale, which is the whole failure
+ * this is here to prevent.
+ */
+export interface DerivedFillState { ours?: string; seeded?: boolean }
+
+export function nextDerivedFill(
+  current: string,
+  computed: string | undefined,
+  state: DerivedFillState,
+): { write?: string; state: DerivedFillState } {
+  let { ours } = state;
+  if (!state.seeded && current && current === computed) ours = current;
+  const seeded = true;
+  if (!computed) return { state: { ours, seeded } };
+  if (current !== "" && current !== ours) return { state: { ours, seeded } }; // hand-edited: theirs
+  if (current !== computed) return { write: computed, state: { ours: computed, seeded } };
+  return { state: { ours: computed, seeded } };
+}
+
 /** The date a derivation offers, or undefined when the source cannot be read. */
 export function deriveDateValue(derive: DateDerivation, source: unknown): string | undefined {
   const parsed = parsePrintedDate(typeof source === "string" ? source : undefined);

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Controller, useWatch, type Control } from "react-hook-form";
 import { format, parseISO } from "date-fns";
 import { Input } from "@/components/ui/input";
@@ -5,10 +6,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { deriveDateValue } from "@/lib/formSchema";
+import { deriveDateValue, nextDerivedFill } from "@/lib/formSchema";
 import type {
-  DateDerivation, DateField, FormField, NumberField, SelectField, PassFailField,
-  SignatureField, TextField, TextareaField,
+  DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
+  PassFailField, SignatureField, TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
@@ -20,32 +21,52 @@ const PASS_FAIL_STYLE: Record<string, string> = {
 };
 
 /**
- * Offers a date computed from another field — e.g. FRM-703's Discard due, which
- * is thirty days past the best-by printed on the pack.
+ * A date computed from another field — e.g. FRM-703's Discard due, thirty days
+ * past the best-by printed on the pack, counting from the last day of a
+ * month-coded pack (FSQM-014 Part 6).
  *
- * It is a LINK, not an auto-fill, and that is the point. The source is a printed
- * code copied off a carton and is frequently coded to the month, so the
- * computation rests on a convention (FSQM-014 Part 6: count from the last day of
- * that month). Showing the result and letting the filler accept it puts a human
- * between the convention and the record. When the source cannot be parsed the
- * link simply does not appear and the date is typed — never a guess.
+ * IT FILLS ITSELF, and STAYS IN STEP while it does. A one-shot fill is the trap
+ * here: fill on scan, the filler then corrects the printed date, and the discard
+ * date is silently stale — worse than leaving it empty, because the draft list
+ * sorts by it. So the value is recomputed whenever the source changes, for as
+ * long as the field still holds what this put there.
+ *
+ * The moment the filler types their own date it is THEIRS and this stops
+ * touching it — the customer-agreement-requires-longer case is a real one, and
+ * an override that kept being overwritten would be unusable. The link then
+ * reappears offering the standard period back, which also tells a reader what
+ * the standard period would have been.
+ *
+ * A source that cannot be parsed produces nothing at all: no fill, no link, and
+ * the date is typed. `parsePrintedDate` returns null rather than guessing, so
+ * the failure mode is an empty field, never a plausible wrong one.
  */
-function DerivedDateLink({ derive, control, onPick }: {
+function DerivedDate({ derive, control, value, onChange }: {
   derive: DateDerivation;
   control: Control<Record<string, any>>;
-  onPick: (value: string) => void;
+  value: unknown;
+  onChange: (value: string) => void;
 }) {
   const source = useWatch({ control, name: derive.fromField });
-  const value = deriveDateValue(derive, source);
-  if (!value) return null;
+  const computed = deriveDateValue(derive, source);
+  const fill = useRef<DerivedFillState>({});
+
+  useEffect(() => {
+    const { write, state } = nextDerivedFill(typeof value === "string" ? value : "", computed, fill.current);
+    fill.current = state;
+    if (write !== undefined) onChange(write);
+  }, [computed, value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Nothing to offer when the field already agrees with the computation.
+  if (!computed || value === computed) return null;
   return (
     <button
       type="button"
-      onClick={() => onPick(value)}
+      onClick={() => { fill.current = { ours: computed, seeded: true }; onChange(computed); }}
       className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0 whitespace-nowrap"
-      title={`Computed from ${derive.fromField.replace(/_/g, " ")}`}
+      title={`The standard period, computed from ${derive.fromField.replace(/_/g, " ")}`}
     >
-      {derive.label ?? "Due"} {format(parseISO(value), "d MMM yyyy")}
+      {derive.label ?? "Due"} {format(parseISO(computed), "d MMM yyyy")}
     </button>
   );
 }
@@ -180,10 +201,11 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
                   </button>
                 )}
                 {field.type === "date" && !disabled && (field as DateField).derive && (
-                  <DerivedDateLink
+                  <DerivedDate
                     derive={(field as DateField).derive!}
                     control={control}
-                    onPick={rhf.onChange}
+                    value={rhf.value}
+                    onChange={rhf.onChange}
                   />
                 )}
               </div>
