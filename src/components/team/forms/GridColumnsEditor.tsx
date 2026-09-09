@@ -118,6 +118,32 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
                 />
               </div>
             )}
+            {/* Fill-time default. Offered only where it means something: a clock/date
+                value for a date-ish column, the filler's initials for a text one. */}
+            {(col.type === "date" || col.type === "time" || col.type === "text") && (
+              <div className="w-40">
+                <Label className="text-[10px] text-muted-foreground">New row default</Label>
+                <Select
+                  value={col.defaultTo ?? "blank"}
+                  onValueChange={v => updateColumn(idx, {
+                    defaultTo: v === "blank" ? undefined : v as GridColumn["defaultTo"],
+                  })}
+                >
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="blank">Blank</SelectItem>
+                    {(col.type === "date" || col.type === "time") && (
+                      <SelectItem value="now">
+                        {col.type === "date" ? "Today's date" : "Time the row is added"}
+                      </SelectItem>
+                    )}
+                    {col.type === "text" && (
+                      <SelectItem value="currentUserInitials">Signed-in user's initials</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {field.scanLabel && (
               <div className="w-44">
                 <Label className="text-[10px] text-muted-foreground">Fill from label</Label>

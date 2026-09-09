@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Plus, Trash2 } from "lucide-react";
 import {
-  applyLabelScan, resolveScanFact, scanWantedFacts,
-  type GridColumn, type GridField, type GridRowValue, type LabelFact, type LabelScanResult,
+  applyLabelScan, newGridRow, resolveScanFact, scanWantedFacts,
+  type FillContext, type GridColumn, type GridField, type GridRowValue,
+  type LabelFact, type LabelScanResult,
 } from "@/lib/formSchema";
 import { PassFailInput } from "./FormFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
@@ -144,6 +145,12 @@ export interface GridFieldInputProps {
     file: File,
     ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[]; keepPhoto: boolean },
   ) => Promise<LabelScanResult | null>;
+  /**
+   * Supplies what a column's `defaultTo` needs and the schema cannot know —
+   * today just the filler's initials. Passed in rather than looked up here for
+   * the same reason onScanLabel is: this grid touches no supabase.
+   */
+  fillContext?: FillContext;
 }
 
 /** State of the most recent scan, kept so it can be undone in one tap. */
@@ -160,7 +167,7 @@ interface ScanOutcome {
  * removes rows (respecting min/max); fixed mode renders one row per configured
  * label with a read-only leading label column.
  */
-export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFieldInputProps) {
+export function GridFieldInput({ field, control, disabled, onScanLabel, fillContext }: GridFieldInputProps) {
   const { fields: rows, append, remove, replace, update } = useFieldArray({ control, name: field.id });
   const fixed = field.rows.mode === "fixed";
   const fixedLabels = fixed ? (field.rows as { labels: string[] }).labels : [];
@@ -520,7 +527,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel }: GridFi
               variant="outline"
               size="sm"
               disabled={!fixed && maxRows != null && rows.length >= maxRows}
-              onClick={() => append({})}
+              onClick={() => append(newGridRow(field, fillContext))}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />{addLabel ?? (fixed ? "Add Item" : "Add Row")}
             </Button>

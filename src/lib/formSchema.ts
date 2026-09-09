@@ -77,7 +77,19 @@ export interface GridColumn {
   // override; when absent the label is matched by keyword (see inferScanFact),
   // and "none" opts the column out of scanning entirely.
   scanFact?: LabelFact | "notes" | "none";
+  // Value seeded into a NEWLY ADDED row, computed when that row is added rather
+  // than when the entry was created. For "now" the difference is the whole
+  // point: a delivery logged at 14:20 should read 14:20, not the time the
+  // receiver first opened the form. Never touches a row that already exists,
+  // and never overwrites a value — these are starting points, not answers.
+  defaultTo?: GridColumnDefault;
 }
+/**
+ * A default the column computes at fill time instead of storing a literal.
+ * "now" resolves against the COLUMN'S OWN type, so it is a date on a date
+ * column and a clock time on a time column.
+ */
+export type GridColumnDefault = "now" | "currentUserInitials";
 export type GridRows =
   | { mode: "dynamic"; min?: number; max?: number; addLabel?: string }
   | {
@@ -223,7 +235,49 @@ const todayValue = (type: string): string => {
   return format(now, "yyyy-MM-dd'T'HH:mm");
 };
 
-function emptyFieldValue(field: FormField): any {
+/**
+ * What a fill-time default needs that the schema cannot know by itself. Passed
+ * in by the caller so this module stays pure and free of supabase — the entry
+ * page owns identity, the same way it owns the label-scan upload.
+ */
+export interface FillContext { userInitials?: string }
+
+/**
+ * "Richard Mercer" → "RM", for a Receiver Initials column. Same rule the
+ * sidebar identity chip uses. Returns "" for an unusable name rather than a
+ * guess: an initials cell is an attestation, and a wrong one is worse than an
+ * empty one the receiver has to fill in themselves.
+ */
+export function initialsFromName(name?: string | null): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length || parts[0].includes("@")) return "";   // an email is not a name
+  return parts.slice(0, 2).map(w => w[0]).join("").toUpperCase();
+}
+
+/** One column's fill-time default, or undefined when it has none. */
+export function gridColumnDefault(column: GridColumn, ctx?: FillContext): any {
+  switch (column.defaultTo) {
+    case "now": return todayValue(column.type);
+    case "currentUserInitials": return ctx?.userInitials || undefined;
+    default: return undefined;
+  }
+}
+
+/**
+ * A brand-new grid row with its columns' fill-time defaults applied. Used both
+ * for the rows a new entry starts with and for every row the filler appends,
+ * so "now" means the moment the row appeared either way.
+ */
+export function newGridRow(field: GridField, ctx?: FillContext): GridRowValue {
+  const row: GridRowValue = {};
+  for (const column of field.columns) {
+    const value = gridColumnDefault(column, ctx);
+    if (value !== undefined) row[column.id] = value;
+  }
+  return row;
+}
+
+function emptyFieldValue(field: FormField, ctx?: FillContext): any {
   const dv = field.defaultValue; // pre-fill for scalar fields (?? keeps a legit 0/false)
   switch (field.type) {
     case "checkbox": return typeof dv === "boolean" ? dv : false;
@@ -235,11 +289,14 @@ function emptyFieldValue(field: FormField): any {
         const { labels, defaultValues, deletable } = grid.rows;
         return labels.map((label, i) => ({
           ...(deletable ? { _label: label } : {}),
+          // A value the paper form printed on that specific row is more
+          // specific than a column-wide default, so it wins.
+          ...newGridRow(grid, ctx),
           ...(defaultValues?.[i] ?? {}),
         }));
       }
       const min = grid.rows.min ?? 1;
-      return Array.from({ length: Math.max(min, 1) }, () => ({}));
+      return Array.from({ length: Math.max(min, 1) }, () => newGridRow(grid, ctx));
     }
     case "date": case "time": case "datetime":
       return (field as DateField).defaultToday ? todayValue(field.type) : (dv ?? "");
@@ -248,9 +305,9 @@ function emptyFieldValue(field: FormField): any {
 }
 
 /** RHF defaultValues for a brand-new entry (also the shape saved on createResponse). */
-export function emptyValues(schema: FormSchema): Record<string, any> {
+export function emptyValues(schema: FormSchema, ctx?: FillContext): Record<string, any> {
   const values: Record<string, any> = {};
-  for (const field of valueFields(schema)) values[field.id] = emptyFieldValue(field);
+  for (const field of valueFields(schema)) values[field.id] = emptyFieldValue(field, ctx);
   return values;
 }
 
