@@ -148,6 +148,68 @@ def put_cells(sheet, row, pairs, style=None, grow_height=True):
     return sheet[:m.start()] + open_tag + inner + close_tag + sheet[m.end():]
 
 
+def replace_in_place(sheet, row, col, value):
+    """Rewrite one cell WITHOUT moving it, for the mid-row columns A-K.
+
+    put_cells removes-and-appends, which is correct only for M/N (and L) because those are
+    the last columns. Column I or J rewritten that way would land after N, and cells must
+    stay in column order inside <row>. This is the same in-place writer
+    remediation-plan-status.py uses for its mid-row column D, for the same reason.
+
+    The cell being replaced is usually a SHARED string (t="s" with a <v> index) rather than
+    inline text, so the whole element is swapped for an inlineStr - editing the string table
+    in place would rewrite every other cell that happens to share the entry.
+    """
+    m = re.search(r'(<row r="%d"[^>]*>)(.*?)(</row>)' % row, sheet, re.S)
+    if not m:
+        raise SystemExit("row %d not found in %s" % (row, SHEET))
+    open_tag, inner, close_tag = m.groups()
+    cm = re.search(r'<c r="%s%d"([^>]*)>.*?</c>|<c r="%s%d"([^>]*)/>' % (col, row, col, row),
+                   inner, re.S)
+    if not cm:
+        raise SystemExit("no %s%d cell to replace - --set only rewrites a cell that exists, "
+                         "because inserting one means finding its ordered position." % (col, row))
+    attrs = cm.group(1) or cm.group(2) or ""
+    s = re.search(r's="(\d+)"', attrs)
+    cell = ('<c r="%s%d"%s t="inlineStr"><is><t xml:space="preserve">%s</t></is></c>'
+            % (col, row, ' s="%s"' % s.group(1) if s else "", esc(value)))
+    return sheet[:m.start()] + open_tag + inner.replace(cm.group(0), cell, 1) + close_tag \
+           + sheet[m.end():]
+
+
+def col_index(ref):
+    n = 0
+    for ch in ref:
+        n = n * 26 + (ord(ch) - 64)
+    return n
+
+
+def sort_row_cells(sheet, row):
+    """Put one row's <c> elements back in column order.
+
+    Cells must appear in ascending column order inside <row>. put_cells appends, which is
+    correct only while the column being written is the last one - so writing K or L after the
+    M/N as-built columns existed left rows reading ...K, M, N, L. Excel has tolerated it, but
+    it is out of spec and a stricter reader is entitled to reject the file. Sorting the row
+    after an edit repairs both the row being touched and any earlier damage to it, and is a
+    no-op on a row that was already correct.
+    """
+    m = re.search(r'(<row r="%d"[^>]*>)(.*?)(</row>)' % row, sheet, re.S)
+    if not m:
+        return sheet
+    open_tag, inner, close_tag = m.groups()
+    cells = re.findall(r'<c r="([A-Z]+)%d"(?:[^>]*/>|[^>]*>.*?</c>)' % row, inner, re.S)
+    if not cells:
+        return sheet
+    found = re.findall(r'<c r="[A-Z]+%d"(?:[^>]*/>|[^>]*>.*?</c>)' % row, inner, re.S)
+    order = sorted(range(len(cells)), key=lambda i: col_index(cells[i]))
+    if order == list(range(len(cells))):
+        return sheet                       # already ordered - leave the bytes alone
+    rest = re.sub(r'<c r="[A-Z]+%d"(?:[^>]*/>|[^>]*>.*?</c>)' % row, "", inner, flags=re.S)
+    return sheet[:m.start()] + open_tag + "".join(found[i] for i in order) + rest.strip() \
+           + close_tag + sheet[m.end():]
+
+
 def shared_strings(parts):
     """The workbook's string table. Column B holds task numbers as shared strings (t="s"),
     not inline text, so a lookup that only reads <t> finds nothing."""
@@ -346,8 +408,10 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--workbook", default=DEFAULT_WB)
     ap.add_argument("--task", required=True, help="task number as it appears in column B, e.g. 30.7")
-    ap.add_argument("--summary", required=True, help="what was actually built (max %d words)" % WORD_CAP)
-    ap.add_argument("--docs", required=True, help="documents affected, e.g. 'FRM-903 (Rev v2)'")
+    ap.add_argument("--summary", default="", help="what was actually built (max %d words). "
+                    "Required unless the run is a pure --set metadata correction." % WORD_CAP)
+    ap.add_argument("--docs", default="", help="documents affected, e.g. 'FRM-903 (Rev v2)'. "
+                    "Required unless the run is a pure --set metadata correction.")
     ap.add_argument("--status", help="also set the Status column, e.g. Completed")
     ap.add_argument("--no-backup", action="store_true")
     # --- new-task mode: append a task the consultant's list never had ---
@@ -375,7 +439,40 @@ def main():
                     help="notes and risk (column K). Sets it on a --new-task row, and rewrites "
                          "it on an existing one - a note can go stale when the thing it warns "
                          "about gets fixed.")
+    ap.add_argument("--set", action="append", default=[], metavar="COL=VALUE",
+                    help="rewrite any of columns A/C-K on an EXISTING task row, repeatable, e.g. "
+                         "--set I='App today'. The App fit (I) and capability (J) columns go "
+                         "stale as the F1-F5 blockers get built - 13.7 still read 'Needs build: "
+                         "F2' after D-07 shipped the CAPA form its findings go to. Read the "
+                         "current value first: these cells are the reason a task was scoped the "
+                         "way it was, and replacing one wholesale is how that reason gets lost.")
     a = ap.parse_args()
+
+    sets = []
+    for pair in a.set:
+        if "=" not in pair:
+            raise SystemExit("--set wants COL=VALUE, got %r" % pair)
+        col, val = pair.split("=", 1)
+        col = col.strip().upper()
+        if col == "B":
+            raise SystemExit("--set B: column B is the task id this tool looks the row up by")
+        if col in (STATUS_COL, SUMMARY_COL, DOCS_COL):
+            raise SystemExit("--set %s: use --status for %s, --summary for %s, --docs for %s"
+                             % (col, STATUS_COL, SUMMARY_COL, DOCS_COL))
+        if not re.fullmatch(r"[A-K]", col):
+            raise SystemExit("--set column %r: expected one of A, C-K" % col)
+        sets.append((col, val))
+    if sets and a.new_task:
+        raise SystemExit("--set rewrites an existing row; a --new-task row takes its values from "
+                         "--name/--artifact/--app-fit/--capability/--notes instead.")
+
+    # M/N are the as-built record. They stay mandatory for logging work, but a run that only
+    # corrects stale metadata must NOT be forced to invent one: writing "what was built" onto a
+    # task nobody has started yet is exactly the summary-disagrees-with-detail problem these
+    # scripts exist to prevent.
+    if not (a.summary and a.docs) and not (sets or a.notes):
+        raise SystemExit("--summary and --docs are required when logging built work. Pass --set "
+                         "and/or --notes on their own to correct a row's metadata instead.")
 
     if a.new_task:
         missing = [f for f in ("name", "artifact", "clauses", "days", "owner")
@@ -423,14 +520,28 @@ def main():
         raise SystemExit("task %r not found in column B of the Task Detail sheet. Use --new-task "
                          "to append it." % a.task)
 
-    pairs = [(SUMMARY_COL, a.summary), (DOCS_COL, a.docs)]
+    # Only write the as-built columns when there is something to record, so a pure --set run
+    # leaves an untouched task's M/N empty rather than blanking or faking them. M and N really
+    # are the last columns, so appending them is correct and they may not exist yet.
+    pairs = [(SUMMARY_COL, a.summary), (DOCS_COL, a.docs)] if (a.summary or a.docs) else []
+    if pairs:
+        sheet = put_cells(sheet, row, pairs)
+
+    # K (notes) and L (status) sit BEFORE M/N, so appending them puts the row out of column
+    # order once the as-built columns exist - which is how rows already in this workbook ended
+    # up reading ...K, M, N, L. Replace them where they sit when they are already there.
+    # On a --new-task row both went in with the rest of the columns already.
+    inplace = list(sets)
     if a.status:
-        pairs.append((STATUS_COL, a.status))
-    # On a new row the note went in with the rest of the columns already; on an existing row
-    # this is the only way to correct one.
+        inplace.append((STATUS_COL, a.status))
     if a.notes and not a.new_task:
-        pairs.append((NOTES_COL, a.notes))
-    sheet = put_cells(sheet, row, pairs)
+        inplace.append((NOTES_COL, a.notes))
+    for col, val in inplace:
+        if re.search(r'<c r="%s%d"[ />]' % (col, row), sheet):
+            sheet = replace_in_place(sheet, row, col, val)
+        else:
+            sheet = put_cells(sheet, row, [(col, val)], grow_height=False)
+    sheet = sort_row_cells(sheet, row)
 
     styles_xml = parts[STYLES].decode("utf-8")
     sheet, styles_xml, greened, minted = green_completed_rows(sheet, styles_xml, strings)
@@ -469,8 +580,9 @@ def main():
         print("green fill applied to Completed row%s %s%s"
               % ("" if len(greened) == 1 else "s", ", ".join(str(r) for r in greened),
                  " (minted %d style%s)" % (minted, "" if minted == 1 else "s") if minted else ""))
-    print("task %s -> row %d  (%d words%s)"
-          % (a.task, row, n, ", status=" + a.status if a.status else ""))
+    print("task %s -> row %d  (%d words%s%s)"
+          % (a.task, row, n, ", status=" + a.status if a.status else "",
+             ", set " + ", ".join(c for c, _ in sets) if sets else ""))
 
 
 if __name__ == "__main__":
