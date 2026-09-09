@@ -48,6 +48,9 @@ begin
          (content #>> '{form_schema,sections,0,fields,0,type}')          as grid_type,
          jsonb_array_length(content #> '{form_schema,sections,0,fields,0,columns}') as cols,
          (content #> '{form_schema,sections,0,fields,0}' ? 'scanLabel')  as already_on,
+         (content #> '{form_schema,sections,0,fields,0,scanLabel}')      as scan_on,
+         (content #>> '{form_schema,sections,0,fields,0,scanNotesColumnId}')   as notes_col,
+         (content #>> '{form_schema,sections,0,fields,0,columns,10,scanFact}') as opted_out,
          (content #>> '{form_schema,sections,0,fields,0,columns,2,id}')  as c2,
          (content #>> '{form_schema,sections,0,fields,0,columns,3,id}')  as c3,
          (content #>> '{form_schema,sections,0,fields,0,columns,4,id}')  as c4,
@@ -65,8 +68,21 @@ begin
   if r.cols <> 13 then
     raise exception 'Receiving Log has % columns, expected 13.', r.cols;
   end if;
+  -- IDEMPOTENT ON PURPOSE. This was first applied straight to the database via the
+  -- Management API, which does NOT write supabase_migrations.schema_migrations - so the next
+  -- `db push` saw it as pending and a bare "already set" guard failed the whole push. Refusing
+  -- to re-apply is right; refusing to RECORD an outcome that is already in place is not. So a
+  -- state that already matches exactly what this migration produces is a clean no-op, and only
+  -- a DIFFERENT configuration is an error worth stopping for.
   if r.already_on then
-    raise exception 'FRM-301 already carries scanLabel; this migration has run, or someone set it.';
+    if r.scan_on is distinct from 'true'::jsonb
+    or r.notes_col is distinct from 'comments_hold_status'
+    or r.opted_out is distinct from 'none' then
+      raise exception 'FRM-301 carries a DIFFERENT scan configuration (scanLabel=%, notes=%, '
+                      'opt-out=%). Someone changed it; re-read before applying.',
+        r.scan_on, r.notes_col, r.opted_out;
+    end if;
+    raise notice 'FRM-301 scan config already in place; recording this migration as a no-op.';
   end if;
   -- Index-addressed writes are only safe while the indices still mean what they meant when
   -- this was written. If a column was inserted or reordered, refuse rather than write the
@@ -81,8 +97,16 @@ begin
   end if;
 end $$;
 
+-- The invariant is "everything EXCEPT the three scan keys is unchanged", so the same three
+-- keys are stripped on both sides of the comparison. Hashing the raw content here instead
+-- works only on a first apply: on the idempotent re-run the keys are already present, so a
+-- raw before-hash would never match a stripped after-hash and the migration would fail
+-- claiming drift that had not happened. (It did, on the first dry run of this file.)
 create temporary table frm301_before on commit drop as
-select md5(content::text) as h
+select md5((content
+            #- '{form_schema,sections,0,fields,0,scanLabel}'
+            #- '{form_schema,sections,0,fields,0,scanNotesColumnId}'
+            #- '{form_schema,sections,0,fields,0,columns,10,scanFact}')::text) as h
   from public.sop_documents where sop_number = 'FRM-301';
 
 update public.sop_documents
@@ -94,7 +118,13 @@ update public.sop_documents
                      to_jsonb('comments_hold_status'::text), true),
                    '{form_schema,sections,0,fields,0,columns,10,scanFact}',
                    to_jsonb('none'::text), true)
- where sop_number = 'FRM-301' and status = 'active';
+ where sop_number = 'FRM-301' and status = 'active'
+   -- Skip the write entirely when the config is already in place. Rewriting identical
+   -- content would still bump updated_at and fire another sop_document_history snapshot,
+   -- putting a second "the form changed" entry in the audit trail for a change that did
+   -- not happen.
+   and coalesce(content #> '{form_schema,sections,0,fields,0,scanLabel}', 'false'::jsonb)
+       is distinct from 'true'::jsonb;
 
 do $$
 declare
