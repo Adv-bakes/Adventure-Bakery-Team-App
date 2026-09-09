@@ -33,7 +33,14 @@
 -- specific lot when two lots ran the same day. The open item is narrowed to that and to naming the
 -- storage location, rather than closed.
 --
--- THE BLOCK IS REPLACED BY BOUNDARY, NOT BY INDEX. Part 6 grows from 6 lines to 11, so every index
+-- THE PACKS ARE CODED TO THE MONTH. A finished pack examined on 2026-09-09 reads "Best By: July
+-- 2027" - no day. Thirty days after that is ambiguous by up to a month, so Part 6 says the period
+-- runs from the LAST day of the coded month: the reading that keeps the sample longer, which is the
+-- right direction to be wrong in. It follows that FRM-703 records the printed date as TEXT, exactly
+-- as printed, rather than as a calendar date the filler would have to invent a day for and then
+-- record the invention as a printed fact.
+--
+-- THE BLOCK IS REPLACED BY BOUNDARY, NOT BY INDEX. Part 6 grows from 6 lines to 12, so every index
 -- after it moves. The head and the tail are taken by locating the Part 6 heading and the Part 7
 -- heading by text, which is the lesson from 20260909000002 and 000004, and the guards assert that
 -- neither head nor tail moved by a byte.
@@ -131,6 +138,7 @@ begin
 "• Each retained sample shall be identified with the product, the batch or lot code, and the date code printed on the pack, so that it can be matched to the batch it speaks for and to that batch's release record on FRM-701.",
 "• Retained samples shall be held under the product's normal storage conditions, in a designated location, identified as retention samples and kept separate from saleable stock so that one cannot be picked and shipped.",
 "• A retained sample shall be kept until thirty days after the best-by or expiration date printed on its pack, and then discarded. Where a customer agreement requires a longer period for that customer's product, the longer period applies.",
+"• Where the pack is coded with a month and year only, the thirty days shall run from the last day of that month.",
 "• Each retained sample shall be logged on FRM-703 Retention Sample Log when it is taken, and its disposal recorded there when it leaves the shelf — whether it is discarded at the end of its period or used earlier for a complaint or an investigation.",
 "> The period is anchored to the date printed on the pack rather than to a specification, and that is deliberate. SQF 2.4.4.5 measures retention against the stated shelf life of the product, which ordinarily means the finished product specification — and this site holds none, which is the same gap Part 5 works around. The date coded onto every pack is the shelf life the site has in fact stated for that unit. It exists today, and it is legible on the retained sample itself, so the date a sample may be discarded can be read off the sample without opening another document.",
 "> The thirty days is this site's own margin and not a requirement of the Code, which measures to the stated shelf life and stops there. It is here because a complaint about a unit eaten near its date arrives after that date, and a sample discarded on the date itself would be gone exactly when it was wanted.",
@@ -149,6 +157,8 @@ update public.sop_documents
                $settled$RETENTION PERIOD — SETTLED 2026-09-09. The practice was to keep samples for about a year, with no rule enforced, and the owner asked whether that much is needed beyond the product's expiration date. It is not. SQF 2.4.4.5 imposes its rule only where retention samples are required by a customer or a regulation, and neither requires them here; where the rule does apply it measures retention against the stated shelf life and stops there. No federal rule reaches a bakery on this point either — reserve-sample requirements sit in infant formula and in dietary supplements, not in baked goods. Part 6 now sets the period at thirty days past the best-by or expiration date printed on the pack, with a customer agreement governing where it requires longer.
 
 ANCHORING THE PERIOD TO THE PRINTED DATE RESOLVES A DEPENDENCY. 2.4.4.5's own wording is "the stated shelf life of the product", which ordinarily means the finished product specification — and the site holds none, which is the same gap Part 5 works around. The date coded onto every pack is the shelf life this site has in fact stated for that unit; it exists today, and it is legible on the retained sample itself. Part 6 is therefore performable now, does not wait on the specification library, and will not need to change when that library is built.
+
+THE PACKS ARE CODED TO THE MONTH, NOT TO THE DAY. A finished pack examined on 2026-09-09 reads "Best By: July 2027" — a month and a year, with no day in it. Thirty days after that is ambiguous by up to a month, so Part 6 states the convention: the period runs from the LAST day of the coded month. That is the reading that keeps the sample longer, which is the right direction to be wrong in on a safety record. It also decides how FRM-703 records the date — as text, exactly as printed, rather than as a calendar date for which the filler would have to invent a day and then record the invention as a printed fact. A record of the pack should say what the pack says.
 
 THE THIRTY DAYS IS THE SITE'S OWN MARGIN and is recorded as such rather than dressed as a requirement. A complaint about a unit eaten near its date arrives after that date, and a sample discarded on the date would be gone exactly when it was wanted. Little is lost by shortening from a year: the sample cannot be tested, since no analysis of any kind is performed (Part 2), so what it can show is what was made, packed, coded and labelled — and a baked product long past its date no longer shows that reliably. BEFORE THIS IS ISSUED, CHECK THE TOLLING AGREEMENTS: a contractual retention term is the likeliest reason a year became the habit, and Part 6 defers to a customer agreement where one requires longer.
 
@@ -174,6 +184,8 @@ begin
          (select count(*) from jsonb_array_elements_text(content->'procedure') s
            where s like '%kept separate from saleable stock%')                               as separation_rule,
          (select count(*) from jsonb_array_elements_text(content->'procedure') s
+           where s like '%coded with a month and year only%')                                as month_rule,
+         (select count(*) from jsonb_array_elements_text(content->'procedure') s
            where s like '%FRM-703 Retention Sample Log%')                                    as names_log,
          (select count(*) from jsonb_array_elements_text(content->'procedure') s
            where s like '%stated shelf life and then discarded%')                            as thin_gone,
@@ -190,20 +202,24 @@ begin
     into r
     from public.sop_documents where sop_number = 'FSQM-014';
 
-  if r.lines <> 34 then
-    raise exception 'Procedure is % lines, expected 34 (29 less 6 plus 11).', r.lines;
+  if r.lines <> 35 then
+    raise exception 'Procedure is % lines, expected 35 (29 less 6 plus 12).', r.lines;
   end if;
   if r.period_rule <> 1 or r.unit_rule <> 1 or r.separation_rule <> 1 or r.names_log <> 1 then
     raise exception 'Part 6 did not land: period=%, unit=%, separation=%, log=%.',
       r.period_rule, r.unit_rule, r.separation_rule, r.names_log;
   end if;
+  -- The packs are coded to the month. Without this line the thirty days is ambiguous by up to one.
+  if r.month_rule <> 1 then
+    raise exception 'The month-coded convention is missing from Part 6 (found %).', r.month_rule;
+  end if;
   if r.thin_gone <> 0 then
     raise exception 'The thin shelf-life bullet is still present (% copies).', r.thin_gone;
   end if;
   -- Exact, because they are computable: the document held 10 bullets and 10 prose lines over 9
-  -- plain steps. Part 6 gave up 4 bullets and 1 prose line and gained 5 of each.
-  if r.bullets <> 11 or r.prose <> 14 then
-    raise exception 'Line forms wrong after the edit: % bullets, % prose (expected 11 / 14).',
+  -- plain steps. Part 6 gave up 4 bullets and 1 prose line and gained 6 bullets and 4 prose.
+  if r.bullets <> 12 or r.prose <> 14 then
+    raise exception 'Line forms wrong after the edit: % bullets, % prose (expected 12 / 14).',
       r.bullets, r.prose;
   end if;
   if not (r.settled and r.contracts_flag and r.new_item and r.heading and r.item3) then
@@ -228,7 +244,7 @@ begin
             where x.ord < b.s_ord) is distinct from b.head
        or (select jsonb_agg(to_jsonb(x.line) order by x.ord)
              from jsonb_array_elements_text(d.content->'procedure') with ordinality x(line, ord)
-            where x.ord >= b.s_ord + 11) is distinct from b.tail
+            where x.ord >= b.s_ord + 12) is distinct from b.tail
        or length(d.content->>'revision_history') <= length(b.history));
   if drift <> 0 then
     raise exception 'FSQM-014 changed beyond Part 6 and its revision history. Rolled back.';
