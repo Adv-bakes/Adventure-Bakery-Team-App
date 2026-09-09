@@ -6,7 +6,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import {
-  emptyValues, getFormSchema,
+  emptyValues, getFormSchema, initialsFromName,
   type FieldManifest, type FormSchema, type LabelFact, type LabelScanResult,
 } from "@/lib/formSchema";
 
@@ -113,9 +113,17 @@ export async function createResponse(doc: {
     if (existing) return existing as FormResponse;
   }
 
+  // The rows a new entry starts with get their columns' fill-time defaults, so
+  // a `defaultTo` column is filled on row one as well as on every Add Row. The
+  // name is looked up here rather than passed in because this is the one place
+  // an entry is born; a missing profile just yields no initials.
+  const { data: prof } = await supabase
+    .from("profiles").select("full_name").eq("id", userId).maybeSingle();
+  const ctx = { userInitials: initialsFromName((prof as any)?.full_name) };
+
   // prefill (e.g. figures derived from another data source) overlays the empty
   // values field-by-field; anything it omits keeps the schema's empty default.
-  const data0 = prefill ? { ...emptyValues(schema), ...prefill } : emptyValues(schema);
+  const data0 = prefill ? { ...emptyValues(schema, ctx), ...prefill } : emptyValues(schema, ctx);
 
   const { data, error } = await table()
     .insert({

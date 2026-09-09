@@ -15,8 +15,9 @@ import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, ScanLine, Sa
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  answerManifest, buildZodSchema, emptyValues, getFormSchema, instanceTitle, mergeScanAnswers,
-  valueFields, type FormSchema, type LabelFact, type LabelScanResult,
+  answerManifest, buildZodSchema, emptyValues, getFormSchema, initialsFromName, instanceTitle,
+  mergeScanAnswers, valueFields,
+  type FillContext, type FormSchema, type LabelFact, type LabelScanResult,
 } from "@/lib/formSchema";
 import {
   StaleResponseError, deleteResponse, extractFormAnswers, extractPackageLabel, fetchProfileNames,
@@ -125,6 +126,12 @@ export default function FormEntry() {
 
   const isSubmitted = response?.status === "submitted";
   const isMine = !!signer && response?.created_by === signer.userId;
+  // What a column's `defaultTo` needs and the schema cannot know. Derived from
+  // the signer the page already resolved, so there is no second identity lookup.
+  const fillContext = useMemo<FillContext>(
+    () => ({ userInitials: initialsFromName(signer?.name) }),
+    [signer?.name],
+  );
   const canEdit = !isSubmitted && (isMine || isAdmin);
   const readOnly = !canEdit;
   // Field STRUCTURE is pinned to the revision the entry was filled under, so an old entry renders
@@ -442,6 +449,7 @@ export default function FormEntry() {
         isAdmin={isAdmin}
         signer={signer}
         onScanLabel={canEdit ? scanLabelIntoRow : undefined}
+        fillContext={fillContext}
       />
 
       {/* File/photo attachments — always shown if any exist, even if the admin

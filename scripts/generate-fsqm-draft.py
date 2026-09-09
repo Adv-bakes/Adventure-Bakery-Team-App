@@ -153,6 +153,33 @@ DOCS = [
         },
     },
     {
+        "json": "sop-drafts/FSQM-014-sampling-inspection-analysis.json",
+        "md":   "sop-drafts/FSQM-014-sampling-inspection-analysis.md",
+        "meta": {
+            "number": "FSQM-014",
+            "title": "Product Sampling, Inspection and Analysis Program",
+            "type": "fsqm (Food Safety Quality Manual)",
+            "category": "Food Safety Quality Manual",
+            "status": "draft",
+            "revision": "New",
+            "effective": "not in force",
+            "sqf": "2.4.4.1, 2.4.4.2, 2.4.4.5, 2.4.4.6  (2.4.4.3 / .4 Not Applicable - no on-site laboratory)",
+            "extra": [
+                ("Approved by", "not approved"),
+                ("Records",
+                 "**FRM-301** incoming (fillable, package-label scan) · batch sheets in process · "
+                 "**FRM-701** at release · **FRM-703** Retention Sample Log (to be built)"),
+                ("Failure path",
+                 "**FSQM-018** Non-Conforming Product and Equipment — anything failing an "
+                 "inspection is held, not accepted or released"),
+                ("Depends on",
+                 "**FSQM-020** Product Release Program — Part 5 adopts its release checks as "
+                 "the finished-product criteria, because no finished product specification exists"),
+                ("Built by", "`20260909000001` (seed)"),
+            ],
+        },
+    },
+    {
         "json": "sop-drafts/FSQM-020-product-release-program.json",
         "md":   "sop-drafts/FSQM-020-product-release-program.md",
         "meta": {
