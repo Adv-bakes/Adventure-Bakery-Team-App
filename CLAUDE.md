@@ -75,7 +75,7 @@ src/
 
 **Layout wrappers:**
 - `BrandLayout` — client portal; sidebar nav driven by role (admin/staff/user)
-- `TeamLayout` — team portal; collapsible left sidebar (232px ↔ 64px) with 7 nav sections; polls `prf_submissions` for inbox badge count
+- `TeamLayout` — team portal; collapsible left sidebar (232px ↔ 64px) with 7 nav sections; polls `prf_submissions` for inbox badge count. The sidebar **footer carries a persistent identity chip** (gold initials avatar + name/email + role label, linking to `/team/account`; collapses to the avatar alone with a tooltip) so who is signed in is visible at a glance without opening My Account — it reads `profiles.full_name` for the current `user.id`
 
 **Route protection:** `ProtectedRoute` accepts a `roles` prop (e.g. `["admin","owner"]`); redirects unauthenticated users to `/team` or `/k2f-login`
 
@@ -129,7 +129,7 @@ All are public (anon) Supabase credentials — safe on the client.
 | Sales | `/team/sales/dashboard`, `/team/sales/templates` | Dashboard has inbox badge |
 | Operations | `/team/ops/orders`, `/team/ops/inventory`, `/team/ops/floor`, `/team/ops/insights` | floor & insights are Phase 0 |
 | Compliance | `/team/compliance/sops`, `/team/compliance/traceability`, `/team/compliance/temperature`, `/team/compliance/certifications` | traceability & certifications Phase 0 |
-| HR | `/team/hr/directory`, `/team/hr/trainings`, `/team/hr/traceability` | directory is Phase 0 |
+| HR | `/team/hr/directory`, `/team/hr/trainings`, `/team/hr/traceability` | traceability is Phase 0 |
 | Internal | `/team/internal/email`, `/team/internal/finance` (owner only), `/team/sourcing`, `/team/account`, `/team/settings` | email/finance Phase 0 |
 
 ---
@@ -253,7 +253,7 @@ Unmapped numbers fall back to plain text. Both generators key physical==printed 
 
 ## Document Numbering Convention — `lib/docNumber.ts`
 
-**Forms, manuals (FSQM), and policies** (`sop_documents.sop_number`) follow **`<TYPE>-<NNN>`**: a type prefix (`FRM`/`FSQM`/`POL` — same prefixes `detectType()` reads) plus a **3-digit number whose hundreds block = the process stage** (receiving 300s, production 500s, …; low number = early in the flow). The identifier is **stable for the document's life — the revision lives in the `revision` field, never baked into the number** (the old `FRM-046-1` style did the latter, the inconsistency this fixes). SQF clause numbers stay **decoupled** from these IDs (SQF renumbers between editions) — cross-reference via the existing `sqf_reference` field/chips. **SOPs are the deliberate exception:** they're numbered by the SQF clause they implement (`SOP-2.3.1`, `SOP-11.7.5`) so auditors can jump clause→SOP; `parseClauseNumber()` recognizes this so it isn't flagged, and the register groups them under "SOPs (numbered by SQF clause)".
+**Forms, manuals (FSQM), and policies** (`sop_documents.sop_number`) follow **`<TYPE>-<NNN>`**: a type prefix (`FRM`/`FSQM`/`POL` — same prefixes `detectType()` reads — plus `TRN` for training modules and `REP` for generated reports, which the Word parser never produces so they live only in `docNumber.ts`'s `DocNumberType`) plus a **3-digit number whose hundreds block = the process stage** (receiving 300s, production 500s, …; low number = early in the flow). The identifier is **stable for the document's life — the revision lives in the `revision` field, never baked into the number** (the old `FRM-046-1` style did the latter, the inconsistency this fixes). SQF clause numbers stay **decoupled** from these IDs (SQF renumbers between editions) — cross-reference via the existing `sqf_reference` field/chips. **SOPs are the deliberate exception:** they're numbered by the SQF clause they implement (`SOP-2.3.1`, `SOP-11.7.5`) so auditors can jump clause→SOP; `parseClauseNumber()` recognizes this so it isn't flagged, and the register groups them under "SOPs (numbered by SQF clause)".
 
 - **`src/lib/docNumber.ts`** is the single source of truth: `DOC_STAGES` (the block→stage map), `parseDocNumber` (tolerant; strips a legacy `-N` suffix and returns it), `stageForNumber`/`stageForSopNumber`, `formatDocNumber` (canonical `FRM-301`), `docNumberIssue`/`isValidDocNumber` (advisory, non-blocking).
 - **`DocNumberHint`** (`components/team/DocNumberHint.tsx`) renders the derived stage + a non-blocking warning under the `sop_number` inputs in `SopImportDialog` and the SOPs Library drawer.
@@ -335,6 +335,15 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   `generateFormReportPdf` (landscape, clamps to 10 columns → "see CSV"), and `generateDerivedReportPdf`
   (landscape log/register PDF for the derived-report feature above); reuses `loadLogoDataUrl`/
   `confidentialFooter` now exported from `sopPdf.ts`.
+- **Printable BLANK forms** (the paper copy an auditor asks for — distinct from the filled-entry PDF
+  above): `python scripts/generate-form-blank.py` renders a form's `form_schema` to both `.pdf`
+  (reportlab) and `.docx` (python-docx) in `sop-drafts/` (gitignored — regenerate rather than commit).
+  One hardcoded block per form in `__main__` supplies the metadata + `landscape_page` flag. Two layout
+  rules exist because both were real bugs: **Arial is registered and used throughout** (core Helvetica
+  has no em-dash or arrow glyph, so those rendered as missing-glyph boxes — the corruption was in the
+  font, not the source text), and section headers / grid titles carry `CondPageBreak` +
+  `keep_with_next` so a heading never orphans onto the page above its table. Every `grid` renders its
+  field label + help text — an untitled table on paper is unusable.
 - **Package-label scan (fill ONE grid row from a photo of an ingredient pack):** a grid opted in via
   `GridField.scanLabel` gets a **camera button on every row**; the filler photographs the bag/case and
   `extract-package-label` reads the printed identity into that row. Distinct from the whole-form photo
@@ -458,6 +467,20 @@ the UI lock matches what the function enforces. Every mutating action writes `ad
 the service-role function can write but no client can tamper: an append-only audit log. Passwords are never
 logged.
 
+**Self-service password change** — `StaffAccount.tsx` (`/team/account`) carries a **Change Password**
+card: `supabase.auth.updateUser({ password })` behind a min-8-chars + confirm-match check, with a single
+Eye/EyeOff toggle driving `type` on both fields. This is a signed-in user changing *their own* password
+and is the answer to "where does a user reset their password?" — distinct from `AccountAccessCard`'s
+admin-driven reset link / temporary password, which exist for accounts that cannot sign in at all.
+
+**Team invitees are auto-confirmed on accept.** `accept_team_invitation` stamps
+`auth.users.email_confirmed_at = COALESCE(email_confirmed_at, now())` (migration
+`20260714000006_confirm_team_invitees.sql`, which also backfilled already-accepted invitees). Without it
+an invitee who set a password still hit **"Email not confirmed"** at sign-in, because internal
+`@adventurebakes.com` addresses do not receive the confirmation mail. The invite link, delivered to that
+mailbox, is already the proof of ownership — the same reasoning `accept-invitation` uses for
+`email_confirm: true`.
+
 **Invitations must be provisioned server-side.** `AcceptInvite.tsx` calls the `accept-invitation` edge fn —
 it must **never** go back to client-side `supabase.auth.signUp`. When an auth user already exists for the
 email, GoTrue's anti-enumeration behavior returns a **fake user object with a random UUID and no error**,
@@ -546,6 +569,17 @@ no DB view/RPC yet (a later phase will roll up summaries + purge old rows). Disp
   surfaces a gold link to it (opens a fresh signed URL via `resolveFileUrl()`) **only when data
   looks wrong** — empty range (missing) or latest reading > 6h old (stale). Renders as plain text
   if the doc isn't found (graceful).
+- **Start FRM-401 Review** (staff/admin/owner): a popover with a month `<input type="month">` picker
+  creates an **FRM-401 Temperature Monitoring Review** entry pre-filled from that month's data and
+  navigates straight to it. The range is a **calendar month** — month-to-date for the current month,
+  the full month for a past one (`monthRange()`) — deliberately *not* the page's rolling Daily/Weekly/
+  Monthly window, which reads as "September 2026" while actually holding the last 30 days.
+  `deriveFrm401Prefill()` fills the review month/date, a per-unit min/max/avg `unit_summary` row, and
+  one `alert_log` row per `temperature_alerts` row in the month (unit, kind, opened, worst value,
+  `acknowledged`, and the log's `action_taken` as the product-affected note), or a single "No alerts
+  raised" row when the month is clean. **Held limits are left blank on purpose** — the limit in force
+  is the reviewer's assertion, not something to be pre-answered for them. Seeded via
+  `createResponse(doc, prefill)`; an existing draft is resumed untouched rather than overwritten.
 
 ---
 
@@ -722,6 +756,6 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `docNumber.ts` | Document numbering convention: `DOC_STAGES`, `parseDocNumber`, `stageForNumber`/`stageForSopNumber`, `formatDocNumber`, `docNumberIssue`/`isValidDocNumber`; `parseClauseNumber`/`compareClauseIds` (the deliberate SQF-clause SOP scheme). See "Document Numbering Convention" above |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
 | `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns); package-label scan helpers `LABEL_FACTS`/`LABEL_FACT_LABELS`, `inferScanFact`/`resolveScanFact`, `scanWantedFacts`, `applyLabelScan`. See "Dynamic Fillable Forms" below |
-| `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse`, `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
+| `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse` (optional 2nd arg `prefill` seeds the new entry's `data` over `emptyValues(schema)`; a resumed existing draft is never clobbered — powers the FRM-401 temperature-review launcher), `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
 | `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
