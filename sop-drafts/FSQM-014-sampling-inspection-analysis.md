@@ -62,7 +62,7 @@ Management team — provides the resources inspection requires, and is notified 
 
   Three things follow from it. SQF 2.4.4.2 governs how analyses are conducted, by what methods and by what laboratory; where none are conducted, its requirements do not arise. SQF 2.4.4.3 and 2.4.4.4 govern the siting, access control and waste handling of an on-site laboratory; there is none, so both are recorded as Not Applicable, and the GMP inspection under FSQM-012 records that there is no laboratory to inspect.
 
-  What must happen before this changes: if any analysis is ever introduced — a gluten result for certified Gluten Free product being the likely first — the method shall be named in this program, and any external laboratory shall be accredited to ISO/IEC 17025 or an equivalent international standard and listed on the contract services register before the first sample is sent to it. The method comes first, then the laboratory, then the sample.
+  What must happen before this changes: if any analysis is ever introduced, the method shall be named in this program, and any external laboratory shall be accredited to ISO/IEC 17025 or an equivalent international standard and listed on the contract services register before the first sample is sent to it. The method comes first, then the laboratory, then the sample.
 
 **3. The site performs three inspections. Each already has its own record, and this program names them rather than creating a second place to write the same thing down.**
 
@@ -70,7 +70,7 @@ Management team — provides the resources inspection requires, and is notified 
   - Work-in-progress — inspected during the run against the batch sheet, and recorded on it. Criteria: the formula was followed; the process steps and process controls stayed within their stated limits; and the pack, seal, date and lot code are correct as the run proceeds.
   - Finished product — inspected before release against the checks listed in FSQM-020 Part 4, and recorded on FRM-701 Finished Product Release Record.
 
-  FRM-301 is an active controlled document and a fillable record in the Team Portal. Its Receiving Log carries a package-label scan on every row: the receiver photographs the material's own label and the supplier, the material description and the lot code are read from it into the row. That is the control worth having here — a lot code transcribed by hand at a loading dock is the entry most likely to be wrong, and it is the one every trace exercise afterwards depends on.
+  FRM-301 is an active controlled document but is not yet a fillable record in the Team Portal, so the incoming inspection is presently recorded on paper against it. Building it out is D-11 and is not done here. Until it is, the paper record is the record, and it is retained on the same basis as the rest.
 
 **4. Inspection is of every batch and every delivery, not of a sample of them. Where a unit or a portion is taken to be examined, it shall be taken from the batch it represents and be typical of it.**
 
@@ -109,7 +109,7 @@ FRM-301 Incoming Material Receiving & Inspection Log; FRM-701 Finished Product R
 
 ## Records
 
-FRM-301 Incoming Material Receiving & Inspection Log — the incoming inspection of every delivery of raw material and packaging, kept in the Team Portal.
+FRM-301 Incoming Material Receiving & Inspection Log — the incoming inspection of every delivery of raw material and packaging. Presently kept on paper; see Part 3.
 Batch sheets — the in-process inspection of every batch, recorded as the batch is made.
 FRM-701 Finished Product Release Record — the finished product inspection, recorded as part of the release decision under FSQM-020.
 FRM-703 Retention Sample Log — every retention sample taken, where it is stored, and its disposal.
@@ -139,12 +139,14 @@ IT NAMES EXISTING RECORDS RATHER THAN CREATING NEW ONES. The three inspections t
 
 PART 5 IS A WORKAROUND AND SAYS SO. 2.4.4.1 requires inspection to agreed specifications, and the site holds no finished product specification. Part 5 therefore states the finished-product criteria explicitly — FSQM-020's release checks, the approved label, and the agreed pack and quantity — so that the inspection is performable today, and records that those criteria move to the specification once the library exists. Building that library is a separate deliverable. This program does not claim to close 2.4.4.1 outright while the specification it inspects against does not exist.
 
-OPEN BEFORE ISSUE — four things the site must settle. The second is the one that matters:
+NO GLUTEN FREE CLAIM — SETTLED 2026-09-09, AND ITS PREMISE WAS FALSE. This document was drafted carrying an open item that read "the Gluten Free claim is not verified by any test", on the understanding that the site was GFCO certified and sold product bearing that claim. The Managing Partner confirmed the same day that Adventure Bakery makes no product carrying a Gluten Free claim, has never made one, and holds no current GFCO certification. The item therefore does not close on evidence; it dissolves, because the thing it was about does not exist. Part 2's rule for introducing analysis stands unchanged — name the method, then an ISO/IEC 17025-accredited laboratory, then send the sample — and only its gluten example is gone, since repeating it would carry the same false premise into an issued document.
+
+That assumption came from somewhere, and it is not confined to this document: FSQM-018 and FSQM-020 were both issued describing certified Gluten Free product and a current GFCO certification agreement, and are corrected by 20260909000008 and 20260909000007. The likeliest source is the Compass Blending hardcopies these documents were scanned from — the import rebrands the company name across every parsed string, but cannot know that the content itself belongs to a different business.
+
+OPEN BEFORE ISSUE — three things the site must settle:
 
 1. There is still no finished product specification. Part 5 works around it and names the workaround, but 2.4.4.1's "to agreed specifications" is not fully met until the specification library exists. Confirm that this deliverable is accepted as closing 2.4.4.1 on that basis, or hold it until the specifications exist.
 
-2. THE GLUTEN FREE CLAIM IS NOT VERIFIED BY ANY TEST. The site is GFCO certified and sells product carrying a Gluten Free claim. FSQM-020's release check confirms that the LABEL's claim is correct for what was actually run; nothing verifies that the PRODUCT meets the gluten threshold, because no analysis of any kind is performed. Confirm how the claim is verified — whether the GFCO certification scheme itself requires or performs testing, whether it rests on supplier documentation and segregation, or whether product testing is in fact done by someone. An auditor will ask, and the answer belongs in Part 2 of this program. Do not issue this document until it is answered, because Part 2 currently asserts that no analysis is performed anywhere and that assertion must be true.
+2. Retention samples: confirm what is actually retained (one unit per batch, per product, or per production day), where it is stored, and for how long, so that Part 6 and FRM-703 describe the real practice rather than a reasonable-sounding one. Part 6 currently sets the shelf life as the retention period, which is the rule 2.4.4.5 applies where retention is required.
 
-3. Retention samples: confirm what is actually retained (one unit per batch, per product, or per production day), where it is stored, and for how long, so that Part 6 and FRM-703 describe the real practice rather than a reasonable-sounding one. Part 6 currently sets the shelf life as the retention period, which is the rule 2.4.4.5 applies where retention is required.
-
-4. The consultant scored 2.4.4.5 Minor with NO evidence recorded in the assessment. Since the site is not required to hold retention samples at all, query that score with RDR Global Partners before accepting it.
+3. The consultant scored 2.4.4.5 Minor with NO evidence recorded in the assessment. Since the site is not required to hold retention samples at all, query that score with RDR Global Partners before accepting it.
