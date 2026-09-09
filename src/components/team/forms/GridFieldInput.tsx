@@ -11,7 +11,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Maximize2, Plus, Tras
 import {
   applyLabelScan, newGridRow, resolveScanFact, scanWantedFacts,
   type FillContext, type GridColumn, type GridField, type GridRowValue,
-  type LabelFact, type LabelScanResult,
+  type LabelFact, type LabelScanResult, type ScanMode,
 } from "@/lib/formSchema";
 import { PassFailInput } from "./FormFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
@@ -151,16 +151,28 @@ export interface GridFieldInputProps {
    * upload, the attachment record, and the edge-function call. Resolve to null
    * when the scan failed (the caller has already told the user why).
    */
-  onScanLabel?: (
-    file: File,
-    ctx: { gridLabel: string; rowIndex: number; wanted: LabelFact[]; keepPhoto: boolean },
-  ) => Promise<LabelScanResult | null>;
+  onScanLabel?: (file: File, ctx: ScanRequest) => Promise<LabelScanResult | null>;
   /**
    * Supplies what a column's `defaultTo` needs and the schema cannot know —
    * today just the filler's initials. Passed in rather than looked up here for
    * the same reason onScanLabel is: this grid touches no supabase.
    */
   fillContext?: FillContext;
+}
+
+/**
+ * What the entry page needs in order to fetch a label scan. Shared by the grid
+ * (one row) and the section scan in FormRenderer (one entry), so the page owns
+ * one handler rather than two that could drift about attachments or modes.
+ *
+ * `rowIndex` is absent for a section scan — there is no row.
+ */
+export interface ScanRequest {
+  label: string;
+  rowIndex?: number;
+  wanted: LabelFact[];
+  keepPhoto: boolean;
+  mode: ScanMode;
 }
 
 /** State of the most recent scan, kept so it can be undone in one tap. */
@@ -269,10 +281,11 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
     setScan(null);
     try {
       const result = await onScanLabel(file, {
-        gridLabel: field.label,
+        label: field.label,
         rowIndex,
         wanted: scanWantedFacts(field), // only ask for facts a column (or the notes overflow) can hold
         keepPhoto: !!field.scanKeepPhoto,
+        mode: field.scanMode ?? "ingredient",
       });
       if (!result) return; // the caller already surfaced the failure
       const prev = rowsRef.current[rowIndex] ?? {};

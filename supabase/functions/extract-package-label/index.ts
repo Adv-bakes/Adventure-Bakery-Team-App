@@ -1,6 +1,10 @@
-// Reads a photograph of an INGREDIENT PACKAGE (a bag/case/tote of flour, cake
-// base, egg, …) and returns the identifying facts printed on it, so one row of a
-// batch/formulation grid can be filled without typing.
+// Reads a photograph of a FOOD PACKAGE and returns the identifying facts printed
+// on it, so a grid row (or a form section) can be filled without typing.
+//
+// TWO MODES, because the two kinds of pack disagree about what a lot code looks
+// like: "ingredient" is a supplier bag/case/tote received at the dock (lot
+// jetted on after printing), "finished_goods" is our own retail carton (whole
+// label block printed in one pass per lot). See MODES below.
 //
 // Sibling of extract-form-answers, but a different job: that one reads a
 // filled-out PAPER FORM and answers a whole schema; this one reads a PRODUCT
@@ -11,7 +15,7 @@
 // traceability spine of the record, so we would rather return nothing than a
 // confident-looking wrong number.
 //
-// Expects: { imageUrls: string[], wanted?: string[] }
+// Expects: { imageUrls: string[], wanted?: string[], mode?: "ingredient" | "finished_goods" }
 // Returns: { facts: {..}, alternates: { lot_code: string[] }, extras: [{label,value}], warnings: string[] }
 
 const corsHeaders = {
@@ -36,7 +40,21 @@ type FactKey = (typeof FACT_KEYS)[number];
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-const SYSTEM_PROMPT = `You read a photograph of a FOOD INGREDIENT PACKAGE (a bag, case, sack, pail or tote received at a bakery) and report the identifying information printed on it. A worker is staging this ingredient for a production batch and needs its identity and lot code recorded.
+// Which kind of pack is in frame. Mirrors ScanMode in src/lib/formSchema.ts.
+//
+// THE TWO MODES DISAGREE ABOUT WHAT A LOT CODE LOOKS LIKE, which is why this is
+// a mode and not a wording tweak. On a supplier's ingredient sack the artwork is
+// pre-printed and the lot is jetted on afterwards, so it is found by looking for
+// the odd-one-out. On our own finished carton the entire block — barcode,
+// product name, lot, best-by, URL — is printed in ONE pass per lot on a blank
+// substrate: there is no artwork to contrast against, the "looks lower quality
+// than its surroundings" test finds nothing, and the ingredient prompt's rule
+// that a number belonging to the printed artwork is never the lot points at
+// exactly the wrong answer.
+const MODES = ["ingredient", "finished_goods"] as const;
+type Mode = (typeof MODES)[number];
+
+const INGREDIENT_PROMPT = `You read a photograph of a FOOD INGREDIENT PACKAGE (a bag, case, sack, pail or tote received at a bakery) and report the identifying information printed on it. A worker is staging this ingredient for a production batch and needs its identity and lot code recorded.
 
 Return ONLY these fact keys, and only the ones you can actually read:
 - "product_name": the product/ingredient description as printed (e.g. "Creme Cake Base"). Exclude the brand and any internal plant/spec codes.
@@ -66,6 +84,52 @@ OTHER RULES:
 Respond with ONLY this JSON object (no markdown):
 {"facts": {"lot_code": "...", ...}, "alternates": {"lot_code": ["..."]}, "extras": [{"label":"...","value":"..."}], "warnings": ["..."]}`;
 
+const FINISHED_GOODS_PROMPT = `You read a photograph of a FINISHED PACKAGED FOOD PRODUCT — a retail carton, box, tray or bag of baked product. A worker is recording the identity of this pack against a batch that was produced and shipped.
+
+The label is usually a single printed block on an otherwise blank carton: a barcode, the product name, and one line each for the lot and the date, often with a website. The whole block, INCLUDING THE LOT, is printed in one pass at production time. Read what it says.
+
+Return ONLY these fact keys, and only the ones you can actually read:
+- "product_name": the product description as printed (e.g. "Banana Rum Cake").
+- "brand": the brand or company. On this kind of pack it is often only a website or domain — report it as printed.
+- "lot_code": the LOT / BATCH code. See the rules below.
+- "best_by": the best-by / expiration date EXACTLY AS PRINTED, verbatim. See the rules below.
+- "item_code": an item / SKU / product number, if one is printed separately from the barcode.
+- "net_weight": net weight exactly as printed, with its unit (e.g. "16 OZ").
+- "pack_size": pack/case configuration if stated (e.g. "12 CT").
+- "plant_code": a plant/facility/establishment code if one is identifiable as such.
+- "barcode": the human-readable digits printed under the barcode (UPC/GTIN), digits only, in printed order.
+
+IDENTIFYING THE LOT CODE:
+- The lot is normally introduced by its own printed label: "Lot:", "LOT", "Lot Code", "Batch:", "B:", "L:". Take the value that follows it. That label is the strongest signal available and you should trust it.
+- DO NOT require the lot to look ink-jetted, stamped, handwritten, or lower-quality than its surroundings. On this kind of pack it is set in the same font, in the same print pass, as everything else. Its appearance says nothing about whether it is the lot.
+- The digits printed under the barcode are NEVER the lot code, even when they are the only number on the pack. Neither is a phone number, a copyright year, or a net weight.
+- If no line is labelled as a lot or batch, put any plausible candidate in "alternates".lot_code and omit "lot_code". Omitting it is correct; guessing is not.
+
+READING THE DATE — this matters as much as the lot:
+- Report "best_by" EXACTLY AS PRINTED. If the pack says "July 2027", return "July 2027". If it says "07/15/2027", return "07/15/2027".
+- Do NOT convert it, normalize it to YYYY-MM-DD, or invent a day that is not printed. These packs are frequently coded to the month only, and a day you supplied would be recorded as though the pack carried it.
+- If more than one date is printed (e.g. a pack date and a best-by), put the best-by in "best_by" and the other in "extras".
+
+OTHER RULES:
+- Transcribe codes CHARACTER FOR CHARACTER, preserving spacing and case. Do not normalize or "correct" a lot code. If a character is genuinely ambiguous (0/O, 1/I/l, 5/S, 8/B), transcribe your best reading and add a warning naming the ambiguity.
+- Do NOT read or report the ingredient statement, the allergen ("Contains:") statement, or the nutrition panel. Ignore them entirely.
+- Anything else clearly readable and useful for identifying this pack goes in "extras" as {"label","value"} pairs. Keep extras short — at most 5.
+- Omit any key you cannot read confidently. A missing key is correct when the pack does not show it or the photo is unclear. Never output empty strings or placeholders.
+- If the photo does not show a packaged food product at all, return empty facts and explain in "warnings".
+
+Respond with ONLY this JSON object (no markdown):
+{"facts": {"lot_code": "...", ...}, "alternates": {"lot_code": ["..."]}, "extras": [{"label":"...","value":"..."}], "warnings": ["..."]}`;
+
+const PROMPTS: Record<Mode, string> = {
+  ingredient: INGREDIENT_PROMPT,
+  finished_goods: FINISHED_GOODS_PROMPT,
+};
+
+const SUBJECT: Record<Mode, string> = {
+  ingredient: "one ingredient package",
+  finished_goods: "one finished packaged product",
+};
+
 const cleanString = (value: unknown, max = 200): string | undefined => {
   if (value == null || typeof value === "object") return undefined;
   const s = String(value).trim();
@@ -74,7 +138,7 @@ const cleanString = (value: unknown, max = 200): string | undefined => {
 };
 
 /** Whitelist the model's output down to known keys + safe strings. */
-function sanitize(parsed: any, wanted: Set<FactKey>) {
+function sanitize(parsed: any, wanted: Set<FactKey>, mode: Mode) {
   const facts: Record<string, string> = {};
   const extras: { label: string; value: string }[] = [];
   const warnings: string[] = Array.isArray(parsed?.warnings)
@@ -86,9 +150,17 @@ function sanitize(parsed: any, wanted: Set<FactKey>) {
     if (!wanted.has(key)) continue;
     const value = cleanString(rawFacts[key]);
     if (!value) continue;
-    // A date the model failed to normalize is still information — keep it as a
-    // detail rather than feeding a native date input something it renders blank.
-    if (key === "best_by" && !ISO_DATE.test(value)) {
+    // INGREDIENT MODE ONLY. There, best_by is asked for as YYYY-MM-DD because it
+    // lands in a date cell, so a date the model failed to normalize is still
+    // information but must not be fed to a native date input that renders it
+    // blank — it becomes a detail instead.
+    //
+    // FINISHED-GOODS MODE DELIBERATELY KEEPS IT VERBATIM. Our own packs are
+    // coded to the month ("Best By: July 2027"), that IS the printed date, and
+    // demoting it to an extra would throw away the one value FRM-703's retention
+    // clock is computed from. The client stores it as text and derives the
+    // discard date under FSQM-014 Part 6's last-day-of-month convention.
+    if (mode === "ingredient" && key === "best_by" && !ISO_DATE.test(value)) {
       extras.push({ label: "Date code", value });
       continue;
     }
@@ -117,7 +189,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { imageUrls, wanted } = await req.json();
+    const { imageUrls, wanted, mode: rawMode } = await req.json();
+    // Unknown/absent mode falls back to the original behaviour, so a client that
+    // has not been updated keeps working exactly as before.
+    const mode: Mode = MODES.includes(rawMode) ? rawMode : "ingredient";
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) return json({ error: "LOVABLE_API_KEY not configured" }, 500);
 
@@ -134,7 +209,7 @@ Deno.serve(async (req) => {
       {
         type: "text",
         text:
-          "Photograph(s) of one ingredient package follow. Report these facts " +
+          `Photograph(s) of ${SUBJECT[mode]} follow. Report these facts ` +
           "(omit any you cannot read confidently): " +
           [...requested].join(", "),
       },
@@ -147,7 +222,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: PROMPTS[mode] },
           { role: "user", content: userContent },
         ],
         response_format: { type: "json_object" },
@@ -170,7 +245,7 @@ Deno.serve(async (req) => {
       parsed = JSON.parse(match[0]);
     }
 
-    return json(sanitize(parsed, requested as Set<FactKey>));
+    return json(sanitize(parsed, requested as Set<FactKey>, mode));
   } catch (e) {
     console.error("extract-package-label error:", e);
     return json({ error: String(e) }, 500);

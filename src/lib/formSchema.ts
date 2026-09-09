@@ -10,7 +10,7 @@
 //   for later production-floor field types).
 
 import { z } from "zod";
-import { format } from "date-fns";
+import { addDays, format, lastDayOfMonth } from "date-fns";
 
 export const FORM_SCHEMA_VERSION = 1;
 
@@ -30,12 +30,43 @@ export interface FieldBase {
   width?: "full" | "half" | "third";
   showInList?: boolean;       // surface this field as its own column in the drawer's Entries list
   defaultValue?: string | number | boolean; // pre-fill for a NEW entry (scalar fields); still editable
+  // Which fact off a photographed package label fills this SCALAR field, when
+  // its section opts into scanning. Same contract as GridColumn.scanFact —
+  // admin-pinned override, keyword-inferred from the label when absent, "none"
+  // opts out. Exists because a form can be built from scalar fields rather than
+  // a grid (one entry per sample, not one row per sample) and would otherwise
+  // have no way to reach the scan at all.
+  scanFact?: LabelFact | "notes" | "none";
 }
 
 export interface TextField     extends FieldBase { type: "text";     maxLength?: number; placeholder?: string; }
 export interface TextareaField extends FieldBase { type: "textarea"; rows?: number; }
 export interface NumberField   extends FieldBase { type: "number";   min?: number; max?: number; step?: number; unit?: string; }
-export interface DateField     extends FieldBase { type: "date" | "time" | "datetime"; defaultToday?: boolean; }
+export interface DateField     extends FieldBase {
+  type: "date" | "time" | "datetime";
+  defaultToday?: boolean;
+  /** Offer this date computed from another field's printed date (see DateDerivation). */
+  derive?: DateDerivation;
+}
+
+/**
+ * A date this field can OFFER, computed from a printed date held in another
+ * field. Never auto-applied: the renderer shows the computed value as a
+ * shortcut link beside "Today" and the filler decides.
+ *
+ * `monthOnly` is the whole reason this exists. Adventure Bakery's finished
+ * packs are coded to the month ("Best By: July 2027"), so "thirty days after
+ * the printed date" is ambiguous by up to a month. FSQM-014 Part 6 settles it —
+ * the period runs from the LAST day of the coded month — and this carries that
+ * convention rather than leaving each filler to pick a day.
+ */
+export interface DateDerivation {
+  fromField: string;                 // id of the field holding the printed date
+  addDays: number;
+  monthOnly?: "last" | "first";      // how to resolve a month-precision source; default "last"
+  /** Link text prefix, e.g. "Due" → "Due 30 Aug 2027". */
+  label?: string;
+}
 export interface CheckboxField extends FieldBase { type: "checkbox"; }
 export interface SelectField   extends FieldBase { type: "select";   options: string[]; multiple?: boolean; allowOther?: boolean; }
 export interface PassFailField extends FieldBase {
@@ -118,6 +149,8 @@ export interface GridField extends FieldBase {
   // Per-row "scan a package label" camera button (see applyLabelScan). Off by
   // default so checklist/QC grids don't grow a control they'd never use.
   scanLabel?: boolean;
+  /** Which kind of pack is being photographed. Default "ingredient". */
+  scanMode?: ScanMode;
   // Where label details that no column claims are appended. Falls back to a
   // column whose name looks like notes; dropped when the grid has neither.
   scanNotesColumnId?: string;
@@ -143,6 +176,14 @@ export interface FormSection {
   title?: string;
   description?: string;
   fields: FormField[];
+  /**
+   * "Scan the pack" buttons in this section's header, filling the section's own
+   * SCALAR fields from one photo (see applyLabelScanToFields). The grid
+   * equivalent is GridField.scanLabel, which fills one row; this fills a section
+   * of a form whose unit of record is the whole entry.
+   */
+  scanLabel?: boolean;
+  scanMode?: ScanMode;
 }
 
 export interface FormSettings {
@@ -405,6 +446,22 @@ export const LABEL_FACTS = [
 ] as const;
 export type LabelFact = (typeof LABEL_FACTS)[number];
 
+/**
+ * Which kind of pack is in the photo. The two disagree about what a lot code
+ * LOOKS like, which is why this is a mode and not a prompt tweak:
+ *
+ * - "ingredient" — a supplier's bag/case received at the dock. The artwork is
+ *   pre-printed and the lot is applied afterwards by ink-jet or laser, so the
+ *   extractor finds it by looking for the odd-one-out and is told that any
+ *   number belonging to the printed artwork is NOT the lot.
+ * - "finished_goods" — our own carton. The whole block (barcode, product, lot,
+ *   best-by, URL) is printed in ONE pass per lot on a blank substrate, so there
+ *   is no artwork to contrast against and that heuristic finds nothing. The
+ *   values are introduced by their own printed labels ("Lot:", "Best By:")
+ *   instead, which is a far easier and more reliable read.
+ */
+export type ScanMode = "ingredient" | "finished_goods";
+
 /** Human names — also the prefix used when a fact spills into the notes column. */
 export const LABEL_FACT_LABELS: Record<LabelFact, string> = {
   product_name: "Product name",
@@ -509,30 +566,37 @@ function sameUnit(scanned: string, columnUnit: string): boolean {
   return a !== "" && a === b;
 }
 
+/**
+ * A scanned label value usually carries its unit — "5 lb", "16 oz", "750 ml".
+ * Stripping the unit and keeping the digits stored 5 for "5 lb" and 16 for
+ * "16 oz" as though they were the same kind of quantity, silently, with nothing
+ * on the record to show a unit had ever been read. On a receiving log that is
+ * the worst failure available: plausible, and invisible.
+ *
+ * So a number is written only when the unit is absent (nothing to lose) or
+ * provably the target's own. Otherwise the cell is left alone, the fact stays
+ * unclaimed, and the caller appends it to the notes destination — where a human
+ * reads "Net weight: 16 oz" and decides what it means.
+ *
+ * Shared by the grid-column and scalar-field coercions so the two cannot drift.
+ */
+function coerceNumberWithUnit(raw: string, unit: string | undefined): number | undefined {
+  const m = raw.match(/^[^\d.\-]*(-?\d+(?:\.\d+)?)\s*(.*)$/);
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return undefined;
+  const scanned = m[2].trim();
+  if (!scanned) return n;          // a bare number carries no unit to lose
+  if (!unit) return undefined;     // it has a unit; the target cannot say which
+  return sameUnit(scanned, unit) ? n : undefined;
+}
+
 function coerceToColumn(column: GridColumn, raw: string | undefined): any {
   const value = typeof raw === "string" ? raw.trim() : "";
   if (!value) return undefined;
   switch (column.type) {
-    case "number": {
-      // A scanned label value usually carries its unit — "5 lb", "16 oz", "750 ml".
-      // Stripping the unit and keeping the digits stored 5 for "5 lb" and 16 for
-      // "16 oz" as though they were the same kind of quantity, silently, with
-      // nothing on the record to show a unit had ever been read. On a receiving
-      // log that is the worst failure available: plausible, and invisible.
-      //
-      // So a number is written only when the unit is absent (nothing to lose) or
-      // provably the column's own. Otherwise the cell is left alone, the fact
-      // stays unclaimed, and applyLabelScan appends it to the notes column —
-      // where a human reads "Net weight: 16 oz" and decides what it means.
-      const m = value.match(/^[^\d.\-]*(-?\d+(?:\.\d+)?)\s*(.*)$/);
-      if (!m) return undefined;
-      const n = Number(m[1]);
-      if (!Number.isFinite(n)) return undefined;
-      const scanned = m[2].trim();
-      if (!scanned) return n;                 // a bare number carries no unit to lose
-      if (!column.unit) return undefined;     // it has a unit; the column cannot say which
-      return sameUnit(scanned, column.unit) ? n : undefined;
-    }
+    case "number":
+      return coerceNumberWithUnit(value, column.unit);
     case "date":
       // The extractor normalizes to YYYY-MM-DD; anything else would render blank
       // in a native date input, so leave the cell alone instead.
@@ -595,6 +659,190 @@ export function applyLabelScan(
   }
 
   return { next, filled };
+}
+
+// ---------- Package-label scan into SCALAR fields (one photo → one section) ----------
+//
+// The grid path above fills ONE ROW, which is right when the unit of record is a
+// row (a receiving log lists many deliveries). It is wrong when the unit of
+// record is the whole entry — FRM-703 keeps one entry per retention sample, so
+// its identity block is scalar fields and could not reach the scan at all.
+// Same contract, same Undo, same "the first field claiming a fact wins".
+
+/** Keyword fallback so a section scans with zero per-field setup. */
+export function inferScanFactForField(field: FormField): LabelFact | "notes" | undefined {
+  const label = field.label ?? "";
+  for (const [pattern, fact] of FACT_PATTERNS) if (pattern.test(label)) return fact;
+  return undefined;
+}
+
+/** Admin-pinned mapping wins over the keyword guess; "none" opts out. */
+export function resolveScanFactForField(field: FormField): LabelFact | "notes" | undefined {
+  if (field.scanFact === "none") return undefined;
+  return field.scanFact ?? inferScanFactForField(field);
+}
+
+/** Fields a scan can actually write to — value-bearing scalars only. */
+const scannableFields = (fields: FormField[]) =>
+  fields.filter(f => VALUE_FIELD_TYPES.has(f.type) && f.type !== "grid");
+
+/** The overflow field: explicitly pinned "notes", else a notes-looking free-text field. */
+function notesField(fields: FormField[]): FormField | undefined {
+  return scannableFields(fields).find(
+    f => (f.type === "text" || f.type === "textarea") && resolveScanFactForField(f) === "notes",
+  );
+}
+
+/** Facts worth asking the model for — see scanWantedFacts for the grid twin. */
+export function scanWantedFactsForFields(fields: FormField[]): LabelFact[] {
+  if (notesField(fields)) return [...LABEL_FACTS];
+  const wanted = new Set<LabelFact>();
+  for (const f of scannableFields(fields)) {
+    const fact = resolveScanFactForField(f);
+    if (fact && fact !== "notes") wanted.add(fact);
+  }
+  return LABEL_FACTS.filter(f => wanted.has(f));
+}
+
+/** Coerce a scanned string to a scalar field's type; undefined = don't write it. */
+function coerceToField(field: FormField, raw: string | undefined): any {
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (!value) return undefined;
+  switch (field.type) {
+    case "number":
+      return coerceNumberWithUnit(value, (field as NumberField).unit);
+    case "date":
+      // A finished-goods pack is often coded to the month, so best_by comes back
+      // as "July 2027" — real information a native date input renders blank.
+      // Left alone here and reported as unclaimed; a form that wants to keep it
+      // uses a text field (FRM-703's printed_date) and the derivation below.
+      return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+    case "datetime":
+      return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) ? value.slice(0, 16) : undefined;
+    case "time":
+      return /^\d{2}:\d{2}$/.test(value) ? value : undefined;
+    case "select": {
+      const f = field as SelectField;
+      if (f.multiple) return undefined;
+      return (f.options ?? []).find(o => o.toLowerCase() === value.toLowerCase());
+    }
+    case "checkbox": case "pass_fail": case "signature": case "grid":
+      return undefined; // nothing on a package label decides a check, a verdict or a signature
+    default:
+      return value.slice(0, 500);
+  }
+}
+
+/**
+ * Merge a label scan into a section's scalar fields. Pure — the caller owns the
+ * RHF write and keeps `filled` for the Undo chip.
+ *
+ * `unclaimed` is what was read but had nowhere to go, and is returned rather
+ * than dropped: without a notes field the alternative is silently discarding
+ * something the model actually saw on the pack, which the filler may want.
+ */
+export function applyLabelScanToFields(
+  fields: FormField[],
+  values: Record<string, any>,
+  result: LabelScanResult,
+): { next: Record<string, any>; filled: string[]; unclaimed: string[] } {
+  const next = { ...values };
+  const filled: string[] = [];
+  const used = new Set<LabelFact>();
+
+  for (const field of scannableFields(fields)) {
+    const fact = resolveScanFactForField(field);
+    if (!fact || fact === "notes" || used.has(fact)) continue; // 1st field claiming a fact wins
+    const value = coerceToField(field, result.facts?.[fact]);
+    if (value === undefined) continue;
+    next[field.id] = value;
+    filled.push(field.label);
+    used.add(fact);
+  }
+
+  const leftovers = [
+    ...LABEL_FACTS
+      .filter(f => !used.has(f) && result.facts?.[f])
+      .map(f => `${LABEL_FACT_LABELS[f]}: ${result.facts![f]}`),
+    ...(result.extras ?? [])
+      .filter(e => e?.value)
+      .map(e => (e.label ? `${e.label}: ${e.value}` : String(e.value))),
+  ];
+
+  const notes = notesField(fields);
+  if (notes && leftovers.length) {
+    const prior = typeof next[notes.id] === "string" ? next[notes.id].trim() : "";
+    next[notes.id] = [prior, ...leftovers].filter(Boolean).join("\n");
+    filled.push(notes.label);
+    return { next, filled, unclaimed: [] };
+  }
+  return { next, filled, unclaimed: leftovers };
+}
+
+// ---------- Printed dates (month-precision packs) ----------
+
+export interface PrintedDate { year: number; month: number; day?: number }
+
+const MONTH_NAMES = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+const monthFromName = (name: string): number | undefined => {
+  const i = MONTH_NAMES.indexOf(name.slice(0, 3).toLowerCase());
+  return i < 0 ? undefined : i + 1;
+};
+
+const validYmd = (year: number, month: number, day?: number): PrintedDate | null => {
+  if (year < 1900 || year > 2999 || month < 1 || month > 12) return null;
+  if (day == null) return { year, month };
+  const d = new Date(year, month - 1, day);
+  // Rejects 31 February rather than letting Date roll it into March.
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return { year, month, day };
+};
+
+/**
+ * Read a date as PRINTED on a pack, which is frequently not a full date.
+ * Returns month precision (no `day`) when that is all the pack carries.
+ *
+ * Deliberately does NOT fall back to Date.parse: a string this cannot recognise
+ * returns null, the shortcut link is simply not offered, and the filler types
+ * the date. A guessed date on a retention record is worse than no suggestion.
+ */
+export function parsePrintedDate(raw: string | undefined | null): PrintedDate | null {
+  const s = String(raw ?? "")
+    .replace(/^\s*(best\s*by|bb|exp(?:iry|ires|iration)?|use\s*by|sell\s*by)\s*[:.-]?\s*/i, "")
+    .replace(/,/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!s) return null;
+  let m: RegExpMatchArray | null;
+  if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/))) return validYmd(+m[1], +m[2], +m[3]);
+  if ((m = s.match(/^(\d{4})[-/.](\d{1,2})$/)))                return validYmd(+m[1], +m[2]);
+  if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/))) return validYmd(+m[3], +m[1], +m[2]); // US m/d/y
+  if ((m = s.match(/^(\d{1,2})[-/.](\d{4})$/)))                return validYmd(+m[2], +m[1]);
+  if ((m = s.match(/^([A-Za-z]{3,9})\.? (\d{4})$/))) {
+    const mo = monthFromName(m[1]);
+    return mo ? validYmd(+m[2], mo) : null;
+  }
+  if ((m = s.match(/^([A-Za-z]{3,9})\.? (\d{1,2}) (\d{4})$/))) {
+    const mo = monthFromName(m[1]);
+    return mo ? validYmd(+m[3], mo, +m[2]) : null;
+  }
+  if ((m = s.match(/^(\d{1,2}) ([A-Za-z]{3,9})\.? (\d{4})$/))) {
+    const mo = monthFromName(m[2]);
+    return mo ? validYmd(+m[3], mo, +m[1]) : null;
+  }
+  return null;
+}
+
+/** The date a derivation offers, or undefined when the source cannot be read. */
+export function deriveDateValue(derive: DateDerivation, source: unknown): string | undefined {
+  const parsed = parsePrintedDate(typeof source === "string" ? source : undefined);
+  if (!parsed) return undefined;
+  const firstOfMonth = new Date(parsed.year, parsed.month - 1, 1);
+  const base = parsed.day != null
+    ? new Date(parsed.year, parsed.month - 1, parsed.day)
+    : derive.monthOnly === "first" ? firstOfMonth : lastDayOfMonth(firstOfMonth);
+  return format(addDays(base, derive.addDays ?? 0), "yyyy-MM-dd");
 }
 
 // ---------- Submit-time validation (zod) ----------

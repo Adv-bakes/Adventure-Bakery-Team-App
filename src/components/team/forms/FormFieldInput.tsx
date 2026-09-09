@@ -1,13 +1,14 @@
-import { Controller, type Control } from "react-hook-form";
-import { format } from "date-fns";
+import { Controller, useWatch, type Control } from "react-hook-form";
+import { format, parseISO } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { deriveDateValue } from "@/lib/formSchema";
 import type {
-  FormField, NumberField, SelectField, PassFailField, SignatureField,
-  TextField, TextareaField,
+  DateDerivation, DateField, FormField, NumberField, SelectField, PassFailField,
+  SignatureField, TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
@@ -17,6 +18,37 @@ const PASS_FAIL_STYLE: Record<string, string> = {
   fail: "data-[on=true]:bg-red-500/15 data-[on=true]:text-red-700 data-[on=true]:border-red-600/40",
   na:   "data-[on=true]:bg-[#2A1F0E]/10 data-[on=true]:text-[#2A1F0E]/70 data-[on=true]:border-[#2A1F0E]/30",
 };
+
+/**
+ * Offers a date computed from another field — e.g. FRM-703's Discard due, which
+ * is thirty days past the best-by printed on the pack.
+ *
+ * It is a LINK, not an auto-fill, and that is the point. The source is a printed
+ * code copied off a carton and is frequently coded to the month, so the
+ * computation rests on a convention (FSQM-014 Part 6: count from the last day of
+ * that month). Showing the result and letting the filler accept it puts a human
+ * between the convention and the record. When the source cannot be parsed the
+ * link simply does not appear and the date is typed — never a guess.
+ */
+function DerivedDateLink({ derive, control, onPick }: {
+  derive: DateDerivation;
+  control: Control<Record<string, any>>;
+  onPick: (value: string) => void;
+}) {
+  const source = useWatch({ control, name: derive.fromField });
+  const value = deriveDateValue(derive, source);
+  if (!value) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(value)}
+      className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0 whitespace-nowrap"
+      title={`Computed from ${derive.fromField.replace(/_/g, " ")}`}
+    >
+      {derive.label ?? "Due"} {format(parseISO(value), "d MMM yyyy")}
+    </button>
+  );
+}
 
 /** Segmented Pass / Fail / N/A control shared by scalar fields and grid cells. */
 export function PassFailInput({ field, value, onChange, disabled, compact }: {
@@ -146,6 +178,13 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
                   >
                     Today
                   </button>
+                )}
+                {field.type === "date" && !disabled && (field as DateField).derive && (
+                  <DerivedDateLink
+                    derive={(field as DateField).derive!}
+                    control={control}
+                    onPick={rhf.onChange}
+                  />
                 )}
               </div>
             );

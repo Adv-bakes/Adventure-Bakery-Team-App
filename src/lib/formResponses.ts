@@ -7,7 +7,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
   emptyValues, getFormSchema, initialsFromName,
-  type FieldManifest, type FormSchema, type LabelFact, type LabelScanResult,
+  type FieldManifest, type FormSchema, type LabelFact, type LabelScanResult, type ScanMode,
 } from "@/lib/formSchema";
 
 export type ResponseStatus = "draft" | "submitted";
@@ -308,15 +308,20 @@ export async function extractFormAnswers(
 }
 
 /**
- * Read one photographed ingredient package → the facts printed on it, for
- * filling a single grid row. Sibling of extractFormAnswers (whole paper form).
+ * Read one photographed package → the facts printed on it, for filling a grid
+ * row or a form section. Sibling of extractFormAnswers (whole paper form).
+ *
+ * `mode` picks which kind of pack is in frame; the two disagree about what a lot
+ * code looks like, so passing the wrong one reads the wrong number. Defaults to
+ * "ingredient", which is what every caller meant before the mode existed.
  */
 export async function extractPackageLabel(
   imageUrls: string[],
   wanted: LabelFact[],
+  mode: ScanMode = "ingredient",
 ): Promise<LabelScanResult> {
   const { data, error } = await supabase.functions.invoke("extract-package-label", {
-    body: { imageUrls, wanted },
+    body: { imageUrls, wanted, mode },
   });
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
