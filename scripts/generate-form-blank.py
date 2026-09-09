@@ -92,13 +92,23 @@ def build_pdf(out, meta, blocks, landscape_page=False):
 
     pdfmetrics.registerFont(TTFont("Sym", "C:/Windows/Fonts/seguisym.ttf"))
     box = '<font name="Sym">☐</font>'
+    # Arial (a full Unicode TTF) instead of the core Helvetica for the body: core
+    # Helvetica has no em-dash/arrow glyph, so "—" and "→" in a form's text render
+    # as a missing-glyph box. Arial carries both (plus °, ±), with near-identical
+    # metrics, so nothing else in the layout shifts.
+    from reportlab.pdfbase.pdfmetrics import registerFontFamily
+    pdfmetrics.registerFont(TTFont("Arial", "C:/Windows/Fonts/arial.ttf"))
+    pdfmetrics.registerFont(TTFont("Arial-Bold", "C:/Windows/Fonts/arialbd.ttf"))
+    pdfmetrics.registerFont(TTFont("Arial-Italic", "C:/Windows/Fonts/ariali.ttf"))
+    pdfmetrics.registerFont(TTFont("Arial-BoldItalic", "C:/Windows/Fonts/arialbi.ttf"))
+    registerFontFamily("Arial", normal="Arial", bold="Arial-Bold", italic="Arial-Italic", boldItalic="Arial-BoldItalic")
     GOLD = colors.HexColor(GOLD_HEX); CREAM = colors.HexColor("#" + CREAM_HEX); CREAM2 = colors.HexColor("#" + CREAM2_HEX)
     st = getSampleStyleSheet()
-    base = ParagraphStyle("base", parent=st["Normal"], fontName="Helvetica", fontSize=9, leading=12)
-    lbl = ParagraphStyle("lbl", parent=base, fontName="Helvetica-Bold")
-    sec = ParagraphStyle("sec", parent=base, fontName="Helvetica-Bold", fontSize=11, textColor=GOLD, spaceBefore=8, spaceAfter=2)
-    info = ParagraphStyle("info", parent=base, fontName="Helvetica-Oblique", fontSize=8, textColor=colors.HexColor("#" + GREY_HEX))
-    cellb = ParagraphStyle("cellb", parent=base, fontName="Helvetica-Bold", fontSize=8.5)
+    base = ParagraphStyle("base", parent=st["Normal"], fontName="Arial", fontSize=9, leading=12)
+    lbl = ParagraphStyle("lbl", parent=base, fontName="Arial-Bold")
+    sec = ParagraphStyle("sec", parent=base, fontName="Arial-Bold", fontSize=11, textColor=GOLD, spaceBefore=8, spaceAfter=2)
+    info = ParagraphStyle("info", parent=base, fontName="Arial-Italic", fontSize=8, textColor=colors.HexColor("#" + GREY_HEX))
+    cellb = ParagraphStyle("cellb", parent=base, fontName="Arial-Bold", fontSize=8.5)
     cell = ParagraphStyle("cell", parent=base, fontSize=8.5)
     ctr = ParagraphStyle("ctr", parent=cell, alignment=TA_CENTER)
 
