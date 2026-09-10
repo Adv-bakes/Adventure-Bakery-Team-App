@@ -7,7 +7,7 @@
 | **Type** | fsqm |
 | **Deliverable** | D-35 (Wave 2) — tasks 35.1, 35.2, and the scoping for 35.3–35.7 |
 | **Clauses** | SQF Food Manufacturing Ed 9 — **11.6.5.1 – 11.6.5.8** |
-| **Status** | Seeded DRAFT by `20260910000004` / `…005`, corrected by `…006` and `…007`. Two items open before issue. |
+| **Status** | Seeded DRAFT by `20260910000004` / `…005`, corrected by `…006`, `…007` and `…008`. Two items open before issue. |
 
 ---
 
@@ -52,9 +52,9 @@ control.
 
 ---
 
-## 2. Scope — every despatch is a collection
+## 2. Scope — every dispatch is a collection
 
-**I had this wrong in the first draft**, and the guard caught it. I described three despatch modes
+**I had this wrong in the first draft**, and the guard caught it. I described three dispatch modes
 taken from the **FRM-701 seed file** — but FRM-701 was amended twice after seeding and no longer has
 a Destination field at all, and **FSQM-020, active since 2026-09-04, records the actual model:**
 
@@ -68,7 +68,7 @@ removed** — the thing that document went out of its way to state does not appl
 ### 2.1 The correction sharpens the programme rather than weakening it
 
 Because every load leaves in a vehicle the site does not own, **the vehicle check is not an edge case
-for an unusual despatch — it is the whole of this site's transport control.**
+for an unusual dispatch — it is the whole of this site's transport control.**
 
 - 11.6.5.2 governs vehicles used to transport food **from the site**, and does not distinguish by who
   owns them. **Responsibility passing on collection does not reach backwards to the moment of
@@ -106,8 +106,14 @@ Nine Parts, in `20260910000004`:
 
 Seeded by `20260910000005`, Section 4 rewritten by `…007`. Five sections, 22 fields, two grids.
 
+**Titled *Dispatch and Vehicle Loading Record*** — `…008` corrected 31 occurrences of the British
+"despatch" across both documents, including the field ids `dispatch_date` and `dispatched_by`. **The
+SQF code itself spells it "dispatch"** (2.6.1.1, 2.6.3.1), and field ids lock once a form has entries,
+so FRM-801 having none made this the last free moment. The migration file `…005_frm801_despatch_record`
+keeps its name: it is applied, and a filename in `schema_migrations` is immutable.
+
 **Why not FRM-701.** Adding vehicle fields there was tempting, since release already precedes
-despatch — but **FRM-701 is one record per batch and a vehicle carries a load.** A three-batch
+dispatch — but **FRM-701 is one record per batch and a vehicle carries a load.** A three-batch
 shipment would have produced three checks of the same truck, or one filled and two blank. It also
 doesn't duplicate FRM-301, which already records the delivering vehicle at receipt.
 
@@ -131,7 +137,7 @@ not what it says — and is the wrong way round. A lock is a device that secures
 seal secures nothing, it only evidences afterwards that somebody opened it. The clause contemplates
 both.
 
-**A seal also does not fit this site.** Every despatch is a collection and a collecting vehicle is
+**A seal also does not fit this site.** Every dispatch is a collection and a collecting vehicle is
 commonly on a multi-drop route, so a seal applied at this dock has to be cut at the next stop.
 Requiring one would have written a rule that cannot be followed.
 
@@ -168,7 +174,7 @@ silence. That dependency no longer *blocks* D-35; it is a stated review trigger 
    the vehicle check. And task 35.5 asks whether a physical fix is worth making, such as a canopy
    over the crossing; that's a judgement for the site.
 
-2. **Is the collecting vehicle checked today?** Sharper than it looked: since *every* despatch is a
+2. **Is the collecting vehicle checked today?** Sharper than it looked: since *every* dispatch is a
    collection, this isn't an edge case — it's every load that has ever left. If the answer is no,
    issuing the programme creates a requirement the floor isn't yet meeting, and that gap should be
    closed by instruction rather than discovered at an audit.
