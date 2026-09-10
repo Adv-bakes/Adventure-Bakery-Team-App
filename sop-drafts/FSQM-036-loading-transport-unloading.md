@@ -52,26 +52,36 @@ control.
 
 ---
 
-## 2. Scope — three despatch modes, and the site is responsible in all three
+## 2. Scope — every despatch is a collection
 
-FRM-701 already records a Destination, and it offers exactly three:
+**I had this wrong in the first draft**, and the guard caught it. I described three despatch modes
+taken from the **FRM-701 seed file** — but FRM-701 was amended twice after seeding and no longer has
+a Destination field at all, and **FSQM-020, active since 2026-09-04, records the actual model:**
 
-| Destination | Who transports | What this programme governs |
-|---|---|---|
-| Shipped from our dock | a carrier the site engages | loading, vehicle condition, security, transport |
-| Collected by the customer | the customer's vehicle | **loading, vehicle condition, security** |
-| Transferred to customer-owned or third-party storage | either | loading, vehicle condition, security, transport |
+> *"The site does not use off-site or contract warehouses. Finished product is collected from the
+> site by a carrier the customer arranges, and responsibility for the product passes to the customer
+> on collection."*
 
-**Collection does not remove the obligation.** 11.6.5.2 covers vehicles used for transporting food
-*from the site* — it does not distinguish by who owns them. If a customer's vehicle arrives dirty,
-damaged or carrying an odour, the site's product is what would be affected, and the site's control is
-the one that failed. So the vehicle check happens before loading in all three modes, and the site may
-refuse to load.
+Describing three modes would have **re-added the off-site-storage limb FSQM-020 deliberately
+removed** — the thing that document went out of its way to state does not apply here.
 
-That is the single most likely gap in current practice, and it is worth confirming rather than
-assuming: **when a customer collects today, is the vehicle looked at before loading?**
+### 2.1 The correction sharpens the programme rather than weakening it
 
----
+Because every load leaves in a vehicle the site does not own, **the vehicle check is not an edge case
+for an unusual despatch — it is the whole of this site's transport control.**
+
+- 11.6.5.2 governs vehicles used to transport food **from the site**, and does not distinguish by who
+  owns them. **Responsibility passing on collection does not reach backwards to the moment of
+  loading**: if a vehicle arrives dirty or carrying an odour, it is this site's product that suffers
+  and this site's control that failed.
+- The site cannot control the journey, and the programme says so plainly rather than pretending
+  otherwise — the FSQM-020 pattern of stating which limbs do not arise.
+- What it *can* do beyond the check is **tell the carrier the requirement in advance** — ambient, and
+  the condition the vehicle must be in. That is now a rule in Part 1, and it is the site's only
+  influence over a journey it does not make.
+
+**The open question is therefore sharper than before: is the collecting vehicle checked today?**
+Not as an edge case — on every load that has ever left.
 
 ## 3. Proposed structure of the programme (task 35.2)
 
