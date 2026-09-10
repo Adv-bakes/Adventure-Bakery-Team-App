@@ -7,7 +7,7 @@
 | **Type** | fsqm |
 | **Deliverable** | D-35 (Wave 2) — tasks 35.1, 35.2, and the scoping for 35.3–35.7 |
 | **Clauses** | SQF Food Manufacturing Ed 9 — **11.6.5.1 – 11.6.5.8** |
-| **Status** | Seeded DRAFT by `20260910000004` / `…005`, corrected by `…006`. Three items open before issue. |
+| **Status** | Seeded DRAFT by `20260910000004` / `…005`, corrected by `…006` and `…007`. Two items open before issue. |
 
 ---
 
@@ -96,7 +96,7 @@ Nine Parts, in `20260910000004`:
 | 3 | **The ambient determination** and what would reverse it | .5 · .6 · .7 **N/A** |
 | 4 | **Vehicle check before loading** — refuse and record | 11.6.5.2 |
 | 5 | **The crossing** — the load goes outdoors; wrapped, weather rules, clean apron, no staging | .1 · .4 · .8 |
-| 6 | **Vacuum seal vs. vehicle seal** — stated separately | 11.6.5.3 |
+| 6 | **Securing the load** — closed and secured before the vehicle leaves; locked where there is a lock | 11.6.5.3 |
 | 7 | Unloading at receipt points back at FRM-301 | 11.6.5.8 |
 | 8–9 | Records; annual review | — |
 
@@ -104,7 +104,7 @@ Nine Parts, in `20260910000004`:
 
 ## 4. FRM-801 — one record per vehicle-load (task 35.3)
 
-Seeded by `20260910000005`. Five sections, 19 fields, two grids.
+Seeded by `20260910000005`, Section 4 rewritten by `…007`. Five sections, 22 fields, two grids.
 
 **Why not FRM-701.** Adding vehicle fields there was tempting, since release already precedes
 despatch — but **FRM-701 is one record per batch and a vehicle carries a load.** A three-batch
@@ -115,19 +115,46 @@ doesn't duplicate FRM-301, which already records the delivering vehicle at recei
 
 - **No temperature fields.** Everything ships ambient, so a box that is always blank would imply a
   control the site doesn't operate.
-- **The seal field is not required.** The site hasn't chosen a method, and a required field for a
-  control that doesn't exist is a rule nobody can follow — the same defect the FSQM-004 single-person
-  amendment removed a day earlier. The option list lets the filler record honestly that none was used.
+- **The seal field is not required** — and after `…007` it is a plain `seal_number` text box beside a
+  required **Compartment secured** tick. A required field for a control the site doesn't operate is a
+  rule nobody can follow — the same defect the FSQM-004 single-person amendment removed a day earlier.
+  The tick records what actually happens on every load; the seal number records the exception.
 
 ---
 
-## 5. What still needs the floor or a decision
+## 5. Securing the load — settled (task 35.4)
 
-1. **Seals (task 35.4).** 11.6.5.3 wants tamper-evident seals *or another agreed method*. Are any used
-   today? A load that is collected and leaves immediately raises a fair question about what a seal
-   adds. This is also the one task with a cross-deliverable dependency — the plan hangs it on **D-22
-   Food Defense**, which hasn't started.
-2. **Wrapping and the weather rule (task 35.5).** The first draft said product never crosses open
+**A latch or a lock is sufficient, and `…007` writes that in.** I had over-read the clause. 11.6.5.3
+says vehicles shall be *secured from tampering using seals or other agreed-upon and acceptable
+**devices or systems***. I turned that into a requirement for something **tamper-evident**, which is
+not what it says — and is the wrong way round. A lock is a device that secures the compartment; a
+seal secures nothing, it only evidences afterwards that somebody opened it. The clause contemplates
+both.
+
+**A seal also does not fit this site.** Every despatch is a collection and a collecting vehicle is
+commonly on a multi-drop route, so a seal applied at this dock has to be cut at the next stop.
+Requiring one would have written a rule that cannot be followed.
+
+The rule is now: **the compartment is closed and secured before the vehicle leaves** — locked where
+there is a lock, latched and confirmed by the driver where there is not — with a seal applied only
+where a customer or carrier asks for one, its number recorded on FRM-801.
+
+The reasoning sits in the Part itself, because the defence of a light control is the argument behind
+it: SQF is risk-based, and ambient shelf-stable product collected locally in small quantities is not
+a tampering target. The Part also records what would change the judgement — the **D-22 food defence
+threat assessment**, which hasn't started — so the choice is revisitable rather than settled by
+silence. That dependency no longer *blocks* D-35; it is a stated review trigger instead.
+
+> **Third time this pattern has come up in a week** — the absolute pre-operational separation rule in
+> FSQM-004, the seal here, and the "does not cross open ground" claim between them. A control heavier
+> than the clause requires is not caution; it is a rule waiting to be ignored, and the owner has
+> caught every one of them.
+
+---
+
+## 6. What still needs the floor or a decision
+
+1. **Wrapping and the weather rule (task 35.5).** The first draft said product never crosses open
    ground. It does: bulk loads are palletised and crossed over the concrete parking area, and there
    is **no dock**. Corrected in `…006`, which states the crossing and the controls that make it
    acceptable — wrapped pallets, no loading in adverse weather without cover, a clean apron free of
@@ -141,19 +168,20 @@ doesn't duplicate FRM-301, which already records the delivering vehicle at recei
    the vehicle check. And task 35.5 asks whether a physical fix is worth making, such as a canopy
    over the crossing; that's a judgement for the site.
 
-3. **Is the collecting vehicle checked today?** Sharper than it looked: since *every* despatch is a
+2. **Is the collecting vehicle checked today?** Sharper than it looked: since *every* despatch is a
    collection, this isn't an edge case — it's every load that has ever left. If the answer is no,
    issuing the programme creates a requirement the floor isn't yet meeting, and that gap should be
    closed by instruction rather than discovered at an audit.
-4. **Training (task 35.7)** follows the record.
+3. **Training (task 35.7)** follows the record.
 
 ---
 
-## 6. What this closes
+## 7. What this closes
 
 **Three clauses by justified Not Applicable** (11.6.5.5, .6, .7) — written into the programme rather
 than filed as a loose note, the mechanism FSQM-014 used for 2.4.4.3 and .4.
 
 The other five (.1, .2, .3, .4, .8) are **addressed in the documents but not yet in force**, because
-both are drafts. `.3` in particular is stated as a requirement the site does not currently meet — the
-seal question above.
+both are still drafts. `.3` is no longer among them as an unmet requirement: after `…007` it states a
+control the site can actually operate on every load, so issuing the programme puts it in force rather
+than creating a gap.

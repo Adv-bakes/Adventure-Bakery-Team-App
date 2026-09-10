@@ -86,8 +86,16 @@ customer, or an existing one who changes carrier, gets the same notice before th
 3. **Consider naming a contact.** A named person to reply to gets you a conversation; a general
    address gets you silence and then a surprised driver.
 
-## What it does not do
+## One thing worth adding, now that task 35.4 is settled
 
-It does not close 11.6.5.3. **Securing the vehicle from tampering is a separate requirement**, the
-site has not chosen a method, and the vacuum seal inside each box — real tamper evidence though it is
-— answers a different question. That stays open as task 35.4.
+FSQM-036 Part 6 asks the driver to **confirm the load compartment is closed and secured** before
+leaving — locked where the vehicle has a lock, latched and confirmed where it does not. That is a
+second thing the driver is asked to do at the dock, so it belongs in the same notice rather than
+arriving as a surprise. Suggested paragraph, after the "if a vehicle does not pass" one:
+
+> **Before your driver leaves**, we will ask them to close and secure the load compartment — locked
+> if the vehicle has a lock, otherwise latched and confirmed closed. If you or your carrier require a
+> seal, tell us in advance and we will apply one and record its number.
+
+It reads as ordinary practice because it is, and it means the first driver asked is not the first
+person to hear about it.
