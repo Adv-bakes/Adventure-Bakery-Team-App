@@ -212,6 +212,26 @@ export function assessDue(
 
 // ---------------------------------------------------------------- FRM-703 retention links
 
+/**
+ * The link that takes somebody from "this is due" to the form they complete it on.
+ *
+ * It points at the SOPs Library drawer rather than at a new entry, because creating an entry is a
+ * write and a notification link must be safe to click twice. The drawer opens on the Entries tab for
+ * a fillable form, so New Entry is one click further — and if the activity was in fact already done,
+ * the entry is right there rather than being created a second time.
+ */
+export function formLink(
+  documentNumber: string,
+  documentId: string,
+  documentTitle?: string | null,
+): NotificationLink {
+  const title = (documentTitle ?? "").trim();
+  return {
+    label: `Open ${documentNumber}${title ? ` · ${title}` : ""}`,
+    href: `/team/compliance/sops?doc=${documentId}`,
+  };
+}
+
 export type RetentionEntry = {
   id: string;
   status: string;

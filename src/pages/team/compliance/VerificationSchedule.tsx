@@ -11,6 +11,7 @@
 // will make them real.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { CalendarCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +44,7 @@ const STATE_LABEL: Record<string, string> = {
 export default function VerificationSchedule() {
   const [rows, setRows] = useState<ScheduleRow[]>([]);
   const [completions, setCompletions] = useState<Completion[]>([]);
+  const [docIdOf, setDocIdOf] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
 
   const today = useMemo(
@@ -70,13 +72,14 @@ export default function VerificationSchedule() {
         sched.filter((r) => r.status === "active" && r.evidence_document_number)
              .map((r) => r.evidence_document_number as string),
       )];
-      if (!docNumbers.length) { setCompletions([]); return; }
+      if (!docNumbers.length) { setCompletions([]); setDocIdOf(new Map()); return; }
 
       const { data: docs } = await (supabase as any)
         .from("sop_documents").select("id, sop_number").in("sop_number", docNumbers);
       const idOf = new Map<string, string>(
         (docs ?? []).map((d: { id: string; sop_number: string }) => [d.sop_number, d.id]),
       );
+      setDocIdOf(idOf);
 
       const found: Completion[] = [];
       for (const r of sched) {
@@ -164,7 +167,19 @@ export default function VerificationSchedule() {
                       </TableCell>
                       <TableCell className="align-top">{r.responsible_position}</TableCell>
                       <TableCell className="align-top whitespace-nowrap">
-                        {r.evidence_kind === "none" ? "—" : (r.evidence_document_number ?? "FRM-008")}
+                        {r.evidence_kind === "none" ? "—" : (() => {
+                          const num = r.evidence_document_number ?? "FRM-008";
+                          const id = docIdOf.get(num);
+                          // Only a link when the document actually exists. FRM-008 will not until
+                          // it is seeded, and a dead link on the compliance schedule is worse than
+                          // plain text.
+                          return id ? (
+                            <Link to={`/team/compliance/sops?doc=${id}`}
+                              className="text-[hsl(var(--tp-gold))] hover:underline">
+                              {num}
+                            </Link>
+                          ) : num;
+                        })()}
                         {r.owning_program && (
                           <div className="text-xs text-muted-foreground">{r.owning_program}</div>
                         )}

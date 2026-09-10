@@ -29,7 +29,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  assessDue, retentionLinks, addDays,
+  assessDue, retentionLinks, formLink, addDays,
   type Completion, type NotificationLink, type ScheduleRow,
 } from "../_shared/verificationSchedule.ts";
 
@@ -106,11 +106,15 @@ serve(async (req) => {
 
     const { data: docRows, error: docErr } = await admin
       .from("sop_documents")
-      .select("id, sop_number")
+      .select("id, sop_number, title")
       .in("sop_number", [...wanted]);
     if (docErr) throw new Error(`resolving documents: ${docErr.message}`);
+    type DocRow = { id: string; sop_number: string; title: string | null };
     const docIdOf = new Map<string, string>(
-      (docRows ?? []).map((d: { id: string; sop_number: string }) => [d.sop_number, d.id]),
+      (docRows ?? []).map((d: DocRow) => [d.sop_number, d.id]),
+    );
+    const docTitleOf = new Map<string, string | null>(
+      (docRows ?? []).map((d: DocRow) => [d.sop_number, d.title]),
     );
 
     // ---------------------------------------------------------------- last completed
@@ -219,7 +223,20 @@ serve(async (req) => {
     for (const f of findings) {
       liveKeys.add(f.dedupeKey);
       const row = all.find((r) => r.activity_key === f.activityKey);
-      const links = linksFor.get(f.activityKey) ?? [];
+
+      // Every activity links to the form it is completed on, so the notification is one click from
+      // the work rather than a sentence naming a document you then go and find. The retention
+      // review's per-sample links follow it: the form link is the general way in, the sample links
+      // are the specific items to close out.
+      const links: NotificationLink[] = [];
+      const evidenceNumber = row?.evidence_kind === "frm008"
+        ? "FRM-008"
+        : row?.evidence_document_number ?? null;
+      const evidenceId = evidenceNumber ? docIdOf.get(evidenceNumber) : undefined;
+      if (evidenceNumber && evidenceId) {
+        links.push(formLink(evidenceNumber, evidenceId, docTitleOf.get(evidenceNumber)));
+      }
+      links.push(...(linksFor.get(f.activityKey) ?? []));
 
       const { error } = await admin.from("internal_notifications").insert({
         notification_type: NOTIFICATION_TYPE,

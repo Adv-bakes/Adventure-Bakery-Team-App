@@ -40,7 +40,7 @@ const C = await bundle("src/lib/verificationSchedule.ts", "client.mjs");
 
 const {
   addDays, addMonths, addFrequency, frequencyLabel,
-  nextDue, dedupeKeyFor, rowState, assessDue, retentionLinks,
+  nextDue, dedupeKeyFor, rowState, assessDue, retentionLinks, formLink,
 } = S;
 
 let failures = 0;
@@ -208,6 +208,20 @@ check("cap holds", capped.length, 26);
 ok("overflow points at the form", capped[25].label === "…and 5 more" &&
    capped[25].href === `/team/compliance/sops?doc=${DOC}`);
 
+// ---------------------------------------------------------------- form links
+// Every activity links to the form it is completed on, so the notification is one click from the
+// work. The href points at the SOPs Library drawer, not at entry creation: a notification link has
+// to be safe to click twice, and creating an entry is a write.
+check("form link href is the drawer, not a write",
+  formLink("FRM-913", "abc-123", "GMP / Food Safety Inspection Record").href,
+  "/team/compliance/sops?doc=abc-123");
+check("form link names the document and its title",
+  formLink("FRM-913", "abc-123", "GMP / Food Safety Inspection Record").label,
+  "Open FRM-913 · GMP / Food Safety Inspection Record");
+check("form link degrades without a title",
+  formLink("FRM-913", "abc-123", null).label, "Open FRM-913");
+ok("form link is an internal path", formLink("FRM-008", "x", "").href.startsWith("/"));
+
 // ---------------------------------------------------------------- the twins agree
 const CASES = [];
 for (const unit of ["day", "week", "month", "quarter", "year"]) {
@@ -230,6 +244,7 @@ try {
   deepStrictEqual(C.assessDue(SCHEDULE, COMPLETIONS, TODAY), S.assessDue(SCHEDULE, COMPLETIONS, TODAY));
   deepStrictEqual(C.retentionLinks(entries, DOC, TODAY), S.retentionLinks(entries, DOC, TODAY));
   deepStrictEqual(C.rowState(row({}), "2026-08-10", TODAY), S.rowState(row({}), "2026-08-10", TODAY));
+  deepStrictEqual(C.formLink("FRM-913", "abc", "T"), S.formLink("FRM-913", "abc", "T"));
 } catch (e) {
   failures++;
   console.error("FAIL  twins disagree:", e.message);
