@@ -7,7 +7,7 @@
 | **Type** | fsqm |
 | **Deliverable** | D-01 (Wave 1) |
 | **Clause** | SQF Food Safety Code: Food Manufacturing, Edition 9 — **2.1.1.3** |
-| **Status** | DRAFT — not written to the database. Five questions below must be answered first. |
+| **Status** | DRAFT — not written to the database. One question outstanding (Part 6). |
 
 Drawn **by position, never by person**. A document that names an individual has to be reissued when
 that individual changes, and 2.1.1.3 asks for personnel to be identified by their responsibilities
@@ -17,155 +17,169 @@ in the structure — not for a staff list.
 
 ## 1. What the clause actually asks for
 
-2.1.1.3 is one sentence doing four jobs, and it is worth separating them because the site meets
-them to very different degrees today:
+2.1.1.3 is one sentence doing four jobs:
 
-| | Requirement | Where it stands |
+| | Requirement | Closed by |
 |---|---|---|
-| i | The reporting structure shall **identify and describe site personnel with specific responsibilities** for tasks within the food safety management system | No structure document exists |
-| ii | **Identify a backup for the absence of key personnel** | None identified — this is also D-02 |
-| iii | **Job descriptions for the key personnel shall be documented** | None documented |
-| iv | Departments and operations are **appropriately staffed and organizationally aligned** to meet food safety objectives | **This is the finding underneath the finding — see Part 3** |
+| i | The reporting structure shall **identify and describe site personnel with specific responsibilities** | Part 3 of this document |
+| ii | **Identify a backup for the absence of key personnel** | Part 5 — and **D-02** for the SQF Practitioner |
+| iii | **Job descriptions for the key personnel shall be documented** | Part 4 of this document |
+| iv | Departments and operations are **appropriately staffed and organizationally aligned** | Part 2 — the substantive finding |
 
-> ⚠️ **The workbook maps D-01 to "2.1.1.3, .4" and D-02 to "2.1.1.5". That mapping is wrong, and
-> it matters.** In the Food Manufacturing edition, **2.1.1.4** is *"designate a primary and
-> substitute SQF practitioner"* and **2.1.1.5** is that practitioner's *competency* (employed on
-> site, HACCP course completed, understands the Code). Both are D-02's artifact, not D-01's.
-> D-01 produces the reporting structure and the job descriptions, which is **2.1.1.3**.
->
-> The consequence: **D-01 cannot close 2.1.1.3 on its own either.** Limb (ii) requires a backup for
-> key personnel, and the key person is the SQF Practitioner, whose substitute is designated by D-02.
-> The two deliverables interlock and should be finished together.
+> ⚠️ **The workbook's clause mapping is wrong.** It maps D-01 to "2.1.1.3, .4" and D-02 to
+> "2.1.1.5". In the Food Manufacturing edition **2.1.1.4** is *"designate a primary and substitute
+> SQF practitioner"* and **2.1.1.5** is that practitioner's *competency*. Both are D-02's artifact.
+> D-01 is **2.1.1.3** alone — and it cannot close limb (ii) without D-02's substitute. The two
+> deliverables interlock and should finish together.
 
 ---
 
-## 2. What the documents already in force actually require
+## 2. What the documents in force actually require
 
-This is the part that could not be guessed, so it was measured. **35 active controlled documents
-carry a Responsibility section.** Between them they assign work to thirteen role names:
+Measured, not assumed. **35 active controlled documents** carry a Responsibility section, and roles
+are named in procedure steps as well. The four apparently unheld roles were then checked line by
+line.
 
-| Role named | Active documents | Holder today |
-|---|---:|---|
-| Maintenance | **14** | **nobody — see Q1** |
-| SQF Practitioner | 11 | CEO |
-| QA | **9** | **nobody — see Q2** |
-| Production staff | 9 | one production employee |
-| Quality Team | 6 | CEO |
-| Management team | 6 | CEO |
-| Admin | 5 | CEO |
-| Supervisors | **4** | **nobody — see Q3** |
-| All staff | 3 | everyone |
-| Quality Leader | **2** | **nobody — see Q2** |
-| Sales · Reception · Action owners | 1 each | CEO |
+**Decisions taken 2026-09-10, and what each one means:**
 
-Against that, the staff directory holds **three working positions**: CEO, one Production employee,
-and an IT Consultant with no portal access. The remaining profiles are read-only auditor accounts
-and unprovisioned records.
+| Role | Evidence | Decision | Consequence |
+|---|---|---|---|
+| **Supervisor** | **58 lines across 22 documents** | **The post exists** — *Production Supervisor* | ✅ **No sweep needed.** Every one of those lines is correct as written. |
+| **QA** | 25 lines, 10 documents | Shorthand for the **SQF Practitioner** | 🔧 Normalise — see Part 7 |
+| **Quality Leader** | 5 lines, 2 documents | Same — **SQF Practitioner** | 🔧 Normalise — see Part 7 |
+| **Maintenance** | 14 documents | **Mixed**: routine in-house, specialist contracted | Position + a Contract Services Register row (D-10) |
 
-**So thirteen role names resolve to three people, and four of those names resolve to nobody at
-all.** That is limb (iv) of the clause — *appropriately staffed and organizationally aligned* — and
-it is why this deliverable is worth more than the paperwork it looks like.
-
-### The roles with no holder, and where they are relied on
-
-- **Maintenance — 14 documents.** Every equipment SOP (SOP-501 to 505, 601 to 605, 905) plus
-  FSQM-012, FSQM-022 and SOP-11.7.3. This is not inherited boilerplate: those SOPs were written
-  here, for this site's machines, and each assigns real work to Maintenance.
-- **QA — 9 documents.** FSQM-012, SOP-2.3.1, SOP-2.3.2, SOP-2.3.2.3, SOP-2.3.4, SOP-2.9,
-  SOP-11.2.12, SOP-11.7.3, SOP-506. **Some of these were authored here**, so QA cannot simply be
-  written off as a Compass Blending import — it has become working vocabulary.
-- **Supervisors — 4 documents.** FSQM-009, FSQM-012, SOP-2.2.3, SOP-2.9. With one production
-  employee there is no supervisory layer to supervise.
-- **Quality Leader — 2 documents.** SOP-2.2.3, SOP-2.3.2. This one *is* on the known Compass
-  Blending inheritance list.
+The Supervisor answer is the important one. Measuring only the Responsibility sections had shown
+four documents and suggested a layer that did not exist; the full count showed **58 lines**, and the
+work assigned is real and load-bearing — *trains and signs off operators, takes the machine out of
+service on a fault, signs the pre-use release*. A supervisory sign-off is what stands between an
+untrained operator and a machine. Deleting it would have been a serious mistake.
 
 ---
 
-## 3. Proposed structure — by position
-
-Reporting lines, not people. Positions marked **(vacant)** are ones the documents rely on and
-nobody currently fills.
+## 3. Reporting structure — by position
 
 ```
-                    Senior Site Management
-                    (Managing Partner / CEO)
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-  SQF Practitioner      Production            Administration
-  (primary)             Operator              (purchasing, records,
-        │                                      supplier files)
-  SQF Practitioner
-  (substitute) (vacant — D-02)
-
-  Supporting functions, however they are resourced:
-    Maintenance  (vacant or contracted — Q1)
-    Sanitation   (currently the Production Operator — Q4)
+                     Senior Site Management
+                     (Managing Partner / CEO)
+                               │
+        ┌──────────────────────┼──────────────────────┐
+        │                      │                      │
+  SQF Practitioner      Production Supervisor    Administration
+  ── primary                   │                 (purchasing, supplier
+  ── substitute (vacant, D-02) │                  files, records)
+        │                Production Operator
+        │                      │
+        │                Receiving / Goods-In
+        │
+   Maintenance — routine tasks in-house;
+   specialist work contracted (D-10 register)
 ```
 
-**One person holding several posts is permitted and is not the problem.** What is not permitted is
-a procedure that describes a *hand-off between two posts the same person holds* — a quorum of one
-is not a control, and writing it as one invites an auditor to test a separation of duties that does
-not exist. Where this document confirms that two posts are held by one person, any procedure step
-that passes work between them must be rewritten rather than relabelled.
+**One person holding several posts is permitted, and is not the problem.** What is not permitted is
+a procedure describing a **hand-off between two posts the same person holds** — a quorum of one is
+not a control, and writing it as one invites an auditor to test a separation of duties that does not
+exist. Where this document confirms two posts are held by one person, any procedure step passing
+work between them must be **rewritten, not relabelled**.
 
 ---
 
-## 4. Job descriptions — scope
+## 4. Job descriptions — key personnel
 
-2.1.1.3 requires job descriptions for **key personnel**: those performing key process steps in the
-food safety management system. On the evidence in Part 2 that is five positions:
+### 4.1 Senior Site Management (Managing Partner)
+Owns the food safety policy and the resources behind it. Appoints the primary and substitute SQF
+Practitioner. Ensures departments and operations are staffed to meet food safety objectives.
+Receives notification where an inspection failure stops production or shipment.
+**Records:** policy statement; management review. **Reports to:** — . **Covered by:** the SQF Practitioner for day-to-day decisions; the appointment power is not delegable.
 
-1. **Senior Site Management** — policy, resources, food safety culture, and the appointment of the SQF Practitioner.
-2. **SQF Practitioner (primary and substitute)** — owns the SQF System; approves controlled documents; decides product release under FSQM-020; owns CAPA under FSQM-009.
-3. **Production Operator** — makes the batch to the batch sheet; performs and records the in-process inspection; performs sanitation and the pre-operational check.
-4. **Receiving / Goods-In** — inspects and accepts incoming material against FRM-301; rejects or holds what fails.
-5. **Maintenance** — planned and reactive maintenance of food-contact equipment; food-grade lubricants; post-maintenance release of equipment back to production.
+### 4.2 SQF Practitioner — primary and substitute
+Owns the SQF System: develops, implements, reviews and maintains it. Approves controlled documents
+and their revisions. **Decides finished product release (FSQM-020) and signs the pre-operational
+release of the line.** Owns CAPA (FSQM-009). Sets the inspection criteria and reviews the inspection
+records (FSQM-014). Verifies annually that the documented programs are what the floor performs.
+**Records:** FRM-701 release, FRM-007 CAPA, FRM-903 pre-op release, document approvals.
+**Competency:** completed HACCP course; understands the SQF Food Safety Code: Food Manufacturing (2.1.1.5).
+**Reports to:** Senior Site Management. **Covered by:** the substitute SQF Practitioner — **vacant, D-02**.
 
-Each description will state: purpose, the food-safety tasks the position owns, the records it
-completes, who it reports to, the competencies required, and **who covers it in absence** — which
-is limb (ii) and cannot be written until Q1 and D-02 are answered.
+### 4.3 Production Supervisor
+Trains operators on each machine and signs them off; no one operates a machine without that
+sign-off. Takes a machine out of service on a fault and releases it back. Coordinates test runs and
+monitors first-batch results. Ensures staff on shift comply with GMP and acts on non-compliance
+immediately. Ensures assigned training is completed and competency verified.
+**Records:** operator sign-off; equipment out-of-service; FRM-909/910/911/912 pre-use releases.
+**Reports to:** Senior Site Management. **Covered by:** the SQF Practitioner.
 
-I have **not** drafted the five descriptions yet. Writing "Maintenance shall…" before knowing
-whether Maintenance is an employee, the CEO, or a contractor would produce a document that reads
-well and describes nobody — the exact defect this programme has been removing from other documents
-all week.
+### 4.4 Production Operator
+Makes the batch to the batch sheet and records the in-process inspection on it. Confirms the pack,
+seal, date and lot code as the run proceeds. Performs sanitation and completes FRM-903.
+**Does not release the line — that signature is the SQF Practitioner's** (see 4.2), so the work and
+its verification are not the same hand.
+**Records:** batch sheet; FRM-903 sanitation. **Reports to:** Production Supervisor.
+**Covered by:** the Production Supervisor.
+
+### 4.5 Receiving / Goods-In
+Inspects every delivery of raw material and packaging before it is accepted into stock, against
+FRM-301 — identity, quantity, pack integrity, lot code and date, pest and damage evidence, vehicle
+condition. Rejects or places on Hold under FSQM-018 what fails. Takes and logs retention samples on
+FRM-703.
+**Records:** FRM-301; FRM-702 hold; FRM-703 retention. **Reports to:** Production Supervisor.
+**Covered by:** the Production Operator.
+
+### 4.6 Maintenance
+Planned and reactive maintenance of production and food-contact equipment. Uses food-grade
+lubricants where contact is possible. Returns equipment to production only after it is cleaned and
+released.
+**Split, per the decision above:** routine tasks — greasing, belt and seal changes, guard checks,
+scheduled servicing named in the equipment SOPs — are performed **in-house**. Specialist work —
+refrigeration, gas, electrical, calibration and anything requiring a licensed trade — is
+**contracted**, and each provider is listed on the **Contract Services Register (D-10)**.
+**Records:** maintenance log; post-maintenance release. **Reports to:** Senior Site Management.
+**Covered by:** the contracted provider for anything the in-house holder cannot complete.
+
+> The in-house/contracted boundary above is **drafted, not confirmed**. It is written so the line
+> falls where a licence or specialist tooling is required, which is the usual place for it. Move it
+> if that is not where it actually sits.
 
 ---
 
-## 5. Questions that must be answered before this can be written
+## 5. Coverage in absence (limb ii)
 
-These are genuine blockers, not review comments. Each one changes what the document says.
-
-**Q1 — Who performs maintenance?** Fourteen active documents assign work to Maintenance. Is it an
-employee, the CEO, or an external contractor? *If it is a contractor, that also creates a row on the
-Contract Services Register (D-10) and the position becomes a managed service rather than a job
-description.*
-
-**Q2 — Is "QA" a distinct post, or a synonym for the Quality Team?** Nine documents use it,
-including some written here. Either it becomes a position in the structure, or it is normalised to
-the site's own vocabulary and those nine documents are corrected. *"Quality Leader" (2 documents) is
-Compass Blending inheritance and should go regardless.*
-
-**Q3 — Is there a supervisory layer at all?** Four documents name Supervisors. With one production
-employee there may be none, in which case those four documents should say who actually does the
-thing.
-
-**Q4 — Who owns sanitation as a position?** It is currently performed by the production employee,
-but the sanitation records (FRM-903) and the pre-operational release are a distinct food-safety
-responsibility. Is that the Production Operator's job description, or a separate post?
-
-**Q5 — Are there employees not in the staff directory?** The directory shows three working
-positions. If anyone else works on site — part-time, seasonal, family — they need a position on the
-chart, because 2.1.1.3 is about the site, not about who has a portal login.
+| Position | Covered by |
+|---|---|
+| Senior Site Management | SQF Practitioner, day-to-day only |
+| **SQF Practitioner** | **Substitute SQF Practitioner — VACANT. This is D-02 and it is the one gap that keeps 2.1.1.3 open.** |
+| Production Supervisor | SQF Practitioner |
+| Production Operator | Production Supervisor |
+| Receiving / Goods-In | Production Operator |
+| Maintenance | Contracted provider |
 
 ---
 
-## 6. What happens after the answers
+## 6. The one question left
 
-1. Write the five job descriptions, each with its coverage-in-absence provision.
-2. Seed FSQM-004 as a draft migration, structured like the other FSQM programs.
-3. **Sweep the vocabulary.** Whatever Q2 and Q3 decide, the documents that use a retired role name
-   have to be corrected — that is a known, bounded list of eleven documents, and leaving them
-   pointing at posts the structure does not contain would recreate the problem D-01 exists to fix.
-4. Finish D-02 in the same pass, so limb (ii) closes with limb (i) and (iii).
+**Who holds the Production Supervisor post, and is anyone else working on site who is not in the
+staff directory?**
+
+The directory shows three working positions — CEO, one Production employee, an IT Consultant with no
+portal access — and the rest are auditor accounts or unprovisioned records. A Production Supervisor
+post that is real must be held by someone, and 2.1.1.3 is about the site rather than about who has a
+portal login. Part-time, seasonal and family workers all count.
+
+If the Supervisor and the Operator are the **same person**, that is allowed — but then §4.4's
+"does not release the line" becomes the only thing keeping the sign-off honest, and SOP-501/502/503
+etc. that say *"do not operate unless the Supervisor has trained and signed you off"* need rereading
+to check they do not have someone signing off their own training.
+
+---
+
+## 7. Follow-on work this creates (not part of D-01)
+
+1. **Normalise QA and Quality Leader to SQF Practitioner** — 30 lines across 12 **active**
+   documents, so each is an amendment to a controlled document with a revision bump and a history
+   entry. Compound forms need judgement, not find/replace: *QA Technician*, *QA/QC Lead*,
+   *QA/Production Manager*, and FSQM-012's *"SQF Practitioner / QA"* which simply de-duplicates.
+   **`FRM-702`'s Section 2 instruction still reads "To be filled out by QA / Quality Leader"** and is
+   already on record as needing this fix.
+2. **Add the maintenance providers to the Contract Services Register (D-10)** once the boundary in
+   §4.6 is confirmed.
+3. **Finish D-02 in the same pass**, so limb (ii) closes alongside (i) and (iii).
