@@ -189,14 +189,16 @@ const entries = [
 
 const links = retentionLinks(entries, DOC, TODAY);
 check("only due, on-shelf samples link",
-  links.map((l) => l.href.split("/").pop()), ["a", "f", "b"]);
-check("links are internal app paths",
-  links[0].href, "/team/compliance/forms/doc-703/entries/a");
+  links.map((l) => l.href.split("/").pop().split("?")[0]), ["a", "f", "b"]);
+// Retention links point at EXISTING records - these samples are already on the shelf - and carry
+// the marker that lets the form offer a way back to the feed.
+check("retention links open the existing entry",
+  links[0].href, "/team/compliance/forms/doc-703/entries/a?from=notifications");
 ok("label carries product, lot and due date",
   links[0].label === "Rum Cake · L1 — due 2026-09-01");
 
 check("horizon pulls in what is due soon",
-  retentionLinks(entries, DOC, TODAY, 100).map((l) => l.href.split("/").pop()),
+  retentionLinks(entries, DOC, TODAY, 100).map((l) => l.href.split("/").pop().split("?")[0]),
   ["a", "f", "b", "c"]);
 
 const many = Array.from({ length: 30 }, (_, i) => ({
@@ -212,14 +214,16 @@ ok("overflow points at the form", capped[25].label === "…and 5 more" &&
 // Every activity links to the form it is completed on, so the notification is one click from the
 // work. The href points at the SOPs Library drawer, not at entry creation: a notification link has
 // to be safe to click twice, and creating an entry is a write.
-check("form link href is the drawer, not a write",
+// It opens the ENTRY, not the library page. /start resumes an open draft before creating one,
+// which is what makes a link that performs a write safe to click twice.
+check("form link opens an entry, via the resume-or-create route",
   formLink("FRM-913", "abc-123", "GMP / Food Safety Inspection Record").href,
-  "/team/compliance/sops?doc=abc-123");
+  "/team/compliance/forms/abc-123/start?from=notifications");
 check("form link names the document and its title",
   formLink("FRM-913", "abc-123", "GMP / Food Safety Inspection Record").label,
-  "Open FRM-913 · GMP / Food Safety Inspection Record");
+  "Record on FRM-913 · GMP / Food Safety Inspection Record");
 check("form link degrades without a title",
-  formLink("FRM-913", "abc-123", null).label, "Open FRM-913");
+  formLink("FRM-913", "abc-123", null).label, "Record on FRM-913");
 ok("form link is an internal path", formLink("FRM-008", "x", "").href.startsWith("/"));
 
 // ---------------------------------------------------------------- the twins agree

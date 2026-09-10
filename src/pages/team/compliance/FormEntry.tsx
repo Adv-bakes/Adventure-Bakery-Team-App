@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +51,12 @@ type DocRow = {
 export default function FormEntry() {
   const { docId, responseId } = useParams<{ docId: string; responseId: string }>();
   const navigate = useNavigate();
+  // Where this entry was opened FROM. A notification sends people straight into a form to
+  // discharge one due activity, and "Back to FRM-907" then strands them in the SOPs Library
+  // rather than returning them to the list of things still outstanding.
+  const [searchParams] = useSearchParams();
+  const cameFromNotifications = searchParams.get("from") === "notifications";
+  const backHref = cameFromNotifications ? "/team/notifications" : `/team/compliance/sops?doc=${docId}`;
   const location = useLocation();
   const { role } = useUserRole();
   const isAdmin = role === "admin" || role === "owner";
@@ -360,10 +366,11 @@ export default function FormEntry() {
       {/* Header */}
       <div>
         <Link
-          to={`/team/compliance/sops?doc=${doc.id}`}
+          to={backHref}
           className="inline-flex items-center gap-1 text-xs text-[#C89B3C] hover:underline"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />Back to {doc.sop_number ?? "form"}
+          <ArrowLeft className="w-3.5 h-3.5" />
+          {cameFromNotifications ? "Back to Notifications" : `Back to ${doc.sop_number ?? "form"}`}
         </Link>
         <div className="flex flex-wrap items-center gap-2 mt-1.5">
           <h1 className="text-2xl font-bold" style={{ color: "#F5F1E6" }}>{doc.title}</h1>
@@ -491,10 +498,11 @@ export default function FormEntry() {
         style={{ borderColor: "rgba(200,155,60,0.3)", background: "rgba(42,31,14,0.85)" }}
       >
         <Link
-          to={`/team/compliance/sops?doc=${doc.id}`}
+          to={backHref}
           className="inline-flex items-center gap-1 text-xs text-[#C89B3C] hover:underline"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />Back to {doc.sop_number ?? "form"}
+          <ArrowLeft className="w-3.5 h-3.5" />
+          {cameFromNotifications ? "Back to Notifications" : `Back to ${doc.sop_number ?? "form"}`}
         </Link>
         {canEdit && (
           <>

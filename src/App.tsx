@@ -94,6 +94,7 @@ import FormEntry from "./pages/team/compliance/FormEntry";
 import FormRecords from "./pages/team/compliance/Records";
 import Notifications from "./pages/team/Notifications";
 import VerificationSchedule from "./pages/team/compliance/VerificationSchedule";
+import FormEntryStart from "./pages/team/compliance/FormEntryStart";
 import TrainingSops from "./pages/team/hr/TrainingSops";
 import TrainingCompliance from "./pages/team/hr/TrainingCompliance";
 import TrainingModuleDetail from "./pages/team/hr/TrainingModuleDetail";
@@ -462,6 +463,13 @@ const App = () => (
           <Route path="/team/compliance/records" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><FormRecords /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          {/* Resumes the caller's newest open draft, else creates one, then redirects to it.
+              A notification link performs a write, so it has to be safe to click twice. */}
+          <Route path="/team/compliance/forms/:docId/start" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><FormEntryStart /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/compliance/forms/:docId/entries/:responseId" element={

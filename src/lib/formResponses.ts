@@ -90,7 +90,17 @@ export async function createResponse(doc: {
   sop_number: string | null;
   revision: string | null;
   content: any;
-}, prefill?: Record<string, any>): Promise<FormResponse> {
+}, prefill?: Record<string, any>, opts?: {
+  /**
+   * Resume the caller's newest open draft even when the form allows multiple drafts.
+   *
+   * Exists for the "start this activity" link on a notification, which has to be safe to click
+   * twice: without it, a second click would leave two half-filled records for one task. Intent
+   * matches too — a person following a due reminder wants the entry they are filling in for it,
+   * not a second one beside it.
+   */
+  resumeAnyDraft?: boolean;
+}): Promise<FormResponse> {
   const schema = getFormSchema(doc.content);
   if (!schema) throw new Error("This form has no fields defined yet.");
 
@@ -98,7 +108,7 @@ export async function createResponse(doc: {
   const userId = auth?.user?.id;
   if (!userId) throw new Error("Not signed in");
 
-  if (schema.settings?.allowMultipleDrafts === false) {
+  if (opts?.resumeAnyDraft || schema.settings?.allowMultipleDrafts === false) {
     const { data: existing, error: exErr } = await table()
       .select("*")
       .eq("document_id", doc.id)

@@ -209,13 +209,15 @@ export function assessDue(
 
 // ---------------------------------------------------------------- FRM-703 retention links
 
+/** Marks a link as arriving from the feed, so the form can offer the way back. */
+export const FROM_NOTIFICATIONS = "from=notifications";
+
 /**
- * The link that takes somebody from "this is due" to the form they complete it on.
+ * The link that takes somebody from "this is due" straight into the record that discharges it.
  *
- * It points at the SOPs Library drawer rather than at a new entry, because creating an entry is a
- * write and a notification link must be safe to click twice. The drawer opens on the Entries tab for
- * a fillable form, so New Entry is one click further — and if the activity was in fact already done,
- * the entry is right there rather than being created a second time.
+ * It opens the ENTRY, not the library page the form lives on — one click to the work rather than
+ * three. The /start route resumes the caller's newest open draft when there is one and only creates
+ * when there is not, which is what keeps a link that performs a write safe to click twice.
  */
 export function formLink(
   documentNumber: string,
@@ -224,8 +226,8 @@ export function formLink(
 ): NotificationLink {
   const title = (documentTitle ?? "").trim();
   return {
-    label: `Open ${documentNumber}${title ? ` · ${title}` : ""}`,
-    href: `/team/compliance/sops?doc=${documentId}`,
+    label: `Record on ${documentNumber}${title ? ` · ${title}` : ""}`,
+    href: `/team/compliance/forms/${documentId}/start?${FROM_NOTIFICATIONS}`,
   };
 }
 
@@ -275,14 +277,17 @@ export function retentionLinks(
     const product = String(e.data?.product_name ?? "").trim() || "Retention sample";
     const dueOn = String(e.data?.discard_due ?? "");
     const label = `${product}${lot ? ` · ${lot}` : ""} — due ${dueOn}`;
-    return { label, href: `/team/compliance/forms/${documentId}/entries/${e.id}` };
+    return {
+      label,
+      href: `/team/compliance/forms/${documentId}/entries/${e.id}?${FROM_NOTIFICATIONS}`,
+    };
   });
 
   if (due.length > cap) {
     links.push({
       label: `…and ${due.length - cap} more`,
       href: `/team/compliance/sops?doc=${documentId}`,
-    });
+    });  // the overflow is a browse, not a task, so it goes to the form's entries list
   }
   return links;
 }

@@ -229,14 +229,22 @@ serve(async (req) => {
       // review's per-sample links follow it: the form link is the general way in, the sample links
       // are the specific items to close out.
       const links: NotificationLink[] = [];
-      const evidenceNumber = row?.evidence_kind === "frm008"
-        ? "FRM-008"
-        : row?.evidence_document_number ?? null;
-      const evidenceId = evidenceNumber ? docIdOf.get(evidenceNumber) : undefined;
-      if (evidenceNumber && evidenceId) {
-        links.push(formLink(evidenceNumber, evidenceId, docTitleOf.get(evidenceNumber)));
+      const perRecord = linksFor.get(f.activityKey) ?? [];
+
+      // An activity whose links point at EXISTING records - the retention review, whose whole job
+      // is to close out samples already on the shelf - must not also offer to start a new one.
+      // Starting a fresh FRM-703 there would log a NEW retention sample, which is the opposite of
+      // what the notification is asking for.
+      if (perRecord.length === 0) {
+        const evidenceNumber = row?.evidence_kind === "frm008"
+          ? "FRM-008"
+          : row?.evidence_document_number ?? null;
+        const evidenceId = evidenceNumber ? docIdOf.get(evidenceNumber) : undefined;
+        if (evidenceNumber && evidenceId) {
+          links.push(formLink(evidenceNumber, evidenceId, docTitleOf.get(evidenceNumber)));
+        }
       }
-      links.push(...(linksFor.get(f.activityKey) ?? []));
+      links.push(...perRecord);
 
       const { error } = await admin.from("internal_notifications").insert({
         notification_type: NOTIFICATION_TYPE,
