@@ -771,6 +771,10 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 
 ## Verification Schedule & Notifications (D-18)
 
+**Operating it: `VERIFICATION_NOTIFICATIONS.md`** — cheat sheet, how to run the job by hand,
+and a troubleshooting guide. Read it before debugging anything scheduled: the first entry is that
+`cron.job_run_details.status = 'succeeded'` means the SQL ran, NOT that the HTTP call landed.
+
 **`public.verification_schedule`** is the master verification schedule SQF 2.5.2.2 requires — one row
 per activity with its frequency, the **position** responsible, and where its evidence lives. It is a
 table rather than a grid inside a form entry because **a grid row has no stable identity**: it is
