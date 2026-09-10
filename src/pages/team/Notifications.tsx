@@ -153,7 +153,7 @@ export default function Notifications() {
   const group = (title: string, items: AppNotification[]) =>
     items.length > 0 && (
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted-foreground">{title} ({items.length})</h2>
+        <h2 className="text-sm font-semibold tp-on-bg-dim">{title} ({items.length})</h2>
         {items.map((n) => <NotificationCard key={n.id} n={n} onDismiss={setTarget} />)}
       </section>
     );
@@ -161,18 +161,18 @@ export default function Notifications() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6 tp-fade-up">
       <div>
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
+        <h1 className="text-2xl font-semibold flex items-center gap-2 tp-on-bg">
           <Bell className="w-5 h-5 text-[hsl(var(--tp-gold))]" />
           Notifications
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm tp-on-bg-dim mt-1">
           Verification activities that have fallen due, and open alerts. Everything here is visible
           to the whole team and labelled with the position responsible for it.
         </p>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 tp-on-bg-dim">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
       ) : open.length === 0 ? (
@@ -196,7 +196,7 @@ export default function Notifications() {
       {/* The attribution is the point of the whole dismissal design, so it is shown, not buried. */}
       <div>
         <button
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 text-sm tp-on-bg-dim hover:text-[#F5F1E6]"
           onClick={() => setShowCleared((v) => !v)}
         >
           <ChevronDown className={`w-4 h-4 transition-transform ${showCleared ? "" : "-rotate-90"}`} />

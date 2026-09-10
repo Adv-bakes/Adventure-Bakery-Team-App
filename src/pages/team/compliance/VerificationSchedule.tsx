@@ -111,22 +111,22 @@ export default function VerificationSchedule() {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6 tp-fade-up">
       <div>
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
+        <h1 className="text-2xl font-semibold flex items-center gap-2 tp-on-bg">
           <CalendarCheck className="w-5 h-5 text-[hsl(var(--tp-gold))]" />
           Master Verification Schedule
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm tp-on-bg-dim mt-1">
           Every verification activity, its frequency and the position responsible for it
           (SQF 2.5.2.2). Recorded on FRM-008 and on the form named against each activity.
         </p>
-        <p className="text-sm text-muted-foreground mt-2">
+        <p className="text-sm tp-on-bg-dim mt-2">
           Activities shown as <strong>Not yet implemented</strong> are scheduled but are not being
           performed: the program that governs them has not been issued. They raise no reminders.
         </p>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 tp-on-bg-dim">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
       ) : (

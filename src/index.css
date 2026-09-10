@@ -500,6 +500,16 @@ All colors MUST be HSL.
    inside the dark team portal. */
 .tp-page-title { color: hsl(var(--foreground)); }
 .tp-page-subtitle { color: hsl(var(--muted-foreground)); }
+
+/* Text that sits DIRECTLY on the team portal's photo background rather than on a card.
+   The --tp-text* tokens are near-black BY DESIGN - they are meant for the off-white card
+   surfaces (--tp-surface) - so `text-muted-foreground` on the background renders dark grey
+   on a dark photo and is close to illegible. That is why 27 inline `#F5F1E6` styles had
+   accumulated across the team pages; these two exist so the 28th does not.
+   Note .tp-page-title/.tp-page-subtitle above are NOT this: they are used by the brand
+   portal pages (Costing, Formulas, Ingredients), which have a light background. */
+.tp-on-bg     { color: #F5F1E6; }
+.tp-on-bg-dim { color: rgba(245, 241, 230, 0.72); }
 .team-portal .tp-page-title { color: #F5F1E6; }
 .team-portal .tp-page-subtitle { color: rgba(245, 241, 230, 0.7); }
 
