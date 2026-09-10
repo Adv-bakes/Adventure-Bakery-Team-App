@@ -7,11 +7,12 @@
 | **Type** | fsqm |
 | **Deliverable** | D-01 (Wave 1) |
 | **Clause** | SQF Food Safety Code: Food Manufacturing, Edition 9 — **2.1.1.3** |
-| **Status** | DRAFT — not written to the database. One question outstanding (Part 6). |
+| **Status** | DRAFT — not yet written to the database. |
 
 Drawn **by position, never by person**. A document that names an individual has to be reissued when
 that individual changes, and 2.1.1.3 asks for personnel to be identified by their responsibilities
-in the structure — not for a staff list.
+in the structure — not for a staff list. Holders are shown in this working draft only so the
+coverage argument can be checked; the issued document carries the boxes without the names.
 
 ---
 
@@ -21,16 +22,15 @@ in the structure — not for a staff list.
 
 | | Requirement | Closed by |
 |---|---|---|
-| i | The reporting structure shall **identify and describe site personnel with specific responsibilities** | Part 3 of this document |
+| i | The reporting structure shall **identify and describe site personnel with specific responsibilities** | Part 3 |
 | ii | **Identify a backup for the absence of key personnel** | Part 5 — and **D-02** for the SQF Practitioner |
-| iii | **Job descriptions for the key personnel shall be documented** | Part 4 of this document |
-| iv | Departments and operations are **appropriately staffed and organizationally aligned** | Part 2 — the substantive finding |
+| iii | **Job descriptions for the key personnel shall be documented** | Part 4 |
+| iv | Departments and operations are **appropriately staffed and organizationally aligned** | Part 2 and §6.1 |
 
 > ⚠️ **The workbook's clause mapping is wrong.** It maps D-01 to "2.1.1.3, .4" and D-02 to
 > "2.1.1.5". In the Food Manufacturing edition **2.1.1.4** is *"designate a primary and substitute
 > SQF practitioner"* and **2.1.1.5** is that practitioner's *competency*. Both are D-02's artifact.
-> D-01 is **2.1.1.3** alone — and it cannot close limb (ii) without D-02's substitute. The two
-> deliverables interlock and should finish together.
+> D-01 is **2.1.1.3** alone.
 
 ---
 
@@ -40,20 +40,18 @@ Measured, not assumed. **35 active controlled documents** carry a Responsibility
 are named in procedure steps as well. The four apparently unheld roles were then checked line by
 line.
 
-**Decisions taken 2026-09-10, and what each one means:**
-
 | Role | Evidence | Decision | Consequence |
 |---|---|---|---|
-| **Supervisor** | **58 lines across 22 documents** | **The post exists** — *Production Supervisor* | ✅ **No sweep needed.** Every one of those lines is correct as written. |
-| **QA** | 25 lines, 10 documents | Shorthand for the **SQF Practitioner** | 🔧 Normalise — see Part 7 |
-| **Quality Leader** | 5 lines, 2 documents | Same — **SQF Practitioner** | 🔧 Normalise — see Part 7 |
-| **Maintenance** | 14 documents | **Mixed**: routine in-house, specialist contracted | Position + a Contract Services Register row (D-10) |
+| **Supervisor** | **58 lines across 22 documents** | **The post exists** — *Production Supervisor* | ✅ **No sweep needed.** Every line is correct as written. |
+| **QA** | 25 lines, 10 documents | Shorthand for the **SQF Practitioner** | 🔧 Normalise — Part 7 |
+| **Quality Leader** | 5 lines, 2 documents | Same — **SQF Practitioner** | 🔧 Normalise — Part 7 |
+| **Maintenance** | 14 documents | **Mixed**: routine in-house, specialist contracted | Position + a D-10 register row |
 
-The Supervisor answer is the important one. Measuring only the Responsibility sections had shown
-four documents and suggested a layer that did not exist; the full count showed **58 lines**, and the
-work assigned is real and load-bearing — *trains and signs off operators, takes the machine out of
-service on a fault, signs the pre-use release*. A supervisory sign-off is what stands between an
-untrained operator and a machine. Deleting it would have been a serious mistake.
+The Supervisor answer is the important one. Measuring only Responsibility sections had shown four
+documents and suggested a layer that did not exist; the full count showed **58 lines**, and the work
+assigned is load-bearing — *trains and signs off operators, takes the machine out of service on a
+fault, signs the pre-use release*. A supervisory sign-off is what stands between an untrained
+operator and a machine. **The narrower count would have justified deleting it.**
 
 ---
 
@@ -61,26 +59,29 @@ untrained operator and a machine. Deleting it would have been a serious mistake.
 
 ```
                      Senior Site Management
-                     (Managing Partner / CEO)
+                     (Managing Partner)  .................. Gabriela
                                │
         ┌──────────────────────┼──────────────────────┐
         │                      │                      │
   SQF Practitioner      Production Supervisor    Administration
-  ── primary                   │                 (purchasing, supplier
-  ── substitute (vacant, D-02) │                  files, records)
-        │                Production Operator
+  ── primary ......... Gabriela      │  .......... Diana
+  ── substitute ....... Diana        │
+        │                Production Operator ............. Diana
+        │                Floor Operator .................. Christina
         │                      │
         │                Receiving / Goods-In
         │
-   Maintenance — routine tasks in-house;
-   specialist work contracted (D-10 register)
+   Maintenance — routine in-house; specialist contracted (D-10 register)
 ```
 
-**One person holding several posts is permitted, and is not the problem.** What is not permitted is
-a procedure describing a **hand-off between two posts the same person holds** — a quorum of one is
-not a control, and writing it as one invites an auditor to test a separation of duties that does not
-exist. Where this document confirms two posts are held by one person, any procedure step passing
-work between them must be **rewritten, not relabelled**.
+**Three people hold seven posts, and that is workable — but only because there are three.** The two
+chains that have to stay honest both resolve:
+
+- **Training sign-off.** The equipment SOPs say *"do not operate unless the Supervisor has trained
+  and signed you off."* Diana (Supervisor) signs off Christina. **Diana is signed off by the SQF
+  Practitioner**, because she cannot sign off herself. Evidenceable end to end.
+- **Pre-operational release.** Diana performs sanitation and completes FRM-903; **Gabriela releases
+  the line.** Work and verification are different hands.
 
 ---
 
@@ -89,56 +90,54 @@ work between them must be **rewritten, not relabelled**.
 ### 4.1 Senior Site Management (Managing Partner)
 Owns the food safety policy and the resources behind it. Appoints the primary and substitute SQF
 Practitioner. Ensures departments and operations are staffed to meet food safety objectives.
-Receives notification where an inspection failure stops production or shipment.
-**Records:** policy statement; management review. **Reports to:** — . **Covered by:** the SQF Practitioner for day-to-day decisions; the appointment power is not delegable.
+Notified where an inspection failure stops production or shipment.
+**Records:** policy statement; management review.
+**Covered by:** the SQF Practitioner for day-to-day decisions; the appointment power is not delegable.
 
 ### 4.2 SQF Practitioner — primary and substitute
-Owns the SQF System: develops, implements, reviews and maintains it. Approves controlled documents
-and their revisions. **Decides finished product release (FSQM-020) and signs the pre-operational
-release of the line.** Owns CAPA (FSQM-009). Sets the inspection criteria and reviews the inspection
-records (FSQM-014). Verifies annually that the documented programs are what the floor performs.
-**Records:** FRM-701 release, FRM-007 CAPA, FRM-903 pre-op release, document approvals.
-**Competency:** completed HACCP course; understands the SQF Food Safety Code: Food Manufacturing (2.1.1.5).
-**Reports to:** Senior Site Management. **Covered by:** the substitute SQF Practitioner — **vacant, D-02**.
+Owns the SQF System: develops, implements, reviews and maintains it. Approves controlled documents.
+**Decides finished product release (FSQM-020) and signs the pre-operational release of the line.**
+Owns CAPA (FSQM-009). Sets inspection criteria and reviews inspection records (FSQM-014).
+**Signs off the Production Supervisor's own training**, since the Supervisor cannot sign off herself.
+Verifies annually that the documented programs are what the floor performs.
+**Records:** FRM-701, FRM-007, FRM-903 release, document approvals.
+**Competency (2.1.1.5):** employed by the site; a position of responsibility for the SQF System;
+**completed HACCP training course**; competent to implement and maintain HACCP-based plans;
+understands the SQF Food Safety Code: Food Manufacturing.
+**Covered by:** the substitute SQF Practitioner.
 
 ### 4.3 Production Supervisor
-Trains operators on each machine and signs them off; no one operates a machine without that
+Trains operators on each machine and signs them off; nobody operates a machine without that
 sign-off. Takes a machine out of service on a fault and releases it back. Coordinates test runs and
 monitors first-batch results. Ensures staff on shift comply with GMP and acts on non-compliance
 immediately. Ensures assigned training is completed and competency verified.
 **Records:** operator sign-off; equipment out-of-service; FRM-909/910/911/912 pre-use releases.
 **Reports to:** Senior Site Management. **Covered by:** the SQF Practitioner.
 
-### 4.4 Production Operator
-Makes the batch to the batch sheet and records the in-process inspection on it. Confirms the pack,
-seal, date and lot code as the run proceeds. Performs sanitation and completes FRM-903.
-**Does not release the line — that signature is the SQF Practitioner's** (see 4.2), so the work and
-its verification are not the same hand.
+### 4.4 Production Operator / Floor Operator
+Makes the batch to the batch sheet and records the in-process inspection on it. Confirms pack, seal,
+date and lot code as the run proceeds. Performs sanitation and completes FRM-903.
+**Does not release the line — that signature is the SQF Practitioner's**, so the work and its
+verification are not the same hand.
 **Records:** batch sheet; FRM-903 sanitation. **Reports to:** Production Supervisor.
-**Covered by:** the Production Supervisor.
+**Covered by:** the other operator, or the Production Supervisor.
 
 ### 4.5 Receiving / Goods-In
 Inspects every delivery of raw material and packaging before it is accepted into stock, against
 FRM-301 — identity, quantity, pack integrity, lot code and date, pest and damage evidence, vehicle
 condition. Rejects or places on Hold under FSQM-018 what fails. Takes and logs retention samples on
-FRM-703.
-**Records:** FRM-301; FRM-702 hold; FRM-703 retention. **Reports to:** Production Supervisor.
-**Covered by:** the Production Operator.
+FRM-703. **Records:** FRM-301; FRM-702; FRM-703. **Covered by:** the Production Supervisor.
 
 ### 4.6 Maintenance
-Planned and reactive maintenance of production and food-contact equipment. Uses food-grade
-lubricants where contact is possible. Returns equipment to production only after it is cleaned and
-released.
-**Split, per the decision above:** routine tasks — greasing, belt and seal changes, guard checks,
-scheduled servicing named in the equipment SOPs — are performed **in-house**. Specialist work —
-refrigeration, gas, electrical, calibration and anything requiring a licensed trade — is
-**contracted**, and each provider is listed on the **Contract Services Register (D-10)**.
-**Records:** maintenance log; post-maintenance release. **Reports to:** Senior Site Management.
-**Covered by:** the contracted provider for anything the in-house holder cannot complete.
+Planned and reactive maintenance of production and food-contact equipment. Food-grade lubricants
+where contact is possible. Returns equipment to production only after it is cleaned and released.
+**Routine tasks in-house** — greasing, belt and seal changes, guard checks, scheduled servicing named
+in the equipment SOPs. **Specialist work contracted** — refrigeration, gas, electrical, calibration,
+anything requiring a licensed trade — each provider listed on the **Contract Services Register (D-10)**.
+**Records:** maintenance log; post-maintenance release. **Covered by:** the contracted provider.
 
-> The in-house/contracted boundary above is **drafted, not confirmed**. It is written so the line
-> falls where a licence or specialist tooling is required, which is the usual place for it. Move it
-> if that is not where it actually sits.
+> The in-house/contracted boundary is **drafted, not confirmed** — written so the line falls where a
+> licence or specialist tooling is required. Move it if that is not where it sits.
 
 ---
 
@@ -147,39 +146,60 @@ refrigeration, gas, electrical, calibration and anything requiring a licensed tr
 | Position | Covered by |
 |---|---|
 | Senior Site Management | SQF Practitioner, day-to-day only |
-| **SQF Practitioner** | **Substitute SQF Practitioner — VACANT. This is D-02 and it is the one gap that keeps 2.1.1.3 open.** |
+| SQF Practitioner (primary) | **Substitute SQF Practitioner — the Production Supervisor** |
 | Production Supervisor | SQF Practitioner |
-| Production Operator | Production Supervisor |
-| Receiving / Goods-In | Production Operator |
-| Maintenance | Contracted provider |
+| Production / Floor Operator | the other operator, or the Supervisor |
+| Receiving / Goods-In | Production Supervisor |
+| Maintenance | contracted provider |
+
+### ⚠️ 5.1 The absence case breaks the two-hands rule, and there is a clean fix
+
+With the primary away, **Diana acts as substitute SQF Practitioner while also being the operator who
+performed the sanitation** — so she would release her own work, which is exactly the separation §4.4
+exists to preserve.
+
+**Recommendation, written into the draft: when the substitute SQF Practitioner is acting, the
+sanitation and the FRM-903 entry are performed by the other floor operator.** Two people are on the
+floor, so the two-hands rule survives the absence rather than lapsing in it. **This is the concrete
+reason the second operator matters to the structure and not just to the roster.**
+
+If that is not workable, the alternative is that the line release waits for the primary — honest, but
+it stops production. It should not be left unstated either way.
 
 ---
 
-## 6. The one question left
+## 6. Answers received 2026-09-10
 
-**Who holds the Production Supervisor post, and is anyone else working on site who is not in the
-staff directory?**
+| | Answer | Consequence |
+|---|---|---|
+| Supervisor | **Diana holds Supervisor *and* Operator** | Allowed; the chains in Part 3 keep it evidenceable — but see §5.1 |
+| Second operator | **Christina, floor operator** | Makes §5.1's fix possible. See §6.1 |
+| SQF Practitioner | **Gabriela primary, Diana substitute**, both to train | Closes 2.1.1.4 and limb (ii). See §6.2 |
 
-The directory shows three working positions — CEO, one Production employee, an IT Consultant with no
-portal access — and the rest are auditor accounts or unprovisioned records. A Production Supervisor
-post that is real must be held by someone, and 2.1.1.3 is about the site rather than about who has a
-portal login. Part-time, seasonal and family workers all count.
+### ⚠️ 6.1 Christina has no account and no training record
+The staff directory holds ten profiles and **none matches Christina**. There are 48 training
+assignments across three people; she has none. **An operator on the floor performing food-safety
+tasks with no training record is a 2.9 finding waiting to be written**, and it is also limb (iv) of
+this clause — *appropriately staffed*. She needs a profile and the assigned training. The invite flow
+captures training language at acceptance, so it is worth setting if English is not her first language.
 
-If the Supervisor and the Operator are the **same person**, that is allowed — but then §4.4's
-"does not release the line" becomes the only thing keeping the sign-off honest, and SOP-501/502/503
-etc. that say *"do not operate unless the Supervisor has trained and signed you off"* need rereading
-to check they do not have someone signing off their own training.
+### ⚠️ 6.2 "SQF Practitioner training" may not be what 2.1.1.5 asks for
+The clause requires the primary and substitute to have **"completed a HACCP training course"** —
+specifically HACCP, not SQF Practitioner training as such. Many practitioner courses include a
+recognised HACCP module and satisfy it; some do not. **Confirm before booking**: the wrong course
+costs weeks and does not close 2.1.1.5.
 
 ---
 
 ## 7. Follow-on work this creates (not part of D-01)
 
-1. **Normalise QA and Quality Leader to SQF Practitioner** — 30 lines across 12 **active**
-   documents, so each is an amendment to a controlled document with a revision bump and a history
-   entry. Compound forms need judgement, not find/replace: *QA Technician*, *QA/QC Lead*,
-   *QA/Production Manager*, and FSQM-012's *"SQF Practitioner / QA"* which simply de-duplicates.
-   **`FRM-702`'s Section 2 instruction still reads "To be filled out by QA / Quality Leader"** and is
-   already on record as needing this fix.
-2. **Add the maintenance providers to the Contract Services Register (D-10)** once the boundary in
-   §4.6 is confirmed.
-3. **Finish D-02 in the same pass**, so limb (ii) closes alongside (i) and (iii).
+1. **Normalise QA and Quality Leader to SQF Practitioner** — 30 lines across 12 **active** documents,
+   each an amendment with a revision bump. Compound forms need judgement, not find/replace:
+   *QA Technician*, *QA/QC Lead*, *QA/Production Manager*, and FSQM-012's *"SQF Practitioner / QA"*
+   which simply de-duplicates. **`FRM-702`'s Section 2 instruction still reads "To be filled out by
+   QA / Quality Leader."**
+2. **Provision Christina** and assign her training (§6.1).
+3. **Add the maintenance providers to the Contract Services Register (D-10)** once §4.6 is confirmed.
+4. **D-02** — designate formally and complete the HACCP course (§6.2). It closes 2.1.1.4, 2.1.1.5 and
+   limb (ii) of 2.1.1.3 with them.
+5. **D-14 task 14.1** becomes possible: a food safety team of three is a team.
