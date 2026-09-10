@@ -604,13 +604,14 @@ if __name__ == "__main__":
     # thirty days themselves - from the LAST day of the month where a pack is coded to a month
     # only, which is the convention Part 6 states and the field's help repeats.
     #
-    # rev New, draft: seeded by 20260909000010 alongside FSQM-014, then reshaped by 000011 (UPC,
-    # scan pins, derived discard date), 000012 (entries left deletable at the owner's request) and
-    # 000013 (retention is per PRODUCT, and the shelf is named). The schema JSON beside this is
-    # assembled from those migrations, so it matches the live row once 000013 is applied.
+    # rev New, effective 2026-09-09, approved GJM: seeded draft by 20260909000010 alongside
+    # FSQM-014, then reshaped by 000011 (UPC, scan pins, derived discard date), 000012 (entries
+    # left deletable at the owner's request) and 000013 (retention is per PRODUCT, and the shelf is
+    # named), and issued with FSQM-014 in one transaction by 20260909000014. The schema JSON beside
+    # this is assembled from those migrations, so it matches the live row.
     s703 = load_schema("sop-drafts/FRM-703-retention-sample-log-schema.json")
     meta703 = {"form_no": "FRM-703", "title": "Retention Sample Log",
-               "revision": "New", "eff": "(draft)", "appr": "(pending)",
+               "revision": "New", "eff": "2026-09-09", "appr": "GJM",
                "sqf": "2.4.4.5",
                "footer": FOOT.format(no="FRM-703")}
     b703 = blocks_from_schema(s703)
