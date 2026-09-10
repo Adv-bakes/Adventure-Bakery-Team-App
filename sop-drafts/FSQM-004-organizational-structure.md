@@ -7,7 +7,7 @@
 | **Type** | fsqm |
 | **Deliverable** | D-01 (Wave 1) |
 | **Clause** | SQF Food Safety Code: Food Manufacturing, Edition 9 — **2.1.1.3** |
-| **Status** | Seeded DRAFT by `20260910000001`, Part 4 amended by `20260910000002`. Three items open before issue. |
+| **Status** | Seeded DRAFT by `20260910000001`; Part 4 amended by `20260910000002` and `20260910000003`. Three items open before issue. |
 
 Drawn **by position, never by person**. A document that names an individual has to be reissued when
 that individual changes, and 2.1.1.3 asks for personnel to be identified by their responsibilities
@@ -196,8 +196,15 @@ costing nothing. Single-person operation is permitted but **not unremarked**:
 |---|---|
 | Permitted | One qualified person may perform the work and its verification |
 | Recorded | The entry records that single-person operation applied |
-| Evidenced | A photograph of the cleaned product-contact surfaces is retained with it |
 | Reviewed | **Senior Site Management reviews those entries monthly** — a different person, which is what keeps it a control |
+
+A photograph of the cleaned product-contact surfaces was proposed as corroboration for that review
+and **was not adopted** (decision 2026-09-10, `20260910000003`). The reduction is real and is recorded
+in the document rather than dropped silently: the monthly review now confirms that the inspection was
+*declared*, not what the line looked like. The weight was always on the review — it is the part
+performed by someone other than whoever ran the line — and on the recording requirement, which
+produces the count of single-person runs. **11.2.5.7 asks only that the inspection be conducted by
+qualified personnel, so nothing in the Code is unmet either way.**
 
 The training sign-off rule is deliberately **not** conditioned: training is arranged rather than
 improvised on a shift, so a second person is always available for it.
