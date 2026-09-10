@@ -7,14 +7,14 @@
 | **Type** | fsqm |
 | **Deliverable** | D-35 (Wave 2) — tasks 35.1, 35.2, and the scoping for 35.3–35.7 |
 | **Clauses** | SQF Food Manufacturing Ed 9 — **11.6.5.1 – 11.6.5.8** |
-| **Status** | DRAFT — not written to the database. |
+| **Status** | Seeded DRAFT by `20260910000004`, with FRM-801 by `20260910000005`. Three items open before issue. |
 
 ---
 
 ## 1. The ambient determination (task 35.1)
 
 **Confirmed by the owner, 2026-09-10: every finished product this site makes ships ambient.**
-Nothing leaves under temperature control, for any customer, in any despatch mode.
+Nothing leaves under temperature control, for any customer.
 
 Three of the eight clauses in 11.6.5 govern refrigerated transport, and on that determination they
 do not arise:
@@ -39,7 +39,7 @@ who found the freezer after reading it would be entitled to ask why the document
 *maintain the storage conditions of the food*. Ambient **is** a specified condition: product must
 not be exposed to heat, damp, direct sun or contamination in transit merely because no temperature
 is being held. Treating "ambient" as "nothing to control" is the usual way this clause is failed,
-and Parts 3 to 5 exist because of it.
+and Parts 5 and 6 of the programme exist because of it.
 
 ### 1.2 What would reverse it
 
@@ -83,61 +83,66 @@ for an unusual despatch — it is the whole of this site's transport control.**
 **The open question is therefore sharper than before: is the collecting vehicle checked today?**
 Not as an edge case — on every load that has ever left.
 
-## 3. Proposed structure of the programme (task 35.2)
+---
 
-1. **Purpose and scope** — the three despatch modes above.
-2. **The ambient determination** — Part 1, with 11.6.5.5/.6/.7 recorded Not Applicable and the reversal trigger.
-3. **Before loading** — vehicle condition check: clean, dry, sound, free of odour, free of pest evidence, no prior load residue, suitable for food. Refuse and record if it fails. *(11.6.5.2)*
-4. **Loading** — product protected from weather and contamination during transfer; exposure minimised; no product placed directly on the ground; load secured so packaging is not damaged. *(11.6.5.1, .4, .8)*
-5. **Security** — tamper-evident seal applied where the load leaves the site's control; seal number recorded against the despatch. *(11.6.5.3)*
-6. **Unloading and receipt** — incoming loads are inspected under FRM-301, which already records the vehicle's condition at receipt. This programme does not create a second route for that. *(11.6.5.8)*
-7. **Records, review, training.**
+## 3. The programme as seeded (task 35.2)
+
+Nine Parts, in `20260910000004`:
+
+| Part | | Clauses |
+|---|---|---|
+| 1 | **Collection model** — product leaves by collection only; the carrier is told the requirement in advance | 11.6.5.1 |
+| 2 | Nothing leaves before release under FSQM-020 | — |
+| 3 | **The ambient determination** and what would reverse it | .5 · .6 · .7 **N/A** |
+| 4 | **Vehicle check before loading** — refuse and record | 11.6.5.2 |
+| 5 | **Loading** — no open ground, nothing on the floor, load restrained | .1 · .4 · .8 |
+| 6 | **Vacuum seal vs. vehicle seal** — stated separately | 11.6.5.3 |
+| 7 | Unloading at receipt points back at FRM-301 | 11.6.5.8 |
+| 8–9 | Records; annual review | — |
 
 ---
 
-## 4. The record question (task 35.3) — and a granularity problem worth deciding
+## 4. FRM-801 — one record per vehicle-load (task 35.3)
 
-The plan warns *"One form also serves D-11's receiving inspection. Do not build two."* Half of that is
-already solved: **FRM-301 records the vehicle at receipt.** There is no despatch equivalent.
+Seeded by `20260910000005`. Five sections, 19 fields, two grids.
 
-Two candidates, and they are not equally good:
+**Why not FRM-701.** Adding vehicle fields there was tempting, since release already precedes
+despatch — but **FRM-701 is one record per batch and a vehicle carries a load.** A three-batch
+shipment would have produced three checks of the same truck, or one filled and two blank. It also
+doesn't duplicate FRM-301, which already records the delivering vehicle at receipt.
 
-**(a) Add vehicle fields to FRM-701.** Tempting — release already happens before shipment, so the
-record exists at the right moment. But **FRM-701 is one record per batch, and a vehicle carries a
-load.** A three-batch shipment would produce three vehicle checks of the same truck, or one filled
-and two blank. The granularity is wrong.
+**Two deliberate omissions, both guarded:**
 
-**(b) A despatch record, one per vehicle-load**, carrying the vehicle check, the seal number, the
-destination and the release records of the batches loaded. Right granularity, and it is the natural
-place for the seal number that 11.6.5.3 wants.
-
-**Recommendation: (b).** It is one new form rather than two, it does not duplicate FRM-301, and it
-matches the unit of the thing being controlled — a vehicle-load. The cross-reference to FRM-701 keeps
-the release decision where it belongs.
+- **No temperature fields.** Everything ships ambient, so a box that is always blank would imply a
+  control the site doesn't operate.
+- **The seal field is not required.** The site hasn't chosen a method, and a required field for a
+  control that doesn't exist is a rule nobody can follow — the same defect the FSQM-004 single-person
+  amendment removed a day earlier. The option list lets the filler record honestly that none was used.
 
 ---
 
 ## 5. What still needs the floor or a decision
 
-These are the reasons this is a draft rather than a migration:
-
-1. **The dock (task 35.5).** *"Written practice plus any physical fixes (dock seal, weather
-   protection)."* I cannot describe a loading area I have not seen. Is loading done at a dock, at a
-   roller door, or in the open? Is product exposed to weather between the building and the vehicle?
-2. **Seals (task 35.4).** 11.6.5.3 wants tamper-evident seals *or another agreed method*. Are seals
-   used today, and does any customer specify one? This also feeds the food defence plan (D-22).
-3. **Customer collection.** Is a collecting vehicle checked before loading today? (Part 2.)
-4. **The despatch record.** Confirm option (b) before I build it.
-5. **Training (task 35.7)** follows the record, not the other way round.
+1. **Seals (task 35.4).** 11.6.5.3 wants tamper-evident seals *or another agreed method*. Are any used
+   today? A load that is collected and leaves immediately raises a fair question about what a seal
+   adds. This is also the one task with a cross-deliverable dependency — the plan hangs it on **D-22
+   Food Defense**, which hasn't started.
+2. **The dock (task 35.5).** You've said product never crosses open ground, and Part 5 records that —
+   but as your account rather than an inspection, and the Part says so. Task 35.5 also asks for any
+   physical fixes, which needs someone to look.
+3. **Is the collecting vehicle checked today?** Sharper than it looked: since *every* despatch is a
+   collection, this isn't an edge case — it's every load that has ever left. If the answer is no,
+   issuing the programme creates a requirement the floor isn't yet meeting, and that gap should be
+   closed by instruction rather than discovered at an audit.
+4. **Training (task 35.7)** follows the record.
 
 ---
 
-## 6. What today's determination actually closes
+## 6. What this closes
 
-**Three of the eight clauses (11.6.5.5, .6, .7), by justified Not Applicable** — the same mechanism
-FSQM-014 used for 2.4.4.3 and .4 when it recorded that the site has no laboratory. It is written into
-the programme rather than filed as a loose note, so an auditor reading 11.6.5 finds the determination
-in the document that governs the subject.
+**Three clauses by justified Not Applicable** (11.6.5.5, .6, .7) — written into the programme rather
+than filed as a loose note, the mechanism FSQM-014 used for 2.4.4.3 and .4.
 
-The remaining five (11.6.5.1, .2, .3, .4, .8) need the programme, the despatch record and the dock
-practice — and those need §5 answered.
+The other five (.1, .2, .3, .4, .8) are **addressed in the documents but not yet in force**, because
+both are drafts. `.3` in particular is stated as a requirement the site does not currently meet — the
+seal question above.
