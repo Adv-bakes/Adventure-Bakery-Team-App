@@ -7,7 +7,7 @@
 | **Type** | fsqm |
 | **Deliverable** | D-35 (Wave 2) — tasks 35.1, 35.2, and the scoping for 35.3–35.7 |
 | **Clauses** | SQF Food Manufacturing Ed 9 — **11.6.5.1 – 11.6.5.8** |
-| **Status** | Seeded DRAFT by `20260910000004`, with FRM-801 by `20260910000005`. Three items open before issue. |
+| **Status** | Seeded DRAFT by `20260910000004` / `…005`, corrected by `…006`. Three items open before issue. |
 
 ---
 
@@ -95,7 +95,7 @@ Nine Parts, in `20260910000004`:
 | 2 | Nothing leaves before release under FSQM-020 | — |
 | 3 | **The ambient determination** and what would reverse it | .5 · .6 · .7 **N/A** |
 | 4 | **Vehicle check before loading** — refuse and record | 11.6.5.2 |
-| 5 | **Loading** — no open ground, nothing on the floor, load restrained | .1 · .4 · .8 |
+| 5 | **The crossing** — the load goes outdoors; wrapped, weather rules, clean apron, no staging | .1 · .4 · .8 |
 | 6 | **Vacuum seal vs. vehicle seal** — stated separately | 11.6.5.3 |
 | 7 | Unloading at receipt points back at FRM-301 | 11.6.5.8 |
 | 8–9 | Records; annual review | — |
@@ -127,9 +127,20 @@ doesn't duplicate FRM-301, which already records the delivering vehicle at recei
    today? A load that is collected and leaves immediately raises a fair question about what a seal
    adds. This is also the one task with a cross-deliverable dependency — the plan hangs it on **D-22
    Food Defense**, which hasn't started.
-2. **The dock (task 35.5).** You've said product never crosses open ground, and Part 5 records that —
-   but as your account rather than an inspection, and the Part says so. Task 35.5 also asks for any
-   physical fixes, which needs someone to look.
+2. **Wrapping and the weather rule (task 35.5).** The first draft said product never crosses open
+   ground. It does: bulk loads are palletised and crossed over the concrete parking area, and there
+   is **no dock**. Corrected in `…006`, which states the crossing and the controls that make it
+   acceptable — wrapped pallets, no loading in adverse weather without cover, a clean apron free of
+   standing water, a direct crossing with no outdoor staging.
+
+   **What weather threatens here is the packaging, not the food** — every unit is vacuum sealed
+   inside its box, but wet cartons lose strength, can support mould, and carry soil into the vehicle.
+
+   **Open:** are wrapping and the adverse-weather rule current practice, or does this programme
+   introduce them? If new, the floor needs telling before the effective date — the same sequence as
+   the vehicle check. And task 35.5 asks whether a physical fix is worth making, such as a canopy
+   over the crossing; that's a judgement for the site.
+
 3. **Is the collecting vehicle checked today?** Sharper than it looked: since *every* despatch is a
    collection, this isn't an edge case — it's every load that has ever left. If the answer is no,
    issuing the programme creates a requirement the floor isn't yet meeting, and that gap should be
