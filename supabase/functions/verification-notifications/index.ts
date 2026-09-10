@@ -126,6 +126,37 @@ serve(async (req) => {
     const formRows = active.filter(
       (r) => r.evidence_kind === "form_entry" && r.evidence_document_number,
     );
+
+    // ONE query for every form's latest submission, not one per activity.
+    //
+    // This was a loop of ~10 sequential round trips, and it pushed the whole run past pg_net's
+    // 5000 ms default timeout: the 19:00 cron run on 2026-09-10 was cut off mid-flight and wrote
+    // nothing, while still looking like a scheduled job that ran. A monitoring job that fails
+    // silently is the exact defect D-34's header warns about, so the fix is here as well as in
+    // the timeout the schedule now passes.
+    const docIds = [...new Set(
+      formRows.map((r) => docIdOf.get(r.evidence_document_number!)).filter((v): v is string => !!v),
+    )];
+    const latestByDoc = new Map<string, string>();
+    if (docIds.length) {
+      const { data, error } = await admin
+        .from("sop_document_responses")
+        .select("document_id, submitted_at")
+        .in("document_id", docIds)
+        .eq("status", "submitted")
+        .order("submitted_at", { ascending: false });
+      if (error) {
+        summary.errors.push(`reading submissions: ${error.message}`);
+      } else {
+        // Ordered newest first, so the first sighting of each document is its latest.
+        for (const e of data ?? []) {
+          const row = e as { document_id: string; submitted_at: string | null };
+          if (!row.submitted_at || latestByDoc.has(row.document_id)) continue;
+          latestByDoc.set(row.document_id, row.submitted_at.slice(0, 10));
+        }
+      }
+    }
+
     for (const r of formRows) {
       const docId = docIdOf.get(r.evidence_document_number!);
       if (!docId) {
@@ -134,18 +165,9 @@ serve(async (req) => {
         summary.errors.push(`${r.activity_key}: ${r.evidence_document_number} not found`);
         continue;
       }
-      const { data, error } = await admin
-        .from("sop_document_responses")
-        .select("submitted_at")
-        .eq("document_id", docId)
-        .eq("status", "submitted")
-        .order("submitted_at", { ascending: false })
-        .limit(1);
-      if (error) { summary.errors.push(`${r.activity_key}: ${error.message}`); continue; }
-      const at = data?.[0]?.submitted_at as string | undefined;
       completions.push({
         activity_key: r.activity_key,
-        completed_on: at ? at.slice(0, 10) : null,
+        completed_on: latestByDoc.get(docId) ?? null,
       });
     }
 
