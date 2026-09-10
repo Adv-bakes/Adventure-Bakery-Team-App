@@ -29,7 +29,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  assessDue, retentionLinks, formLink, addDays,
+  assessDue, retentionLinks, formLink, documentLink, addDays,
   type Completion, type NotificationLink, type ScheduleRow,
 } from "../_shared/verificationSchedule.ts";
 
@@ -171,41 +171,34 @@ serve(async (req) => {
       });
     }
 
-    // FRM-008 activities: one query, reduced per activity in JS. FRM-008 will hold tens of entries,
-    // not thousands, and this avoids a jsonb predicate against an unindexed column.
-    const frm008Rows = active.filter((r) => r.evidence_kind === "frm008");
-    if (frm008Rows.length) {
-      const docId = docIdOf.get("FRM-008");
-      if (docId) {
-        const { data, error } = await admin
-          .from("sop_document_responses")
-          .select("submitted_at, data")
-          .eq("document_id", docId)
-          .eq("status", "submitted");
-        if (error) {
-          summary.errors.push(`FRM-008: ${error.message}`);
-        } else {
-          const latest = new Map<string, string>();
-          for (const e of data ?? []) {
-            const key = String((e as { data?: Record<string, unknown> }).data?.activity ?? "");
-            const at = (e as { submitted_at?: string }).submitted_at;
-            if (!key || !at) continue;
-            const day = at.slice(0, 10);
-            if (!latest.has(key) || day > latest.get(key)!) latest.set(key, day);
-          }
-          for (const r of frm008Rows) {
-            completions.push({
-              activity_key: r.activity_key,
-              // FRM-008's activity select stores the human label, which is what the schedule's
-              // `activity` column holds. activity_key is the machine identity and never appears
-              // on the form.
-              completed_on: latest.get(r.activity) ?? null,
-            });
-          }
-        }
-      } else {
-        summary.errors.push("FRM-008 not found; its activities cannot be dated");
+    // Activities evidenced by a document being revised rather than by an entry. The annual review
+    // of a programme is the case: every programme in this document set evidences its own review by
+    // its revision, so there is no form to fill in and no entry to look for. sop_document_history
+    // already snapshots a published document whenever its watched fields change, which makes the
+    // date of the last revision readable without anything new being recorded anywhere.
+    const revisionRows = active.filter(
+      (r) => r.evidence_kind === "document_revision" && r.evidence_document_number,
+    );
+    for (const r of revisionRows) {
+      const docId = docIdOf.get(r.evidence_document_number!);
+      if (!docId) {
+        summary.errors.push(`${r.activity_key}: ${r.evidence_document_number} not found`);
+        continue;
       }
+      const { data, error } = await admin
+        .from("sop_document_history")
+        .select("snapshotted_at")
+        .eq("document_id", docId)
+        .order("snapshotted_at", { ascending: false })
+        .limit(1);
+      if (error) { summary.errors.push(`${r.activity_key}: ${error.message}`); continue; }
+      const at = data?.[0]?.snapshotted_at as string | undefined;
+      // No history means the document has never been revised since it was published, which is a
+      // real answer rather than a missing one: the review has not happened yet.
+      completions.push({
+        activity_key: r.activity_key,
+        completed_on: at ? at.slice(0, 10) : null,
+      });
     }
 
     // ---------------------------------------------------------------- decide
@@ -258,12 +251,13 @@ serve(async (req) => {
       // Starting a fresh FRM-703 there would log a NEW retention sample, which is the opposite of
       // what the notification is asking for.
       if (perRecord.length === 0) {
-        const evidenceNumber = row?.evidence_kind === "frm008"
-          ? "FRM-008"
-          : row?.evidence_document_number ?? null;
+        const evidenceNumber = row?.evidence_document_number ?? null;
         const evidenceId = evidenceNumber ? docIdOf.get(evidenceNumber) : undefined;
         if (evidenceNumber && evidenceId) {
-          links.push(formLink(evidenceNumber, evidenceId, docTitleOf.get(evidenceNumber)));
+          // A document-evidenced activity has no entry to start, so it opens the document.
+          links.push(row?.evidence_kind === "document_revision"
+            ? documentLink(evidenceNumber, evidenceId, docTitleOf.get(evidenceNumber))
+            : formLink(evidenceNumber, evidenceId, docTitleOf.get(evidenceNumber)));
         }
       }
       links.push(...perRecord);

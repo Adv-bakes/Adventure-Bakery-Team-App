@@ -26,7 +26,7 @@ export type ScheduleRow = {
   frequency_unit: FrequencyUnit;
   frequency_count: number;
   responsible_position: string;
-  evidence_kind: "form_entry" | "frm008" | "none";
+  evidence_kind: "form_entry" | "document_revision" | "none";
   evidence_document_number?: string | null;
   owning_program?: string | null;
   pending_deliverable?: string | null;
@@ -211,6 +211,23 @@ export function assessDue(
 }
 
 // ---------------------------------------------------------------- FRM-703 retention links
+
+/**
+ * Opens a document rather than a record. Used where an activity is evidenced by the document
+ * itself being revised - the annual review of a programme, which is how every programme in this
+ * document set evidences its own review - so there is no entry to start.
+ */
+export function documentLink(
+  documentNumber: string,
+  documentId: string,
+  documentTitle?: string | null,
+): NotificationLink {
+  const title = (documentTitle ?? "").trim();
+  return {
+    label: `Open ${documentNumber}${title ? ` · ${title}` : ""}`,
+    href: `/team/compliance/sops?doc=${documentId}`,
+  };
+}
 
 /** Marks a link as arriving from the feed, so the form can offer the way back. */
 export const FROM_NOTIFICATIONS = "from=notifications";

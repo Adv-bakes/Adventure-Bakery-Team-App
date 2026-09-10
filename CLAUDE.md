@@ -780,8 +780,12 @@ still showed it as scheduled. `activity_key` survives the wording changing. Staf
 (it is meant to be edited in the app); DELETE is admin/owner only — an activity that stops applying
 is **retired**, never removed. SELECT is `is_compliance_viewer`, so the auditor can read it.
 
-- **There is no `last_completed` column.** It is derived at read time from `max(submitted_at)` of the
-  evidence form's submitted responses, so it cannot go stale and the date shown IS the record. This
+- **There is no `last_completed` column.** It is derived at read time — from `max(submitted_at)` of
+  the evidence form's SUBMITTED responses (`evidence_kind='form_entry'`), or from the latest
+  `sop_document_history` snapshot (`evidence_kind='document_revision'`, used where an activity is
+  evidenced by the document itself being revised, which is how every FSQM programme evidences its
+  own annual review). Drafts never count: a draft FRM-913 is an inspection somebody started. So it
+  cannot go stale and the date shown IS the record. This
   also keeps the job read-only against `sop_document_responses` — any UPDATE there fires the
   `sop_document_responses_touch` trigger and would hand a `StaleResponseError` to whoever has that
   form open.
@@ -820,3 +824,14 @@ temperature alerts the feed must surface were already being written into it. Add
 - **Temperature notifications carry no Clear button.** Clearing one would make the badge go away
   without the SOP-401 corrective-action record ever being written. They close themselves once the
   alert is acknowledged or cleared.
+
+**There is deliberately no FRM-008 and no general verification form.** One was drafted and deleted
+before issue. Its record section served two activities out of thirteen, and both dissolved on
+inspection: no active FSQM programme records its annual review on a form — the revision is the
+evidence, in all eight of them — and the annual re-validation of critical food safety limits belongs
+with the food safety plan that establishes them, which does not exist, so that activity is carried
+as `planned`. **The schedule lives in FSQM-017 Part 6**, generated from `verification_schedule`, and
+2.5.2.2 asks the *programme* to have a verification schedule, so that is also the literal reading.
+The general lesson is worth keeping: **a catch-all record beside a purpose-built one produces two
+accounts of a single activity** and invites being filled in alongside the real form rather than
+instead of it. If a future activity has no home, give it one — do not revive a generic form.

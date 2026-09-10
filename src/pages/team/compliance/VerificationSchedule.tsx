@@ -68,8 +68,9 @@ export default function VerificationSchedule() {
 
       // Last completed, derived. One query per referenced document, filtered by document_id first —
       // there is no index on sop_document_responses.data.
+      // Both evidence kinds name a document; only the source of "last completed" differs.
       const docNumbers = [...new Set(
-        sched.filter((r) => r.status === "active" && r.evidence_document_number)
+        sched.filter((r) => r.evidence_document_number)
              .map((r) => r.evidence_document_number as string),
       )];
       if (!docNumbers.length) { setCompletions([]); setDocIdOf(new Map()); return; }
@@ -86,14 +87,30 @@ export default function VerificationSchedule() {
         if (r.status !== "active" || !r.evidence_document_number) continue;
         const docId = idOf.get(r.evidence_document_number);
         if (!docId) continue;
-        const { data: last } = await (supabase as any)
-          .from("sop_document_responses")
-          .select("submitted_at")
-          .eq("document_id", docId)
-          .eq("status", "submitted")
-          .order("submitted_at", { ascending: false })
-          .limit(1);
-        const at = last?.[0]?.submitted_at as string | undefined;
+        // An activity evidenced by a revision reads sop_document_history; one evidenced by an
+        // entry reads the submissions. Same question, two places it can be answered.
+        const revision = r.evidence_kind === "document_revision";
+        let at: string | undefined;
+        if (revision) {
+          const { data } = await (supabase as any)
+            .from("sop_document_history")
+            .select("snapshotted_at")
+            .eq("document_id", docId)
+            .order("snapshotted_at", { ascending: false })
+            .limit(1);
+          at = data?.[0]?.snapshotted_at;
+        } else {
+          const { data } = await (supabase as any)
+            .from("sop_document_responses")
+            .select("submitted_at")
+            .eq("document_id", docId)
+            // SUBMITTED, not any draft. A draft FRM-913 is an inspection somebody started, and
+            // counting it as completed would reset the clock on an activity nobody finished.
+            .eq("status", "submitted")
+            .order("submitted_at", { ascending: false })
+            .limit(1);
+          at = data?.[0]?.submitted_at;
+        }
         found.push({ activity_key: r.activity_key, completed_on: at ? at.slice(0, 10) : null });
       }
       setCompletions(found);
