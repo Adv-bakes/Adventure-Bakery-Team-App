@@ -7,7 +7,7 @@
 | **Type** | fsqm |
 | **Deliverable** | D-01 (Wave 1) |
 | **Clause** | SQF Food Safety Code: Food Manufacturing, Edition 9 — **2.1.1.3** |
-| **Status** | DRAFT — not yet written to the database. |
+| **Status** | Seeded DRAFT by `20260910000001`. Three items open before issue. |
 
 Drawn **by position, never by person**. A document that names an individual has to be reissued when
 that individual changes, and 2.1.1.3 asks for personnel to be identified by their responsibilities
@@ -186,13 +186,10 @@ three people on site it can always be satisfied. In practice it produces:
 | Christina (Floor Operator) | Diana (SQF Practitioner) | the normal pairing |
 | Diana | Gabriela (substitute SQF Practitioner) | when Christina is absent |
 
-**Recommended default: Christina performs the sanitation and the FRM-903 entry, Diana signs the
-release.** That keeps the primary practitioner doing the release — which is where it belongs — and
-uses the substitute only as a substitute rather than as a routine second signature.
-
-The alternative, if the roster will not support it, is that Diana signs both and the record shows
-it. That is honest, but it is a self-verified release and it should be a deliberate decision rather
-than something the document leaves ambiguous.
+**✅ SETTLED 2026-09-10: Christina performs the day-to-day sanitation and the FRM-903 entry; Diana
+signs the release.** Two hands in the normal case, the primary practitioner doing the release where
+it belongs, and the substitute used only as a substitute. The fallback pairing stands for when
+Christina is absent.
 
 ---
 
@@ -218,12 +215,18 @@ specifically HACCP, not SQF Practitioner training as such. Many practitioner cou
 recognised HACCP module and satisfy it; some do not. **Confirm before booking**: the wrong course
 costs weeks and does not close 2.1.1.5.
 
-### ⚠️ 6.3 Who approves controlled documents now?
-Every document issued to date is stamped **approved by GJM**. If document approval is the SQF
-Practitioner's authority, it moves to Diana on designation; if it is Senior Site Management's, it
-stays with Gabriela. Past approvals are historical and stay as they are either way — this is only
-about the next one. **Worth deciding explicitly**, because an auditor comparing the structure against
-the approval block on a recent revision will ask, and "both, depending" is not an answer.
+### ✅ 6.3 Document approval moves to the SQF Practitioner — with one exception
+**Settled 2026-09-10: Diana approves controlled documents** from here on. Past approvals stamped GJM
+are historical and stay as they are.
+
+**⚠️ FSQM-004 itself is the exception, and it should be approved by Senior Site Management.** 2.1.1.4
+makes designating the practitioner an act of senior site management, and §4.1 already records that
+the appointment power is not delegable — so a document that appoints somebody should not be approved
+by the appointee. The approval block is the first place an auditor looks for that circularity. This
+is open item 1 in the seeded document.
+
+**Practical point for issue:** the approval field stores initials, and the stamp on every document to
+date is `GJM`. The next approval needs Diana's initials, which are not recorded anywhere yet.
 
 ---
 
@@ -239,3 +242,4 @@ the approval block on a recent revision will ask, and "both, depending" is not a
 4. **D-02** — designate formally and complete the HACCP course (§6.2). It closes 2.1.1.4, 2.1.1.5 and
    limb (ii) of 2.1.1.3 with them.
 5. **D-14 task 14.1** becomes possible: a food safety team of three is a team.
+6. **Provide Diana's initials** for the approval stamp on the first document she approves (§6.3).
