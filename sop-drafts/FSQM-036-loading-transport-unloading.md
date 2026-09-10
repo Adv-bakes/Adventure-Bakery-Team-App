@@ -7,7 +7,7 @@
 | **Type** | fsqm |
 | **Deliverable** | D-35 (Wave 2) — tasks 35.1, 35.2, and the scoping for 35.3–35.7 |
 | **Clauses** | SQF Food Manufacturing Ed 9 — **11.6.5.1 – 11.6.5.8** |
-| **Status** | Seeded DRAFT by `20260910000004` / `…005`, corrected by `…006`, `…007` and `…008`. Two items open before issue. |
+| **Status** | **ISSUED active 2026-09-10, approved GJM, effective 2026-09-10.** Seeded by `…004`/`…005`, corrected by `…006`–`…009`, issued by `…010`. |
 
 ---
 
@@ -158,27 +158,44 @@ silence. That dependency no longer *blocks* D-35; it is a stated review trigger 
 
 ---
 
-## 6. What still needs the floor or a decision
+## 6. The three open items, answered 2026-09-10
 
-1. **Wrapping and the weather rule (task 35.5).** The first draft said product never crosses open
-   ground. It does: bulk loads are palletised and crossed over the concrete parking area, and there
-   is **no dock**. Corrected in `…006`, which states the crossing and the controls that make it
-   acceptable — wrapped pallets, no loading in adverse weather without cover, a clean apron free of
-   standing water, a direct crossing with no outdoor staging.
+| | Answer | Effect |
+|---|---|---|
+| Wrapping + adverse-weather rule | **Current practice** | Part 5 records what already happens; nothing new on the floor |
+| Collecting vehicle checked today? | **No** | Part 4 is a **new** requirement from the effective date — written into the revision history rather than glossed |
+| Carrier notice acceptance | **Not tracked** | Sent copy retained as correspondence; no chase-list |
 
-   **What weather threatens here is the packaging, not the food** — every unit is vacuum sealed
-   inside its box, but wet cartons lose strength, can support mould, and carry soil into the vehicle.
+**Diana and Christina have been briefed**, which discharges task 35.7.
 
-   **Open:** are wrapping and the adverse-weather rule current practice, or does this programme
-   introduce them? If new, the floor needs telling before the effective date — the same sequence as
-   the vehicle check. And task 35.5 asks whether a physical fix is worth making, such as a canopy
-   over the crossing; that's a judgement for the site.
+### 6.1 The Part 1 rule had to change, and the clause does not say what I assumed
 
-2. **Is the collecting vehicle checked today?** Sharper than it looked: since *every* dispatch is a
-   collection, this isn't an edge case — it's every load that has ever left. If the answer is no,
-   issuing the programme creates a requirement the floor isn't yet meeting, and that gap should be
-   closed by instruction rather than discovered at an audit.
-3. **Training (task 35.7)** follows the record.
+The rule read *"**Before a collection**, the customer or the carrier shall be told…"* — which is
+**every** collection. For a customer collecting weekly that is a rule nobody keeps, and with
+acceptance deliberately untracked there would have been no evidence either way. `…009` changes it to
+**before a customer's first collection, and again when the carrier or the requirement changes**, with
+the sent copy retained.
+
+**And 11.6.5 does not require the notice at all.** I checked the clause text rather than my summary of
+it: 11.6.5.1 asks for practices *"designed to maintain appropriate storage conditions and product
+integrity"* and for food loaded, transported and unloaded *"under conditions suitable to prevent
+cross-contamination"*. Nothing about telling a carrier anything. The notice is the site's own control,
+and Part 1 now says so — claiming clause backing it doesn't have is the same error as reading
+11.6.5.3 into a seal requirement, pointing the other way.
+
+### 6.2 The vehicle check is not happening yet, and the document says so
+
+This is the one that mattered. Part 4 becomes binding on 2026-09-10 without ever having been
+practice. The revision history records that plainly, because **the gap assessment already scored
+11.6.5.2 as not met** — a programme written as though the check had always happened would contradict
+the finding it exists to close.
+
+The date was not backdated. An effective date earlier than the first FRM-801 entry creates a stretch
+where the programme required a check with no record, which an auditor finds by subtraction.
+
+**Still to do:** send the carrier notice. It was drafted as advance warning and is now a notification
+of something already in force — the site accepted that when the date was set, but it means the first
+drivers turned away may not have heard.
 
 ---
 
