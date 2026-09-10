@@ -124,11 +124,17 @@ All are public (anon) Supabase credentials — safe on the client.
 
 | Section | Path | Notes |
 |---------|------|-------|
-| Home | `/team/dashboard` | |
+| Home | `/team/dashboard`, `/team/notifications` | Notifications carries a count badge |
 | Relationships | `/team/sales/clients` | |
 | Sales | `/team/sales/dashboard`, `/team/sales/templates` | Dashboard has inbox badge |
+
+**Sidebar badges are declared, not hardcoded.** `NavItem.badge?: "inbox" | "notifications"` names
+which live counter feeds an item's gold pill; `TeamLayout` owns both counts (plain `useState` +
+`setInterval` at 30s keyed on `location.pathname` — the sidebar deliberately uses no TanStack
+Query, and `refetchInterval` appears nowhere in `src/`). The pill still renders when the sidebar
+is collapsed. Before D-18 this was `item.path === "/team/sales/dashboard"` inline in the render.
 | Operations | `/team/ops/orders`, `/team/ops/inventory`, `/team/ops/floor`, `/team/ops/insights` | floor & insights are Phase 0 |
-| Compliance | `/team/compliance/sops`, `/team/compliance/traceability`, `/team/compliance/temperature`, `/team/compliance/certifications` | traceability & certifications Phase 0 |
+| Compliance | `/team/compliance/sops`, `/team/compliance/verification`, `/team/compliance/traceability`, `/team/compliance/temperature`, `/team/compliance/certifications` | traceability & certifications Phase 0 |
 | HR | `/team/hr/directory`, `/team/hr/trainings`, `/team/hr/traceability` | traceability is Phase 0 |
 | Internal | `/team/internal/email`, `/team/internal/finance` (owner only), `/team/sourcing`, `/team/account`, `/team/settings` | email/finance Phase 0 |
 
@@ -722,6 +728,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `generate-quiz` | Accepts `{title, narrations[], count}`; returns `{questions[]}` — MCQ with 4 options, hint, rationale |
 | `cleanup-narration` | Accepts `{text}`; returns `{text}` — grammar/style cleanup via Gemini |
 | `extract-package-label` | Accepts `{imageUrls[], wanted[]}`; reads a photographed **ingredient package** and returns `{facts, alternates:{lot_code[]}, extras[], warnings[]}` for filling one grid row. Closed fact whitelist server-side (no allergen key); prompted to distinguish a variable-applied lot code from pre-printed item/barcode numbers. See "Package-label scan" above |
+| `verification-notifications` | Invoked by pg_cron twice daily (`0 11,19 * * *` UTC). Reads `verification_schedule`, derives each activity's last-completed from the evidence records, and raises one `internal_notifications` row per activity due or overdue — plus, for the retention review, a deep link per FRM-703 sample past its discard date. Dedupes on a unique index over `dedupe_key`; treats `23505` as "already raised" and refreshes instead. Closes what is no longer due with `resolved_at` (never `dismissed_at`). Decision half is `_shared/verificationSchedule.ts`, tested by `scripts/test-verification-schedule.mjs`. See "Verification Schedule & Notifications" below. |
 | `cleanup-form-text` | Accepts `{text}`; returns `{text}` — same shape as `cleanup-narration` but prompted for compliance-form free-text answers (incident reports, root-cause notes): fixes grammar/punctuation/capitalization/filler words into one clear statement, preserves every fact/name/quantity exactly. Powers the AI-cleanup Sparkles button in `DictationTextarea.tsx`. |
 | `admin-user-account` | Accepts `{action, userId, password?, redirectTo?}` — `status` / `set_password` / `reset_link`. Admin-only account management; see "Account Access" below. Caller gate is `has_role('admin') OR is_owner()` — deliberately **not** `is_staff_or_admin` (that helper includes staff). |
 | `accept-invitation` | Accepts `{token, password, preferSpanish}`; provisions the invited auth user server-side via `auth.admin.createUser({email_confirm:true})`, then calls the accept RPC. `verify_jwt=false` — the caller has no account yet; the invite token is the credential. See "Invitations" below. |
@@ -759,3 +766,57 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse` (optional 2nd arg `prefill` seeds the new entry's `data` over `emptyValues(schema)`; a resumed existing draft is never clobbered — powers the FRM-401 temperature-review launcher), `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
 | `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
+
+---
+
+## Verification Schedule & Notifications (D-18)
+
+**`public.verification_schedule`** is the master verification schedule SQF 2.5.2.2 requires — one row
+per activity with its frequency, the **position** responsible, and where its evidence lives. It is a
+table rather than a grid inside a form entry because **a grid row has no stable identity**: it is
+addressed by array position (or `_label` when `deletable`), so renaming an activity would orphan its
+open notification and deleting a row would silently stop the alerting while the printed schedule
+still showed it as scheduled. `activity_key` survives the wording changing. Staff can INSERT/UPDATE
+(it is meant to be edited in the app); DELETE is admin/owner only — an activity that stops applying
+is **retired**, never removed. SELECT is `is_compliance_viewer`, so the auditor can read it.
+
+- **There is no `last_completed` column.** It is derived at read time from `max(submitted_at)` of the
+  evidence form's submitted responses, so it cannot go stale and the date shown IS the record. This
+  also keeps the job read-only against `sop_document_responses` — any UPDATE there fires the
+  `sop_document_responses_touch` trigger and would hand a `StaleResponseError` to whoever has that
+  form open.
+- **Frequency is unit + count, never days.** 365-day arithmetic drifts a day per leap year until
+  "reviewed annually" quietly is not. Month-end addition clamps (31 Jan + 1 month = 28 Feb).
+- **`status='planned'`** means scheduled but *not being performed* — the governing program has not
+  been issued. Seven of the twenty seeded rows are planned (calibration, backflow, water, compressed
+  air, CCP record review, internal audit, traceability test). A CHECK forces each to name its
+  deliverable, and `assessDue()` refuses to raise one; the schedule page renders them muted with no
+  due date. **Do not "fix" a planned row by activating it** — activate it when its program is issued.
+- The date maths lives in **two identical copies** — `supabase/functions/_shared/verificationSchedule.ts`
+  and `src/lib/verificationSchedule.ts` — because a browser bundle must not pull in server code (the
+  same reasoning that duplicates `limitText` into `temperatureAlerts.ts`).
+  `scripts/test-verification-schedule.mjs` bundles **both** and asserts they agree, because drift in
+  date arithmetic is silent and material.
+
+**`public.internal_notifications`** was extended rather than replaced. It had existed since
+`20260129202804` with five writers and **zero readers**, is already team-wide (no `user_id`), and the
+temperature alerts the feed must surface were already being written into it. Added: `dedupe_key`,
+`responsible_position`, `due_on`, `severity`, `links` (`[{label, href}]`), `dismissed_by/at/note`,
+`resolved_at/reason`.
+
+- **Dismissal and resolution are different things.** A person clearing an item is stamped; the job
+  closing one because the activity was done sets `resolved_at` and is **never** stamped with a name,
+  or the stamp stops being evidence that a person acted.
+- Both UPDATE policies were **dropped**, so the people a stamp describes cannot edit it. Dismissal
+  goes through `public.dismiss_notification(uuid, text)` — `SECURITY DEFINER`, gated on
+  `is_staff_or_admin`, first-dismissal-wins. The note is optional (unlike
+  `acknowledge_temperature_alert`, where the sentence *is* the corrective-action record).
+- **`is_read` / `read_at` are vestigial** — never written by any code, and they carry no actor.
+- The dedupe index is **total**, not partial on dismissal, because a due date is an *occurrence* (the
+  date is in the key) rather than a recurring *condition*. That is what stops the afternoon run
+  resurrecting what somebody cleared at 09:30.
+- **`FEED_TYPES` in `src/lib/notifications.ts` is an allowlist.** Four of the five pre-existing
+  writers are batch-sheet/private-label chatter. Add a type there deliberately, or it will not show.
+- **Temperature notifications carry no Clear button.** Clearing one would make the badge go away
+  without the SOP-401 corrective-action record ever being written. They close themselves once the
+  alert is acknowledged or cleared.
