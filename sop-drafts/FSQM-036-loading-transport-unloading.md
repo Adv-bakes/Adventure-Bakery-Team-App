@@ -106,6 +106,12 @@ Nine Parts, in `20260910000004`:
 
 Seeded by `20260910000005`, Section 4 rewritten by `…007`. Five sections, 22 fields, two grids.
 
+**v2 from `…011`: Customer, Product and Lot / batch code are required.** As issued, the form required
+the vehicle registration but not what was on the truck or who received it — backwards for 2.6.3.1,
+which asks for records of dispatch *and destination*. The `loaded` grid itself stays optional on
+purpose: a refused vehicle is loaded with nothing, and requiring a row would make the refusal record
+unsubmittable.
+
 **Titled *Dispatch and Vehicle Loading Record*** — `…008` corrected 31 occurrences of the British
 "despatch" across both documents, including the field ids `dispatch_date` and `dispatched_by`. **The
 SQF code itself spells it "dispatch"** (2.6.1.1, 2.6.3.1), and field ids lock once a form has entries,
