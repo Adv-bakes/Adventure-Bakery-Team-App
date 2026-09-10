@@ -45,7 +45,7 @@ line.
 | **Supervisor** | **58 lines across 22 documents** | **The post exists** — *Production Supervisor* | ✅ **No sweep needed.** Every line is correct as written. |
 | **QA** | 25 lines, 10 documents | Shorthand for the **SQF Practitioner** | 🔧 Normalise — Part 7 |
 | **Quality Leader** | 5 lines, 2 documents | Same — **SQF Practitioner** | 🔧 Normalise — Part 7 |
-| **Maintenance** | 14 documents | **Mixed**: routine in-house, specialist contracted | Position + a D-10 register row |
+| **Maintenance** | 14 documents | **Simple tasks by Senior Site Management; chronic or specialist work contracted** | §4.6 + a D-10 register row |
 
 The Supervisor answer is the important one. Measuring only Responsibility sections had shown four
 documents and suggested a layer that did not exist; the full count showed **58 lines**, and the work
@@ -64,24 +64,28 @@ operator and a machine. **The narrower count would have justified deleting it.**
         ┌──────────────────────┼──────────────────────┐
         │                      │                      │
   SQF Practitioner      Production Supervisor    Administration
-  ── primary ......... Gabriela      │  .......... Diana
-  ── substitute ....... Diana        │
+  ── primary ......... Diana         │  .......... Gabriela
+  ── substitute ....... Gabriela     │
         │                Production Operator ............. Diana
         │                Floor Operator .................. Christina
         │                      │
         │                Receiving / Goods-In
         │
-   Maintenance — routine in-house; specialist contracted (D-10 register)
+   Maintenance — simple tasks by Senior Site Management (Gabriela);
+                 chronic or specialist work contracted (D-10 register)
 ```
 
-**Three people hold seven posts, and that is workable — but only because there are three.** The two
-chains that have to stay honest both resolve:
+**Three people hold eight posts.** Two chains have to stay honest, and after the 2026-09-10
+correction they resolve differently:
 
-- **Training sign-off.** The equipment SOPs say *"do not operate unless the Supervisor has trained
-  and signed you off."* Diana (Supervisor) signs off Christina. **Diana is signed off by the SQF
-  Practitioner**, because she cannot sign off herself. Evidenceable end to end.
-- **Pre-operational release.** Diana performs sanitation and completes FRM-903; **Gabriela releases
-  the line.** Work and verification are different hands.
+- **Training sign-off — resolves.** The equipment SOPs say *"do not operate unless the Supervisor has
+  trained and signed you off."* Diana (Supervisor) signs off Christina; **Senior Site Management
+  signs off Diana**, because she cannot sign off herself. Evidenceable end to end.
+- **Maintenance and release — resolves, and is now stronger.** Gabriela performs simple maintenance;
+  Diana releases the equipment back to production. The person who works on the machine is not the
+  person who releases it.
+- **Pre-operational release — ⚠️ COLLIDES. See §5.1.** Diana is now both the operator who performs
+  sanitation and the SQF Practitioner who signs the release.
 
 ---
 
@@ -98,7 +102,8 @@ Notified where an inspection failure stops production or shipment.
 Owns the SQF System: develops, implements, reviews and maintains it. Approves controlled documents.
 **Decides finished product release (FSQM-020) and signs the pre-operational release of the line.**
 Owns CAPA (FSQM-009). Sets inspection criteria and reviews inspection records (FSQM-014).
-**Signs off the Production Supervisor's own training**, since the Supervisor cannot sign off herself.
+**Does not sign off her own training** — where the SQF Practitioner and the Production Supervisor
+are the same person, Senior Site Management signs that off (see Part 3).
 Verifies annually that the documented programs are what the floor performs.
 **Records:** FRM-701, FRM-007, FRM-903 release, document approvals.
 **Competency (2.1.1.5):** employed by the site; a position of responsibility for the SQF System;
@@ -112,13 +117,15 @@ sign-off. Takes a machine out of service on a fault and releases it back. Coordi
 monitors first-batch results. Ensures staff on shift comply with GMP and acts on non-compliance
 immediately. Ensures assigned training is completed and competency verified.
 **Records:** operator sign-off; equipment out-of-service; FRM-909/910/911/912 pre-use releases.
-**Reports to:** Senior Site Management. **Covered by:** the SQF Practitioner.
+**Reports to:** Senior Site Management. **Covered by:** Senior Site Management — *not* the SQF
+Practitioner, which is the same person as the Supervisor and would leave the post uncovered.
 
 ### 4.4 Production Operator / Floor Operator
 Makes the batch to the batch sheet and records the in-process inspection on it. Confirms pack, seal,
 date and lot code as the run proceeds. Performs sanitation and completes FRM-903.
-**Does not release the line — that signature is the SQF Practitioner's**, so the work and its
-verification are not the same hand.
+**Does not sign the release of work they performed.** The pre-operational release is signed by
+someone other than the person who performed the sanitation, so the work and its verification are
+never the same hand — see §5.1.
 **Records:** batch sheet; FRM-903 sanitation. **Reports to:** Production Supervisor.
 **Covered by:** the other operator, or the Production Supervisor.
 
@@ -131,13 +138,17 @@ FRM-703. **Records:** FRM-301; FRM-702; FRM-703. **Covered by:** the Production 
 ### 4.6 Maintenance
 Planned and reactive maintenance of production and food-contact equipment. Food-grade lubricants
 where contact is possible. Returns equipment to production only after it is cleaned and released.
-**Routine tasks in-house** — greasing, belt and seal changes, guard checks, scheduled servicing named
-in the equipment SOPs. **Specialist work contracted** — refrigeration, gas, electrical, calibration,
-anything requiring a licensed trade — each provider listed on the **Contract Services Register (D-10)**.
-**Records:** maintenance log; post-maintenance release. **Covered by:** the contracted provider.
+**Simple tasks are performed by Senior Site Management** — greasing, belt and seal changes, guard
+checks, and the scheduled servicing named in the equipment SOPs. **Chronic or specialist work is
+contracted** — anything recurring, or requiring a licensed trade or specialist tooling — and each
+provider is listed on the **Contract Services Register (D-10)**.
+**Records:** maintenance log; post-maintenance release.
+**Covered by:** the contracted provider.
 
-> The in-house/contracted boundary is **drafted, not confirmed** — written so the line falls where a
-> licence or specialist tooling is required. Move it if that is not where it sits.
+> **This separation is worth keeping deliberately.** Maintenance sits with Senior Site Management
+> while the equipment release sits with the SQF Practitioner, so the person who works on a machine is
+> not the person who releases it back to production. That happened by circumstance rather than by
+> design, but it is the right shape and the document should say so.
 
 ---
 
@@ -146,25 +157,42 @@ anything requiring a licensed trade — each provider listed on the **Contract S
 | Position | Covered by |
 |---|---|
 | Senior Site Management | SQF Practitioner, day-to-day only |
-| SQF Practitioner (primary) | **Substitute SQF Practitioner — the Production Supervisor** |
-| Production Supervisor | SQF Practitioner |
+| SQF Practitioner (primary) | **Substitute SQF Practitioner — Senior Site Management** |
+| Production Supervisor | Senior Site Management |
 | Production / Floor Operator | the other operator, or the Supervisor |
 | Receiving / Goods-In | Production Supervisor |
-| Maintenance | contracted provider |
+| Maintenance | the contracted provider |
 
-### ⚠️ 5.1 The absence case breaks the two-hands rule, and there is a clean fix
+### ⚠️ 5.1 Pre-operational release — the one thing that does not resolve by itself
 
-With the primary away, **Diana acts as substitute SQF Practitioner while also being the operator who
-performed the sanitation** — so she would release her own work, which is exactly the separation §4.4
-exists to preserve.
+**Making Diana the primary SQF Practitioner moved this from a problem in the absence case to a
+problem in the normal case.** She is the operator who performs sanitation *and* the practitioner who
+signs the pre-operational release, so by default she verifies her own work — every day, not just
+when someone is away.
 
-**Recommendation, written into the draft: when the substitute SQF Practitioner is acting, the
-sanitation and the FRM-903 entry are performed by the other floor operator.** Two people are on the
-floor, so the two-hands rule survives the absence rather than lapsing in it. **This is the concrete
-reason the second operator matters to the structure and not just to the roster.**
+That is worth being blunt about, because a pre-operational release is one of the first records an
+auditor pulls, and the first thing they check is whose signature is on it.
 
-If that is not workable, the alternative is that the line release waits for the primary — honest, but
-it stops production. It should not be left unstated either way.
+**The fix is to write the control positionally rather than personally:**
+
+> **The pre-operational release shall be signed by someone other than the person who performed the
+> sanitation.**
+
+That is the actual control. It survives any roster, needs no revision when duties move, and with
+three people on site it can always be satisfied. In practice it produces:
+
+| Sanitation performed by | Release signed by | When |
+|---|---|---|
+| Christina (Floor Operator) | Diana (SQF Practitioner) | the normal pairing |
+| Diana | Gabriela (substitute SQF Practitioner) | when Christina is absent |
+
+**Recommended default: Christina performs the sanitation and the FRM-903 entry, Diana signs the
+release.** That keeps the primary practitioner doing the release — which is where it belongs — and
+uses the substitute only as a substitute rather than as a routine second signature.
+
+The alternative, if the roster will not support it, is that Diana signs both and the record shows
+it. That is honest, but it is a self-verified release and it should be a deliberate decision rather
+than something the document leaves ambiguous.
 
 ---
 
@@ -174,7 +202,8 @@ it stops production. It should not be left unstated either way.
 |---|---|---|
 | Supervisor | **Diana holds Supervisor *and* Operator** | Allowed; the chains in Part 3 keep it evidenceable — but see §5.1 |
 | Second operator | **Christina, floor operator** | Makes §5.1's fix possible. See §6.1 |
-| SQF Practitioner | **Gabriela primary, Diana substitute**, both to train | Closes 2.1.1.4 and limb (ii). See §6.2 |
+| SQF Practitioner | **Diana primary, Gabriela substitute** *(corrected 2026-09-10)*, both to train | Closes 2.1.1.4 and limb (ii). See §6.2 and **§6.3** |
+| Maintenance | **Simple tasks Gabriela; chronic work contracted** | §4.6. Gives a clean split from the equipment release |
 
 ### ⚠️ 6.1 Christina has no account and no training record
 The staff directory holds ten profiles and **none matches Christina**. There are 48 training
@@ -188,6 +217,13 @@ The clause requires the primary and substitute to have **"completed a HACCP trai
 specifically HACCP, not SQF Practitioner training as such. Many practitioner courses include a
 recognised HACCP module and satisfy it; some do not. **Confirm before booking**: the wrong course
 costs weeks and does not close 2.1.1.5.
+
+### ⚠️ 6.3 Who approves controlled documents now?
+Every document issued to date is stamped **approved by GJM**. If document approval is the SQF
+Practitioner's authority, it moves to Diana on designation; if it is Senior Site Management's, it
+stays with Gabriela. Past approvals are historical and stay as they are either way — this is only
+about the next one. **Worth deciding explicitly**, because an auditor comparing the structure against
+the approval block on a recent revision will ask, and "both, depending" is not an answer.
 
 ---
 
