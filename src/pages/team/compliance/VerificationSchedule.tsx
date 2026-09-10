@@ -25,11 +25,11 @@ import {
 
 const STATE_STYLE: Record<string, string> = {
   overdue: "text-destructive font-medium",
-  due: "text-[hsl(var(--tp-gold))] font-medium",
+  due: "tp-card-gold font-medium",
   never: "text-destructive",
-  ok: "text-muted-foreground",
-  planned: "text-muted-foreground",
-  retired: "text-muted-foreground",
+  ok: "tp-card-dim",
+  planned: "tp-card-dim",
+  retired: "tp-card-dim",
 };
 
 const STATE_LABEL: Record<string, string> = {
@@ -154,10 +154,10 @@ export default function VerificationSchedule() {
                       <TableCell className="align-top">
                         <div className="font-medium">{r.activity}</div>
                         {r.description && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{r.description}</div>
+                          <div className="text-xs tp-card-dim mt-0.5">{r.description}</div>
                         )}
                         {r.pending_deliverable && (
-                          <div className="text-xs text-muted-foreground mt-0.5 italic">
+                          <div className="text-xs tp-card-dim mt-0.5 italic">
                             Awaiting {r.pending_deliverable}
                           </div>
                         )}
@@ -175,13 +175,13 @@ export default function VerificationSchedule() {
                           // plain text.
                           return id ? (
                             <Link to={`/team/compliance/sops?doc=${id}`}
-                              className="text-[hsl(var(--tp-gold))] hover:underline">
+                              className="tp-card-gold hover:underline font-medium">
                               {num}
                             </Link>
                           ) : num;
                         })()}
                         {r.owning_program && (
-                          <div className="text-xs text-muted-foreground">{r.owning_program}</div>
+                          <div className="text-xs tp-card-dim">{r.owning_program}</div>
                         )}
                       </TableCell>
                       <TableCell className="align-top whitespace-nowrap">{last ?? "—"}</TableCell>

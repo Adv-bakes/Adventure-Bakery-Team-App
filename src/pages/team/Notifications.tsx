@@ -34,7 +34,7 @@ function ResponsiblePill({ position }: { position: string }) {
   // onto the notification and is never hidden behind a "show details" toggle — it is the reason
   // this feed can be team-wide instead of routed to individuals.
   return (
-    <span className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--tp-gold))] text-[hsl(var(--tp-gold))] whitespace-nowrap">
+    <span className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--tp-gold-soft))] tp-card-gold whitespace-nowrap">
       {position}
     </span>
   );
@@ -60,12 +60,12 @@ function NotificationCard({
           </div>
           <div className="flex-1 min-w-[240px]">
             <p className="font-medium leading-snug">{n.title}</p>
-            {n.message && <p className="text-sm text-muted-foreground mt-1">{n.message}</p>}
+            {n.message && <p className="text-sm tp-card-dim mt-1">{n.message}</p>}
 
             <div className="flex items-center gap-2 flex-wrap mt-2">
               {n.responsible_position && <ResponsiblePill position={n.responsible_position} />}
               {n.due_on && (
-                <span className="text-[11px] text-muted-foreground">Due {n.due_on}</span>
+                <span className="text-[11px] tp-card-dim">Due {n.due_on}</span>
               )}
             </div>
 
@@ -73,7 +73,7 @@ function NotificationCard({
               <ul className="mt-3 space-y-1">
                 {n.links.map((l) => (
                   <li key={l.href}>
-                    <Link to={l.href} className="text-sm text-[hsl(var(--tp-gold))] hover:underline">
+                    <Link to={l.href} className="text-sm tp-card-gold hover:underline font-medium">
                       {l.label}
                     </Link>
                   </li>
@@ -84,7 +84,7 @@ function NotificationCard({
             {isTemp && (
               <Link
                 to="/team/compliance/temperature"
-                className="inline-block mt-3 text-sm text-[hsl(var(--tp-gold))] hover:underline"
+                className="inline-block mt-3 text-sm tp-card-gold hover:underline font-medium"
               >
                 Open temperature alerts to acknowledge and record what was done →
               </Link>
@@ -180,7 +180,7 @@ export default function Notifications() {
           <CardContent className="py-10 text-center">
             <CheckCircle2 className="w-8 h-8 mx-auto text-[hsl(var(--tp-gold))]" />
             <p className="mt-3 font-medium">Nothing outstanding</p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm tp-card-dim mt-1">
               Every scheduled verification activity is up to date and no alerts are open.
             </p>
           </CardContent>
@@ -205,24 +205,24 @@ export default function Notifications() {
         {showCleared && (
           <Card className="mt-2">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium tp-card-dim">
                 Who cleared what
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {cleared.length === 0 && (
-                <p className="text-sm text-muted-foreground">Nothing has been cleared yet.</p>
+                <p className="text-sm tp-card-dim">Nothing has been cleared yet.</p>
               )}
               {cleared.map((n) => (
                 <div key={n.id} className="text-sm border-b last:border-0 pb-2 last:pb-0">
                   <p className="font-medium">{n.title}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs tp-card-dim">
                     {n.dismissed_at
                       ? `Cleared by ${names.get(n.dismissed_by ?? "") ?? "a team member"} · ${new Date(n.dismissed_at).toLocaleString()}`
                       : `Closed automatically · ${n.resolved_reason ?? "no longer due"}`}
                   </p>
                   {n.dismissed_note && (
-                    <p className="text-xs text-muted-foreground italic mt-0.5">{n.dismissed_note}</p>
+                    <p className="text-xs tp-card-dim italic mt-0.5">{n.dismissed_note}</p>
                   )}
                 </div>
               ))}
