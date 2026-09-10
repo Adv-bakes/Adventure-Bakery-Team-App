@@ -7,7 +7,7 @@
 | **Type** | fsqm |
 | **Deliverable** | D-01 (Wave 1) |
 | **Clause** | SQF Food Safety Code: Food Manufacturing, Edition 9 — **2.1.1.3** |
-| **Status** | Seeded DRAFT by `20260910000001`. Three items open before issue. |
+| **Status** | Seeded DRAFT by `20260910000001`, Part 4 amended by `20260910000002`. Three items open before issue. |
 
 Drawn **by position, never by person**. A document that names an individual has to be reissued when
 that individual changes, and 2.1.1.3 asks for personnel to be identified by their responsibilities
@@ -84,8 +84,9 @@ correction they resolve differently:
 - **Maintenance and release — resolves, and is now stronger.** Gabriela performs simple maintenance;
   Diana releases the equipment back to production. The person who works on the machine is not the
   person who releases it.
-- **Pre-operational release — ⚠️ COLLIDES. See §5.1.** Diana is now both the operator who performs
-  sanitation and the SQF Practitioner who signs the release.
+- **Pre-operational release — resolves, with a stated exception.** Christina performs the day-to-day
+  sanitation and Diana signs the release. Where only one qualified person is on site, that person may
+  do both, recorded and reviewed — see §5.2.
 
 ---
 
@@ -163,33 +164,47 @@ provider is listed on the **Contract Services Register (D-10)**.
 | Receiving / Goods-In | Production Supervisor |
 | Maintenance | the contracted provider |
 
-### ⚠️ 5.1 Pre-operational release — the one thing that does not resolve by itself
+### ✅ 5.1 Pre-operational release, and single-person operation
 
-**Making Diana the primary SQF Practitioner moved this from a problem in the absence case to a
-problem in the normal case.** She is the operator who performs sanitation *and* the practitioner who
-signs the pre-operational release, so by default she verifies her own work — every day, not just
-when someone is away.
+Making Diana the primary SQF Practitioner put the operator who performs sanitation and the
+practitioner who signs the release in the same person. **Settled 2026-09-10: Christina performs the
+day-to-day sanitation, Diana signs the release.** Two hands in the normal case, with the substitute
+used only as a substitute.
 
-That is worth being blunt about, because a pre-operational release is one of the first records an
-auditor pulls, and the first thing they check is whose signature is on it.
+### ⚠️ 5.2 The rule as first written forbade a run that actually happened — corrected
 
-**The fix is to write the control positionally rather than personally:**
+A simple pancake mix was made in the week of 2026-09-01 with **one person on site**, who performed
+every task herself. Part 4 as first seeded said the release *"shall be signed by someone other than
+the person who performed the sanitation"*, full stop. That made an ordinary run a departure from the
+manual, on a document one day old.
 
-> **The pre-operational release shall be signed by someone other than the person who performed the
-> sanitation.**
+**The Code does not require the separation.** 11.2.5.7: *"Pre-operational inspections shall be
+conducted by **qualified** personnel."* Qualified — not independent, and not two of them. The only
+independence requirement in either edition is **2.5.4.2** on internal audits, and even that is hedged
+*"where practical"*, which is the Code acknowledging sites of this size.
 
-That is the actual control. It survives any roster, needs no revision when duties move, and with
-three people on site it can always be satisfied. In practice it produces:
+**FRM-903 already had it right**, which is the evidence the rule was wrong rather than the practice:
+`released_by` (qualified inspector) is **required**, `supervisor` is an **optional verifier** line.
+The form has always allowed one competent person to complete and release a pre-operational
+inspection. Only the manual forbade it.
 
-| Sanitation performed by | Release signed by | When |
-|---|---|---|
-| Christina (Floor Operator) | Diana (SQF Practitioner) | the normal pairing |
-| Diana | Gabriela (substitute SQF Practitioner) | when Christina is absent |
+**Corrected by `20260910000002`.** The separation is **kept where it can be had and conditioned where
+it cannot**, rather than deleted — on any day two qualified people are present it is a real check
+costing nothing. Single-person operation is permitted but **not unremarked**:
 
-**✅ SETTLED 2026-09-10: Christina performs the day-to-day sanitation and the FRM-903 entry; Diana
-signs the release.** Two hands in the normal case, the primary practitioner doing the release where
-it belongs, and the substitute used only as a substitute. The fallback pairing stands for when
-Christina is absent.
+| | |
+|---|---|
+| Permitted | One qualified person may perform the work and its verification |
+| Recorded | The entry records that single-person operation applied |
+| Evidenced | A photograph of the cleaned product-contact surfaces is retained with it |
+| Reviewed | **Senior Site Management reviews those entries monthly** — a different person, which is what keeps it a control |
+
+The training sign-off rule is deliberately **not** conditioned: training is arranged rather than
+improvised on a shift, so a second person is always available for it.
+
+> **The general principle, worth keeping:** a rule the site cannot always follow is worse than a
+> weaker rule it can. The first thing that happens to it is that it is ignored, and the second is
+> that everything written next to it is trusted a little less.
 
 ---
 
