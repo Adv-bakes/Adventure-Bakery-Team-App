@@ -7,25 +7,40 @@ import {
   Home, Users, FileText, Kanban, Boxes, TrendingUp, Factory, BarChart2,
   ClipboardCheck, ClipboardList, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
   ListTodo, Inbox, DollarSign, Database, Settings, User as UserIcon,
-  LogOut, PanelLeftClose, PanelLeft, Thermometer,
+  LogOut, PanelLeftClose, PanelLeft, Thermometer, Bell, CalendarCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 import { CoachChat } from "@/components/CoachChat";
 import { useUserRole } from "@/hooks/useUserRole";
+import { countOpenNotifications } from "@/lib/notifications";
 
 interface TeamLayoutProps { children: ReactNode; }
-interface NavItem { path: string; icon: React.ElementType; label: string; ownerOnly?: boolean; auditorOk?: boolean; }
+interface NavItem {
+  path: string; icon: React.ElementType; label: string;
+  ownerOnly?: boolean; auditorOk?: boolean;
+  /**
+   * Which live counter feeds this item's gold pill. The counts are owned by TeamLayout, so a nav
+   * item NAMES one rather than carrying a number — navSections stays a static const.
+   *
+   * This used to be `item.path === "/team/sales/dashboard"` inline in the render. A second badged
+   * item is what made that untenable: two hardcoded paths is the point where it becomes a field.
+   */
+  badge?: "inbox" | "notifications";
+}
 interface NavSection { title: string; items: NavItem[]; }
 
 const navSections: NavSection[] = [
-  { title: "Home", items: [{ path: "/team/dashboard", icon: Home, label: "Dashboard" }] },
+  { title: "Home", items: [
+    { path: "/team/dashboard", icon: Home, label: "Dashboard" },
+    { path: "/team/notifications", icon: Bell, label: "Notifications", badge: "notifications" },
+  ]},
   { title: "Relationships", items: [
     { path: "/team/sales/clients", icon: Users, label: "Clients" },
   ]},
   { title: "Sales", items: [
-    { path: "/team/sales/dashboard", icon: BarChart2, label: "Dashboard" },
+    { path: "/team/sales/dashboard", icon: BarChart2, label: "Dashboard", badge: "inbox" },
     { path: "/team/sales/templates", icon: FileText, label: "Templates" },
   ]},
   { title: "Operations", items: [
@@ -38,6 +53,7 @@ const navSections: NavSection[] = [
     { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library", auditorOk: true },
     { path: "/team/compliance/register", icon: Database, label: "Document Register", auditorOk: true },
     { path: "/team/compliance/records", icon: ClipboardList, label: "Form Records", auditorOk: true },
+    { path: "/team/compliance/verification", icon: CalendarCheck, label: "Verification Schedule", auditorOk: true },
     { path: "/team/compliance/traceability", icon: ClipboardCheck, label: "Traceability" },
     { path: "/team/compliance/temperature", icon: Thermometer, label: "Temperature Logs", auditorOk: true },
     { path: "/team/compliance/certifications", icon: ShieldCheck, label: "Certifications" },
@@ -69,6 +85,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   // who also holds staff/admin keeps the full nav (roles union additively).
   const isAuditorOnly = roles.length > 0 && roles.every((r) => r === "auditor");
   const [inboxCount, setInboxCount] = useState(0);
+  const [notifCount, setNotifCount] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -103,6 +120,25 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
         .select("*", { count: "exact", head: true })
         .in("status", ["new", "reviewing"]);
       if (!cancelled) setInboxCount(count || 0);
+    };
+    refresh();
+    const t = setInterval(refresh, 30000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [location.pathname]);
+
+  // Mirrors the inbox counter above deliberately, down to the 30s interval and the pathname
+  // dependency. The sidebar uses no TanStack Query and `refetchInterval` appears nowhere in src/;
+  // matching the file beats importing a new idiom for one more counter.
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const n = await countOpenNotifications();
+        if (!cancelled) setNotifCount(n);
+      } catch {
+        // A failed count must not blank a pill that was right a moment ago, and must never
+        // interrupt navigation with a toast. Leave the last known value.
+      }
     };
     refresh();
     const t = setInterval(refresh, 30000);
@@ -157,7 +193,9 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
                   const Icon = item.icon;
                   const active = location.pathname === item.path ||
                     (item.path !== "/team/dashboard" && location.pathname.startsWith(item.path));
-                  const showBadge = item.path === "/team/sales/dashboard" && inboxCount > 0;
+                  const badgeCount = item.badge === "inbox" ? inboxCount
+                    : item.badge === "notifications" ? notifCount : 0;
+                  const showBadge = badgeCount > 0;
                   return (
                     <Link
                       key={item.path}
@@ -169,7 +207,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
                       {!collapsed && <span className="truncate flex-1">{item.label}</span>}
                       {showBadge && (
                         <span className="ml-auto text-[10px] font-semibold bg-[hsl(var(--tp-gold))] text-black rounded-full px-1.5 min-w-[18px] text-center">
-                          {inboxCount}
+                          {badgeCount}
                         </span>
                       )}
                     </Link>

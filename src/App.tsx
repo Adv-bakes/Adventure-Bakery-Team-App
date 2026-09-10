@@ -92,6 +92,9 @@ import DocumentRegister from "./pages/team/compliance/DocumentRegister";
 import TemperatureReport from "./pages/team/compliance/TemperatureReport";
 import FormEntry from "./pages/team/compliance/FormEntry";
 import FormRecords from "./pages/team/compliance/Records";
+import Notifications from "./pages/team/Notifications";
+import VerificationSchedule from "./pages/team/compliance/VerificationSchedule";
+import FormEntryStart from "./pages/team/compliance/FormEntryStart";
 import TrainingSops from "./pages/team/hr/TrainingSops";
 import TrainingCompliance from "./pages/team/hr/TrainingCompliance";
 import TrainingModuleDetail from "./pages/team/hr/TrainingModuleDetail";
@@ -442,9 +445,31 @@ const App = () => (
               <TeamLayout><TemperatureReport /></TeamLayout>
             </ProtectedRoute>
           } />
+          {/* No auditor. The feed is an internal action list, not a record - the records
+              themselves stay auditable through SOPs Library and Form Records - and RLS on
+              internal_notifications is is_staff_or_admin, which excludes auditor anyway. */}
+          <Route path="/team/notifications" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><Notifications /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          {/* The auditor DOES see the schedule - it is one of the first things an SQF audit asks
+              for - matching is_compliance_viewer on verification_schedule. */}
+          <Route path="/team/compliance/verification" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
+              <TeamLayout><VerificationSchedule /></TeamLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/team/compliance/records" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><FormRecords /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          {/* Resumes the caller's newest open draft, else creates one, then redirects to it.
+              A notification link performs a write, so it has to be safe to click twice. */}
+          <Route path="/team/compliance/forms/:docId/start" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><FormEntryStart /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/compliance/forms/:docId/entries/:responseId" element={
