@@ -1,0 +1,263 @@
+{
+  "sections": [
+    {
+      "id": "dispatch",
+      "title": "1. Dispatch",
+      "fields": [
+        {
+          "id": "how_this_works",
+          "text": "ONE RECORD PER VEHICLE-LOAD, not per batch. If one vehicle carries three batches, that is one record listing all three.\n\nEVERY DISPATCH IS A COLLECTION. A carrier the customer arranges collects from the site, and responsibility passes to the customer at that point. The vehicle is therefore never ours — and it is checked anyway, because 11.6.5.2 covers vehicles carrying food FROM this site whoever owns them. Responsibility passing on collection does not reach backwards to the moment of loading.\n\nNothing is loaded before it has been released on FRM-701, and no vehicle is loaded before it has passed the check in Section 2. A vehicle that fails is not loaded — record the refusal and its reason, and do not proceed until a fit vehicle is provided.\n\nAll product ships AMBIENT. There are no temperature checks on this form because nothing leaves under temperature control (FSQM-036 Part 3). If that ever changes, the programme is revised before the first such load.",
+          "type": "info",
+          "label": "Before you start"
+        },
+        {
+          "id": "dispatch_date",
+          "type": "date",
+          "label": "Date",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "defaultToday": true
+        },
+        {
+          "id": "customer",
+          "type": "text",
+          "label": "Customer",
+          "width": "half",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "carrier",
+          "help": "Who collected it — the carrier the customer arranged. Every dispatch from this site is a collection.",
+          "type": "text",
+          "label": "Collecting carrier",
+          "width": "half",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "vehicle_id",
+          "type": "text",
+          "label": "Vehicle registration or identifier",
+          "width": "half",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "loaded",
+          "help": "One row per batch on this vehicle. The release record is FRM-701 for that batch.",
+          "rows": {
+            "min": 1,
+            "mode": "dynamic",
+            "addLabel": "Add a batch"
+          },
+          "type": "grid",
+          "label": "Product loaded",
+          "columns": [
+            {
+              "id": "product",
+              "type": "text",
+              "label": "Product",
+              "width": 3,
+              "required": true
+            },
+            {
+              "id": "lot_code",
+              "type": "text",
+              "label": "Lot / batch code",
+              "width": 2,
+              "required": true
+            },
+            {
+              "id": "quantity",
+              "type": "text",
+              "label": "Quantity",
+              "width": 2
+            },
+            {
+              "id": "released",
+              "type": "pass_fail",
+              "label": "Released on FRM-701",
+              "width": 1,
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vehicle_check",
+      "title": "2. Vehicle check — before loading",
+      "fields": [
+        {
+          "id": "check_info",
+          "text": "Every row must be answered. The vehicle belongs to the customer or to a carrier they arranged, and it is checked all the same — it is this site's product that would be affected. A single Fail means the vehicle is not loaded.",
+          "type": "info",
+          "label": "How to use this table"
+        },
+        {
+          "id": "checks",
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "Load space clean and dry\nNo dirt, spillage or standing water.",
+              "Free of odour\nNothing that could taint product.",
+              "Free of residue from a previous load\nAnd the previous load was not a non-food material.",
+              "No evidence of pest activity\nDroppings, gnawing, insects, nesting.",
+              "Sound and weatherproof\nNo holes, gaps or damaged seals that would let weather in.",
+              "Suitable for carrying food\nNo sharp protrusions or damage that could breach packaging."
+            ],
+            "labelHeader": "Check"
+          },
+          "type": "grid",
+          "label": "Vehicle condition (11.6.5.2)",
+          "columns": [
+            {
+              "id": "result",
+              "type": "pass_fail",
+              "label": "Result",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "note",
+              "type": "text",
+              "label": "Note",
+              "width": 3
+            }
+          ]
+        },
+        {
+          "id": "vehicle_accepted",
+          "type": "select",
+          "label": "Outcome",
+          "width": "half",
+          "options": [
+            "Accepted — loaded",
+            "REFUSED — not loaded"
+          ],
+          "required": true
+        },
+        {
+          "id": "refusal_reason",
+          "help": "Required where the vehicle was refused. Say what was found and what was done.",
+          "rows": 2,
+          "type": "textarea",
+          "label": "If refused, why, and what happened next",
+          "width": "full"
+        }
+      ]
+    },
+    {
+      "id": "loading",
+      "title": "3. Loading — the crossing",
+      "fields": [
+        {
+          "id": "loading_info",
+          "text": "Bulk loads are palletised and moved across the concrete parking area to the vehicle, so they are briefly outdoors. There is no dock. What the weather threatens is the packaging rather than the food - each unit is vacuum sealed inside its box - but wet cartons lose strength, can support mould, and carry soil into the vehicle.\n\nIf the weather is against you, cover the load for the crossing or wait. A delayed collection is recoverable; a pallet of soaked cartons is not.",
+          "type": "info",
+          "label": "The load crosses an outdoor area"
+        },
+        {
+          "id": "pallets_wrapped",
+          "type": "pass_fail",
+          "label": "Pallets wrapped before leaving the building",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "weather_ok",
+          "type": "pass_fail",
+          "label": "Weather suitable for the crossing, or load covered for it",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "apron_clear",
+          "type": "pass_fail",
+          "label": "Loading area clean and free of standing water",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "not_on_ground",
+          "type": "pass_fail",
+          "label": "No pallet or product set down on wet or soiled ground",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "load_secured",
+          "type": "pass_fail",
+          "label": "Load stacked and restrained so packaging is not crushed, punctured or abraded",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "loading_notes",
+          "help": "Required where any check above is a Fail, or where the load was covered for the crossing.",
+          "rows": 2,
+          "type": "textarea",
+          "label": "Notes",
+          "width": "full"
+        }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "4. Securing the load",
+      "fields": [
+        {
+          "id": "security_info",
+          "text": "11.6.5.3 asks that the vehicle be SECURED from tampering, using seals or other agreed and acceptable devices or systems. A lock is such a device. A seal is not required here and would not work: a collecting vehicle is often on a multi-drop route, so a seal applied at this dock has to be cut at the next stop.\n\nSo: close the compartment and secure it. Lock it if it has a lock; latch it and have the driver confirm it is closed if it does not. One tick.\n\nIf a particular customer or carrier asks for a seal, apply one and write its number below.",
+          "type": "info",
+          "label": "What this section is for"
+        },
+        {
+          "id": "compartment_secured",
+          "type": "pass_fail",
+          "label": "Load compartment closed and secured before departure",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "seal_number",
+          "help": "Only where a customer or carrier requires a seal. Otherwise leave blank.",
+          "type": "text",
+          "label": "Seal number, if one was required",
+          "width": "half"
+        }
+      ]
+    },
+    {
+      "id": "signoff",
+      "title": "5. Sign-off",
+      "fields": [
+        {
+          "id": "dispatched_by",
+          "type": "signature",
+          "label": "Loaded and dispatched by",
+          "width": "half",
+          "required": true,
+          "statement": "I checked the vehicle, loaded this dispatch as recorded above, and confirm the product on it had been released."
+        },
+        {
+          "id": "verified_by",
+          "role": "verifier",
+          "type": "signature",
+          "label": "Verified by (optional)",
+          "width": "half",
+          "statement": "I have reviewed this dispatch record."
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "deletable": false,
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "instanceTitleTemplate": "Dispatch {dispatch_date} — {vehicle_id}"
+  },
+  "schemaVersion": 1
+}

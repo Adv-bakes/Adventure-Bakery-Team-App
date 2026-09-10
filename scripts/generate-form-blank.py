@@ -617,3 +617,33 @@ if __name__ == "__main__":
     b703 = blocks_from_schema(s703)
     build_pdf("sop-drafts/FRM-703-blank.pdf", meta703, b703)
     build_docx("sop-drafts/FRM-703-blank.docx", meta703, b703)
+
+    # FRM-801 - Dispatch and Vehicle Loading Record. PORTRAIT: neither grid is wide. The load is
+    # Product / Lot / Quantity / Released, and the vehicle check is a label column plus Result and
+    # Note - the same shape as FRM-701, which is portrait for the same reason.
+    #
+    # THIS IS THE STRONGEST CASE IN THE SET FOR A PAPER BLANK. Every field on it is filled AT THE
+    # VEHICLE: the load space is inspected before loading, and the loading confirmations are made
+    # while pallets cross an outdoor concrete area on a forklift. There is no dock and no tablet out
+    # there. A record that has to wait for someone to come back inside is a record written from
+    # memory, and a vehicle check written from memory is not a vehicle check.
+    #
+    # ONE SHEET IS ONE VEHICLE-LOAD, not one batch - a three-batch shipment is one truck and one
+    # sheet, which is why these fields are not on FRM-701.
+    #
+    # A REFUSED VEHICLE STILL GETS A SHEET, with Section 1's load grid left empty and the refusal
+    # recorded in Section 2. That is why the load grid is not a required field even though Product
+    # and Lot are required columns: the columns only bite on rows the filler has started.
+    #
+    # rev v2, effective 2026-09-10, approved GJM: seeded draft by 20260910000005, Section 4 replaced
+    # by 000007 (a lock, not a seal), respelled by 000008, issued with FSQM-036 by 000010, and taken
+    # to v2 by 000011, which made Customer, Product and Lot / batch code required so the record says
+    # what left and who received it. The schema JSON beside this was pulled from the live row.
+    s801 = load_schema("sop-drafts/FRM-801-dispatch-vehicle-loading-schema.json")
+    meta801 = {"form_no": "FRM-801", "title": "Dispatch and Vehicle Loading Record",
+               "revision": "v2", "eff": "2026-09-10", "appr": "GJM",
+               "sqf": "11.6.5.2, 11.6.5.3, 11.6.5.4, 11.6.5.8",
+               "footer": FOOT.format(no="FRM-801")}
+    b801 = blocks_from_schema(s801)
+    build_pdf("sop-drafts/FRM-801-blank.pdf", meta801, b801)
+    build_docx("sop-drafts/FRM-801-blank.docx", meta801, b801)
