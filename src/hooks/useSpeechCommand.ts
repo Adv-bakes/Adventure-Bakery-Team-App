@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- the Web Speech API (webkitSpeechRecognition and
    its events) has no TypeScript lib types; DictationTextarea types it the same way. */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { RECOGNIZER_LANG, type VoiceLang } from "@/lib/voiceLexicon";
+import { VOICE_MSG } from "@/lib/voiceMessages";
 
 // One spoken command, start to finish, through the browser's speech recognition.
 //
@@ -11,10 +13,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 //
 // ANDROID CHROME REALITIES this is built around:
 //  - start() must run synchronously inside the tap handler. Any await before it and Chrome treats
-//    the call as not user-initiated and refuses the microphone.
+//    the call as not user-initiated and refuses the microphone. So the language is read from a ref
+//    at start(), never loaded on the way.
 //  - Recognition runs on Google's servers, so a dropped connection surfaces as error "network".
 //  - A long line with a pause in it sometimes ends without ever sending a final result. The last
 //    interim text is then used, flagged as partial, rather than throwing the operator's words away.
+//  - A device without the Spanish speech pack reports "language-not-supported".
 
 const Recognition: any =
   typeof window !== "undefined"
@@ -25,23 +29,29 @@ export const speechRecognitionSupported = !!Recognition;
 
 export type SpeechState = "idle" | "listening" | "done" | "error";
 
-function errorMessage(code: string): string {
+function errorMessage(code: string, lang: VoiceLang): string {
+  const m = VOICE_MSG[lang].speech;
   switch (code) {
     case "not-allowed":
     case "service-not-allowed":
-      return "The microphone is blocked. In Chrome, tap the lock icon beside the address, allow Microphone, then try again.";
+      return m.blocked;
     case "no-speech":
-      return "I didn't hear anything. Tap the microphone and read the line.";
+      return m.noSpeech;
     case "audio-capture":
-      return "No microphone was found on this device.";
+      return m.noMic;
     case "network":
-      return "Voice recognition needs an internet connection. Check the Wi-Fi, or type the line below.";
+      return m.network;
+    case "language-not-supported":
+      return m.langNotSupported;
     default:
-      return `Voice recognition stopped (${code}). Try again, or type the line below.`;
+      return m.generic(code);
   }
 }
 
-export function useSpeechCommand(onHeard: (alternatives: string[], partial: boolean) => void) {
+export function useSpeechCommand(
+  onHeard: (alternatives: string[], partial: boolean) => void,
+  options: { lang?: VoiceLang } = {},
+) {
   const [state, setState] = useState<SpeechState>("idle");
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -50,10 +60,13 @@ export function useSpeechCommand(onHeard: (alternatives: string[], partial: bool
   const lastInterim = useRef("");
   const onHeardRef = useRef(onHeard);
   onHeardRef.current = onHeard;
+  const langRef = useRef<VoiceLang>(options.lang ?? "en");
+  langRef.current = options.lang ?? "en";
 
   const start = useCallback(() => {
+    const lang = langRef.current;
     if (!Recognition) {
-      setError("This browser has no speech recognition. Use Chrome, or type the line below.");
+      setError(VOICE_MSG[lang].speech.unsupportedBrowser);
       setState("error");
       return;
     }
@@ -63,7 +76,7 @@ export function useSpeechCommand(onHeard: (alternatives: string[], partial: bool
     rec.continuous = false;
     rec.interimResults = true;
     rec.maxAlternatives = 5;
-    rec.lang = "en-US";
+    rec.lang = RECOGNIZER_LANG[lang];
     gotFinal.current = false;
     lastInterim.current = "";
     setInterim("");
@@ -90,7 +103,7 @@ export function useSpeechCommand(onHeard: (alternatives: string[], partial: bool
     };
     rec.onerror = (event: any) => {
       if (event.error === "aborted") return;
-      setError(errorMessage(event.error));
+      setError(errorMessage(event.error, lang));
       setState("error");
     };
     rec.onend = () => {
@@ -110,7 +123,7 @@ export function useSpeechCommand(onHeard: (alternatives: string[], partial: bool
       rec.start();
     } catch (e: any) {
       recRef.current = null;
-      setError(errorMessage(e?.name ?? "start-failed"));
+      setError(errorMessage(e?.name ?? "start-failed", lang));
       setState("error");
     }
   }, []);

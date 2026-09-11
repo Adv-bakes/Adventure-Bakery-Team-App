@@ -14,6 +14,7 @@ import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 import { CoachChat } from "@/components/CoachChat";
 import { VoiceCommandPanel } from "@/components/team/voice/VoiceCommandPanel";
+import type { VoiceLang } from "@/lib/voiceLexicon";
 import { useUserRole } from "@/hooks/useUserRole";
 import { countOpenNotifications } from "@/lib/notifications";
 
@@ -102,16 +103,23 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // The voice panel starts in the operator's Training Language.
+  const [voiceLang, setVoiceLang] = useState<VoiceLang>("en");
+
   // Fetch the display name for the sidebar identity chip.
   useEffect(() => {
-    if (!user?.id) { setFullName(""); return; }
+    if (!user?.id) { setFullName(""); setVoiceLang("en"); return; }
     let cancelled = false;
     supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, preferred_language")
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data }) => { if (!cancelled) setFullName(data?.full_name || ""); });
+      .then(({ data }) => {
+        if (cancelled) return;
+        setFullName(data?.full_name || "");
+        setVoiceLang(data?.preferred_language === "es" ? "es" : "en");
+      });
     return () => { cancelled = true; };
   }, [user?.id]);
 
@@ -268,7 +276,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
         currentSection="Concept"
         avoidBottomBar
         tooltipText={canVoice ? "Tap to record a CCP check by voice." : undefined}
-        renderPanel={canVoice ? ({ close }) => <VoiceCommandPanel onDone={close} /> : undefined}
+        renderPanel={canVoice ? ({ close }) => <VoiceCommandPanel onDone={close} defaultLang={voiceLang} /> : undefined}
       />
     </div>
   );

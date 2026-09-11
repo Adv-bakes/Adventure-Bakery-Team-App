@@ -32,6 +32,8 @@ import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
 import { applyVoiceFill, type VoiceWarning } from "@/lib/voiceCommands";
+import type { VoiceLang } from "@/lib/voiceLexicon";
+import { VOICE_MSG } from "@/lib/voiceMessages";
 import type { VoiceCommandState } from "@/lib/voiceCommandTarget";
 import { setUnsavedForm } from "@/lib/unsavedChanges";
 import { useBottomBarClearance } from "@/hooks/useBottomBarClearance";
@@ -182,7 +184,7 @@ export default function FormEntry() {
       if (e instanceof StaleResponseError) {
         toast.error(e.message);
         // A spoken row that could not be saved is offered again on the fresh copy, not lost.
-        setVoice(v => (v?.kind === "applied" ? { kind: "stale", state: v.state } : v));
+        setVoice(v => (v?.kind === "applied" ? { kind: "stale", state: v.state, lang: v.lang } : v));
       }
       else toast.error(e.message ?? "Failed to save draft");
     } finally {
@@ -319,10 +321,11 @@ export default function FormEntry() {
   // into the form but NOT saved: the operator checks it - lot codes get misheard - and taps Save
   // Draft. The form is left dirty so the leave-page warning covers it. A second spoken line while
   // this entry is already open arrives as a new nonce and is added on top of the unsaved values.
+  // `lang` is the language the operator spoke to the panel in; the banner follows it, the record does not.
   const [voice, setVoice] = useState<
-    | { kind: "applied"; state: VoiceCommandState; rowIndex: number; gridLabel: string; warnings: VoiceWarning[]; prev: Record<string, any> }
-    | { kind: "refused"; message: string }
-    | { kind: "stale"; state: VoiceCommandState }
+    | { kind: "applied"; lang: VoiceLang; state: VoiceCommandState; rowIndex: number; gridLabel: string; warnings: VoiceWarning[]; prev: Record<string, any> }
+    | { kind: "refused"; lang: VoiceLang; message: string }
+    | { kind: "stale"; lang: VoiceLang; state: VoiceCommandState }
     | null
   >(null);
   const appliedVoice = useRef(new Set<string>());
@@ -336,25 +339,25 @@ export default function FormEntry() {
 
   const applyVoice = (vc: VoiceCommandState) => {
     if (!schema || !response) return;
+    const lang: VoiceLang = vc.uiLang ?? "en";
     if (isSubmitted || !canEdit) {
       setVoice({
         kind: "refused",
-        message: isSubmitted
-          ? "This record has been submitted, so the spoken reading could not be added. Ask an admin to reopen it."
-          : "This record belongs to someone else, so the spoken reading could not be added to it.",
+        lang,
+        message: isSubmitted ? VOICE_MSG[lang].banner.refusedSubmitted : VOICE_MSG[lang].banner.refusedNotMine,
       });
       return;
     }
     const prev = { ...emptyValues(schema), ...form.getValues() };
-    const res = applyVoiceFill(schema, prev, vc.fill, fillContext);
+    const res = applyVoiceFill(schema, prev, vc.fill, fillContext, lang);
     if (!res.ok) {
-      setVoice({ kind: "refused", message: res.error });
+      setVoice({ kind: "refused", lang, message: res.error });
       return;
     }
     // keepDefaultValues: the loaded record stays the baseline, so the spoken row counts as unsaved.
     form.reset(res.values, { keepDefaultValues: true });
     setVoice({
-      kind: "applied", state: vc, rowIndex: res.rowIndex, gridLabel: res.gridLabel,
+      kind: "applied", lang, state: vc, rowIndex: res.rowIndex, gridLabel: res.gridLabel,
       warnings: [...vc.fill.warnings, ...res.warnings], prev,
     });
   };
@@ -471,17 +474,18 @@ export default function FormEntry() {
 
       {/* A CCP reading spoken to the Manufacturing Coach, waiting for the operator to check and save */}
       {voice && (
-        <Card id="voice-banner" className="p-3 space-y-2 border scroll-mt-4" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.6)" }}>
+        <Card id="voice-banner" lang={voice.lang} className="p-3 space-y-2 border scroll-mt-4" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.6)" }}>
           {voice.kind === "applied" && (
             <>
               <div className="flex items-start gap-2">
                 <Mic className="w-4 h-4 text-[#9A6F1E] mt-0.5 shrink-0" />
                 <div className="text-sm text-[#2A1F0E] space-y-0.5">
                   <p>
-                    <strong>Added by voice.</strong> Check row {voice.rowIndex + 1} of {voice.gridLabel} — especially the
-                    lot code — then tap <strong>Save Draft</strong>. Nothing is saved until you do.
+                    <strong>{VOICE_MSG[voice.lang].banner.addedLead}</strong>
+                    {VOICE_MSG[voice.lang].banner.addedBody(voice.rowIndex + 1, voice.gridLabel)}
+                    <strong>Save Draft</strong>{VOICE_MSG[voice.lang].banner.addedTail}
                   </p>
-                  <p className="text-xs text-[#2A1F0E]/80 italic">Heard: "{voice.state.transcript}"</p>
+                  <p className="text-xs text-[#2A1F0E]/80 italic">{VOICE_MSG[voice.lang].banner.heard(voice.state.transcript)}</p>
                 </div>
               </div>
               <WarningList warnings={voice.warnings} />
@@ -497,11 +501,11 @@ export default function FormEntry() {
                       document.getElementById(`form-section-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
                   >
-                    Go to Section 3
+                    {VOICE_MSG[voice.lang].banner.goToSection3}
                   </Button>
                 )}
                 <Button type="button" size="sm" variant="outline" onClick={undoVoice}>
-                  <Undo2 className="w-3.5 h-3.5 mr-1.5" />Undo
+                  <Undo2 className="w-3.5 h-3.5 mr-1.5" />{VOICE_MSG[voice.lang].banner.undo}
                 </Button>
               </div>
             </>
@@ -509,16 +513,14 @@ export default function FormEntry() {
           {voice.kind === "refused" && (
             <div className="flex flex-wrap items-start justify-between gap-2">
               <p className="text-sm text-amber-900">{voice.message}</p>
-              <Button type="button" size="sm" variant="outline" onClick={() => setVoice(null)}>Dismiss</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setVoice(null)}>{VOICE_MSG[voice.lang].banner.dismiss}</Button>
             </div>
           )}
           {voice.kind === "stale" && (
             <div className="space-y-2">
-              <p className="text-sm text-amber-900">
-                This record was saved somewhere else while the spoken row was waiting, so it could not be saved over it.
-              </p>
+              <p className="text-sm text-amber-900">{VOICE_MSG[voice.lang].banner.stale}</p>
               <Button type="button" size="sm" onClick={reloadAndReapply} className="bg-[#C89B3C] hover:bg-[#B8892C]">
-                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />Reload and add the row again
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />{VOICE_MSG[voice.lang].banner.reload}
               </Button>
             </div>
           )}

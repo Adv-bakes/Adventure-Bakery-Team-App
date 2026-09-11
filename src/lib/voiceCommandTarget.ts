@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createResponse, type FormResponse } from "@/lib/formResponses";
 import { getFormSchema } from "@/lib/formSchema";
 import type { VoiceFill } from "@/lib/voiceCommands";
+import type { VoiceLang } from "@/lib/voiceLexicon";
 
 export interface VoiceForm {
   id: string;
@@ -32,6 +33,8 @@ export interface VoiceCommandState {
   responseId: string;
   fill: VoiceFill;
   transcript: string;
+  /** The language the banner is shown in. Absent on a handoff from before Spanish: English. */
+  uiLang?: VoiceLang;
 }
 
 export async function fetchVoiceForm(formNumber: string): Promise<VoiceForm> {
@@ -71,9 +74,9 @@ export function createVoiceEntry(form: VoiceForm, fill: VoiceFill): Promise<Form
   return createResponse(form, { production_date: fill.productionDate, product: fill.entryFields.product });
 }
 
-export function newVoiceState(responseId: string, fill: VoiceFill, transcript: string): VoiceCommandState {
+export function newVoiceState(responseId: string, fill: VoiceFill, transcript: string, uiLang: VoiceLang = "en"): VoiceCommandState {
   const nonce = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  return { v: 1, nonce, responseId, fill, transcript };
+  return { v: 1, nonce, responseId, fill, transcript, uiLang };
 }

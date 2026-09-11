@@ -209,5 +209,181 @@ for (const [line, want] of lots) {
   check(gridIssues.length === 0, "the voice row satisfies the grid's required columns", gridIssues);
 }
 
+// ── 9. English negation ────────────────────────────────────────────────────────
+{
+  const notPassed = seal("Hourly, Vacuum 27 inches, Visual passed, Pull test not passed");
+  check(notPassed.ok && notPassed.fill.row.pull_test === "fail", "'pull test not passed' is a fail", notPassed.ok && notPassed.fill.row);
+  const didNot = seal("Hourly, Vacuum 27 inches, Visual did not pass, Pull test passed");
+  check(didNot.ok && didNot.fill.row.visual === "fail" && didNot.fill.row.pull_test === "pass", "'visual did not pass' is a fail", didNot.ok && didNot.fill.row);
+}
+
+// ── 10. Español ────────────────────────────────────────────────────────────────
+const strip = (r) => JSON.stringify({ ...r, def: r.def?.id });
+{
+  // Every English line above still parses identically when English is asked for explicitly.
+  for (const line of [V.renderExample(V.VOICE_COMMANDS[0]), V.renderExample(V.VOICE_COMMANDS[1]), "what time is lunch",
+    "Create a CCP Baking Record for Product Your Product, Lot L0911-1, Temperature 340 for 30 minutes. Passed."]) {
+    check(strip(V.parseCommand(line, AT)) === strip(V.parseCommand(line, AT, "en")), `default language is English: "${line.slice(0, 40)}"`);
+  }
+  check(V.RECOGNIZER_LANG.es === "es-US" && V.RECOGNIZER_LANG.en === "en-US", "recogniser locales");
+}
+for (const def of V.VOICE_COMMANDS) {
+  const r = V.parseCommand(V.renderExample(def, "es"), AT, "es");
+  check(r.ok && r.def.id === def.id && r.fill.formNumber === def.formNumber && r.lang === "es", `${def.id}: its Spanish card example parses`, r);
+  check(V.renderScript(def, "es").includes("<número de lote>"), `${def.id}: Spanish script shows placeholders`);
+  check(!/rum|cake|bahama/i.test(V.renderScript(def, "es") + V.renderExample(def, "es")), `${def.id}: Spanish card names no product or customer`);
+  const enSlots = def.text.en.script.filter(p => p.slot).map(p => p.slot).join();
+  const esSlots = def.text.es.script.filter(p => p.slot).map(p => p.slot).join();
+  check(enSlots === esSlots, `${def.id}: both cards ask for the same slots in the same order`, [enSlots, esSlots]);
+}
+{
+  const en1 = V.parseCommand(V.renderExample(V.VOICE_COMMANDS[0]), AT);
+  const es1 = V.parseCommand(V.renderExample(V.VOICE_COMMANDS[0], "es"), AT, "es");
+  check(es1.ok && JSON.stringify(es1.fill.row) === JSON.stringify(en1.fill.row), "CCP 1: Spanish and English examples give the same row", [es1.fill?.row, en1.fill.row]);
+  check(es1.ok && es1.fill.entryFields.product === "Su Producto" && es1.fill.productionDate === en1.fill.productionDate, "CCP 1: Spanish product and date");
+  const en2 = V.parseCommand(V.renderExample(V.VOICE_COMMANDS[1]), AT);
+  const es2 = V.parseCommand(V.renderExample(V.VOICE_COMMANDS[1], "es"), AT, "es");
+  check(es2.ok && JSON.stringify(es2.fill.row) === JSON.stringify(en2.fill.row), "CCP 2: Spanish and English examples give the same row", [es2.fill?.row, en2.fill.row]);
+  check(es1.ok && es1.fill.summary.some(s => s.label === "Temperatura del horno") && es1.fill.warnings.some(w => /Compare el código de lote/.test(w.text)), "Spanish preview and warnings are in Spanish");
+  const ccp2 = V.VOICE_COMMANDS.find(d => d.id === "ccp2_seal");
+  check(V.CHECK_OPTIONS.every(o => (ccp2.text.es.checkPhrases[o] ?? []).length > 0), "every FRM-606 check option has Spanish phrases");
+}
+
+const esBake = (tail, head = "Registro de horneado, producto Su Producto, lote L0911-1, ") => V.parseCommand(head + tail, AT, "es");
+const esSeal = (tail, head = "Registro de sellado, producto Su Producto, lote L0911-1, ") => V.parseCommand(head + tail, AT, "es");
+
+const esNums = [
+  ["temperatura 350 grados por 27 minutos. Aprobado.", "350", "27"],
+  ["temperatura 350 ºF por 27 minutos", "350", "27"],
+  ["temperatura 3:50 por 27 minutos", "350", "27"],
+  ["temperatura 3,50 por 27 minutos", "350", "27"],
+  ["temperatura trescientos cincuenta grados por veintisiete minutos", "350", "27"],
+  ["temperatura trescientos cincuenta y cinco por veinte y siete minutos", "355", "27"],
+  ["temperatura tres cincuenta por veintisiete minutos", "350", "27"],
+  ["temperatura tres cincuenta y cinco por treinta minutos", "355", "30"],
+  ["temperatura 350 por 27,5 minutos", "350", "27.5"],
+  ["temperatura 350 por veintisiete y medio minutos", "350", "27.5"],
+  ["temperatura 350 por veintisiete minutos y medio", "350", "27.5"],
+  ["temperatura 350 por veintisiete punto cinco min", "350", "27.5"],
+  ["temperatura 350 por veintisiete coma cinco minutos", "350", "27.5"],
+  ["temperatura 350 durante 27 minutos", "350", "27"],
+  ["temperatura 350 x 27 minutos", "350", "27"],
+  ["temperatura 350 grados 27 minutos", "350", "27"],
+  ["temperatura del horno trescientos sesenta por treinta minutos", "360", "30"],
+];
+for (const [tail, t, m] of esNums) {
+  const r = esBake(tail);
+  check(r.ok && r.fill.row.oven_temp === t && r.fill.row.bake_time === m, `números: "${tail}"`, r.ok ? r.fill.row : r);
+}
+{
+  const cold = esBake("temperatura 35 por 27 minutos");
+  check(!cold.ok && cold.reason === "bad_value" && /fuera de/.test(cold.message), "35 grados is out of range, in Spanish", cold);
+}
+
+const esLots = [
+  ["registro de horneado, producto su producto, lote ele cero nueve uno uno guion uno, temperatura 350 por 27 minutos", "L0911-1"],
+  ["registro de horneado producto su producto lote el cero nueve once guión uno temperatura 350 por 27 minutos", "L0911-1"],
+  ["registro de horneado producto su producto lote L cero novecientos once raya uno temperatura 350 por 27 minutos", "L0911-1"],
+  ["registro de horneado producto su producto código de lote be doble siete temperatura 350 por 27 minutos", "B77"],
+  ["registro de horneado producto su producto lote bravo doble siete temperatura 350 por 27 minutos", "B77"],
+  ["registro de horneado producto su producto lote doble ve cero uno temperatura 350 por 27 minutos", "W01"],
+  ["registro de horneado producto su producto lote equis i griega zeta guion 1 temperatura 350 por 27 minutos", "XYZ-1"],
+];
+for (const [line, want] of esLots) {
+  const r = V.parseCommand(line, AT, "es");
+  check(r.ok && r.fill.row.lot_code === want, `lote: "${line.slice(45)}"`, r.ok ? r.fill.row.lot_code : r);
+}
+{
+  const numero = V.parseCommand("registro de horneado producto pan dulce número de lote 4 5 6 temperatura 350 por 27 minutos", AT, "es");
+  check(numero.ok && numero.fill.row.lot_code === "456" && numero.fill.entryFields.product === "Pan Dulce", "'número de lote' does not leak into the product", numero.ok ? [numero.fill.entryFields, numero.fill.row.lot_code] : numero);
+  const loteProduct = V.parseCommand("Registro de horneado, producto Pan Lote Grande, lote 77, temperatura 350 por 27 minutos", AT, "es");
+  check(loteProduct.ok && loteProduct.fill.entryFields.product === "Pan Lote Grande" && loteProduct.fill.row.lot_code === "77", "product name containing 'lote'", loteProduct.ok ? [loteProduct.fill.entryFields, loteProduct.fill.row.lot_code] : loteProduct);
+  const pina = V.parseCommand("registro de horneado, producto pan de piña, lote 5, temperatura 350 por 27 minutos", AT, "es");
+  check(pina.ok && pina.fill.entryFields.product === "Pan de Piña", "Spanish title case keeps 'de' and the ñ", pina.ok && pina.fill.entryFields);
+}
+{
+  check(esBake("temperatura 350 por 27 minutos. Pasó.").fill?.row.within_limits === "pass", "'Pasó' is a pass");
+  check(esBake("temperatura 350 por 27 minutos. Aprobada.").fill?.row.within_limits === "pass", "'Aprobada' is a pass");
+  const rech = esBake("temperatura 350 por 27 minutos. Rechazado.");
+  check(rech.ok && rech.fill.row.within_limits === "fail" && rech.fill.warnings.some(w => w.level === "fail" && /Usted dijo Rechazado/.test(w.text)), "'Rechazado' within limits is a fail with a note", rech.ok && rech.fill.warnings);
+  const noPaso = esBake("temperatura 350 por 27 minutos. No pasó.");
+  check(noPaso.ok && noPaso.fill.row.within_limits === "fail", "'No pasó' is a fail, not a pass", noPaso.ok && noPaso.fill.row);
+  const noAprob = esBake("temperatura 350 por 27 minutos, no aprobado");
+  check(noAprob.ok && noAprob.fill.row.within_limits === "fail", "'no aprobado' is a fail");
+  const low = esBake("temperatura 349 por 27 minutos. Aprobado.");
+  check(low.ok && low.fill.row.within_limits === "fail" && low.fill.warnings.some(w => w.section === "deviation" && /Usted dijo Aprobado/.test(w.text)), "349 grados spoken Aprobado is a fail, in Spanish", low.ok && low.fill.warnings);
+  const visNo = esSeal("cada hora, vacío 27 pulgadas, visual no pasó, prueba de jalón aprobada");
+  check(visNo.ok && visNo.fill.row.visual === "fail" && visNo.fill.row.pull_test === "pass" && visNo.fill.warnings.some(w => w.section === "deviation" && /inspección visual falló/.test(w.text)), "'visual no pasó' fails visual only", visNo.ok ? [visNo.fill.row, visNo.fill.warnings] : visNo);
+  const tiron = esSeal("cada hora, vacío 27 pulgadas, visual aprobado, prueba de tirón no está bien");
+  check(tiron.ok && tiron.fill.row.pull_test === "fail", "'prueba de tirón no está bien' is a fail", tiron.ok && tiron.fill.row);
+  const bien = esSeal("cada hora, vacío 27 pulgadas, visual bien, prueba de jalón correcta");
+  check(bien.ok && bien.fill.row.visual === "pass" && bien.fill.row.pull_test === "pass", "'bien' / 'correcta' pass");
+  const pv = esSeal("cada hora, vacío 27 pulgadas, prueba visual aprobada, prueba de jalón aprobada");
+  check(pv.ok && pv.fill.row.visual === "pass" && pv.fill.row.pull_test === "pass", "'prueba visual' and 'prueba de jalón' are told apart", pv.ok ? pv.fill.row : pv);
+  const borrowed = esSeal("cada hora, vacío 27 pulgadas, visual, prueba de jalón aprobada");
+  check(!borrowed.ok && borrowed.missing.includes("visual"), "visual never borrows the pull test's result", borrowed);
+}
+{
+  const checks = [
+    ["arranque", "Set-up"], ["puesta en marcha", "Set-up"], ["por hora", "Hourly"], ["después de un ajuste", "After a change or adjustment"],
+    ["despues del cambio", "After a change or adjustment"], ["fin de la corrida", "End of run"], ["final de producción", "End of run"],
+  ];
+  for (const [phrase, want] of checks) {
+    const r = esSeal(`${phrase}, vacío 27 pulgadas, visual aprobado, prueba de jalón aprobada`);
+    check(r.ok && r.fill.row.check === want, `revisión: "${phrase}"`, r.ok ? r.fill.row : r);
+  }
+  const none = esSeal("vacío 27 pulgadas, visual aprobado, prueba de jalón aprobada");
+  check(none.ok && !("check" in none.fill.row) && none.fill.warnings.some(w => /tipo de revisión/.test(w.text)), "no check type: Spanish warning", none.ok && none.fill.warnings);
+}
+{
+  const accented = esSeal("cada hora, vacío 27 pulgadas, visual aprobado, prueba de jalón aprobada");
+  const plain = esSeal("cada hora, vacio 27 pulgadas, visual aprobado, prueba de jalon aprobada");
+  check(plain.ok && JSON.stringify(plain.fill.row) === JSON.stringify(accented.fill.row), "typing without accents gives the same row");
+  const plainLot = V.parseCommand("registro de horneado producto su producto numero de lote ele cero uno guion dos temperatura 350 por 27 minutos", AT, "es");
+  check(plainLot.ok && plainLot.fill.row.lot_code === "L01-2", "'numero de lote' and 'guion' without accents", plainLot.ok ? plainLot.fill.row : plainLot);
+  const alVacio = V.parseCommand("Registro de sellado al vacío, producto Su Producto, lote 5, cada hora, vacío 27 pulgadas, visual aprobado, prueba de jalón aprobada", AT, "es");
+  check(alVacio.ok && alVacio.fill.entryFields.product === "Su Producto" && alVacio.fill.row.vacuum_reading === "27", "'sellado al vacío' does not hijack the vacuum reading", alVacio.ok ? [alVacio.fill.entryFields, alVacio.fill.row] : alVacio);
+  const mercurio = esSeal("cada hora, vacío 27,5 pulgadas de mercurio, visual aprobado, prueba de jalón aprobada");
+  check(mercurio.ok && mercurio.fill.row.vacuum_reading === "27.5", "'27,5 pulgadas de mercurio'", mercurio.ok ? mercurio.fill.row : mercurio);
+  const pcc = V.parseCommand("Crear registro PCC de horneado para producto Pan, lote 5, temperatura 350 grados por 27 minutos", AT, "es");
+  check(pcc.ok && pcc.def.id === "ccp1_bake" && pcc.fill.entryFields.product === "Pan", "'Crear registro PCC de horneado' still works", pcc.ok ? pcc.fill.entryFields : pcc);
+  const peCeCe = V.parseCommand("pe ce ce uno, producto Pan, lote 5, temperatura 350 por 27 minutos", AT, "es");
+  check(peCeCe.ok && peCeCe.def.id === "ccp1_bake", "'pe ce ce uno' is CCP 1", peCeCe);
+  const ceCePeDos = V.parseCommand("ce ce pe dos, producto Pan, lote 5, cada hora, vacío 27 pulgadas, visual aprobado, prueba de jalón aprobada", AT, "es");
+  check(ceCePeDos.ok && ceCePeDos.def.id === "ccp2_seal", "'ce ce pe dos' is CCP 2", ceCePeDos);
+  const mixed = esBake("temperatura 350 grados for 27 minutes, passed");
+  check(mixed.ok && mixed.fill.row.bake_time === "27" && mixed.fill.row.within_limits === "pass", "a Spanish line with English carry-over words", mixed.ok ? mixed.fill.row : mixed);
+}
+{
+  const enExample = V.renderExample(V.VOICE_COMMANDS[0]);
+  const esExample = V.renderExample(V.VOICE_COMMANDS[0], "es");
+  const wrong = V.parseCommand(enExample, AT, "es");
+  check(!wrong.ok && wrong.reason === "no_command", "the English card is not parsed by the Spanish lexicon (they are not merged)", wrong);
+  const anyEs = V.parseAnyLanguage([enExample], AT, "es");
+  check(anyEs.ok && anyEs.lang === "en", "parseAnyLanguage recovers an English line with Spanish switched on", anyEs);
+  const anyEn = V.parseAnyLanguage([esExample], AT, "en");
+  check(anyEn.ok && anyEn.lang === "es", "parseAnyLanguage recovers a Spanish line with English switched on", anyEn);
+}
+{
+  const noLot = V.parseCommand("Registro de horneado, producto Su Producto, temperatura 350 por 27 minutos", AT, "es");
+  check(!noLot.ok && noLot.missing.join() === "lot" && /número de lote/.test(noLot.message), "Spanish missing-lot message", noLot);
+  const three = V.parseCommand("Registro de horneado, producto Su Producto", AT, "es");
+  check(!three.ok && three.missing.length === 3 && / ni /.test(three.message), "Spanish lists several missing pieces with 'ni'", three);
+  const none = V.parseCommand("qué hora es", AT, "es");
+  check(!none.ok && none.reason === "no_command" && /Registro de horneado/.test(none.message), "Spanish no-command message", none);
+  const englishUi = V.parseCommand("Registro de horneado, producto Su Producto, temperatura 350 por 27 minutos", AT, "es", "en");
+  check(!englishUi.ok && /Lot number/.test(englishUi.message), "messages follow uiLang, not the spoken language", englishUi);
+}
+{
+  const fillEs = V.parseCommand(V.renderExample(V.VOICE_COMMANDS[0], "es"), AT, "es").fill;
+  const base = { ...F.emptyValues(S507, { userInitials: "CR" }), production_date: "2026-09-10", product: "Other Loaf" };
+  const a = V.applyVoiceFill(S507, base, fillEs, { userInitials: "TP" }, "es");
+  check(a.ok && a.warnings.some(w => /Este registro es para "Other Loaf"/.test(w.text)) && a.warnings.some(w => /no de hoy/.test(w.text)), "Spanish applyVoiceFill warnings", a.ok && a.warnings);
+  const moved = JSON.parse(JSON.stringify(S507).replace("At least 350°F", "At least 360°F"));
+  const b = V.applyVoiceFill(moved, { ...base, production_date: "2026-09-11", product: "" }, fillEs, { userInitials: "TP" }, "es");
+  check(b.ok && b.values.oven_loads[0].within_limits === "" && b.warnings.some(w => /límites críticos impresos/.test(w.text)), "Spanish limits-changed warning", b.ok && b.warnings);
+  check(V.sameProduct("Piña Colada", "pina colada") && V.sameProduct("YOUR PRODUCTS", "Your Product") && !V.sameProduct("Pan", "Pastel"), "sameProduct folds accents");
+}
+
 console.log(failed ? `\n${failed} FAILED, ${passed} passed` : `\nALL ${passed} PASS`);
 process.exit(failed ? 1 : 0);
