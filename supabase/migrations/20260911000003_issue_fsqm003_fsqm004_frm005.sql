@@ -6,11 +6,18 @@
 -- Issuing any one without the others would put an in-force document in the position of pointing at
 -- a draft - the state FSQM-017 and FSQM-036 have been in with respect to FSQM-004 since they issued.
 --
--- WHY GJM, AND NOT THE SQF PRACTITIONER. FSQM-004 gives document approval to the SQF Practitioner.
--- These three are the exception, because each records that Senior Site Management designates the
--- SQF Practitioner, and an appointment is not approved by the appointee. That was item 1 of
--- FSQM-004's OPEN BEFORE ISSUE block, and it is settled in its revision history here. Documents
--- issued after this one are the SQF Practitioner's to approve.
+-- WHO APPROVES, AND A REVERSAL AT ISSUE. The draft of FSQM-004 gave the approval of controlled
+-- documents to the SQF Practitioner, from that document forward. On 2026-09-11, at issue, the owner
+-- kept approval with Senior Site Management instead - it is who has approved 96 of the active
+-- documents, and the Code only asks that the approver be authorised and that the site say who. So the
+-- two job descriptions carrying it are amended here: Senior Site Management approves controlled
+-- documents and their revisions, not delegably; the SQF Practitioner prepares and reviews them. Each
+-- line is replaced whole and guarded on its exact prior text; every other line is fingerprinted.
+--
+-- KNOWN AND NOT FIXED HERE: SOP-2.2.3 Document Control, which is active, still says "The Quality
+-- Leader is responsible for preparing, approving, and controlling all documents and records", and
+-- Quality Leader is the site's shorthand for the SQF Practitioner. It contradicts FSQM-004 as issued
+-- and needs its own revision; an active document is not quietly edited from another's issue migration.
 --
 -- FSQM-003's EFFECTIVE DATE CHANGES FROM 2025-10-28 TO 2026-09-11. 2025-10-28 and the GJM approval
 -- were carried over from the paper original when it was imported on 2026-06-08, and the row was never
@@ -22,16 +29,14 @@
 -- WHAT THIS DOES NOT CLOSE. D-02 stays open. 2.1.1.4 is met when the first FRM-005 entry is signed
 -- by Senior Site Management and submitted; 2.1.1.5 when both holders' HACCP course certificates are
 -- on FRM-952. Neither holder has completed one. FSQM-004's revision history now says so in terms.
---
--- Content is not edited, apart from FSQM-004's revision history: every other key of all three
--- documents is fingerprinted before and compared after.
 
 begin;
 
 create temporary table _issue_before on commit drop as
   select sop_number,
-         md5(content::text)                              as whole,
-         md5((content - 'revision_history')::text)       as body
+         md5(content::text)                                              as whole,
+         md5((content - 'revision_history' - 'procedure')::text)         as body,
+         md5((((content->'procedure') - 11) - 10)::text)                  as proc_rest
     from public.sop_documents
    where sop_number in ('FSQM-003', 'FSQM-004', 'FRM-005');
 
@@ -58,6 +63,10 @@ begin
         and content->>'statement' not like '%Managing Partner%')                      as fsqm003_reworded,
     (select jsonb_array_length(content->'procedure') from public.sop_documents
       where sop_number = 'FSQM-004')                                                  as lines,
+    (select content->'procedure'->>10 from public.sop_documents
+      where sop_number = 'FSQM-004')                                                  as l10,
+    (select content->'procedure'->>11 from public.sop_documents
+      where sop_number = 'FSQM-004')                                                  as l11,
     (select content->>'revision_history' from public.sop_documents
       where sop_number = 'FSQM-004')                                                  as rh,
     (select count(*) from public.sop_documents d,
@@ -91,6 +100,13 @@ begin
   if r.lines <> 32 then
     raise exception 'FSQM-004 is % procedure lines, expected 32.', r.lines;
   end if;
+  -- The two job descriptions are replaced whole, so they must be exactly what was reviewed.
+  if r.l10 is distinct from $ln$• Senior Site Management — owns the food safety policy and the resources behind it; designates the primary and substitute SQF Practitioner; ensures the site is appropriately staffed; is notified where an inspection failure stops production or shipment. Records: the policy statement and the management review. Covered by the SQF Practitioner for day-to-day decisions only — the power to designate is not delegable.$ln$ then
+    raise exception 'FSQM-004 procedure[10] is not the reviewed Senior Site Management line.';
+  end if;
+  if r.l11 is distinct from $ln$• SQF Practitioner — develops, implements, reviews and maintains the SQF System; approves controlled documents and their revisions; decides finished product release under FSQM-020 and signs the pre-operational release of the line; owns corrective and preventive action under FSQM-009; sets the inspection criteria and reviews the inspection records under FSQM-014; confirms at least annually that the documented programmes are what the floor performs. Records: FRM-701, FRM-007, FRM-903 and document approvals. Covered by the substitute SQF Practitioner.$ln$ then
+    raise exception 'FSQM-004 procedure[11] is not the reviewed SQF Practitioner line.';
+  end if;
   if r.fields <> 28 then
     raise exception 'FRM-005 has % fields, expected 28; apply 20260911000001 first.', r.fields;
   end if;
@@ -116,6 +132,14 @@ begin
   end if;
 end $$;
 
+-- FSQM-004: approval of controlled documents moves from the SQF Practitioner's job description to
+-- Senior Site Management's.
+update public.sop_documents
+   set content = jsonb_set(
+                   jsonb_set(content, '{procedure,10}', to_jsonb($ln$• Senior Site Management — owns the food safety policy and the resources behind it; designates the primary and substitute SQF Practitioner; approves controlled documents and their revisions; ensures the site is appropriately staffed; is notified where an inspection failure stops production or shipment. Records: the policy statement, the management review and document approvals. Covered by the SQF Practitioner for day-to-day decisions only — the power to designate and the approval of controlled documents are not delegable.$ln$::text)),
+                   '{procedure,11}', to_jsonb($ln$• SQF Practitioner — develops, implements, reviews and maintains the SQF System; prepares and reviews controlled documents and their revisions and submits them to Senior Site Management for approval; decides finished product release under FSQM-020 and signs the pre-operational release of the line; owns corrective and preventive action under FSQM-009; sets the inspection criteria and reviews the inspection records under FSQM-014; confirms at least annually that the documented programmes are what the floor performs. Records: FRM-701, FRM-007 and FRM-903. Covered by the substitute SQF Practitioner.$ln$::text))
+ where sop_number = 'FSQM-004';
+
 -- FSQM-004: drop the open block (its three items are restated as settled), keep the amendments,
 -- append the settled block last so the history reads in date order.
 update public.sop_documents
@@ -129,7 +153,7 @@ update public.sop_documents
                   position('AMENDED 2026-09-10, BEFORE ISSUE' in content->>'revision_history'))
         || chr(10) || chr(10)
         || $st$SETTLED AT ISSUE — 2026-09-11:$st$
-        || chr(10) || chr(10) || $st$1. WHO APPROVES. Senior Site Management, GJM. This document gives the approval of controlled documents to the SQF Practitioner, and is itself the exception to that rule: it records that Senior Site Management designates the SQF Practitioner, and a document that appoints somebody is not approved by the appointee. FSQM-003 and FRM-005, which carry the same designation, were issued with it on the same approval for the same reason. From this date other controlled documents and their revisions are approved by the SQF Practitioner, as that position's job description states.$st$
+        || chr(10) || chr(10) || $st$1. WHO APPROVES CONTROLLED DOCUMENTS. Senior Site Management: this document, and every controlled document and revision after it. The draft gave that approval to the SQF Practitioner, as a change from the arrangement under which every document to date had been approved. The change was reversed at issue, and the two job descriptions in the procedure were amended to match: Senior Site Management approves controlled documents and their revisions, and that approval is not delegable; the SQF Practitioner prepares and reviews them and submits them for approval. The Code requires documents to be approved by someone authorised to approve them and leaves it to the site to say who that is. The arrangement also keeps the appointee from approving their own appointment, which this document, FSQM-003 and FRM-005 each record.$st$
         || chr(10) || chr(10) || $st$2. THE COVER FOR THE SQF PRACTITIONER IS STATED BUT NOT YET IN FORCE. FRM-005 is issued alongside this document, but no designation has yet been signed on it, and neither holder has yet completed the HACCP training course that 2.1.1.5 requires specifically. Internal HACCP awareness training does not satisfy it, and a practitioner course satisfies it only if it includes a recognised HACCP module. The procedure already says so where it names the cover. The designation is in force when Senior Site Management signs and submits the first FRM-005 entry; the holders' qualification is met when both HACCP certificates are filed on FRM-952. This is an open action, not a standing limitation.$st$
         || chr(10) || chr(10) || $st$3. THE CONTRACT SERVICES REGISTER DOES NOT YET EXIST, AND THAT DID NOT HOLD UP ISSUE. This document names the register rather than any provider, so the boundary it records between simple maintenance performed in-house and chronic or specialist work that is contracted is in force from this date. The reference is completed when the register is issued; until then no contracted provider is listed under document control.$st$
         || chr(10) || chr(10) || $st$WHAT THIS CLOSES. 2.1.1.3 is in force from this date: the reporting structure, the job descriptions of key personnel, and the cover for each key position, with the exceptions set out in 2 and 3 above. FSQM-017 and FSQM-036, both already active, cite this document; until this date they cited a draft.$st$))
@@ -154,7 +178,17 @@ begin
       where d.sop_number in ('FSQM-003', 'FRM-005') and md5(d.content::text) <> b.whole) as moved_whole,
     (select count(*) from public.sop_documents d join _issue_before b using (sop_number)
       where d.sop_number = 'FSQM-004'
-        and md5((d.content - 'revision_history')::text) <> b.body)                    as moved_body,
+        and (md5((d.content - 'revision_history' - 'procedure')::text) <> b.body
+             or md5((((d.content->'procedure') - 11) - 10)::text) <> b.proc_rest))  as moved_body,
+    (select jsonb_array_length(content->'procedure') from public.sop_documents
+      where sop_number = 'FSQM-004')                                                  as lines,
+    (select content->'procedure'->>10 from public.sop_documents
+      where sop_number = 'FSQM-004')                                                  as l10,
+    (select content->'procedure'->>11 from public.sop_documents
+      where sop_number = 'FSQM-004')                                                  as l11,
+    (select count(*) from public.sop_documents d, jsonb_array_elements_text(d.content->'procedure') p
+      where d.sop_number = 'FSQM-004'
+        and p like '%approves controlled documents%')                                 as approver_lines,
     (select content->>'revision_history' from public.sop_documents
       where sop_number = 'FSQM-004')                                                  as rh,
     (select count(*) from public.sop_documents
@@ -169,13 +203,27 @@ begin
     raise exception 'Expected 3 documents issued; found %.', r.issued;
   end if;
   if r.moved_whole <> 0 or r.moved_body <> 0 then
-    raise exception 'Issuing changed document content (FSQM-003/FRM-005=%, FSQM-004 body=%).', r.moved_whole, r.moved_body;
+    raise exception 'Issuing changed content it should not have (FSQM-003/FRM-005=%, FSQM-004=%).', r.moved_whole, r.moved_body;
+  end if;
+  if r.lines <> 32 then
+    raise exception 'FSQM-004 is % procedure lines after issue, expected 32.', r.lines;
+  end if;
+  if r.l10 is distinct from $ln$• Senior Site Management — owns the food safety policy and the resources behind it; designates the primary and substitute SQF Practitioner; approves controlled documents and their revisions; ensures the site is appropriately staffed; is notified where an inspection failure stops production or shipment. Records: the policy statement, the management review and document approvals. Covered by the SQF Practitioner for day-to-day decisions only — the power to designate and the approval of controlled documents are not delegable.$ln$ or r.l11 is distinct from $ln$• SQF Practitioner — develops, implements, reviews and maintains the SQF System; prepares and reviews controlled documents and their revisions and submits them to Senior Site Management for approval; decides finished product release under FSQM-020 and signs the pre-operational release of the line; owns corrective and preventive action under FSQM-009; sets the inspection criteria and reviews the inspection records under FSQM-014; confirms at least annually that the documented programmes are what the floor performs. Records: FRM-701, FRM-007 and FRM-903. Covered by the substitute SQF Practitioner.$ln$ then
+    raise exception 'FSQM-004 job descriptions were not replaced as reviewed.';
+  end if;
+  -- Exactly one position approves controlled documents, and it is Senior Site Management.
+  if r.approver_lines <> 1 or r.l10 not like '%approves controlled documents%' then
+    raise exception 'FSQM-004 names % approver line(s); expected Senior Site Management alone.', r.approver_lines;
   end if;
   if r.rh not like '%ISSUED 2026-09-11, approved GJM (Senior Site Management), effective 2026-09-11.%' or r.rh like '%Not approved, not in force%' then
     raise exception 'FSQM-004 issue stamp is wrong.';
   end if;
   if position('OPEN BEFORE ISSUE' in r.rh) > 0 then
     raise exception 'FSQM-004 still carries the open block.';
+  end if;
+  -- The cut removes the draft's "the SQF Practitioner approves controlled documents"; nothing may keep it.
+  if position('SQF Practitioner approves controlled documents' in r.rh) > 0 then
+    raise exception 'FSQM-004 revision history still gives approval to the SQF Practitioner.';
   end if;
   -- What came before and after the open block must both have survived the cut.
   if r.rh not like 'Rev New %' or r.rh not like '%WHY IT EXISTS.%'
@@ -186,7 +234,7 @@ begin
   end if;
   -- The last amendment paragraph ends "...unmet either way."; the settled block must follow it directly.
   if r.rh not like ('%is unmet either way.' || chr(10) || chr(10) || 'SETTLED AT ISSUE — 2026-09-11:%')
-     or r.rh not like '%1. WHO APPROVES.%'
+     or r.rh not like '%1. WHO APPROVES CONTROLLED DOCUMENTS. Senior Site Management%'
      or r.rh not like '%2. THE COVER FOR THE SQF PRACTITIONER%'
      or r.rh not like '%3. THE CONTRACT SERVICES REGISTER%'
      or r.rh not like '%WHAT THIS CLOSES. 2.1.1.3 is in force%cited a draft.' then
