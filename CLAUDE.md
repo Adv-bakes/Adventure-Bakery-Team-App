@@ -876,3 +876,23 @@ check that did not happen.
   overwrites that row's creation-time `time_out` with the time the line was spoken.
 - The orb sits above FormEntry's sticky Save bar via `useBottomBarClearance` (`--tp-bottom-bar-h`) and
   `CoachChat`'s `avoidBottomBar`; brand-portal layouts pass no props and are unchanged.
+- **Spanish (optional, per operator).** The panel has an **English | Español** switch that starts at
+  `profiles.preferred_language` (read in `TeamLayout`). It sets the recogniser (`RECOGNIZER_LANG`, es-US)
+  and the language of the panel, preview, warnings and FormEntry banner (`state.voiceCommand.uiLang`).
+  **The record never changes language** — "pass"/"fail", FRM-606's English check options, numbers as
+  strings — and a test asserts the Spanish and English card examples produce the identical row.
+  - Word lists live in **`lib/voiceLexicon.ts`, one lexicon per language, never merged**: `es`/`el`/`en`
+    are letters in an English lot code and words in Spanish, `once` is 11, `de` is both D and "of", and
+    English "for" is heard as "4". A line is parsed wholly in one language; `parseAnyLanguage` retries the
+    other language only on `no_command` (someone reading the other card).
+  - Every sentence a person sees is in **`lib/voiceMessages.ts`** (`VOICE_MSG[lang]`); English entries are
+    the exact shipped strings. Each command's card text, triggers, anchors and check phrases are under
+    `text.en` / `text.es` (`checkPhrases` is typed `Record<CheckOption, …>` so a new FRM-606 option cannot
+    be left without Spanish). Top-level `title`/`script`/`tips` mirror `text.en`.
+  - Pitfalls that were real: JavaScript `\b` is ASCII-only, so Spanish rewrites use Unicode lookarounds
+    (`/\bpasó\b/` never matches); "sellado al vacío" must collapse to "sellado" or "vacío" hijacks the
+    vacuum anchor and swallows product and lot; **negation flips a pass word to fail** in both languages
+    ("no pasó", "pull test not passed") — a dropped "no" is why the Spanish card prints *Rechazado*, not
+    *No aprobado*. Accents are folded for matching (ñ kept) but product names keep what was said.
+  - The print page takes `?lang=en|es|both` (default both), one language per card. The Spanish card wording
+    is a draft for a Spanish-speaking team member to check before it goes on the wall.
