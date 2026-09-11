@@ -1,0 +1,285 @@
+{
+  "settings": {
+    "deletable": false,
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": false,
+    "requireVerification": true,
+    "instanceTitleTemplate": "{effective_date} — {primary_name} / {substitute_name}"
+  },
+  "sections": [
+    {
+      "id": "designation",
+      "title": "1. Designation",
+      "fields": [
+        {
+          "id": "how_this_works",
+          "type": "info",
+          "label": "How this record works",
+          "text": "ONE ENTRY IS ONE DESIGNATION. Make a new entry whenever the primary or the substitute changes, and at least once a year to confirm the designation in force. Earlier entries are never edited: they are the history of who held the authority, and when.\n\nTHIS RECORD NAMES PEOPLE SO THE DOCUMENTS DO NOT HAVE TO. FSQM-004 and every other controlled document name the position, not the person. The individuals holding it are recorded here, so a change of personnel is a new entry rather than a document revision.\n\nWHO SIGNS WHAT. Each acknowledgement is signed by the person named, in their own login. Only senior site management can sign the designation itself, and the app enforces that. A staff login can edit only an entry it started, so the person designated primary should start this entry and sign first; senior site management then completes and submits it.\n\nSENIOR SITE MANAGEMENT MAY ALSO BE THE SUBSTITUTE. 2.1.1.4 makes the designation senior site management's act and does not stop it naming itself, and in a small site it often has to. Where that is the case the same person signs both, and the record should show it as it is."
+        },
+        {
+          "id": "effective_date",
+          "type": "date",
+          "width": "half",
+          "required": true,
+          "defaultToday": true,
+          "showInList": true,
+          "label": "Effective date"
+        },
+        {
+          "id": "reason",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "Reason",
+          "options": [
+            "First designation",
+            "Change of primary SQF Practitioner",
+            "Change of substitute SQF Practitioner",
+            "Annual confirmation - no change"
+          ]
+        },
+        {
+          "id": "primary_name",
+          "type": "text",
+          "width": "half",
+          "required": true,
+          "showInList": true,
+          "label": "Primary SQF Practitioner"
+        },
+        {
+          "id": "primary_position",
+          "type": "text",
+          "width": "half",
+          "required": true,
+          "label": "Position held",
+          "help": "The post in FSQM-004 this person holds."
+        },
+        {
+          "id": "substitute_name",
+          "type": "text",
+          "width": "half",
+          "required": true,
+          "showInList": true,
+          "label": "Substitute SQF Practitioner"
+        },
+        {
+          "id": "substitute_position",
+          "type": "text",
+          "width": "half",
+          "required": true,
+          "label": "Position held",
+          "help": "The post in FSQM-004 this person holds."
+        }
+      ]
+    },
+    {
+      "id": "authority",
+      "title": "2. Responsibility and authority (2.1.1.4)",
+      "fields": [
+        {
+          "id": "authority_info",
+          "type": "info",
+          "label": "What is designated",
+          "text": "The primary and the substitute SQF Practitioner are given the responsibility and authority to:\ni. oversee how the SQF System is developed, put in place, reviewed and kept up;\nii. act to protect the integrity of the SQF System; and\niii. make sure the people who need it are told what keeps the SQF System working.\n\nThe substitute holds the same responsibility and authority whenever the primary is absent. The duties of the post are set out in FSQM-004. This record confers the authority; it does not restate the job."
+        },
+        {
+          "id": "informed",
+          "type": "pass_fail",
+          "width": "half",
+          "required": true,
+          "label": "Both designees have been told of this responsibility and authority"
+        }
+      ]
+    },
+    {
+      "id": "primary_qual",
+      "title": "3. Primary SQF Practitioner - qualification (2.1.1.5)",
+      "fields": [
+        {
+          "id": "p_info",
+          "type": "info",
+          "label": "How to answer",
+          "text": "Answer each point for the person named as primary. PENDING IS AN HONEST ANSWER and is expected while training is outstanding - it is not a failure, and writing Met to avoid it would be.\n\nPoint iii means a recognised external HACCP course with a certificate. File the certificate on FRM-952 Training Competency Verification Record and note the reference below. The internal TRN-005 training module is awareness training for the floor and is not a HACCP course."
+        },
+        {
+          "id": "p_employed",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "i. Employed by the site",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "p_position",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "ii. Holds a position of responsibility for managing the SQF System",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "p_haccp",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "iii. Has completed a HACCP training course",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "p_competent",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "iv. Competent to implement and maintain HACCP-based food safety plans",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "p_code",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "v. Understands the SQF Food Safety Code: Food Manufacturing as it applies here",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "p_haccp_detail",
+          "type": "text",
+          "label": "HACCP course",
+          "help": "Course name, provider, date completed and FRM-952 reference - or, while pending, when it is booked."
+        },
+        {
+          "id": "p_notes",
+          "type": "textarea",
+          "label": "Evidence for points iv and v, and anything pending",
+          "help": "What shows the competency: experience, the course, how understanding of the Code was confirmed."
+        }
+      ]
+    },
+    {
+      "id": "substitute_qual",
+      "title": "4. Substitute SQF Practitioner - qualification (2.1.1.5)",
+      "fields": [
+        {
+          "id": "s_info",
+          "type": "info",
+          "label": "How to answer",
+          "text": "As Section 3, for the person named as substitute. The substitute must meet 2.1.1.5 in full, exactly as the primary does. It is the same qualification held in reserve, not a lesser one."
+        },
+        {
+          "id": "s_employed",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "i. Employed by the site",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "s_position",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "ii. Holds a position of responsibility for managing the SQF System",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "s_haccp",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "iii. Has completed a HACCP training course",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "s_competent",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "iv. Competent to implement and maintain HACCP-based food safety plans",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "s_code",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "v. Understands the SQF Food Safety Code: Food Manufacturing as it applies here",
+          "options": [
+            "Met",
+            "Pending"
+          ]
+        },
+        {
+          "id": "s_haccp_detail",
+          "type": "text",
+          "label": "HACCP course",
+          "help": "Course name, provider, date completed and FRM-952 reference - or, while pending, when it is booked."
+        },
+        {
+          "id": "s_notes",
+          "type": "textarea",
+          "label": "Evidence for points iv and v, and anything pending",
+          "help": "What shows the competency: experience, the course, how understanding of the Code was confirmed."
+        }
+      ]
+    },
+    {
+      "id": "signatures",
+      "title": "5. Signatures",
+      "fields": [
+        {
+          "id": "primary_ack",
+          "type": "signature",
+          "role": "filler",
+          "width": "half",
+          "label": "Primary SQF Practitioner - acknowledgement",
+          "statement": "I accept the designation above and the responsibility and authority it carries."
+        },
+        {
+          "id": "substitute_ack",
+          "type": "signature",
+          "role": "filler",
+          "width": "half",
+          "label": "Substitute SQF Practitioner - acknowledgement",
+          "statement": "I accept the designation above and the responsibility and authority it carries."
+        },
+        {
+          "id": "designated_by",
+          "type": "signature",
+          "role": "verifier",
+          "width": "half",
+          "required": true,
+          "label": "Designated by Senior Site Management",
+          "statement": "As senior site management, I designate the primary and substitute SQF Practitioner named above, with the responsibility and authority in Section 2."
+        }
+      ]
+    }
+  ]
+}
