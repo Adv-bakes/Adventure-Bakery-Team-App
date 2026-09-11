@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "settings": {
+    "deletable": false,
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "requireVerification": true,
+    "instanceTitleTemplate": "{production_date} — CCP 2 Vacuum Sealing"
+  },
+  "sections": [
+    {
+      "id": "day",
+      "title": "1. Production day",
+      "fields": [
+        {
+          "id": "how_this_works",
+          "type": "info",
+          "label": "Before you start",
+          "text": "ONE RECORD PER PRODUCTION DAY, for the product covered by the site's HACCP plan. Add a row at set-up, at least every hour through the run, after any change or adjustment to the sealer, and at the end of the run. Write each row when the check is done.\n\nCCP 2 PROTECTS THE PRODUCT AFTER THE BAKE. A failed seal lets in air and microbial contamination and ends the product's shelf stability. The critical limits below are the HACCP plan's.\n\nWATCH THE GAUGE ON EVERY CYCLE AND LOOK AT EVERY POUCH. The rows record the checks; they do not replace watching. Any cycle or pouch that fails stops the run - Section 3 says what happens next.\n\nWHEN THE DAY IS DONE, sign Section 4 and leave the entry as a draft. It is reviewed, the verification is signed, and the reviewer submits it."
+        },
+        {
+          "id": "production_date",
+          "type": "date",
+          "label": "Production date",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "defaultToday": true
+        },
+        {
+          "id": "product",
+          "type": "text",
+          "label": "Product",
+          "width": "half",
+          "required": true,
+          "showInList": true,
+          "help": "The product covered by the HACCP plan."
+        },
+        {
+          "id": "limits",
+          "type": "reference_table",
+          "label": "CCP 2 critical limits (HACCP plan)",
+          "columns": [
+            "Critical limit",
+            "Limit",
+            "How it is checked",
+            "How often"
+          ],
+          "rows": [
+            [
+              "Vacuum level",
+              "To the sealer's specification - NOT YET CONFIRMED for this machine (typical 27 in. Hg)",
+              "The sealer's vacuum gauge",
+              "Every cycle"
+            ],
+            [
+              "Seal integrity",
+              "No visible leak, channel, wrinkle across the seal, or partial seal",
+              "Visual check",
+              "Every pouch"
+            ],
+            [
+              "Seal width",
+              "To the sealer's specification - NOT YET CONFIRMED for this machine (typical 5 mm)",
+              "Inspection of the seal",
+              "With each pull test"
+            ],
+            [
+              "Seal strength",
+              "The seal holds under a pull test",
+              "Pull test on one pouch",
+              "At set-up, after any change, and at least hourly"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "checks",
+      "title": "2. Sealing checks",
+      "fields": [
+        {
+          "id": "seal_checks",
+          "type": "grid",
+          "label": "Sealing checks",
+          "required": true,
+          "help": "A row at set-up, at least hourly, after any change or adjustment, and at the end of the run.",
+          "rows": {
+            "mode": "dynamic",
+            "min": 1,
+            "addLabel": "Add a check"
+          },
+          "columns": [
+            {
+              "id": "time",
+              "type": "time",
+              "label": "Time",
+              "width": 1,
+              "required": true,
+              "defaultTo": "now"
+            },
+            {
+              "id": "check",
+              "type": "select",
+              "label": "Check",
+              "width": 2,
+              "required": true,
+              "options": [
+                "Set-up",
+                "Hourly",
+                "After a change or adjustment",
+                "End of run"
+              ]
+            },
+            {
+              "id": "lot_code",
+              "type": "text",
+              "label": "Lot / batch code",
+              "width": 2,
+              "required": true
+            },
+            {
+              "id": "vacuum_reading",
+              "type": "number",
+              "label": "Vacuum gauge reading",
+              "unit": "in. Hg",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "visual",
+              "type": "pass_fail",
+              "label": "Every pouch since the last check free of seal defects",
+              "width": 2,
+              "required": true
+            },
+            {
+              "id": "pull_test",
+              "type": "pass_fail",
+              "label": "Pull test held",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "seal_width",
+              "type": "number",
+              "label": "Seal width, if measured",
+              "unit": "mm",
+              "width": 1
+            },
+            {
+              "id": "initials",
+              "type": "text",
+              "label": "Initials",
+              "width": 1,
+              "required": true,
+              "defaultTo": "currentUserInitials"
+            },
+            {
+              "id": "note",
+              "type": "text",
+              "label": "Note",
+              "width": 2
+            }
+          ]
+        },
+        {
+          "id": "spec_info",
+          "type": "info",
+          "label": "Two limits are not yet confirmed",
+          "text": "The HACCP plan sets the vacuum level and the seal width to the sealer's specification, and gives only typical values (27 in. Hg and 5 mm). Neither has been confirmed for this site's machine. Until it is, write the gauge reading exactly as it shows - this record captures it but cannot show it as within a limit nobody has confirmed. A reading clearly out of line with the rest of the run is treated as a failed cycle.\n\nThe visual check and the pull test ARE judged here, against the limits above."
+        }
+      ]
+    },
+    {
+      "id": "deviation",
+      "title": "3. If a limit was not met",
+      "fields": [
+        {
+          "id": "deviation_info",
+          "type": "info",
+          "label": "What to do",
+          "text": "A FAILED CYCLE, A POUCH WITH A SEAL DEFECT, OR A FAILED PULL TEST:\n1. Stop sealing.\n2. Put on Hold, and tag on FRM-702 under FSQM-018, everything sealed since the last check that passed.\n3. Inspect the held pouches: reseal those that can be resealed, and destroy those that cannot.\n4. Inspect or adjust the sealer, then seal a pouch and pull-test it. Record that as an \"After a change or adjustment\" row before production restarts.\n5. Notify the SQF Practitioner, and record the cause and the action on FRM-007 under FSQM-009.\n\nHeld product is not released on FRM-701 until its disposition is recorded."
+        },
+        {
+          "id": "deviations_today",
+          "type": "select",
+          "label": "Deviations on this day",
+          "width": "half",
+          "required": true,
+          "options": [
+            "None - every check passed",
+            "Yes - each one is recorded below"
+          ]
+        },
+        {
+          "id": "deviation_log",
+          "type": "grid",
+          "label": "Deviations",
+          "help": "Required for every deviation. Leave empty only where the answer above is None.",
+          "rows": {
+            "mode": "dynamic",
+            "min": 0,
+            "addLabel": "Add a deviation"
+          },
+          "columns": [
+            {
+              "id": "time",
+              "type": "time",
+              "label": "Time",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "lot_code",
+              "type": "text",
+              "label": "Lot / batch code",
+              "width": 2,
+              "required": true
+            },
+            {
+              "id": "what",
+              "type": "text",
+              "label": "What failed",
+              "width": 3,
+              "required": true
+            },
+            {
+              "id": "units_held",
+              "type": "text",
+              "label": "Pouches held",
+              "width": 1
+            },
+            {
+              "id": "action",
+              "type": "select",
+              "label": "Action taken",
+              "width": 2,
+              "required": true,
+              "options": [
+                "Resealed",
+                "Held on FRM-702",
+                "Destroyed"
+              ]
+            },
+            {
+              "id": "reference",
+              "type": "text",
+              "label": "FRM-702 / FRM-007 reference",
+              "width": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "signoff",
+      "title": "4. Sign-off",
+      "fields": [
+        {
+          "id": "monitored_by",
+          "type": "signature",
+          "role": "filler",
+          "width": "half",
+          "required": true,
+          "label": "Monitored by (production operator)",
+          "statement": "I performed the checks recorded above at the times shown, and recorded them as found."
+        },
+        {
+          "id": "verification_independence",
+          "type": "select",
+          "width": "half",
+          "required": true,
+          "label": "Who verified this record",
+          "help": "FSQM-017 Part 5: a person does not verify their own monitoring where a second qualified person is available. Where one is not, say so here.",
+          "options": [
+            "Someone other than the operator who took the readings",
+            "No second qualified person available - verified by the operator"
+          ]
+        },
+        {
+          "id": "verified_by",
+          "type": "signature",
+          "role": "verifier",
+          "width": "half",
+          "required": true,
+          "label": "Verified by",
+          "statement": "I have reviewed this record against the CCP 2 critical limits, and every deviation on it has a recorded action."
+        }
+      ]
+    }
+  ]
+}
