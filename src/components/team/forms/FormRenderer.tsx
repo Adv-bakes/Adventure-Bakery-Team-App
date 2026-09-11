@@ -124,7 +124,9 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
       {schema.sections.map(section => (
         <div
           key={section.id}
-          className="rounded-lg border p-4 space-y-3"
+          // Anchor for "Go to Section 3" when a voice-recorded CCP reading misses a limit.
+          id={`form-section-${section.id}`}
+          className="rounded-lg border p-4 space-y-3 scroll-mt-4"
           style={{ borderColor: "rgba(200,155,60,0.3)", background: "#FFFFFF" }}
         >
           {(section.title || section.description || section.scanLabel) && (

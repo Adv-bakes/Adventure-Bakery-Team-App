@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 import { CoachChat } from "@/components/CoachChat";
+import { VoiceCommandPanel } from "@/components/team/voice/VoiceCommandPanel";
 import { useUserRole } from "@/hooks/useUserRole";
 import { countOpenNotifications } from "@/lib/notifications";
 
@@ -84,6 +85,8 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   // user's ONLY role, restrict the sidebar to the auditor-visible items. A user
   // who also holds staff/admin keeps the full nav (roles union additively).
   const isAuditorOnly = roles.length > 0 && roles.every((r) => r === "auditor");
+  // Voice commands write records, so only the roles that fill forms get the mic.
+  const canVoice = roles.some((r) => r === "staff" || r === "admin" || r === "owner");
   const [inboxCount, setInboxCount] = useState(0);
   const [notifCount, setNotifCount] = useState(0);
 
@@ -258,7 +261,15 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
         </main>
       </div>
 
-      <CoachChat progress={0} currentSection="Concept" />
+      {/* For anyone who fills forms, the Coach's panel records CCP checks by voice; auditor-only and
+          client users keep the plain panel. avoidBottomBar keeps the orb off FormEntry's Save bar. */}
+      <CoachChat
+        progress={0}
+        currentSection="Concept"
+        avoidBottomBar
+        tooltipText={canVoice ? "Tap to record a CCP check by voice." : undefined}
+        renderPanel={canVoice ? ({ close }) => <VoiceCommandPanel onDone={close} /> : undefined}
+      />
     </div>
   );
 };

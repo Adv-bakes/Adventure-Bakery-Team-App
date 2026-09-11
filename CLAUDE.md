@@ -839,3 +839,40 @@ as `planned`. **The schedule lives in FSQM-017 Part 6**, generated from `verific
 The general lesson is worth keeping: **a catch-all record beside a purpose-built one produces two
 accounts of a single activity** and invites being filled in alongside the real form rather than
 instead of it. If a future activity has no home, give it one — do not revive a generic form.
+
+---
+
+## Voice Commands (CCP records) — `lib/voiceCommands.ts`
+
+The Team Portal's **Manufacturing Coach** orb (`CoachChat`, mounted in `TeamLayout`) opens
+`VoiceCommandPanel` for staff/admin/owner: the operator taps the mic and reads a line off a printed
+card — *"Create a CCP Baking Record for Product X, Lot Y, Temperature 350 for 27 minutes. Passed."* —
+and FRM-507 (or FRM-606 for *"Create a CCP Sealing Record…"*) opens with the row filled in. It exists
+because operators push back on the number of forms, and an unrecorded CCP check is to an auditor a
+check that did not happen.
+
+- **One registry drives the parser and the wall card.** `VOICE_COMMANDS` holds each command's
+  `script` (the card text and the parser's anchors), `extract` and `build`. The card is
+  `/team/compliance/voice-commands/print` (`VoiceCommandScripts.tsx`, rendered outside TeamLayout so
+  it prints clean). `scripts/test-voice-commands.mjs` feeds every card example back through the
+  parser — **add a command by adding a registry entry and a test, never by editing the card alone.**
+- **Deterministic, not AI.** The wording is fixed by the card; the parser handles what Chrome does to
+  it (`3:50` for "three fifty", `past` for "passed", lot codes spelled letter by letter, "for" heard as
+  "4"). `parseAlternatives` tries every recognition alternative.
+- **Never auto-saves.** The panel previews, then (on tap) finds or creates the entry and navigates with
+  `state.voiceCommand` (`voiceCommandTarget.ts`); `FormEntry` applies it once per nonce with
+  `form.reset(values, { keepDefaultValues: true })` so the row is **unsaved and dirty**, shows a banner
+  with Undo, and the operator taps Save Draft. Nothing is written before the tap because FRM-507/606
+  entries are not deletable.
+- **"Today's record" is looked up, never resumed.** `createResponse`'s `resumeAnyDraft` has no date
+  filter and CCP drafts wait up to a week for review, so `findTodaysDrafts` matches
+  `created_by`, `status='draft'` and `data->>production_date`. A draft for a different product is an
+  explicit choice in the panel.
+- **The app judges CCP 1 pass/fail** from `CCP1_LIMITS` (350°F, 27 min): a spoken Pass can be
+  downgraded to Fail, a spoken Fail is never upgraded. `limitsStillMatch` blanks the verdict if
+  FRM-507's printed limits ever change. CCP 2's vacuum reading is recorded, not judged (limit
+  unconfirmed). The internal-temperature column is never filled by voice (not probed on site).
+- `applyVoiceFill` fills the new entry's seeded blank row rather than appending beside it, and
+  overwrites that row's creation-time `time_out` with the time the line was spoken.
+- The orb sits above FormEntry's sticky Save bar via `useBottomBarClearance` (`--tp-bottom-bar-h`) and
+  `CoachChat`'s `avoidBottomBar`; brand-portal layouts pass no props and are unchanged.

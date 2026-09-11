@@ -1,12 +1,35 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Bot, X } from "lucide-react";
 import aiBotIcon from "@/assets/ai-bot-icon.jpg";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { BOTTOM_BAR_VAR } from "@/hooks/useBottomBarClearance";
 
-export const CoachChat = ({ currentSection = "Concept", progress = 0 }) => {
+interface CoachChatProps {
+  currentSection?: string;
+  progress?: number;
+  /**
+   * Replaces the placeholder cards in the panel. The Team Portal passes the voice command panel;
+   * brand-portal layouts pass nothing and get exactly the panel they had before.
+   */
+  renderPanel?: (api: { close: () => void }) => ReactNode;
+  tooltipText?: string;
+  /**
+   * Sit above a page's sticky bottom action bar instead of on top of it. The page publishes the
+   * bar's height (useBottomBarClearance); with no bar the variable is unset and this is bottom-6.
+   */
+  avoidBottomBar?: boolean;
+}
+
+export const CoachChat = ({
+  currentSection = "Concept",
+  progress = 0,
+  renderPanel,
+  tooltipText,
+  avoidBottomBar = false,
+}: CoachChatProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -30,7 +53,8 @@ export const CoachChat = ({ currentSection = "Concept", progress = 0 }) => {
       {/* Floating Orb */}
       <TooltipProvider>
         <div
-          className="fixed bottom-6 right-6 z-50"
+          className={avoidBottomBar ? "fixed right-6 z-50" : "fixed bottom-6 right-6 z-50"}
+          style={avoidBottomBar ? { bottom: `calc(var(${BOTTOM_BAR_VAR}, 0px) + 1.5rem)` } : undefined}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
@@ -109,7 +133,7 @@ export const CoachChat = ({ currentSection = "Concept", progress = 0 }) => {
                 <Bot className="w-5 h-5" style={{ color: "hsl(43,70%,60%)" }} />
                 <p className="text-sm font-semibold">Manufacturing Coach AI</p>
               </div>
-              <p className="text-xs opacity-90">Hi! I’m here to help you with {currentSection}.</p>
+              <p className="text-xs opacity-90">{tooltipText ?? `Hi! I’m here to help you with ${currentSection}.`}</p>
               <p className="text-[10px] opacity-60 mt-1">Click to open assistant panel</p>
             </TooltipContent>
           </Tooltip>
@@ -143,34 +167,40 @@ export const CoachChat = ({ currentSection = "Concept", progress = 0 }) => {
           </SheetHeader>
 
           <ScrollArea className="flex-1 p-5 space-y-4">
-            <div
-              className="rounded-lg p-4 shadow-sm border"
-              style={{
-                background: "hsl(0,0%,100%/0.7)",
-                borderColor: "hsl(43,52%,50%/0.15)",
-              }}
-            >
-              <p className="text-sm text-gray-800 leading-relaxed">
-                👋 Hi there! I’m your AI Manufacturing Coach.
-                <br />
-                <br />I can help you document ingredients, plan shelf-life testing, or refine your cost model — all
-                inside this workspace.
-              </p>
-            </div>
+            {renderPanel ? (
+              renderPanel({ close: () => setIsOpen(false) })
+            ) : (
+              <>
+                <div
+                  className="rounded-lg p-4 shadow-sm border"
+                  style={{
+                    background: "hsl(0,0%,100%/0.7)",
+                    borderColor: "hsl(43,52%,50%/0.15)",
+                  }}
+                >
+                  <p className="text-sm text-gray-800 leading-relaxed">
+                    👋 Hi there! I’m your AI Manufacturing Coach.
+                    <br />
+                    <br />I can help you document ingredients, plan shelf-life testing, or refine your cost model — all
+                    inside this workspace.
+                  </p>
+                </div>
 
-            <div
-              className="rounded-lg p-4 shadow-sm border"
-              style={{
-                background: "linear-gradient(135deg,hsl(43,70%,97%)0%,hsl(40,60%,99%)100%)",
-                borderColor: "hsl(43,52%,50%/0.2)",
-              }}
-            >
-              <p className="text-sm font-medium text-gray-900 mb-1">Next step suggestion:</p>
-              <p className="text-sm text-gray-700">
-                Open your <strong>{currentSection}</strong> section and make sure all required fields are filled in
-                before moving on.
-              </p>
-            </div>
+                <div
+                  className="rounded-lg p-4 shadow-sm border"
+                  style={{
+                    background: "linear-gradient(135deg,hsl(43,70%,97%)0%,hsl(40,60%,99%)100%)",
+                    borderColor: "hsl(43,52%,50%/0.2)",
+                  }}
+                >
+                  <p className="text-sm font-medium text-gray-900 mb-1">Next step suggestion:</p>
+                  <p className="text-sm text-gray-700">
+                    Open your <strong>{currentSection}</strong> section and make sure all required fields are filled in
+                    before moving on.
+                  </p>
+                </div>
+              </>
+            )}
           </ScrollArea>
         </SheetContent>
       </Sheet>

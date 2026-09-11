@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, ScanLine, Save, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, Mic, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -31,6 +31,11 @@ import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
+import { applyVoiceFill, type VoiceWarning } from "@/lib/voiceCommands";
+import type { VoiceCommandState } from "@/lib/voiceCommandTarget";
+import { setUnsavedForm } from "@/lib/unsavedChanges";
+import { useBottomBarClearance } from "@/hooks/useBottomBarClearance";
+import { WarningList } from "@/components/team/voice/VoiceCommandPanel";
 
 const statusBadge: Record<string, string> = {
   draft: "bg-[#C89B3C]/20 text-[#9A6F1E] border-[#C89B3C]/40",
@@ -171,9 +176,14 @@ export default function FormEntry() {
     try {
       const updated = await saveResponseData(response.id, form.getValues(), response.updated_at);
       applyResult(updated);
+      setVoice(v => (v?.kind === "applied" ? null : v));
       toast.success("Draft saved");
     } catch (e: any) {
-      if (e instanceof StaleResponseError) toast.error(e.message);
+      if (e instanceof StaleResponseError) {
+        toast.error(e.message);
+        // A spoken row that could not be saved is offered again on the fresh copy, not lost.
+        setVoice(v => (v?.kind === "applied" ? { kind: "stale", state: v.state } : v));
+      }
       else toast.error(e.message ?? "Failed to save draft");
     } finally {
       setSaving(false);
@@ -304,6 +314,81 @@ export default function FormEntry() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, response, schema, canEdit, location.state]);
 
+  // ── A CCP reading spoken to the Manufacturing Coach (VoiceCommandPanel) ────────────────────────
+  // The panel navigates here carrying the parsed row in router state. It is applied ONCE per nonce,
+  // into the form but NOT saved: the operator checks it - lot codes get misheard - and taps Save
+  // Draft. The form is left dirty so the leave-page warning covers it. A second spoken line while
+  // this entry is already open arrives as a new nonce and is added on top of the unsaved values.
+  const [voice, setVoice] = useState<
+    | { kind: "applied"; state: VoiceCommandState; rowIndex: number; gridLabel: string; warnings: VoiceWarning[]; prev: Record<string, any> }
+    | { kind: "refused"; message: string }
+    | { kind: "stale"; state: VoiceCommandState }
+    | null
+  >(null);
+  const appliedVoice = useRef(new Set<string>());
+  const actionBarRef = useRef<HTMLDivElement>(null);
+  useBottomBarClearance(actionBarRef, !loading && !!response);
+
+  useEffect(() => {
+    if (response) setUnsavedForm(response.id, isDirty);
+  }, [response, isDirty]);
+  useEffect(() => () => { if (responseId) setUnsavedForm(responseId, false); }, [responseId]);
+
+  const applyVoice = (vc: VoiceCommandState) => {
+    if (!schema || !response) return;
+    if (isSubmitted || !canEdit) {
+      setVoice({
+        kind: "refused",
+        message: isSubmitted
+          ? "This record has been submitted, so the spoken reading could not be added. Ask an admin to reopen it."
+          : "This record belongs to someone else, so the spoken reading could not be added to it.",
+      });
+      return;
+    }
+    const prev = { ...emptyValues(schema), ...form.getValues() };
+    const res = applyVoiceFill(schema, prev, vc.fill, fillContext);
+    if (!res.ok) {
+      setVoice({ kind: "refused", message: res.error });
+      return;
+    }
+    // keepDefaultValues: the loaded record stays the baseline, so the spoken row counts as unsaved.
+    form.reset(res.values, { keepDefaultValues: true });
+    setVoice({
+      kind: "applied", state: vc, rowIndex: res.rowIndex, gridLabel: res.gridLabel,
+      warnings: [...vc.fill.warnings, ...res.warnings], prev,
+    });
+  };
+
+  useEffect(() => {
+    const vc = (location.state as { voiceCommand?: VoiceCommandState } | null)?.voiceCommand;
+    if (!vc || appliedVoice.current.has(vc.nonce)) return;
+    // The id check matters: switching entries leaves one render where `response` is still the old one.
+    if (loading || !response || !schema || !signer || response.id !== vc.responseId) return;
+    appliedVoice.current.add(vc.nonce);
+    navigate(location.pathname + location.search, { replace: true, state: {} });
+    applyVoice(vc);
+    requestAnimationFrame(() => document.getElementById("voice-banner")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, response, schema, signer, location.state]);
+
+  const undoVoice = () => {
+    if (voice?.kind !== "applied") return;
+    form.reset(voice.prev, { keepDefaultValues: true });
+    setVoice(null);
+  };
+
+  // Saved elsewhere while the spoken row waited: reload the record, then add the row to the fresh copy.
+  const reloadAndReapply = async () => {
+    if (voice?.kind !== "stale") return;
+    const vc = voice.state;
+    setVoice(null);
+    await load();
+    navigate(location.pathname + location.search, {
+      replace: true,
+      state: { voiceCommand: { ...vc, nonce: `${vc.nonce}-reload-${Date.now()}` } },
+    });
+  };
+
   const handleAttachmentsChange = async (next: ResponseAttachment[]) => {
     if (!response) return;
     try {
@@ -383,6 +468,62 @@ export default function FormEntry() {
           {response.submitted_at && ` · submitted ${format(new Date(response.submitted_at), "M/d/yyyy h:mm a")}`}
         </p>
       </div>
+
+      {/* A CCP reading spoken to the Manufacturing Coach, waiting for the operator to check and save */}
+      {voice && (
+        <Card id="voice-banner" className="p-3 space-y-2 border scroll-mt-4" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.6)" }}>
+          {voice.kind === "applied" && (
+            <>
+              <div className="flex items-start gap-2">
+                <Mic className="w-4 h-4 text-[#9A6F1E] mt-0.5 shrink-0" />
+                <div className="text-sm text-[#2A1F0E] space-y-0.5">
+                  <p>
+                    <strong>Added by voice.</strong> Check row {voice.rowIndex + 1} of {voice.gridLabel} — especially the
+                    lot code — then tap <strong>Save Draft</strong>. Nothing is saved until you do.
+                  </p>
+                  <p className="text-xs text-[#2A1F0E]/80 italic">Heard: "{voice.state.transcript}"</p>
+                </div>
+              </div>
+              <WarningList warnings={voice.warnings} />
+              <div className="flex flex-wrap gap-2">
+                {voice.warnings.some(w => w.section) && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="border-red-400 text-red-700 hover:bg-red-50"
+                    onClick={() => {
+                      const section = voice.warnings.find(w => w.section)?.section;
+                      document.getElementById(`form-section-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                  >
+                    Go to Section 3
+                  </Button>
+                )}
+                <Button type="button" size="sm" variant="outline" onClick={undoVoice}>
+                  <Undo2 className="w-3.5 h-3.5 mr-1.5" />Undo
+                </Button>
+              </div>
+            </>
+          )}
+          {voice.kind === "refused" && (
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <p className="text-sm text-amber-900">{voice.message}</p>
+              <Button type="button" size="sm" variant="outline" onClick={() => setVoice(null)}>Dismiss</Button>
+            </div>
+          )}
+          {voice.kind === "stale" && (
+            <div className="space-y-2">
+              <p className="text-sm text-amber-900">
+                This record was saved somewhere else while the spoken row was waiting, so it could not be saved over it.
+              </p>
+              <Button type="button" size="sm" onClick={reloadAndReapply} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />Reload and add the row again
+              </Button>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Schema-drift notices */}
       {resolved?.source === "snapshot" && (
@@ -494,6 +635,7 @@ export default function FormEntry() {
 
       {/* Action bar */}
       <div
+        ref={actionBarRef}
         className="sticky bottom-0 -mx-1 px-1 py-3 flex flex-wrap items-center gap-2 border-t backdrop-blur"
         style={{ borderColor: "rgba(200,155,60,0.3)", background: "rgba(42,31,14,0.85)" }}
       >

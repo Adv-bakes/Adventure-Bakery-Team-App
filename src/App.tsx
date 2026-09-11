@@ -95,6 +95,7 @@ import FormRecords from "./pages/team/compliance/Records";
 import Notifications from "./pages/team/Notifications";
 import VerificationSchedule from "./pages/team/compliance/VerificationSchedule";
 import FormEntryStart from "./pages/team/compliance/FormEntryStart";
+import VoiceCommandScripts from "./pages/team/compliance/VoiceCommandScripts";
 import TrainingSops from "./pages/team/hr/TrainingSops";
 import TrainingCompliance from "./pages/team/hr/TrainingCompliance";
 import TrainingModuleDetail from "./pages/team/hr/TrainingModuleDetail";
@@ -467,6 +468,13 @@ const App = () => (
           } />
           {/* Resumes the caller's newest open draft, else creates one, then redirects to it.
               A notification link performs a write, so it has to be safe to click twice. */}
+          {/* The voice command wall card. Deliberately outside TeamLayout so the sidebar and the
+              Coach orb do not print. */}
+          <Route path="/team/compliance/voice-commands/print" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <VoiceCommandScripts />
+            </ProtectedRoute>
+          } />
           <Route path="/team/compliance/forms/:docId/start" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><FormEntryStart /></TeamLayout>
