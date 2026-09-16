@@ -164,6 +164,76 @@ check("twice-daily is idempotent",
   assessDue(SCHEDULE, COMPLETIONS, TODAY).map((f) => f.dedupeKey),
   found.map((f) => f.dedupeKey));
 
+// ---------------------------------------------------------------- covers_until_field (D-05)
+// A record that declares its own period of validity dates the next one from THAT, not from the day
+// it happened to be filed. FRM-006 is the case: a blackout declaration covering a calendar year is
+// due on 1 January whether it was signed the October before or the February after.
+const DECL = row({
+  activity_key: "blackout_declaration",
+  activity: "Blackout period declaration to the certification body",
+  frequency_unit: "year", frequency_count: 1,
+  responsible_position: "Senior Site Management",
+  evidence_document_number: "FRM-006",
+  covers_until_field: "period_to",
+  lead_days: 90, grace_days: 0,
+});
+
+check("due the day after the period covered ends",
+  nextDue(DECL, "2026-10-01", "2027-12-31"), "2028-01-01");
+check("filing date is ignored entirely when a period is declared",
+  nextDue(DECL, "2020-01-01", "2027-12-31"), nextDue(DECL, "2027-11-30", "2027-12-31"));
+check("frequency is not consulted at all",
+  nextDue({ ...DECL, frequency_count: 3 }, "2026-10-01", "2027-12-31"), "2028-01-01");
+check("no submitted declaration falls back to first_due_on",
+  nextDue({ ...DECL, first_due_on: "2027-01-01" }, null, null), "2027-01-01");
+check("no declaration and no first_due_on is the 'never' anchor",
+  nextDue(DECL, null, null), null);
+
+// 90 days of lead is the whole point: the alert has to arrive while there is still time to agree
+// the dates, sign them and send them to the certification body.
+check("quiet 91 days out",
+  rowState(DECL, "2026-10-01", "2027-10-02", "2027-12-31").state, "ok");
+check("alerts at exactly 90 days out",
+  rowState(DECL, "2026-10-01", "2027-10-03", "2027-12-31").state, "due");
+check("still only due on the last day covered",
+  rowState(DECL, "2026-10-01", "2027-12-31", "2027-12-31").state, "due");
+// grace_days is 0, so the due date itself still reads "due" and overdue begins the day after -
+// the same semantics every other row has, deliberately not special-cased here.
+check("the first uncovered day is due",
+  rowState(DECL, "2026-10-01", "2028-01-01", "2027-12-31").state, "due");
+check("overdue the day after that",
+  rowState(DECL, "2026-10-01", "2028-01-02", "2027-12-31").state, "overdue");
+check("a declaration filed for the NEXT period clears it",
+  rowState(DECL, "2027-11-01", "2028-01-01", "2028-12-31").state, "ok");
+
+// The message must say what runs out, not when the last one was filed - the expiry is the thing
+// anybody can act on.
+const declFound = assessDue([DECL], [{
+  activity_key: "blackout_declaration", completed_on: "2026-10-01", covers_until: "2027-12-31",
+}], "2027-11-01");
+check("the declaration fires at 90 days", declFound.length, 1);
+ok("message names the expiry", declFound[0].message.includes("covers to 2027-12-31"));
+ok("message names the next effective date", declFound[0].message.includes("2028-01-01"));
+ok("message names the record", declFound[0].message.includes("FRM-006"));
+check("dedupe key is the occurrence, so clearing it stays cleared",
+  declFound[0].dedupeKey, "verification:blackout_declaration:2028-01-01");
+
+const lapsed = assessDue([DECL], [{
+  activity_key: "blackout_declaration", completed_on: "2026-10-01", covers_until: "2027-12-31",
+}], "2028-02-01");
+check("a lapsed declaration is overdue", lapsed[0].severity, "overdue");
+ok("and says so in those terms", lapsed[0].message.includes("lapsed"));
+
+// A correction filed to an EARLIER period after a later one must not walk the due date backwards.
+// The job takes the maximum covers-until across submitted entries for exactly this reason; this
+// asserts the library honours whichever date it is handed rather than re-deriving one.
+check("the later period wins",
+  nextDue(DECL, "2028-03-01", "2028-12-31"), "2029-01-01");
+
+// Every other row is unaffected: no covers_until_field means the old anchoring, untouched.
+check("rows without the field still count forward from the last record",
+  nextDue(row({}), "2026-08-01", "2099-01-01"), "2026-09-01");
+
 // ---------------------------------------------------------------- retention links
 const DOC = "doc-703";
 const entries = [
@@ -248,6 +318,16 @@ try {
   deepStrictEqual(C.assessDue(SCHEDULE, COMPLETIONS, TODAY), S.assessDue(SCHEDULE, COMPLETIONS, TODAY));
   deepStrictEqual(C.retentionLinks(entries, DOC, TODAY), S.retentionLinks(entries, DOC, TODAY));
   deepStrictEqual(C.rowState(row({}), "2026-08-10", TODAY), S.rowState(row({}), "2026-08-10", TODAY));
+  // The declared-period anchoring is date arithmetic on a different input, so it gets its own
+  // twin check rather than riding on the one above.
+  for (const [last, covers, day] of [
+    ["2026-10-01", "2027-12-31", "2027-10-02"], ["2026-10-01", "2027-12-31", "2027-10-03"],
+    ["2026-10-01", "2027-12-31", "2028-01-01"], [null, null, "2027-01-01"],
+    ["2027-11-01", "2028-12-31", "2028-01-01"], ["2026-10-01", "2028-02-29", "2029-03-01"],
+  ]) {
+    deepStrictEqual(C.rowState(DECL, last, day, covers), S.rowState(DECL, last, day, covers));
+    deepStrictEqual(C.nextDue(DECL, last, covers), S.nextDue(DECL, last, covers));
+  }
   deepStrictEqual(C.formLink("FRM-913", "abc", "T"), S.formLink("FRM-913", "abc", "T"));
 } catch (e) {
   failures++;

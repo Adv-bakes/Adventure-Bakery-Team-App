@@ -34,12 +34,33 @@ export type ScheduleRow = {
   lead_days: number;
   grace_days: number;
   first_due_on?: string | null;
+  /**
+   * Names a field on the evidence form holding THE LAST DATE THAT RECORD COVERS. Where it is set,
+   * the next due date is the day after that - the first day no record covers - instead of being
+   * counted forward from the day the last one was filed.
+   *
+   * It exists because some records declare their own period of validity. FRM-006 declares blackout
+   * dates for a stated period; filing it early or late says nothing about when it expires, so
+   * anchoring on submitted_at would either nag months too soon or let the declaration lapse
+   * unnoticed. Only meaningful with evidence_kind 'form_entry'.
+   */
+  covers_until_field?: string | null;
   status: "active" | "planned" | "retired";
   sort_order?: number;
 };
 
-/** Last time an activity was actually performed, from the evidence record - never stored. */
-export type Completion = { activity_key: string; completed_on: string | null };
+/**
+ * Last time an activity was actually performed, from the evidence record - never stored.
+ *
+ * `covers_until` is only filled for a row carrying covers_until_field, and is the LATEST such date
+ * across that form's submitted entries - not the one on the newest entry. A correction filed to
+ * last year's declaration after this year's would otherwise walk the due date backwards.
+ */
+export type Completion = {
+  activity_key: string;
+  completed_on: string | null;
+  covers_until?: string | null;
+};
 
 export type DueSeverity = "due" | "overdue";
 
@@ -128,8 +149,21 @@ export function frequencyLabel(unit: FrequencyUnit, count: number): string {
  * seeded today would go quiet for a year before its first annual activity was ever asked for.
  * Returns null when there is no anchor at all, which is a real state and not an error: the
  * activity has never been done and nobody has said when it should first happen.
+ *
+ * A row with covers_until_field is anchored differently and deliberately: on the period the record
+ * itself declares, not on when it was filed. The next one is due the day after the last day covered
+ * - the first day nothing covers - so the frequency is not consulted at all. A declaration covering
+ * a calendar year is due on 1 January whether it was signed in the October before or the February
+ * after, which is the only reading under which "the site is covered" stays true continuously.
  */
-export function nextDue(row: ScheduleRow, lastCompletedOn: string | null): string | null {
+export function nextDue(
+  row: ScheduleRow,
+  lastCompletedOn: string | null,
+  coversUntil: string | null = null,
+): string | null {
+  if (row.covers_until_field) {
+    return coversUntil ? addDays(coversUntil, 1) : (row.first_due_on ?? null);
+  }
   if (lastCompletedOn) return addFrequency(lastCompletedOn, row.frequency_unit, row.frequency_count);
   return row.first_due_on ?? null;
 }
@@ -142,10 +176,15 @@ export function dedupeKeyFor(activityKey: string, dueOn: string | null): string 
 }
 
 /** The per-row view the schedule page renders. Pure; safe to call for any status. */
-export function rowState(row: ScheduleRow, lastCompletedOn: string | null, today: string): RowState {
+export function rowState(
+  row: ScheduleRow,
+  lastCompletedOn: string | null,
+  today: string,
+  coversUntil: string | null = null,
+): RowState {
   if (row.status === "planned") return { lastCompletedOn, nextDueOn: null, state: "planned" };
   if (row.status === "retired") return { lastCompletedOn, nextDueOn: null, state: "retired" };
-  const due = nextDue(row, lastCompletedOn);
+  const due = nextDue(row, lastCompletedOn, coversUntil);
   if (!due) return { lastCompletedOn, nextDueOn: null, state: "never" };
   if (today > addDays(due, row.grace_days)) return { lastCompletedOn, nextDueOn: due, state: "overdue" };
   if (today >= addDays(due, -row.lead_days)) return { lastCompletedOn, nextDueOn: due, state: "due" };
@@ -166,27 +205,33 @@ export function assessDue(
   today: string,
 ): DueFinding[] {
   const last = new Map(completions.map((c) => [c.activity_key, c.completed_on]));
+  const covers = new Map(completions.map((c) => [c.activity_key, c.covers_until ?? null]));
   const out: DueFinding[] = [];
 
   for (const row of rows) {
     if (row.status !== "active") continue;
 
     const lastCompletedOn = last.get(row.activity_key) ?? null;
-    const st = rowState(row, lastCompletedOn, today);
+    const coversUntil = covers.get(row.activity_key) ?? null;
+    const st = rowState(row, lastCompletedOn, today, coversUntil);
     if (st.state !== "due" && st.state !== "overdue" && st.state !== "never") continue;
 
     const neverDone = st.state === "never";
     const severity: DueSeverity = st.state === "overdue" ? "overdue" : "due";
     const freq = frequencyLabel(row.frequency_unit, row.frequency_count);
-    const where = row.evidence_kind === "frm008"
-      ? "Record it on FRM-008."
-      : row.evidence_document_number
-        ? `Record it on ${row.evidence_document_number}.`
-        : "";
+    const where = row.evidence_document_number
+      ? `Record it on ${row.evidence_document_number}.`
+      : "";
 
     const bits: string[] = [`${freq}.`];
     if (neverDone) {
       bits.push("No record of this activity has ever been made.");
+    } else if (row.covers_until_field && coversUntil) {
+      // Say what runs out and when, rather than when the last one was filed. The filing date is
+      // not the thing anybody needs to act on here; the expiry is.
+      bits.push(st.state === "overdue"
+        ? `The record in force covered to ${coversUntil} and has lapsed - nothing covers ${st.nextDueOn} onward.`
+        : `The record in force covers to ${coversUntil}; the next one takes effect ${st.nextDueOn}.`);
     } else if (lastCompletedOn) {
       bits.push(`Last recorded ${lastCompletedOn}; due ${st.nextDueOn}.`);
     } else {

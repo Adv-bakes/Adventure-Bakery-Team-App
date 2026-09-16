@@ -111,7 +111,31 @@ export default function VerificationSchedule() {
             .limit(1);
           at = data?.[0]?.submitted_at;
         }
-        found.push({ activity_key: r.activity_key, completed_on: at ? at.slice(0, 10) : null });
+
+        // A row anchored on the period the record declares needs that field, and needs the LATEST
+        // such date across every submitted entry rather than the one on the newest. Same read as
+        // the notification job makes, so the page and the badge cannot show different due dates.
+        let coversUntil: string | null = null;
+        if (r.covers_until_field) {
+          const { data } = await (supabase as any)
+            .from("sop_document_responses")
+            .select("data")
+            .eq("document_id", docId)
+            .eq("status", "submitted")
+            .limit(200);
+          for (const e of (data ?? []) as { data: Record<string, unknown> | null }[]) {
+            const v = String((e.data ?? {})[r.covers_until_field] ?? "").slice(0, 10);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(v) && (coversUntil === null || v > coversUntil)) {
+              coversUntil = v;
+            }
+          }
+        }
+
+        found.push({
+          activity_key: r.activity_key,
+          completed_on: at ? at.slice(0, 10) : null,
+          covers_until: coversUntil,
+        });
       }
       setCompletions(found);
     } catch (e) {
@@ -124,6 +148,7 @@ export default function VerificationSchedule() {
   useEffect(() => { void load(); }, [load]);
 
   const lastOf = new Map(completions.map((c) => [c.activity_key, c.completed_on]));
+  const coversOf = new Map(completions.map((c) => [c.activity_key, c.covers_until ?? null]));
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6 tp-fade-up">
@@ -134,7 +159,8 @@ export default function VerificationSchedule() {
         </h1>
         <p className="text-sm tp-on-bg-dim mt-1">
           Every verification activity, its frequency and the position responsible for it
-          (SQF 2.5.2.2). Recorded on FRM-008 and on the form named against each activity.
+          (SQF 2.5.2.2). Each activity is recorded on the form named against it — there is no
+          general verification form, by design.
         </p>
         <p className="text-sm tp-on-bg-dim mt-2">
           Activities shown as <strong>Not yet implemented</strong> are scheduled but are not being
@@ -164,7 +190,7 @@ export default function VerificationSchedule() {
               <TableBody>
                 {rows.map((r) => {
                   const last = lastOf.get(r.activity_key) ?? null;
-                  const st = rowState(r, last, today);
+                  const st = rowState(r, last, today, coversOf.get(r.activity_key) ?? null);
                   const muted = r.status !== "active";
                   return (
                     <TableRow key={r.activity_key} className={muted ? "opacity-60" : undefined}>
