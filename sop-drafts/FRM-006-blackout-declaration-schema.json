@@ -1,0 +1,228 @@
+{
+  "sections": [
+    {
+      "id": "period",
+      "title": "1. Period covered",
+      "fields": [
+        {
+          "id": "how_this_works",
+          "text": "ONE ENTRY IS ONE DECLARATION. Make a new entry for each period covered, and a new one whenever the operating pattern changes, rather than editing the entry in force. Earlier entries are the history of what was declared, and when.\n\nWHAT 2.1.1.8 ASKS FOR. Senior site management designates defined blackout periods that stop an unannounced re-certification audit landing out of season or when the site is not operating for legitimate business reasons, and the list of dates with their justification goes to the certification body at least one month before the sixty-day unannounced window opens.\n\nTWO DIFFERENT THINGS ARE RECORDED HERE AND THEY ARE NOT INTERCHANGEABLE. Section 2 is the site's normal operating pattern. Section 3 is the blackout list. Keeping them apart is deliberate - the note on Section 2 says why.",
+          "type": "info",
+          "label": "How this record works"
+        },
+        {
+          "id": "period_from",
+          "type": "date",
+          "label": "Period covered from",
+          "width": "third",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "period_to",
+          "type": "date",
+          "label": "Period covered to",
+          "width": "third",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "prepared_on",
+          "type": "date",
+          "label": "Prepared on",
+          "width": "third",
+          "required": true,
+          "defaultToday": true
+        },
+        {
+          "id": "reason",
+          "type": "select",
+          "label": "Reason for this declaration",
+          "width": "half",
+          "options": [
+            "First declaration",
+            "Annual re-affirmation - no change",
+            "Operating pattern changed",
+            "Blackout dates changed"
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "title": "2. Operating pattern (not a blackout list)",
+      "fields": [
+        {
+          "id": "pattern_info",
+          "text": "THIS SECTION IS NOT A BLACKOUT LIST. A blackout period under 2.1.1.8 is a defined calendar date range. The days of the week the site does not run are its operating pattern, not blackout: listing every non-operating weekday as a blackout date would be scores of dates a year, it would misstate what the clause asks for, and a certification body may refuse the declaration on that basis.\n\nIT IS RECORDED ALL THE SAME, BECAUSE THE RISK IS REAL. An unannounced auditor arriving on a day nobody is producing is exactly what 2.1.1.8 exists to prevent. The certification body needs the operating pattern so that an unannounced audit is planned against a day the site actually runs. Giving it both - the pattern here, the dates in Section 3 - answers the clause without overstating the blackout claim.\n\nRE-AFFIRM THIS WHEN THE PATTERN CHANGES, and at least once a year. A declaration written around an as-needed schedule stops being true as production moves to full time, and a stale operating pattern is worse than none: it tells the certification body to plan around days the site no longer keeps.",
+          "type": "info",
+          "label": "Why the weekly pattern is recorded here and not claimed as blackout"
+        },
+        {
+          "id": "production_basis",
+          "type": "select",
+          "label": "Production basis",
+          "width": "half",
+          "options": [
+            "As-needed",
+            "Scheduled - part week",
+            "Scheduled - full time"
+          ],
+          "required": true
+        },
+        {
+          "id": "operating_days",
+          "help": "For example \"Tuesday to Thursday\". These are the days an unannounced audit would find the site running.",
+          "type": "text",
+          "label": "Days the site produces or cleans",
+          "width": "half",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "pattern_notes",
+          "help": "Anything the certification body needs to plan around - whether the pattern is settled or changing, and when it is expected to change.",
+          "type": "textarea",
+          "label": "Notes on the pattern"
+        }
+      ]
+    },
+    {
+      "id": "blackout",
+      "title": "3. Blackout periods designated (2.1.1.8)",
+      "fields": [
+        {
+          "id": "blackout_info",
+          "text": "ONE ROW PER DATE RANGE, with the business reason. A single day is a row with the same From and To date.\n\nTHE STANDING CLOSURES TO CARRY FORWARD EACH PERIOD: the week of Thanksgiving; Christmas through New Year; and the national holidays the site observes - entered as the individual dates falling inside the period covered, because the certification body needs dates rather than a rule.\n\nTHE JUSTIFICATION IS THE POINT. 2.1.1.8 permits blackout for being out of season, or not operating for legitimate business reasons. Say which applies to each range. \"Closed - no production or cleaning staff on site\" is a legitimate reason and a sufficient one; being busy is neither of the two grounds the clause names.",
+          "type": "info",
+          "label": "How to fill this in"
+        },
+        {
+          "id": "designation",
+          "type": "select",
+          "label": "Blackout periods designated",
+          "width": "half",
+          "options": [
+            "As listed below",
+            "None - the site operates year-round"
+          ],
+          "required": true
+        },
+        {
+          "id": "periods",
+          "help": "One row per date range. A single day is a row with the same From and To date.",
+          "rows": {
+            "min": 3,
+            "mode": "dynamic",
+            "addLabel": "Add a blackout period"
+          },
+          "type": "grid",
+          "label": "Blackout dates",
+          "columns": [
+            {
+              "id": "from_date",
+              "type": "date",
+              "label": "From",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "to_date",
+              "type": "date",
+              "label": "To",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "reason",
+              "type": "text",
+              "label": "Business justification",
+              "width": 3,
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "justification",
+          "help": "Why these periods, against the two grounds the clause allows - out of season, or not operating for legitimate business reasons.",
+          "type": "textarea",
+          "label": "Statement of justification",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "approval",
+      "title": "4. Senior site management",
+      "fields": [
+        {
+          "id": "management_position",
+          "help": "The post in FSQM-004 this person holds.",
+          "type": "text",
+          "label": "Position held",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "designated_by",
+          "role": "verifier",
+          "type": "signature",
+          "label": "Designated by Senior Site Management",
+          "width": "half",
+          "required": true,
+          "statement": "As senior site management, I designate the blackout periods listed in Section 3, with the operating pattern stated in Section 2, for the period covered by this declaration."
+        }
+      ]
+    },
+    {
+      "id": "submission",
+      "title": "5. Submission to the certification body",
+      "fields": [
+        {
+          "id": "submission_info",
+          "text": "LEAVE THIS SECTION BLANK UNTIL A CERTIFICATION BODY IS APPOINTED. No certification body is engaged and no certificate is held, so there is no sixty-day unannounced window to count back from yet. The designation in Sections 2 and 3 stands on its own, and is what senior site management is accountable for.\n\nWHEN THERE IS ONE: send this declaration at least one month before the sixty-day unannounced re-certification window opens, and record here who sent it, to whom, when and how. The PDF of this submitted entry is the document to send - there is no separate letter to keep in step with it.\n\nWHO SENDS IT. Senior site management designates, and signs Section 4. FSQM-003 puts communication with certification bodies and regulatory agencies with the SQF Practitioner, so the transmission is usually theirs to make and to record here. Both documents stay true because the two acts are kept apart.",
+          "type": "info",
+          "label": "When and how this is sent"
+        },
+        {
+          "id": "certification_body",
+          "type": "text",
+          "label": "Certification body",
+          "width": "half"
+        },
+        {
+          "id": "submitted_on",
+          "type": "date",
+          "label": "Submitted on",
+          "width": "half"
+        },
+        {
+          "id": "submitted_by",
+          "type": "text",
+          "label": "Submitted by",
+          "width": "half"
+        },
+        {
+          "id": "submission_method",
+          "type": "select",
+          "label": "How it was sent",
+          "width": "half",
+          "options": [
+            "Email",
+            "Certification body portal",
+            "Post",
+            "Other"
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": false,
+    "requireVerification": true,
+    "instanceTitleTemplate": "{period_from} to {period_to} — blackout declaration"
+  },
+  "schemaVersion": 1
+}

@@ -1,0 +1,222 @@
+{
+  "sections": [
+    {
+      "id": "section_1",
+      "title": "Management Review Record",
+      "fields": [
+        {
+          "id": "meeting_date",
+          "type": "date",
+          "label": "Meeting Date",
+          "width": "half",
+          "defaultToday": true
+        }
+      ]
+    },
+    {
+      "id": "meeting_attendance_logistics",
+      "title": "Meeting Attendance & Logistics",
+      "fields": [
+        {
+          "id": "meeting_chairperson",
+          "type": "text",
+          "label": "Meeting Chairperson",
+          "width": "half"
+        },
+        {
+          "id": "recorder",
+          "type": "text",
+          "label": "Recorder",
+          "width": "half"
+        },
+        {
+          "id": "attendees",
+          "rows": {
+            "min": 5,
+            "mode": "dynamic"
+          },
+          "type": "grid",
+          "label": "Attendees",
+          "columns": [
+            {
+              "id": "attendee_name",
+              "type": "text",
+              "label": "Attendee Name"
+            },
+            {
+              "id": "title",
+              "type": "text",
+              "label": "Title"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section_i_mandatory_system_policy_regulatory_rev",
+      "title": "Section I — Mandatory System, Policy & Regulatory Reviews",
+      "fields": [
+        {
+          "id": "info_mandatory_reviews",
+          "text": "In accordance with FSQM-005 and SQF 2.1.2.1, senior site management confirms the review of each foundational system element below, to establish continued suitability and effectiveness.\n\nEVERY ROW IS ANSWERED, INCLUDING \"NO CHANGE\". A row left blank is indistinguishable from a row nobody considered, and the clause asks for the review, not only for the changes it finds.\n\nFOOD SAFETY CULTURE PERFORMANCE has no measures set against it yet - the food safety culture plan has not been issued. Until it is, answer it with what the site actually did and observed, and say that no formal measures are in force. That is a true record; a target invented here would not be.",
+          "type": "info",
+          "label": "Mandatory Reviews"
+        },
+        {
+          "id": "mandatory_reviews",
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "Food Safety and Quality Policy (Ref: FSQM-002)",
+              "Organizational Chart and Management Changes (Ref: FSQM-004)",
+              "Changes to Food Safety Management System Documentation\nPolicies, procedures, specifications and the food safety plan changed since the last review (2.1.2.1 i).",
+              "Food Safety Fundamentals, Food Safety Plan and the Hazard and Risk Management System\nChanges to the HACCP plan, its hazard analysis and its critical limits, and to the prerequisite programmes supporting them (2.1.2.1 v).",
+              "Food Safety Culture Performance\nHow the site is performing against its food safety culture commitments, and what was done about it (2.1.2.1 ii).",
+              "Applicable Food Legislation and Regulatory Changes (Origin/Destination)",
+              "New Food Safety Related Scientific/Technical Information"
+            ]
+          },
+          "type": "grid",
+          "label": "Mandatory Reviews",
+          "columns": [
+            {
+              "id": "ref_doc_version",
+              "type": "text",
+              "label": "Ref. Doc Version #"
+            },
+            {
+              "id": "status",
+              "type": "select",
+              "label": "Status",
+              "options": [
+                "Current",
+                "Update"
+              ]
+            },
+            {
+              "id": "meeting_notes_discussion",
+              "type": "text",
+              "label": "Meeting Notes / Discussion"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section_ii_review_inputs_performance_data_findin",
+      "title": "Section II — Review Inputs (Performance Data & Findings)",
+      "fields": [
+        {
+          "id": "info_review_inputs",
+          "text": "Document the findings and the supporting data for each input below.\n\nA TARGET SHOWN AGAINST AN INPUT IS A MEASURE SENIOR MANAGEMENT HAS SET. Where an input has none, record what was found and what was decided; do not invent a figure to fill the line.\n\nWHERE AN ACTIVITY IS NOT PERFORMED, SAY SO ON THE ROW. The site performs no microbiological or environmental analysis, so there are no such results to trend - writing \"not performed\" is the honest answer and is what an auditor can check.",
+          "type": "info",
+          "label": "Review Inputs Info"
+        },
+        {
+          "id": "review_inputs",
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "Previous Management Review Action Items\nSummarize progress on prior goals, outstanding tasks, and the effectiveness of previous decisions (2.1.2.1 vi).",
+              "Internal, External, and Regulatory Audit Results\nSummarize findings from internal audits, third-party certification audits and regulatory inspections.\nTarget: > 90% food safety audit score",
+              "Customer Feedback and Complaints\nAnalyze trends from FRM-002 and REP-003.\nTarget: ≤ 1 quality complaint per month",
+              "Corrective and Preventive Actions (CAPA)\nReview outstanding non-conformances and the effectiveness of corrective action under FSQM-009, recorded on FRM-007.",
+              "Supplier and Raw Material Performance\nReview material compliance, COA verification, and supplier incidents per SOP-2.3.4.",
+              "Training Effectiveness and Resource Adequacy\nAssess staffing, equipment and training needs. Completion and quiz results are held in the Team Portal; competency is recorded on FRM-952 and sessions on FRM-953.",
+              "Facility and Equipment Maintenance / Sanitation\nReview Master Sanitation Schedule performance (FRM-901) and the daily sanitation, pre-operation and release records (FRM-903).",
+              "Food Safety Incidents\nReview any recalls, withdrawals, or labeling / allergen non-conformances since the last review.",
+              "Verification and Validation Activities\nReview the master verification schedule under FSQM-017 - what fell due, what was completed, and anything still outstanding (2.1.2.1 iv)."
+            ]
+          },
+          "type": "grid",
+          "label": "Review Inputs",
+          "columns": [
+            {
+              "id": "findings_discussion",
+              "type": "text",
+              "label": "Findings & Discussion"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section_iii_review_outputs_strategic_decisions",
+      "title": "Section III — Review Outputs & Strategic Decisions",
+      "fields": [
+        {
+          "id": "decisions_continuous_improvement",
+          "type": "textarea",
+          "label": "Decisions Regarding Continuous Improvement\nIdentify specific opportunities for improvement of the Food Safety and Quality Management System."
+        },
+        {
+          "id": "resource_allocation_infrastructure_needs",
+          "type": "textarea",
+          "label": "Resource Allocation and Infrastructure Needs\nDocument approved expenditures, staffing modifications, or infrastructure shifts required to maintain the SQF system."
+        }
+      ]
+    },
+    {
+      "id": "section_iv_action_item_tracking",
+      "title": "Section IV — Action Item Tracking",
+      "fields": [
+        {
+          "id": "action_item_tracking",
+          "rows": {
+            "min": 8,
+            "mode": "dynamic"
+          },
+          "type": "grid",
+          "label": "Action Item Tracking",
+          "columns": [
+            {
+              "id": "action_required",
+              "type": "text",
+              "label": "Action Required"
+            },
+            {
+              "id": "responsible_person",
+              "type": "text",
+              "label": "Responsible Person"
+            },
+            {
+              "id": "target_date",
+              "type": "date",
+              "label": "Target Date"
+            },
+            {
+              "id": "completed",
+              "type": "checkbox",
+              "label": "Completed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section_v_meeting_conclusion_final_sign_off",
+      "title": "Section V — Meeting Conclusion & Final Sign-off",
+      "fields": [
+        {
+          "id": "next_scheduled_management_review_date",
+          "type": "date",
+          "label": "Next Scheduled Management Review Date"
+        },
+        {
+          "id": "sqf_practitioner_signature",
+          "role": "verifier",
+          "type": "signature",
+          "label": "SQF Practitioner"
+        },
+        {
+          "id": "senior_site_management_signature",
+          "role": "verifier",
+          "type": "signature",
+          "label": "Senior Site Management"
+        }
+      ]
+    }
+  ],
+  "settings": {},
+  "schemaVersion": 1
+}
