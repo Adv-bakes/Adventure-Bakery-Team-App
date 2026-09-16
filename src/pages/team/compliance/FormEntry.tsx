@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, Mic, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, Mic, PenLine, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -36,6 +36,15 @@ import type { VoiceLang } from "@/lib/voiceLexicon";
 import { VOICE_MSG } from "@/lib/voiceMessages";
 import type { VoiceCommandState } from "@/lib/voiceCommandTarget";
 import { setUnsavedForm } from "@/lib/unsavedChanges";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  fetchSignatories, openSignatureRequest, requestSignature, resolveSignatureRequest,
+  type AppNotification, type Signatory,
+} from "@/lib/notifications";
+import { unsignedVerifierFields } from "@/lib/formSchema";
 import { useBottomBarClearance } from "@/hooks/useBottomBarClearance";
 import { WarningList } from "@/components/team/voice/VoiceCommandPanel";
 
@@ -72,6 +81,13 @@ export default function FormEntry() {
   const [response, setResponse] = useState<FormResponse | null>(null);
   const [resolved, setResolved] = useState<ResolvedSchema | null>(null);
   const [signer, setSigner] = useState<Signer | undefined>();
+  // The open signature request for this entry, if there is one, plus the dialog that creates it.
+  const [request, setRequest] = useState<AppNotification | null>(null);
+  const [askOpen, setAskOpen] = useState(false);
+  const [signatories, setSignatories] = useState<Signatory[]>([]);
+  const [askWho, setAskWho] = useState("");
+  const [askNote, setAskNote] = useState("");
+  const [asking, setAsking] = useState(false);
   const [fillerName, setFillerName] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -126,6 +142,59 @@ export default function FormEntry() {
   };
   useEffect(() => { load(); }, [docId, responseId]);
 
+  /** Is a signature already being waited on for this entry? Drives the button's wording. */
+  const refreshRequest = async () => {
+    if (!responseId) return;
+    try { setRequest(await openSignatureRequest(responseId)); }
+    catch { /* The button just falls back to "Request signature". */ }
+  };
+  useEffect(() => { void refreshRequest(); }, [responseId]);
+
+  const askForSignature = async () => {
+    if (!response || !askWho) return;
+    setAsking(true);
+    try {
+      await requestSignature(response.id, askWho, askNote);
+      await refreshRequest();
+      setAskOpen(false);
+      setAskNote("");
+      toast.success("Signature requested");
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not send the request");
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  const withdrawRequest = async () => {
+    if (!response) return;
+    try {
+      await resolveSignatureRequest(response.id, "Withdrawn by the requester");
+      setRequest(null);
+      toast.success("Request withdrawn");
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not withdraw the request");
+    }
+  };
+
+  // Opening the dialog is what loads the list of people who can sign — one query, and only for
+  // somebody who is actually asking.
+  const openAsk = async () => {
+    setAskOpen(true);
+    if (signatories.length) return;
+    try {
+      const people = await fetchSignatories();
+      setSignatories(people);
+      // One signer is the normal case here, and making somebody pick from a list of one is noise.
+      if (people.length === 1) setAskWho(people[0].id);
+    } catch {
+      toast.error("Could not load who can sign this");
+    }
+  };
+
+  /** Verifier lines still unsigned — there is nothing to ask for when there are none. */
+  const pendingSignatures = schema ? unsignedVerifierFields(schema, form.watch()) : [];
+
   // Warn about unsaved edits when leaving the page. isDirty must be read during
   // render — RHF's formState is a subscription proxy, so reading it only inside
   // the event handler would never activate dirty tracking.
@@ -172,6 +241,20 @@ export default function FormEntry() {
     form.reset({ ...emptyValues(schema!), ...(updated.data ?? {}) });
   };
 
+  /**
+   * Close any open signature request once the lines it asked for are signed.
+   *
+   * Called after a save or a submit, where the schema and the saved answers are both in hand — the
+   * only place that can tell without re-deriving anything. resolve_signature_request() is a no-op
+   * when there is no open request, so this costs one cheap call and never needs to ask first.
+   */
+  const closeRequestIfSigned = async (saved: Record<string, any>) => {
+    if (!response || !schema) return;
+    if (unsignedVerifierFields(schema, saved).length > 0) return;
+    try { await resolveSignatureRequest(response.id, "Signed"); }
+    catch { /* The signature is the record; a lingering prompt is not worth a toast. */ }
+  };
+
   const saveDraft = async () => {
     if (!response) return;
     setSaving(true);
@@ -179,6 +262,8 @@ export default function FormEntry() {
       const updated = await saveResponseData(response.id, form.getValues(), response.updated_at);
       applyResult(updated);
       setVoice(v => (v?.kind === "applied" ? null : v));
+      await closeRequestIfSigned(updated.data ?? {});
+      void refreshRequest();
       toast.success("Draft saved");
     } catch (e: any) {
       if (e instanceof StaleResponseError) {
@@ -200,6 +285,10 @@ export default function FormEntry() {
       try {
         const updated = await submitResponse(response.id, values, response.updated_at);
         applyResult(updated);
+        // A submitted entry can no longer be signed, so an outstanding request is finished either
+        // way — satisfied if the lines were signed, moot if they were not.
+        try { await resolveSignatureRequest(response.id, "Entry submitted"); } catch { /* prompt only */ }
+        setRequest(null);
         toast.success("Entry submitted");
       } catch (e: any) {
         if (e instanceof StaleResponseError) toast.error(e.message);
@@ -663,6 +752,23 @@ export default function FormEntry() {
             </Button>
           </>
         )}
+        {/*
+          Only offered while a verifier line is actually outstanding. Once every one is signed there
+          is nobody to ask, and a button that sends a pointless prompt is how a feed fills with
+          things people learn to skip.
+        */}
+        {!isSubmitted && pendingSignatures.length > 0 && (
+          request ? (
+            <Button type="button" variant="outline" onClick={withdrawRequest}
+              title={`Requested ${format(new Date(request.created_at), "M/d/yyyy h:mm a")}`}>
+              <PenLine className="w-4 h-4 mr-1.5" />Signature requested — withdraw
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" onClick={openAsk} disabled={saving || submitting}>
+              <PenLine className="w-4 h-4 mr-1.5" />Request signature
+            </Button>
+          )
+        )}
         {isSubmitted && isAdmin && (
           <Button type="button" variant="outline" onClick={reopen}>
             <LockOpen className="w-4 h-4 mr-1.5" />Reopen
@@ -687,6 +793,64 @@ export default function FormEntry() {
           </Button>
         )}
       </div>
+
+      {/* Ask someone to sign */}
+      <AlertDialog open={askOpen} onOpenChange={(v) => { if (!v) setAskOpen(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ask for a signature</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1 text-sm">
+                <p>
+                  They get this in their notifications with a link straight to this entry. Save your
+                  changes first — they will open whatever has been saved.
+                </p>
+                <p>
+                  Outstanding: {pendingSignatures.map(f => f.label).join(", ")}.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Who should sign it</label>
+              <Select value={askWho} onValueChange={setAskWho}>
+                <SelectTrigger><SelectValue placeholder="Choose a person" /></SelectTrigger>
+                <SelectContent>
+                  {signatories.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {signatories.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Nobody on this site holds the admin role a verifier signature needs.
+                </p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium">Note (optional)</label>
+              <Textarea
+                rows={3}
+                placeholder="What you are asking them to check, or anything they need to know"
+                value={askNote}
+                onChange={(e) => setAskNote(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={asking}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); void askForSignature(); }}
+              disabled={asking || !askWho}
+            >
+              {asking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send request"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Submit confirmation */}
       <AlertDialog open={confirmSubmit} onOpenChange={setConfirmSubmit}>

@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Bell, CalendarClock, CheckCircle2, ChevronDown, Loader2, Thermometer } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, CheckCircle2, ChevronDown, Loader2, PenLine, Thermometer } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ function NotificationCard({
   n, onDismiss,
 }: { n: AppNotification; onDismiss: (n: AppNotification) => void }) {
   const isTemp = n.notification_type === "temperature_alert";
+  const isSignature = n.notification_type === "signature_requested";
   const overdue = n.severity === "overdue";
   const accent = overdue ? "border-l-destructive"
     : isTemp ? "border-l-destructive/70"
@@ -55,12 +56,15 @@ function NotificationCard({
         <div className="flex items-start gap-3 flex-wrap">
           <div className="mt-0.5 shrink-0">
             {isTemp ? <Thermometer className="w-4 h-4 text-destructive" />
+              : isSignature ? <PenLine className="w-4 h-4 text-[hsl(var(--tp-gold))]" />
               : overdue ? <AlertTriangle className="w-4 h-4 text-destructive" />
               : <CalendarClock className="w-4 h-4 text-[hsl(var(--tp-gold))]" />}
           </div>
           <div className="flex-1 min-w-[240px]">
             <p className="font-medium leading-snug">{n.title}</p>
-            {n.message && <p className="text-sm tp-card-dim mt-1">{n.message}</p>}
+            {n.message && (
+              <p className="text-sm tp-card-dim mt-1 whitespace-pre-line">{n.message}</p>
+            )}
 
             <div className="flex items-center gap-2 flex-wrap mt-2">
               {n.responsible_position && <ResponsiblePill position={n.responsible_position} />}
@@ -146,7 +150,9 @@ export default function Notifications() {
     }
   };
 
-  const overdue = open.filter((n) => n.severity === "overdue");
+  const signatures = open.filter((n) => n.notification_type === "signature_requested");
+  const overdue = open.filter((n) => n.severity === "overdue"
+    && n.notification_type !== "signature_requested");
   const due = open.filter((n) => n.notification_type === "verification_due" && n.severity !== "overdue");
   const alerts = open.filter((n) => n.notification_type === "temperature_alert");
 
@@ -166,8 +172,9 @@ export default function Notifications() {
           Notifications
         </h1>
         <p className="text-sm tp-on-bg-dim mt-1">
-          Verification activities that have fallen due, and open alerts. Everything here is visible
-          to the whole team and labelled with the position responsible for it.
+          Verification activities that have fallen due, and open alerts — visible to the whole team
+          and labelled with the position responsible for each.
+          {" A signature someone has asked you for is addressed to you alone; everything else is the team's."}
         </p>
       </div>
 
@@ -187,6 +194,7 @@ export default function Notifications() {
         </Card>
       ) : (
         <div className="space-y-6">
+          {group("Asked of you", signatures)}
           {group("Overdue", overdue)}
           {group("Due", due)}
           {group("Alerts", alerts)}
