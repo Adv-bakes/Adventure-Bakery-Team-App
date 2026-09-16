@@ -696,3 +696,26 @@ if __name__ == "__main__":
     b006 = blocks_from_schema(s006)
     build_pdf("sop-drafts/FRM-006-blank.pdf", meta006, b006)
     build_docx("sop-drafts/FRM-006-blank.docx", meta006, b006)
+
+    # FRM-009 - Monthly SQF Update Record. PORTRAIT: one fixed grid that is a label column plus a
+    # single "What was raised" column, and a narrow actions grid (Action / Owner / Due / Completed).
+    # Nothing is competing for horizontal room, and landscape would make the one wide column absurd.
+    #
+    # THE FORM IS DELIBERATELY SHORT and the blank has to stay that way. Twelve of these a year are
+    # only kept if each takes minutes to fill; a printed copy that runs to three pages would be
+    # self-defeating. Section 2's six fixed rows print their labels in full because the prompt IS
+    # the control - a row answered "none" is evidence the question was asked, which is the whole
+    # difference between this record and the sentence it replaced.
+    #
+    # rev New, DRAFT: seeded by 20260916000007 after review of FSQM-005 found that the programme
+    # named FRM-001 for the annual review and left the monthly update documented "in minutes" with
+    # no form, no location and nothing to prompt it - the same weakness as the "Flash Report" that
+    # draft replaced, one level less obvious. Re-run this block once the issue migration stamps it.
+    s009 = load_schema("sop-drafts/FRM-009-monthly-sqf-update-schema.json")
+    meta009 = {"form_no": "FRM-009", "title": "Monthly SQF Update Record",
+               "revision": "New", "eff": "(draft)", "appr": "(pending)",
+               "sqf": "2.1.2.2",
+               "footer": FOOT.format(no="FRM-009")}
+    b009 = blocks_from_schema(s009)
+    build_pdf("sop-drafts/FRM-009-blank.pdf", meta009, b009)
+    build_docx("sop-drafts/FRM-009-blank.docx", meta009, b009)

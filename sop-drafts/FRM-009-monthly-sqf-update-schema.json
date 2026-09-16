@@ -1,0 +1,170 @@
+{
+  "sections": [
+    {
+      "id": "update",
+      "title": "1. The update",
+      "fields": [
+        {
+          "id": "how_this_works",
+          "text": "ONE ENTRY IS ONE MONTHLY UPDATE. SQF 2.1.2.2 asks the SQF Practitioner to update senior site management at least monthly on matters affecting the SQF System, and for the update AND management's response to be documented. This is that record.\n\nIT IS DELIBERATELY SHORT. Twelve of these a year only get filled in if filling one in takes minutes. Most months several rows will read \"none\", and that is a complete answer - a row saying nothing arose is evidence the question was asked.\n\nMOST OF SECTION 2 IS ALREADY ON THE NOTIFICATIONS PAGE. Verification activities that have fallen due, open alerts and outstanding items are listed there; this record is where what was said about them, and what management decided, gets written down.\n\nTHE ANNUAL REVIEW IS A DIFFERENT RECORD. The full review of the SQF System against the six items 2.1.2.1 names is recorded on FRM-001, once a year. This form does not replace it.",
+          "type": "info",
+          "label": "How this record works"
+        },
+        {
+          "id": "update_date",
+          "type": "date",
+          "label": "Date of the update",
+          "width": "third",
+          "required": true,
+          "showInList": true,
+          "defaultToday": true
+        },
+        {
+          "id": "month_covered",
+          "help": "For example \"September 2026\".",
+          "type": "text",
+          "label": "Month covered",
+          "width": "third",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "present",
+          "type": "text",
+          "label": "Who was present",
+          "width": "third",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "matters",
+      "title": "2. Matters raised (2.1.2.2)",
+      "fields": [
+        {
+          "id": "matters_info",
+          "text": "Answer every row, including with \"none\". A blank row cannot be told apart from one nobody raised.",
+          "type": "info",
+          "label": "How to fill this in"
+        },
+        {
+          "id": "matters",
+          "rows": {
+            "mode": "fixed",
+            "labels": [
+              "Verification activities due or overdue\nWhat the schedule shows outstanding, and why.",
+              "Open corrective actions\nCAPAs on FRM-007 still open, and anything past its due date.",
+              "Complaints, incidents and recalls\nAnything raised since the last update.",
+              "Audit and inspection findings\nInternal, customer, certification body or regulatory.",
+              "Changes affecting the SQF System\nProcess, product, equipment, facility or personnel.",
+              "Anything needing a decision or a resource"
+            ],
+            "labelHeader": "Matter"
+          },
+          "type": "grid",
+          "label": "Matters affecting the SQF System",
+          "columns": [
+            {
+              "id": "raised",
+              "type": "text",
+              "label": "What was raised",
+              "width": 3,
+              "required": true
+            }
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "response",
+      "title": "3. Management's response",
+      "fields": [
+        {
+          "id": "response",
+          "help": "What senior site management said about the matters above, and what was decided.",
+          "type": "textarea",
+          "label": "Response and decisions",
+          "required": true
+        },
+        {
+          "id": "actions",
+          "help": "Leave empty where nothing was actioned.",
+          "rows": {
+            "min": 0,
+            "mode": "dynamic",
+            "addLabel": "Add an action"
+          },
+          "type": "grid",
+          "label": "Actions arising",
+          "columns": [
+            {
+              "id": "action",
+              "type": "text",
+              "label": "Action",
+              "width": 3,
+              "required": true
+            },
+            {
+              "id": "owner",
+              "type": "text",
+              "label": "Owner",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "due",
+              "type": "date",
+              "label": "Due",
+              "width": 1,
+              "required": true
+            },
+            {
+              "id": "done",
+              "type": "pass_fail",
+              "label": "Completed",
+              "width": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "signoff",
+      "title": "4. Sign-off",
+      "fields": [
+        {
+          "id": "signoff_info",
+          "text": "BOTH SIGNATURES ARE THE POINT OF THE RECORD. 2.1.2.2 asks for the update and the response - the SQF Practitioner signs that the update was given, senior site management signs its response to it. Where one person holds both posts, they sign both and the record shows it as it is.\n\nOnly admin/owner can sign the management line. If that is not you, fill this in, save it as a draft and use Request signature to send it to whoever signs.",
+          "type": "info",
+          "label": "Who signs what"
+        },
+        {
+          "id": "updated_by",
+          "role": "filler",
+          "type": "signature",
+          "label": "SQF Practitioner - update given",
+          "width": "half",
+          "required": true,
+          "statement": "I gave the update recorded above to senior site management on the date shown."
+        },
+        {
+          "id": "management_response",
+          "role": "verifier",
+          "type": "signature",
+          "label": "Senior Site Management - response",
+          "width": "half",
+          "required": true,
+          "statement": "I received this update and the response and decisions recorded above are mine."
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": false,
+    "requireVerification": true,
+    "instanceTitleTemplate": "{update_date} — monthly SQF update"
+  },
+  "schemaVersion": 1
+}
