@@ -17,7 +17,6 @@ import { VoiceCommandPanel } from "@/components/team/voice/VoiceCommandPanel";
 import type { VoiceLang } from "@/lib/voiceLexicon";
 import { useUserRole } from "@/hooks/useUserRole";
 import { countOpenNotifications } from "@/lib/notifications";
-import { countAwaitingSignature } from "@/lib/formResponses";
 
 interface TeamLayoutProps { children: ReactNode; }
 interface NavItem {
@@ -91,10 +90,6 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   const canVoice = roles.some((r) => r === "staff" || r === "admin" || r === "owner");
   const [inboxCount, setInboxCount] = useState(0);
   const [notifCount, setNotifCount] = useState(0);
-  // Drafts waiting on a verifier signature. Only admin/owner can sign one, so for anybody else
-  // this stays 0 rather than showing a pill for work they are not permitted to do.
-  const [signatureCount, setSignatureCount] = useState(0);
-  const canVerify = roles.some((r) => r === "admin" || r === "owner");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -161,26 +156,6 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
     return () => { cancelled = true; clearInterval(t); };
   }, [location.pathname]);
 
-  // Entries waiting on this user's signature. Same idiom again — 30s, pathname-keyed, last-known
-  // value kept on failure. It rides the Notifications pill rather than adding a second badged item:
-  // the page lists these alongside the feed, so the number still matches what opening it shows, and
-  // a second pill competing with the first is how people learn to ignore both.
-  useEffect(() => {
-    if (!canVerify) { setSignatureCount(0); return; }
-    let cancelled = false;
-    const refresh = async () => {
-      try {
-        const n = await countAwaitingSignature();
-        if (!cancelled) setSignatureCount(n);
-      } catch {
-        // Leave the last known value, as above.
-      }
-    };
-    refresh();
-    const t = setInterval(refresh, 30000);
-    return () => { cancelled = true; clearInterval(t); };
-  }, [location.pathname, canVerify]);
-
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) toast.error("Error signing out");
@@ -230,7 +205,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
                   const active = location.pathname === item.path ||
                     (item.path !== "/team/dashboard" && location.pathname.startsWith(item.path));
                   const badgeCount = item.badge === "inbox" ? inboxCount
-                    : item.badge === "notifications" ? notifCount + signatureCount : 0;
+                    : item.badge === "notifications" ? notifCount : 0;
                   const showBadge = badgeCount > 0;
                   return (
                     <Link

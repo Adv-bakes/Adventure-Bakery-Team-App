@@ -27,11 +27,7 @@ import {
   AppNotification, dismissNotification, fetchClearedNotifications,
   fetchOpenNotifications, isDismissable,
 } from "@/lib/notifications";
-import {
-  AwaitingSignature, fetchAwaitingSignature, fetchProfileNames,
-} from "@/lib/formResponses";
-import { useUserRole } from "@/hooks/useUserRole";
-import { FROM_NOTIFICATIONS } from "@/lib/verificationSchedule";
+import { fetchProfileNames } from "@/lib/formResponses";
 
 function ResponsiblePill({ position }: { position: string }) {
   // 2.5.2.2 requires the schedule to name who is responsible for each activity. That label travels
@@ -44,57 +40,11 @@ function ResponsiblePill({ position }: { position: string }) {
   );
 }
 
-/**
- * An entry someone has filled in and left as a draft, waiting on a verifier signature.
- *
- * Not a notification row — nothing is written when a form is left awaiting review. The queue is
- * derived from the schema (which lines need a verifier) and the entry (which of them are signed),
- * so it cannot point at a deleted entry, outlive the signature it asks for, or be forgotten by
- * whoever filled the form in. It is also why there is no Clear button here: the way to clear it is
- * to open the entry and sign.
- */
-function SignatureCard({ item, byName }: { item: AwaitingSignature; byName: string | null }) {
-  const waitingDays = (() => {
-    const ms = Date.now() - new Date(item.createdAt).getTime();
-    const d = Math.floor(ms / 86_400_000);
-    return d <= 0 ? "today" : d === 1 ? "1 day" : `${d} days`;
-  })();
-
-  return (
-    <Card className="border-l-4 border-l-[hsl(var(--tp-gold))]">
-      <CardContent className="pt-4 pb-4">
-        <div className="flex items-start gap-3 flex-wrap">
-          <div className="mt-0.5 shrink-0">
-            <PenLine className="w-4 h-4 text-[hsl(var(--tp-gold))]" />
-          </div>
-          <div className="min-w-0 flex-1 space-y-1">
-            <p className="font-medium">
-              {item.formNumber} — {item.entryTitle}
-            </p>
-            <p className="text-sm tp-card-dim">
-              {item.documentTitle}
-            </p>
-            <p className="text-sm tp-card-dim">
-              Awaiting {item.awaiting.join(" and ")}.
-              {byName ? ` Drafted by ${byName}.` : ""} Waiting {waitingDays}.
-            </p>
-            <Link
-              to={`/team/compliance/forms/${item.documentId}/entries/${item.responseId}?${FROM_NOTIFICATIONS}`}
-              className="inline-block text-sm underline underline-offset-2 text-[hsl(var(--tp-gold))]"
-            >
-              Open and sign
-            </Link>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function NotificationCard({
   n, onDismiss,
 }: { n: AppNotification; onDismiss: (n: AppNotification) => void }) {
   const isTemp = n.notification_type === "temperature_alert";
+  const isSignature = n.notification_type === "signature_requested";
   const overdue = n.severity === "overdue";
   const accent = overdue ? "border-l-destructive"
     : isTemp ? "border-l-destructive/70"
@@ -106,12 +56,15 @@ function NotificationCard({
         <div className="flex items-start gap-3 flex-wrap">
           <div className="mt-0.5 shrink-0">
             {isTemp ? <Thermometer className="w-4 h-4 text-destructive" />
+              : isSignature ? <PenLine className="w-4 h-4 text-[hsl(var(--tp-gold))]" />
               : overdue ? <AlertTriangle className="w-4 h-4 text-destructive" />
               : <CalendarClock className="w-4 h-4 text-[hsl(var(--tp-gold))]" />}
           </div>
           <div className="flex-1 min-w-[240px]">
             <p className="font-medium leading-snug">{n.title}</p>
-            {n.message && <p className="text-sm tp-card-dim mt-1">{n.message}</p>}
+            {n.message && (
+              <p className="text-sm tp-card-dim mt-1 whitespace-pre-line">{n.message}</p>
+            )}
 
             <div className="flex items-center gap-2 flex-wrap mt-2">
               {n.responsible_position && <ResponsiblePill position={n.responsible_position} />}
@@ -155,12 +108,6 @@ function NotificationCard({
 }
 
 export default function Notifications() {
-  const { roles } = useUserRole();
-  // Only admin/owner can sign a verifier line (SignatureFieldInput enforces it, and RLS allows
-  // only admin/owner to write to another person's draft at all), so nobody else is shown a queue
-  // of work they cannot do.
-  const canVerify = roles.some((r) => r === "admin" || r === "owner");
-  const [awaiting, setAwaiting] = useState<AwaitingSignature[]>([]);
   const [open, setOpen] = useState<AppNotification[]>([]);
   const [cleared, setCleared] = useState<AppNotification[]>([]);
   const [names, setNames] = useState<Map<string, string>>(new Map());
@@ -173,27 +120,17 @@ export default function Notifications() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [o, c, sig] = await Promise.all([
-        fetchOpenNotifications(),
-        fetchClearedNotifications(),
-        canVerify ? fetchAwaitingSignature() : Promise.resolve([] as AwaitingSignature[]),
-      ]);
+      const [o, c] = await Promise.all([fetchOpenNotifications(), fetchClearedNotifications()]);
       setOpen(o);
       setCleared(c);
-      setAwaiting(sig);
-      // One lookup for both lists: who cleared a notification, and who drafted an entry awaiting
-      // signature. Knowing whose work is waiting on you is most of the value of the queue.
-      const ids = [...new Set([
-        ...c.map((n) => n.dismissed_by),
-        ...sig.map((a) => a.createdBy),
-      ].filter((v): v is string => !!v))];
+      const ids = [...new Set(c.map((n) => n.dismissed_by).filter((v): v is string => !!v))];
       setNames(ids.length ? await fetchProfileNames(ids) : new Map());
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not load notifications");
     } finally {
       setLoading(false);
     }
-  }, [canVerify]);
+  }, []);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -213,7 +150,9 @@ export default function Notifications() {
     }
   };
 
-  const overdue = open.filter((n) => n.severity === "overdue");
+  const signatures = open.filter((n) => n.notification_type === "signature_requested");
+  const overdue = open.filter((n) => n.severity === "overdue"
+    && n.notification_type !== "signature_requested");
   const due = open.filter((n) => n.notification_type === "verification_due" && n.severity !== "overdue");
   const alerts = open.filter((n) => n.notification_type === "temperature_alert");
 
@@ -235,7 +174,7 @@ export default function Notifications() {
         <p className="text-sm tp-on-bg-dim mt-1">
           Verification activities that have fallen due, and open alerts — visible to the whole team
           and labelled with the position responsible for each.
-          {canVerify && " Entries awaiting your signature are listed first; those are yours alone to clear, by signing them."}
+          {" A signature someone has asked you for is addressed to you alone; everything else is the team's."}
         </p>
       </div>
 
@@ -243,7 +182,7 @@ export default function Notifications() {
         <div className="flex items-center gap-2 tp-on-bg-dim">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
-      ) : open.length === 0 && awaiting.length === 0 ? (
+      ) : open.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">
             <CheckCircle2 className="w-8 h-8 mx-auto text-[hsl(var(--tp-gold))]" />
@@ -255,17 +194,7 @@ export default function Notifications() {
         </Card>
       ) : (
         <div className="space-y-6">
-          {awaiting.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-sm font-semibold tp-on-bg-dim">
-                Awaiting your signature ({awaiting.length})
-              </h2>
-              {awaiting.map((a) => (
-                <SignatureCard key={a.responseId} item={a}
-                  byName={names.get(a.createdBy ?? "") ?? null} />
-              ))}
-            </section>
-          )}
+          {group("Asked of you", signatures)}
           {group("Overdue", overdue)}
           {group("Due", due)}
           {group("Alerts", alerts)}
