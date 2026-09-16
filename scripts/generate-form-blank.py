@@ -647,3 +647,52 @@ if __name__ == "__main__":
     b801 = blocks_from_schema(s801)
     build_pdf("sop-drafts/FRM-801-blank.pdf", meta801, b801)
     build_docx("sop-drafts/FRM-801-blank.docx", meta801, b801)
+
+    # FRM-001 - Management Review Record. PORTRAIT: the two agenda grids are a long label column
+    # plus three narrow ones (Ref. Doc Version / Status / Notes) and a single wide free-text column
+    # respectively, and the rest of the form is attendees, two textareas, an action tracker and
+    # signatures. Landscape would stretch the Findings column to the width of the page and leave the
+    # scalar sections stranded.
+    #
+    # THE AGENDA IS THE POINT OF THIS BLANK, so both fixed grids print their row labels in full -
+    # each carries the clause limb it satisfies. A management review run off a printed agenda that
+    # omits an item is how the finding this form just closed happened in the first place.
+    #
+    # rev v4, effective 2026-09-16, approved GJM: taken there by 20260916000006 under D-06, which
+    # added the three agenda items 2.1.2.1 requires but FRM-001 lacked (documentation changes, food
+    # safety culture performance, and the hazard and risk management system stated as such), added a
+    # verification and validation input for 2.1.2.1 (iv), corrected three references that pointed at
+    # FSQM-002/026/033 - the policy, and two numbers reserved for documents not yet written - and
+    # removed three targets asserting analysis the site does not perform.
+    s001 = load_schema("sop-drafts/FRM-001-management-review-schema.json")
+    meta001 = {"form_no": "FRM-001", "title": "Management Review Record",
+               "revision": "v4", "eff": "2026-09-16", "appr": "GJM",
+               "sqf": "2.1.2.1",
+               "footer": FOOT.format(no="FRM-001")}
+    b001 = blocks_from_schema(s001)
+    build_pdf("sop-drafts/FRM-001-blank.pdf", meta001, b001)
+    build_docx("sop-drafts/FRM-001-blank.docx", meta001, b001)
+
+    # FRM-006 - Blackout Period Declaration. PORTRAIT: one narrow grid (From / To / Business
+    # justification) and four sections of scalar fields, a signature and a submission block.
+    #
+    # ONE SHEET IS ONE DECLARATION, covering a stated period - which is also how the verification
+    # schedule dates it: the next declaration is due the day after the last day this one covers,
+    # not a year after it was filed.
+    #
+    # SECTION 2 IS NOT A BLACKOUT LIST and the printed blank has to keep that distinction as
+    # clearly as the screen does, because this is the copy that goes to the certification body. The
+    # operating pattern is recorded so an unannounced audit is planned against a day the site runs;
+    # the blackout DATES are Section 3. Collapsing the two would declare roughly a hundred
+    # non-operating weekdays a year as blackout, which misstates 2.1.1.8 and invites a refusal.
+    #
+    # rev New, effective 2026-09-16, approved GJM: seeded draft by 20260916000002 and issued by
+    # 20260916000004 under D-05, alongside the schedule row that prompts it.
+    s006 = load_schema("sop-drafts/FRM-006-blackout-declaration-schema.json")
+    meta006 = {"form_no": "FRM-006", "title": "Blackout Period Declaration",
+               "revision": "New", "eff": "2026-09-16", "appr": "GJM",
+               "sqf": "2.1.1.8",
+               "footer": FOOT.format(no="FRM-006")}
+    b006 = blocks_from_schema(s006)
+    build_pdf("sop-drafts/FRM-006-blank.pdf", meta006, b006)
+    build_docx("sop-drafts/FRM-006-blank.docx", meta006, b006)
