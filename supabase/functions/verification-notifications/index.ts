@@ -157,6 +157,36 @@ serve(async (req) => {
       }
     }
 
+    // A row whose next-due date comes out of the RECORD rather than off the clock needs the entry
+    // itself, not just its date. It is a separate query over only those documents on purpose: the
+    // query above deliberately does not select `data`, because one FRM-913 entry is large and
+    // dragging every form's answers into a job with a 5-second budget is the pg_net timeout again.
+    //
+    // The MAXIMUM covers-until across submitted entries, not the one on the newest entry. A
+    // correction filed to last year's declaration after this year's was filed would otherwise walk
+    // the due date backwards and re-raise a notification somebody had already discharged.
+    const coversByKey = new Map<string, string | null>();
+    const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+    for (const r of formRows) {
+      if (!r.covers_until_field) continue;
+      const docId = docIdOf.get(r.evidence_document_number!);
+      if (!docId) continue; // reported below, where the activity is skipped
+      const { data, error } = await admin
+        .from("sop_document_responses")
+        .select("data")
+        .eq("document_id", docId)
+        .eq("status", "submitted")
+        .limit(200);
+      if (error) { summary.errors.push(`${r.activity_key}: ${error.message}`); continue; }
+      let best: string | null = null;
+      for (const e of data ?? []) {
+        const answers = ((e as { data: Record<string, unknown> | null }).data ?? {});
+        const v = String(answers[r.covers_until_field] ?? "").slice(0, 10);
+        if (ISO_DATE.test(v) && (best === null || v > best)) best = v;
+      }
+      coversByKey.set(r.activity_key, best);
+    }
+
     for (const r of formRows) {
       const docId = docIdOf.get(r.evidence_document_number!);
       if (!docId) {
@@ -168,6 +198,7 @@ serve(async (req) => {
       completions.push({
         activity_key: r.activity_key,
         completed_on: latestByDoc.get(docId) ?? null,
+        covers_until: coversByKey.get(r.activity_key) ?? null,
       });
     }
 
