@@ -6,7 +6,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import {
-  emptyValues, getFormSchema, initialsFromName,
+  emptyValues, getFormSchema, initialsFromName, instanceTitle, unsignedVerifierFields,
   type FieldManifest, type FormSchema, type LabelFact, type LabelScanResult, type ScanMode,
 } from "@/lib/formSchema";
 
@@ -455,4 +455,124 @@ export async function resolveSchemaForResponse(
   }
 
   return live ? { schema: live, source: "fallback", pinnedRevision: pinned } : null;
+}
+
+// ---------------------------------------------------------------- awaiting a verifier signature
+
+export interface AwaitingSignature {
+  responseId: string;
+  documentId: string;
+  formNumber: string;
+  documentTitle: string;
+  /** What the entry calls itself — settings.instanceTitleTemplate, or the form number and date. */
+  entryTitle: string;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  /** Labels of the verifier signatures still unsigned, in schema order. */
+  awaiting: string[];
+}
+
+/**
+ * Drafts carrying an unsigned verifier signature — the entries somebody is waiting on.
+ *
+ * DERIVED, NOT REQUESTED. There is no "send for signature" action and no assignment row, because
+ * the form schema already says which lines need a verifier and the entry already says which of them
+ * are signed. A queue computed from those two facts cannot drift out of step with them: it cannot
+ * point at a deleted entry, cannot survive a signature that has already been given, and cannot be
+ * forgotten by whoever filled the form in.
+ *
+ * ONLY ADMIN/OWNER CAN CLEAR THIS QUEUE, which is why callers gate on the role rather than this
+ * function filtering by it. SignatureFieldInput allows a verifier signature only for admin/owner,
+ * and RLS allows only admin/owner to update another person's draft at all, so for anybody else the
+ * list would be a set of tasks they cannot perform.
+ *
+ * Submitted entries are excluded: an entry that went in unverified is a records problem for the
+ * reviewer, not a signature waiting to be collected.
+ */
+type VerifierDoc = {
+  row: { id: string; sop_number: string | null; title: string | null };
+  schema: FormSchema;
+};
+
+/**
+ * The schemas are cached because the sidebar polls this counter every 30 seconds and they are the
+ * expensive half: ~104 kB of form schemas against ~25 kB of draft answers, and the schemas only
+ * change when an admin edits a form. The DRAFTS are never cached — a signature given a moment ago
+ * has to leave the queue on the next poll, which is the whole point of the badge.
+ *
+ * The cost of the TTL is that a verifier line added to a form takes up to five minutes to start
+ * collecting entries. Nothing waits on that; a draft signed or deleted still disappears in 30s.
+ */
+let verifierDocsCache: { at: number; docs: Map<string, VerifierDoc> } | null = null;
+const VERIFIER_DOCS_TTL_MS = 5 * 60_000;
+
+async function verifierDocs(): Promise<Map<string, VerifierDoc>> {
+  if (verifierDocsCache && Date.now() - verifierDocsCache.at < VERIFIER_DOCS_TTL_MS) {
+    return verifierDocsCache.docs;
+  }
+  const { data, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, sop_number, title, content")
+    .eq("type", "form")
+    .eq("status", "active");
+  if (error) throw error;
+
+  type DocRow = { id: string; sop_number: string | null; title: string | null; content: any };
+  const docs = new Map<string, VerifierDoc>();
+  for (const d of (data ?? []) as DocRow[]) {
+    const schema = getFormSchema(d.content);
+    if (!schema) continue;
+    // Passing {} asks "which verifier lines would an empty entry be missing" — i.e. does this form
+    // have any at all. Most forms do not, and they never need a drafts query.
+    if (unsignedVerifierFields(schema, {}).length === 0) continue;
+    docs.set(d.id, { row: { id: d.id, sop_number: d.sop_number, title: d.title }, schema });
+  }
+  verifierDocsCache = { at: Date.now(), docs };
+  return docs;
+}
+
+/** Drop the cached schemas — call after saving a form's schema so the queue picks it up at once. */
+export function invalidateVerifierDocs(): void {
+  verifierDocsCache = null;
+}
+
+export async function fetchAwaitingSignature(): Promise<AwaitingSignature[]> {
+  const wanted = await verifierDocs();
+  if (wanted.size === 0) return [];
+
+  const { data: rows, error } = await (supabase as any)
+    .from("sop_document_responses")
+    .select("id, document_id, form_number, data, created_by, created_at, updated_at")
+    .eq("status", "draft")
+    .in("document_id", [...wanted.keys()]);
+  if (error) throw error;
+
+  const out: AwaitingSignature[] = [];
+  for (const r of (rows ?? []) as any[]) {
+    const hit = wanted.get(r.document_id);
+    if (!hit) continue;
+    const pending = unsignedVerifierFields(hit.schema, r.data);
+    if (pending.length === 0) continue;
+    out.push({
+      responseId: r.id,
+      documentId: r.document_id,
+      formNumber: r.form_number ?? hit.row.sop_number ?? "Form",
+      documentTitle: hit.row.title ?? "",
+      entryTitle: instanceTitle(hit.schema, r),
+      createdBy: r.created_by ?? null,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at ?? null,
+      awaiting: pending.map(f => f.label),
+    });
+  }
+
+  // Oldest first: the one that has been waiting longest is the one to sign next.
+  out.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  return out;
+}
+
+/** The badge count. Same derivation; separate name so call sites read as what they are. */
+export async function countAwaitingSignature(): Promise<number> {
+  return (await fetchAwaitingSignature()).length;
 }

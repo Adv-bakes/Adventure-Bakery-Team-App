@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Bell, CalendarClock, CheckCircle2, ChevronDown, Loader2, Thermometer } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, CheckCircle2, ChevronDown, Loader2, PenLine, Thermometer } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,11 @@ import {
   AppNotification, dismissNotification, fetchClearedNotifications,
   fetchOpenNotifications, isDismissable,
 } from "@/lib/notifications";
-import { fetchProfileNames } from "@/lib/formResponses";
+import {
+  AwaitingSignature, fetchAwaitingSignature, fetchProfileNames,
+} from "@/lib/formResponses";
+import { useUserRole } from "@/hooks/useUserRole";
+import { FROM_NOTIFICATIONS } from "@/lib/verificationSchedule";
 
 function ResponsiblePill({ position }: { position: string }) {
   // 2.5.2.2 requires the schedule to name who is responsible for each activity. That label travels
@@ -37,6 +41,53 @@ function ResponsiblePill({ position }: { position: string }) {
     <span className="text-[11px] px-2 py-0.5 rounded-full border border-[hsl(var(--tp-gold-soft))] tp-card-gold whitespace-nowrap">
       {position}
     </span>
+  );
+}
+
+/**
+ * An entry someone has filled in and left as a draft, waiting on a verifier signature.
+ *
+ * Not a notification row — nothing is written when a form is left awaiting review. The queue is
+ * derived from the schema (which lines need a verifier) and the entry (which of them are signed),
+ * so it cannot point at a deleted entry, outlive the signature it asks for, or be forgotten by
+ * whoever filled the form in. It is also why there is no Clear button here: the way to clear it is
+ * to open the entry and sign.
+ */
+function SignatureCard({ item, byName }: { item: AwaitingSignature; byName: string | null }) {
+  const waitingDays = (() => {
+    const ms = Date.now() - new Date(item.createdAt).getTime();
+    const d = Math.floor(ms / 86_400_000);
+    return d <= 0 ? "today" : d === 1 ? "1 day" : `${d} days`;
+  })();
+
+  return (
+    <Card className="border-l-4 border-l-[hsl(var(--tp-gold))]">
+      <CardContent className="pt-4 pb-4">
+        <div className="flex items-start gap-3 flex-wrap">
+          <div className="mt-0.5 shrink-0">
+            <PenLine className="w-4 h-4 text-[hsl(var(--tp-gold))]" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="font-medium">
+              {item.formNumber} — {item.entryTitle}
+            </p>
+            <p className="text-sm tp-card-dim">
+              {item.documentTitle}
+            </p>
+            <p className="text-sm tp-card-dim">
+              Awaiting {item.awaiting.join(" and ")}.
+              {byName ? ` Drafted by ${byName}.` : ""} Waiting {waitingDays}.
+            </p>
+            <Link
+              to={`/team/compliance/forms/${item.documentId}/entries/${item.responseId}?${FROM_NOTIFICATIONS}`}
+              className="inline-block text-sm underline underline-offset-2 text-[hsl(var(--tp-gold))]"
+            >
+              Open and sign
+            </Link>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -104,6 +155,12 @@ function NotificationCard({
 }
 
 export default function Notifications() {
+  const { roles } = useUserRole();
+  // Only admin/owner can sign a verifier line (SignatureFieldInput enforces it, and RLS allows
+  // only admin/owner to write to another person's draft at all), so nobody else is shown a queue
+  // of work they cannot do.
+  const canVerify = roles.some((r) => r === "admin" || r === "owner");
+  const [awaiting, setAwaiting] = useState<AwaitingSignature[]>([]);
   const [open, setOpen] = useState<AppNotification[]>([]);
   const [cleared, setCleared] = useState<AppNotification[]>([]);
   const [names, setNames] = useState<Map<string, string>>(new Map());
@@ -116,17 +173,27 @@ export default function Notifications() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [o, c] = await Promise.all([fetchOpenNotifications(), fetchClearedNotifications()]);
+      const [o, c, sig] = await Promise.all([
+        fetchOpenNotifications(),
+        fetchClearedNotifications(),
+        canVerify ? fetchAwaitingSignature() : Promise.resolve([] as AwaitingSignature[]),
+      ]);
       setOpen(o);
       setCleared(c);
-      const ids = [...new Set(c.map((n) => n.dismissed_by).filter((v): v is string => !!v))];
+      setAwaiting(sig);
+      // One lookup for both lists: who cleared a notification, and who drafted an entry awaiting
+      // signature. Knowing whose work is waiting on you is most of the value of the queue.
+      const ids = [...new Set([
+        ...c.map((n) => n.dismissed_by),
+        ...sig.map((a) => a.createdBy),
+      ].filter((v): v is string => !!v))];
       setNames(ids.length ? await fetchProfileNames(ids) : new Map());
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not load notifications");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canVerify]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -166,8 +233,9 @@ export default function Notifications() {
           Notifications
         </h1>
         <p className="text-sm tp-on-bg-dim mt-1">
-          Verification activities that have fallen due, and open alerts. Everything here is visible
-          to the whole team and labelled with the position responsible for it.
+          Verification activities that have fallen due, and open alerts — visible to the whole team
+          and labelled with the position responsible for each.
+          {canVerify && " Entries awaiting your signature are listed first; those are yours alone to clear, by signing them."}
         </p>
       </div>
 
@@ -175,7 +243,7 @@ export default function Notifications() {
         <div className="flex items-center gap-2 tp-on-bg-dim">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
-      ) : open.length === 0 ? (
+      ) : open.length === 0 && awaiting.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">
             <CheckCircle2 className="w-8 h-8 mx-auto text-[hsl(var(--tp-gold))]" />
@@ -187,6 +255,17 @@ export default function Notifications() {
         </Card>
       ) : (
         <div className="space-y-6">
+          {awaiting.length > 0 && (
+            <section className="space-y-2">
+              <h2 className="text-sm font-semibold tp-on-bg-dim">
+                Awaiting your signature ({awaiting.length})
+              </h2>
+              {awaiting.map((a) => (
+                <SignatureCard key={a.responseId} item={a}
+                  byName={names.get(a.createdBy ?? "") ?? null} />
+              ))}
+            </section>
+          )}
           {group("Overdue", overdue)}
           {group("Due", due)}
           {group("Alerts", alerts)}

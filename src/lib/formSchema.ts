@@ -249,6 +249,36 @@ export function listFields(schema: FormSchema): FormField[] {
   return valueFields(schema).filter(f => f.showInList && f.type !== "grid");
 }
 
+/**
+ * Signature fields only admin/owner can sign — SignatureFieldInput gates on exactly this.
+ */
+export function verifierSignatureFields(schema: FormSchema): SignatureField[] {
+  return schema.sections
+    .flatMap(s => s.fields)
+    .filter((f): f is SignatureField => f.type === "signature" && f.role === "verifier");
+}
+
+/**
+ * Verifier signatures this entry is still waiting for.
+ *
+ * The signing queue is DERIVED from this rather than recorded anywhere: a draft carrying an
+ * unsigned verifier signature IS an entry awaiting review, so there is no request to send, nothing
+ * to forget to send, and no "sent" flag that can outlive the signature it was asking for.
+ *
+ * "Signed" is `!!value?.name`, the same test SignatureFieldInput renders from — so the queue and
+ * the checkbox cannot disagree about whether a line has been signed.
+ */
+export function unsignedVerifierFields(
+  schema: FormSchema,
+  data: Record<string, unknown> | null | undefined,
+): SignatureField[] {
+  const answers = data ?? {};
+  return verifierSignatureFields(schema).filter(f => {
+    const v = answers[f.id] as SignatureValue | null | undefined;
+    return !v?.name;
+  });
+}
+
 // ---------- Ids ----------
 
 /** Slugify a label into a stable snake_case field id, deduped against `taken`. */

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { patchModuleContent } from "@/lib/training";
+import { invalidateVerifierDocs } from "@/lib/formResponses";
 import {
   FIELD_TYPE_LABELS, FORM_SCHEMA_VERSION, emptyValues, getFormSchema, slugifyFieldId, valueFields,
   type FormField, type FormFieldType, type FormSchema, type FormSection, type GridField,
@@ -318,6 +319,9 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
       }
       setSavedIds(ids);
       onContentChange?.(nextContent);
+      // Adding or removing a verifier signature changes which entries are awaiting one, and the
+      // signing queue caches these schemas for five minutes. Drop it so the change shows at once.
+      invalidateVerifierDocs();
       toast.success("Form saved");
     } catch (e: any) {
       toast.error(e.message ?? "Failed to save form");
