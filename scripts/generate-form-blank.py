@@ -707,13 +707,15 @@ if __name__ == "__main__":
     # the control - a row answered "none" is evidence the question was asked, which is the whole
     # difference between this record and the sentence it replaced.
     #
-    # rev New, DRAFT: seeded by 20260916000007 after review of FSQM-005 found that the programme
-    # named FRM-001 for the annual review and left the monthly update documented "in minutes" with
-    # no form, no location and nothing to prompt it - the same weakness as the "Flash Report" that
-    # draft replaced, one level less obvious. Re-run this block once the issue migration stamps it.
+    # rev New, effective 2026-09-16, approved GJM: seeded by 20260916000007 after review of FSQM-005
+    # found that the programme named FRM-001 for the annual review and left the monthly update
+    # documented "in minutes" with no form, no location and nothing to prompt it - the same weakness
+    # as the "Flash Report" that draft replaced, one level less obvious. Issued by 20260916000008
+    # together with FSQM-005, which governs it, and with the monthly schedule activity that prompts
+    # it. Mirrors the live row.
     s009 = load_schema("sop-drafts/FRM-009-monthly-sqf-update-schema.json")
     meta009 = {"form_no": "FRM-009", "title": "Monthly SQF Update Record",
-               "revision": "New", "eff": "(draft)", "appr": "(pending)",
+               "revision": "New", "eff": "2026-09-16", "appr": "GJM",
                "sqf": "2.1.2.2",
                "footer": FOOT.format(no="FRM-009")}
     b009 = blocks_from_schema(s009)
