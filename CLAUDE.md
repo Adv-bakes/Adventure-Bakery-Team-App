@@ -317,7 +317,8 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
 - **Surfaces:** SOPs Library drawer gains **Form** + **Entries** tabs for `type='form'` docs (default tab:
   entries if fillable, else form) and a gold "Fillable" pill in the list; entry editor is a dedicated route
   **`/team/compliance/forms/:docId/entries/:responseId`** (`FormEntry.tsx`, `max-w-7xl` — Save Draft /
-  Submit (confirm + validation) / admin Reopen / Download PDF / admin Delete, hidden when
+  Submit (confirm + validation) / **Request signature** (only while a verifier line is unsigned — see
+  "Signature requests") / admin Reopen / Download PDF / admin Delete, hidden when
   `settings.deletable === false`; the "Back to FRM-###" link is duplicated into the sticky bottom action
   bar next to Save/Submit so returning to the library never requires scrolling to the header);
   **Form Records** page **`/team/compliance/records`** (`Records.tsx`, Compliance nav) = cross-form recent
@@ -762,7 +763,9 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `sopPdf.ts` | `generateSopPdf(row)` — client-side SOP→PDF via `pdfmake` (template header table + body sections via `SECTION_LABELS` + per-page confidentiality footer; logo from `/sop-logo.png`). On-demand, no caching. Also exports `loadLogoDataUrl`, `confidentialFooter`, `DISCLAIMER`, `PDF_GOLD` for reuse by `formPdf.ts`. See "SOP PDF Export" above |
 | `docNumber.ts` | Document numbering convention: `DOC_STAGES`, `parseDocNumber`, `stageForNumber`/`stageForSopNumber`, `formatDocNumber`, `docNumberIssue`/`isValidDocNumber`; `parseClauseNumber`/`compareClauseIds` (the deliberate SQF-clause SOP scheme). See "Document Numbering Convention" above |
 | `templates.ts` | `fetchActiveTemplates()`, `downloadTemplate()` |
-| `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns); package-label scan helpers `LABEL_FACTS`/`LABEL_FACT_LABELS`, `inferScanFact`/`resolveScanFact`, `scanWantedFacts`, `applyLabelScan`. See "Dynamic Fillable Forms" below |
+| `notifications.ts` | The in-app feed: `FEED_TYPES` allowlist, `fetchOpenNotifications`/`countOpenNotifications` (team-wide rows plus the ones addressed to the reader), `fetchClearedNotifications`, `dismissNotification`, `isDismissable`, `isInternalHref`; signature requests — `fetchSignatories`, `requestSignature`, `resolveSignatureRequest`, `openSignatureRequest`. Every query goes through `(supabase as any)` because the added columns are not in the generated types. See "Verification Schedule & Notifications" |
+| `verificationSchedule.ts` | Due-date maths for the schedule — `nextDue`, `rowState`, `assessDue`, `addFrequency`, `frequencyLabel`, `dedupeKeyFor`, `formLink`/`documentLink`, `retentionLinks`, `FROM_NOTIFICATIONS`. **Byte-identical twin** of `supabase/functions/_shared/verificationSchedule.ts` below the header; edit both and run `scripts/test-verification-schedule.mjs` |
+| `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns), `verifierSignatureFields`/`unsignedVerifierFields` (which verifier lines an entry is still missing — drives the Request-signature action and closes the request); package-label scan helpers `LABEL_FACTS`/`LABEL_FACT_LABELS`, `inferScanFact`/`resolveScanFact`, `scanWantedFacts`, `applyLabelScan`. See "Dynamic Fillable Forms" below |
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse` (optional 2nd arg `prefill` seeds the new entry's `data` over `emptyValues(schema)`; a resumed existing draft is never clobbered — powers the FRM-401 temperature-review launcher), `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
 | `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
@@ -795,11 +798,23 @@ is **retired**, never removed. SELECT is `is_compliance_viewer`, so the auditor 
   form open.
 - **Frequency is unit + count, never days.** 365-day arithmetic drifts a day per leap year until
   "reviewed annually" quietly is not. Month-end addition clamps (31 Jan + 1 month = 28 Feb).
+- **`covers_until_field` is the second way to date an activity**, and only one row uses it
+  (`blackout_declaration`, D-05). It names a field on the evidence form holding **the last date that
+  record covers**; the activity is then due **the day after** — the first day no record covers — and
+  the frequency is not consulted at all. It exists because some records declare their own period of
+  validity: FRM-006 states the blackout dates for a stated period, so filing it early or late says
+  nothing about when it expires. Anchored on `submitted_at`, a declaration signed in October for the
+  following calendar year would come due the *following* October, and one signed late would push its
+  own expiry out and let the site run uncovered. A CHECK confines it to `evidence_kind='form_entry'`.
+  The job takes the **maximum** covers-until across submitted entries, not the newest entry's value,
+  so a correction filed to an earlier period cannot walk the due date backwards and re-raise
+  something already discharged.
 - **`status='planned'`** means scheduled but *not being performed* — the governing program has not
-  been issued. Seven of the twenty seeded rows are planned (calibration, backflow, water, compressed
-  air, CCP record review, internal audit, traceability test). A CHECK forces each to name its
-  deliverable, and `assessDue()` refuses to raise one; the schedule page renders them muted with no
-  due date. **Do not "fix" a planned row by activating it** — activate it when its program is issued.
+  been issued. Six of the twenty-two rows are planned (critical-limit re-validation, calibration,
+  backflow, water, internal audit, traceability test); compressed air is **retired** (D-32 determined
+  11.5.5 is not engaged). A CHECK forces each planned row to name its deliverable, and `assessDue()`
+  refuses to raise one; the schedule page renders them muted with no due date. **Do not "fix" a
+  planned row by activating it** — activate it when its program is issued.
 - The date maths lives in **two identical copies** — `supabase/functions/_shared/verificationSchedule.ts`
   and `src/lib/verificationSchedule.ts` — because a browser bundle must not pull in server code (the
   same reasoning that duplicates `limitText` into `temperatureAlerts.ts`).
@@ -810,7 +825,7 @@ is **retired**, never removed. SELECT is `is_compliance_viewer`, so the auditor 
 `20260129202804` with five writers and **zero readers**, is already team-wide (no `user_id`), and the
 temperature alerts the feed must surface were already being written into it. Added: `dedupe_key`,
 `responsible_position`, `due_on`, `severity`, `links` (`[{label, href}]`), `dismissed_by/at/note`,
-`resolved_at/reason`.
+`resolved_at/reason`, and later `assigned_to` (see "Signature requests" below).
 
 - **Dismissal and resolution are different things.** A person clearing an item is stamped; the job
   closing one because the activity was done sets `resolved_at` and is **never** stamped with a name,
@@ -823,8 +838,9 @@ temperature alerts the feed must surface were already being written into it. Add
 - The dedupe index is **total**, not partial on dismissal, because a due date is an *occurrence* (the
   date is in the key) rather than a recurring *condition*. That is what stops the afternoon run
   resurrecting what somebody cleared at 09:30.
-- **`FEED_TYPES` in `src/lib/notifications.ts` is an allowlist.** Four of the five pre-existing
-  writers are batch-sheet/private-label chatter. Add a type there deliberately, or it will not show.
+- **`FEED_TYPES` in `src/lib/notifications.ts` is an allowlist** — currently `verification_due`,
+  `temperature_alert`, `signature_requested`. Four of the five pre-existing writers are
+  batch-sheet/private-label chatter. Add a type there deliberately, or it will not show.
 - **Temperature notifications carry no Clear button.** Clearing one would make the badge go away
   without the SOP-401 corrective-action record ever being written. They close themselves once the
   alert is acknowledged or cleared.
@@ -839,6 +855,43 @@ as `planned`. **The schedule lives in FSQM-017 Part 6**, generated from `verific
 The general lesson is worth keeping: **a catch-all record beside a purpose-built one produces two
 accounts of a single activity** and invites being filled in alongside the real form rather than
 instead of it. If a future activity has no home, give it one — do not revive a generic form.
+
+### Signature requests
+
+The person who filled a form in asks a **named person** to review and sign it, with an optional note.
+"Request signature" sits in `FormEntry`'s action bar and appears **only while a verifier-role
+signature is still unsigned** — once every one is signed there is nobody to ask. It then offers to
+withdraw instead. The request lands in that person's feed with the note and a deep link to the entry.
+
+- **It is requested, never derived.** The first cut computed the queue — any draft with an unsigned
+  verifier line was "awaiting signature" — and against live data that produced **12 items, the oldest
+  three months old**, almost none of them anybody waiting on anything. A queue that is mostly noise
+  stops being opened. `unsignedVerifierFields()` survives from that version and is what decides when
+  the request has been satisfied. **Do not revive the derived queue.**
+- **`assigned_to` (nullable) makes the feed addressable**, which it had never been. Everything else
+  in the table is team-wide and labelled with a responsible *position* — deliberately, because
+  2.5.2.2 is what that labelling is for. A signature request is addressed to a *person*, since only
+  they can discharge it. The feed shows a row when `assigned_to is null or = the reader`, so every
+  pre-existing notification behaves exactly as before.
+- **A request cannot be dismissed, only resolved** — the same shape of reason temperature alerts
+  cannot be. Clearing it would make the ask disappear without the signature ever being given; the
+  ways out are signing it or the asker withdrawing it. That is also what makes the upsert honest:
+  re-asking reopens the row by clearing `resolved_at`, which never carries a name, so nothing about
+  anybody's act is erased. `dismissed_*` is never written for this type.
+- **It closes itself.** Saving or submitting with every verifier line signed calls
+  `resolve_signature_request`, checked in `FormEntry` where the schema and the saved answers are both
+  in hand. Submitting closes it either way — a submitted entry cannot be signed.
+- **Two `SECURITY DEFINER` RPCs** (`request_signature`, `resolve_signature_request`) because the
+  table has no UPDATE policy at all, and because asking twice must upsert on the unique `dedupe_key`
+  (`signature:<response_id>`) rather than fail. Same shape as `dismiss_notification`.
+- **Only admin/owner can sign a verifier line** — `SignatureFieldInput` enforces it, and RLS lets
+  only admin/owner update another person's draft. For staff→staff signing, add a `sign_response()`
+  RPC that writes *only* the signature key; **do not widen the RLS update policy**, because RLS
+  cannot see the old row and the signer could alter the answers they are attesting to.
+- ⚠️ Every `SECURITY DEFINER` function in `public` is executable by `anon` — a Supabase
+  default-privileges effect, not specific to these two, and `revoke ... from public` does **not**
+  undo it. Not a live hole (each gates on `is_staff_or_admin(auth.uid())`), and some genuinely need
+  anon. Unresolved; do not tighten piecemeal.
 
 ---
 
