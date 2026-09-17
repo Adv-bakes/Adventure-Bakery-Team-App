@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
-import { createResponse } from "@/lib/formResponses";
+import { createResponse, saveResponseData } from "@/lib/formResponses";
 import { ALERT_KIND_LABEL, formatWorstValue, type TemperatureAlert } from "@/lib/temperatureAlerts";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -78,6 +78,51 @@ function deriveFrm401Prefill(
   // quiet month reads differently from an unreviewed one.
   prefill.alert_log = alertRows.length ? alertRows : [{ kind: "No alerts raised" }];
   return prefill;
+}
+
+// FRM-401 allows one open draft per person, so createResponse hands back an existing draft
+// UNTOUCHED and the prefill never lands. That was a real bug: a draft opened from the SOPs
+// Library (no month, no figures) made every "Start FRM-401 Review" click reopen it blank.
+// This fills the blanks of whatever came back and never overwrites a value somebody entered.
+// A draft already for a DIFFERENT month is left alone and reported, not re-pointed.
+const isBlankValue = (v: unknown) => v == null || v === "";
+const rowIsBlank = (r: Record<string, any> | null | undefined) =>
+  !r || Object.entries(r).every(([k, v]) => k === "_label" || isBlankValue(v));
+
+function mergeFrm401Prefill(
+  existing: Record<string, any>,
+  prefill: Record<string, any>,
+): { data: Record<string, any>; changed: boolean; otherMonth?: string } {
+  const month = existing?.review_month;
+  if (!isBlankValue(month) && month !== prefill.review_month) {
+    return { data: existing, changed: false, otherMonth: String(month) };
+  }
+  const data: Record<string, any> = { ...existing };
+  let changed = false;
+
+  for (const key of ["review_month", "review_date"]) {
+    if (isBlankValue(data[key]) && !isBlankValue(prefill[key])) { data[key] = prefill[key]; changed = true; }
+  }
+
+  if (Array.isArray(prefill.unit_summary)) {
+    const rows: Record<string, any>[] = Array.isArray(data.unit_summary) ? data.unit_summary.map((r: any) => ({ ...r })) : [];
+    for (const [i, p] of prefill.unit_summary.entries()) {
+      // registers key rows by _label; fall back to position for a plain fixed grid
+      const idx = p._label != null ? rows.findIndex(r => r?._label === p._label) : i;
+      if (idx < 0 || !rows[idx]) { rows.push({ ...p }); changed = true; continue; }
+      for (const col of ["min_f", "max_f", "avg_f"]) {
+        if (isBlankValue(rows[idx][col]) && !isBlankValue(p[col])) { rows[idx][col] = p[col]; changed = true; }
+      }
+    }
+    data.unit_summary = rows;
+  }
+
+  const alerts = data.alert_log;
+  if (Array.isArray(prefill.alert_log) && (!Array.isArray(alerts) || alerts.every(rowIsBlank))) {
+    data.alert_log = prefill.alert_log;
+    changed = true;
+  }
+  return { data, changed };
 }
 
 type TempRow = {
@@ -277,6 +322,16 @@ export default function TemperatureReport() {
         format(new Date(), "yyyy-MM-dd"),
       );
       const resp = await createResponse(doc as any, prefill);
+      // A fresh entry already holds the prefill (no-op); a resumed draft gets its blanks filled.
+      const merged = mergeFrm401Prefill(resp.data ?? {}, prefill);
+      if (merged.otherMonth) {
+        toast.warning(
+          `You already have an open FRM-401 draft for ${merged.otherMonth}. Finish or delete it before starting ${label}.`,
+        );
+      } else if (merged.changed) {
+        await saveResponseData(resp.id, merged.data, resp.updated_at);
+        toast.success(`Filled in ${label} temperatures on your open FRM-401 draft.`);
+      }
       // Point the page at the reviewed month so the Summary matches on return.
       setStart(mStart);
       setEnd(mEnd);
