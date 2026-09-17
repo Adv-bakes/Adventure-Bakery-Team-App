@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { confidentialFooter, loadLogoDataUrl, PDF_GOLD } from "@/lib/sopPdf";
 import {
   formatFieldValue,
-  type FormSchema, type GridField, type GridRowValue, type InfoField, type ReportColumn,
+  type FormSchema, type GridField, type GridRowValue, type InfoField, type ReferenceTableField, type ReportColumn,
 } from "@/lib/formSchema";
 import { getResponseAttachmentUrl, type FormResponse, type ResponseAttachment } from "@/lib/formResponses";
 
@@ -229,6 +229,31 @@ export async function generateFormResponsePdf(
                 ...(fixed ? [{ text: " " } as TableCell] : []),
                 ...grid.columns.map(() => ({ text: " " } as TableCell)),
               ]])],
+            },
+            layout: blackGrid,
+            margin: [0, 0, 0, 6],
+          });
+          break;
+        }
+        case "reference_table": {
+          // A printed legend the filler reads (e.g. FRM-401's unit limits). It holds no answer,
+          // so it used to fall through to the scalar default and print as "Label: —", which on
+          // paper hides exactly what the entry was judged against.
+          const ref = field as ReferenceTableField;
+          const cols = ref.columns ?? [];
+          if (!cols.length) break;
+          body.push({ text: ref.label, bold: true, margin: [0, 4, 0, 2] });
+          if (ref.help) body.push({ text: ref.help, fontSize: 8.5, italics: true, color: "#555555", margin: [0, 0, 0, 2] });
+          body.push({
+            table: {
+              headerRows: 1,
+              widths: cols.map(() => "*"),
+              body: [
+                cols.map(c => ({ text: c || " ", bold: true, fontSize: 8.5, fillColor: "#F5F1E6" } as TableCell)),
+                ...((ref.rows ?? []).length
+                  ? ref.rows.map(r => cols.map((_, i) => ({ text: String(r?.[i] ?? "") || " ", fontSize: 8.5 } as TableCell)))
+                  : [cols.map(() => ({ text: " " } as TableCell))]),
+              ],
             },
             layout: blackGrid,
             margin: [0, 0, 0, 6],
