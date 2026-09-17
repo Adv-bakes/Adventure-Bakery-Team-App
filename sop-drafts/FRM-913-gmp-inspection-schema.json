@@ -105,7 +105,17 @@
             ],
             "addLabel": "Add item",
             "deletable": true,
-            "labelHeader": "Module 11 subsection"
+            "labelHeader": "Module 11 subsection",
+            "guidance": [
+              "• Anything nearby that could threaten product: neighbouring businesses, dumpsters, standing water, overgrowth\n• Any risk found is controlled, and the assessment is updated when the surroundings change\n• The building is approved/permitted to operate",
+              "• Floors smooth, sealed, free of cracks and pooled water; they drain properly\n• Drains clean and not a trip or contamination hazard\n• Walls, ceilings and doors durable, smooth, light-coloured and clean; wall-to-floor corners sealed\n• No pipes or ducting over product that could drip or shed\n• Windows shatterproof; doors solid\n• Ceiling (or drop ceiling) intact, no missing tiles or gaps\n• Stairs or platforms, if any, are not over open product",
+              "• Enough light to work and inspect by\n• Lights over exposed product, ingredients or packaging are shatterproof or covered, with no cracked or missing covers\n• Warehouse lights protected from breakage",
+              "• If product is inspected on the line: the spot is clean, has handwashing nearby and a waste bin\nN/A if there is no inspection station on the line - say so in Finding.",
+              "• Outside doors and windows seal when closed - no daylight at the gaps\n• Personnel doors close themselves and are insect-proofed\n• Dock/overhead doors: self-closing, screen, air curtain or good seal\n• Traps and bait stations placed where they cannot contaminate product, packaging or equipment\n• No poison bait inside production or storage areas",
+              "• Enough airflow; no condensation build-up\n• Vents and fans clean and screened against insects\n• Hood/extraction over heat and steam sources (oven, kettle) works and is clean",
+              "• Equipment in good repair: smooth, no cracks, rust, flaking paint or crevices that trap food\n• Tables, benches and machines placed so they can be cleaned around\n• Utensils and containers stored clean and off the floor; food-contact kept apart from non-food\n• Waste bins clearly marked\n• Broken equipment tagged or set aside so nobody uses it\n• Carts, pallet jacks or other vehicles in production are clean and not a hazard",
+              "• Outside kept free of rubbish, clutter, stored junk and overgrowth that would attract pests\n• No pooled water at the loading area; outside drains clear\n• Paths into the building sealed, not bare dirt"
+            ]
           }
         }
       ]
@@ -157,7 +167,14 @@
             ],
             "addLabel": "Add item",
             "deletable": true,
-            "labelHeader": "Module 11 subsection"
+            "labelHeader": "Module 11 subsection",
+            "guidance": [
+              "• No temporary fixes (tape, cardboard, wire) left in place without a plan to repair them\n• Recent repairs cleaned up after; supervisor was told before work in production areas\n• Lubricant on or over food-contact equipment is food-grade\n• Paint in production areas intact, not flaking, and not on product-contact surfaces\n• Equipment failures are recorded and the repair is on the maintenance schedule",
+              "• Contractors and maintenance staff follow the same hygiene rules (hair net, no jewellery, handwashing)\n• Contractors not trained on site food safety rules are escorted\n• No tools, screws, wire or debris left behind after a job",
+              "• Scales, thermometers and other measuring devices are on the calibration list and within date\n• Devices protected from damage and not adjusted by unauthorised people\n• If a device was found out of calibration: the product it measured was assessed",
+              "• No signs of pests: droppings, gnaw marks, insects, nests, webs\n• Traps and bait stations in place, numbered, matching the site map, not damaged or overdue\n• Pest control visit reports current; any activity found has been acted on\n• Pesticides, if kept on site, labelled and stored with the chemicals\n• No animals in food handling or storage areas",
+              "• Equipment and areas clean to the eye, including under, behind and above\n• Daily sanitation and pre-op records (FRM-903) filled in and current\n• Sani-512 mixed to 200 ppm; test strips on hand and the check is recorded\n• Only approved chemicals present; containers labelled\n• Cleaning tools marked, stored off the floor, in good condition\n• Toilets, break room and change areas clean"
+            ]
           }
         }
       ]
@@ -209,7 +226,14 @@
             ],
             "addLabel": "Add item",
             "deletable": true,
-            "labelHeader": "Module 11 subsection"
+            "labelHeader": "Module 11 subsection",
+            "guidance": [
+              "• Nobody working with exposed food while visibly ill\n• Cuts covered with a coloured, metal-detectable bandage; a glove over it if on the hand\n• Staff know to report illness and what to do if blood or bodily fluid gets on a surface",
+              "• Watch people wash hands: on entering production, after toilet, eating, smoking, cleaning or handling waste\n• Handwash sinks near entrances: hot and cold water, soap in a dispenser, paper towels, a bin\n• Sinks used only for handwashing, not blocked or used for storage\n• Handwashing signs posted in the languages staff read\n• People wearing gloves still wash hands",
+              "• Uniforms and shoes clean at the start of the shift; heavily soiled clothing changed\n• Hair nets and beard covers worn and covering all hair\n• No jewellery apart from plain bands or medical alert items, covered\n• Gloves and aprons changed after breaks and when damaged; not left on product, packaging or equipment\n• Racks for aprons/smocks by the entrance, used when leaving production\n• Phones and personal belongings kept in lockers or offices, not in production",
+              "• Visitors signed in and acknowledged the GMP rules (FRM-905 / FRM-906)\n• Visitors escorted or briefed; wearing hair nets and suitable clothing; jewellery removed\n• Visitors come in through the staff entrance and wash hands\n• No visibly ill visitors in production",
+              "• Toilets clean, stocked and separate from production; handwash sink right by them\n• Street clothes and personal items stored away from uniforms, food and packaging\n• Change area clean\n• Break room separate from production, clean, with a fridge and sink; no food waste left out\n• Outside eating/smoking area clean and not attracting pests"
+            ]
           }
         }
       ]
@@ -257,7 +281,10 @@
             ],
             "addLabel": "Add item",
             "deletable": true,
-            "labelHeader": "Module 11 subsection"
+            "labelHeader": "Module 11 subsection",
+            "guidance": [
+              "• People enter production through the personnel door only; doors kept closed\n• No eating, drinking, gum or tasting product in production (except controlled sensory testing)\n• No false nails, nail polish, long nails or false eyelashes when handling exposed food\n• No product, packaging or utensils placed on the floor\n• Staff don't move from dirty areas (waste, raw materials) to finished product without washing up\n• Dropped product discarded, not put back"
+            ]
           }
         }
       ]
@@ -309,7 +336,14 @@
             ],
             "addLabel": "Add item",
             "deletable": true,
-            "labelHeader": "Module 11 subsection"
+            "labelHeader": "Module 11 subsection",
+            "guidance": [
+              "• Hot and cold water available at every sink needed for cleaning\n• Hoses stored off the floor; no hose ends sitting in buckets or drains (back-siphonage)\n• Backflow preventers in place; annual backflow test current where applicable\n• Any non-potable water lines clearly marked and not connected to potable\n• Staff know what to do if the water supply is declared unsafe",
+              "• If water is filtered or treated on site: equipment working, filters changed on schedule, checks recorded\nN/A if the site uses municipal water with no treatment - say so in Finding.",
+              "• Water testing result on file and within the last 12 months\n• Result meets potable water standards",
+              "• If ice is used in the process or as an ingredient: made from potable water, from an approved supplier, stored in a clean covered container, scoop kept out of the ice\nN/A if no ice is used - say so in Finding.",
+              "• If compressed air or another gas touches food or food-contact surfaces: filters maintained and quality checked at least annually\nN/A if no air or gas touches food or food-contact surfaces - say which uses were checked."
+            ]
           }
         }
       ]
@@ -361,7 +395,14 @@
             ],
             "addLabel": "Add item",
             "deletable": true,
-            "labelHeader": "Module 11 subsection"
+            "labelHeader": "Module 11 subsection",
+            "guidance": [
+              "• Goods stored off the floor and away from walls so the space can be inspected and cleaned\n• Oldest stock used first; nothing past its date\n• Raw materials kept apart from finished product; allergens stored so they cannot spill onto other goods\n• Open ingredients covered and labelled\n• Anything in overflow or temporary storage is protected and the risk is considered",
+              "• Fridge and freezer at temperature; sensors reporting\n• Temperature records and any alerts reviewed and acted on (FRM-401)\n• Units clean, not overloaded, door seals intact, no ice build-up\n• Condensate and defrost water drains to a drain, not onto product or the floor",
+              "• Dry storage away from wet areas, clean and dry\n• Packaging protected from dust and pests; no damaged or open cases\n• Racks cleanable, with room to see and clean floors and behind racks",
+              "• Chemicals in a marked, lockable area away from food and packaging\n• Every container labelled with what is in it; no chemicals in food containers\n• Safety Data Sheets current and available\n• Food-grade and non-food-grade chemicals not mixed together\n• Spill kit and PPE on hand; empty containers not reused",
+              "• Vehicle check done before loading and recorded (FRM-801)\n• Loading area clean; product not left sitting exposed during loading\n• Loaded vehicle secured with a latch, lock or seal"
+            ]
           }
         }
       ]
@@ -412,7 +453,13 @@
             ],
             "addLabel": "Add item",
             "deletable": true,
-            "labelHeader": "Module 11 subsection"
+            "labelHeader": "Module 11 subsection",
+            "guidance": [
+              "• If a high-risk process exists (product handled after a kill step and not cooked again before eating): area separated, dedicated staff, clothing change on entry\nN/A if there is no high-risk process on site - say so in Finding.",
+              "• If product or ingredients are thawed: done in a suitable place and way (refrigerated, or controlled air/water), not on the floor or at room temperature uncontrolled\n• Packaging from thawed product disposed of promptly\nN/A if nothing is thawed - say so in Finding.",
+              "• No glass, ceramic or brittle plastic items in production that are not on the glass & brittle plastic register\n• Items on the register are intact\n• Nothing loose on equipment or overhead: nuts, bolts, screws, tape, cable ties\n• Knives controlled and in good condition; no snap-off blades anywhere\n• Wooden pallets or utensils in production are clean and not splintering\n• Gaskets, belts, seals and scrapers not worn or shedding pieces",
+              "• If a metal detector, sieve, screen or filter is used: working, checked at the set frequency, and checks recorded\n• Rejected or contaminated product isolated and its disposition recorded\nN/A for the detector limb if no detection or removal device is used - say so in Finding."
+            ]
           }
         }
       ]
@@ -460,7 +507,10 @@
             ],
             "addLabel": "Add item",
             "deletable": true,
-            "labelHeader": "Module 11 subsection"
+            "labelHeader": "Module 11 subsection",
+            "guidance": [
+              "• Waste removed regularly; not building up in production\n• Bins clean, lidded where needed, clearly marked as waste\n• Outside dumpster area clean, lids closed, not attracting pests\n• Liquid waste goes to a drain or a lidded container\n• Packaging with our brand or customer brands disposed of so it can't be misused"
+            ]
           }
         }
       ]

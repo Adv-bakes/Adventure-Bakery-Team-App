@@ -33,6 +33,8 @@ export interface GridRowDialogProps {
   disabled?: boolean;
   /** Read-only leading label, for a fixed-row grid. */
   rowLabel?: string;
+  /** What to look at for this row (GridRows.guidance). Shown above the first field. */
+  guidance?: string;
   /**
    * The row's useFieldArray key. A scan replaces the whole row through
    * `update()`, which mints a new key; the table re-reads because its <TableRow>
@@ -51,7 +53,7 @@ export interface GridRowDialogProps {
 }
 
 export function GridRowDialog({
-  field, control, rowIndex, onClose, disabled, rowLabel, rowKey, onScanFile, scanning,
+  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning,
 }: GridRowDialogProps) {
   const open = rowIndex != null;
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -115,6 +117,7 @@ export function GridRowDialog({
           })()}
 
           <div key={rowKey ?? rowIndex ?? "none"} className="space-y-4">
+          {rowIndex != null && guidance && <RowGuidance text={guidance} />}
           {rowIndex != null && field.columns.map((column: GridColumn) => (
             <div key={column.id} className="space-y-1.5">
               <Label className="text-xs font-medium text-[#2A1F0E]">
@@ -150,5 +153,40 @@ export function GridRowDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * "What to look at" for the row being filled. Lines starting "• " collapse into
+ * one list; any other line is a paragraph, so a lead sentence can sit above
+ * its bullets.
+ */
+function RowGuidance({ text }: { text: string }) {
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+  const blocks: Array<{ kind: "p"; text: string } | { kind: "ul"; items: string[] }> = [];
+  for (const line of lines) {
+    const bullet = /^[•\-*]\s+/.exec(line);
+    if (bullet) {
+      const last = blocks[blocks.length - 1];
+      const item = line.slice(bullet[0].length);
+      if (last?.kind === "ul") last.items.push(item);
+      else blocks.push({ kind: "ul", items: [item] });
+    } else {
+      blocks.push({ kind: "p", text: line });
+    }
+  }
+  return (
+    <div className="rounded-md border px-3 py-2.5 space-y-1.5 bg-[#C89B3C]/8" style={{ borderColor: "rgba(200,155,60,0.35)" }}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9A6F1E]">What to look at</p>
+      {blocks.map((b, i) =>
+        b.kind === "p" ? (
+          <p key={i} className="text-sm text-[#2A1F0E]">{b.text}</p>
+        ) : (
+          <ul key={i} className="list-disc pl-5 space-y-1 text-sm text-[#2A1F0E]">
+            {b.items.map((item, j) => <li key={j}>{item}</li>)}
+          </ul>
+        ),
+      )}
+    </div>
   );
 }
