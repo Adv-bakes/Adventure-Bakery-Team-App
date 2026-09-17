@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import {
-  GRID_COLUMN_TYPE_LABELS, LABEL_FACTS, LABEL_FACT_LABELS, inferScanFact, slugifyFieldId,
+  GRID_COLUMN_TYPE_LABELS, LABEL_FACTS, LABEL_FACT_LABELS, ROW_DIALOG_MIN_COLUMNS, inferScanFact,
+  slugifyFieldId,
   type GridColumn, type GridColumnType, type GridField, type LabelFact,
 } from "@/lib/formSchema";
 
@@ -245,6 +246,31 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
             </Select>
           </div>
         )}
+      </div>
+
+      {/* Open a row as a top-to-bottom form. Automatic on wide grids; a narrow grid
+          whose cells hold sentences (a finding, a corrective action) wants it too. */}
+      <div className="space-y-2 border-t pt-2" style={{ borderColor: "rgba(200,155,60,0.2)" }}>
+        <div className="w-72">
+          <Label className="text-[10px] text-muted-foreground">Open a row as a form</Label>
+          <Select
+            value={field.rowDialog === undefined ? "auto" : field.rowDialog ? "on" : "off"}
+            onValueChange={v => onChange({ ...field, rowDialog: v === "auto" ? undefined : v === "on" })}
+          >
+            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">
+                Automatic — {field.columns.length >= ROW_DIALOG_MIN_COLUMNS ? "on" : "off"} ({ROW_DIALOG_MIN_COLUMNS}+ columns)
+              </SelectItem>
+              <SelectItem value="on">Always — every row gets an expand button</SelectItem>
+              <SelectItem value="off">Never</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Adds a button to each row that opens it as a pop-up form with full-size fields — for tablets, and
+            for cells that hold sentences.
+          </p>
+        </div>
       </div>
 
       <div className="space-y-2 border-t pt-2" style={{ borderColor: "rgba(200,155,60,0.2)" }}>

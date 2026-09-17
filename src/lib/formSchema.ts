@@ -161,8 +161,22 @@ export interface GridField extends FieldBase {
   // auditor could challenge later. Without it the upload is transient and the
   // file is removed once the model has read it.
   scanKeepPhoto?: boolean;
+  // Per-row "open this row as a form" button (GridRowDialog). Unset = automatic:
+  // on once the grid has ROW_DIALOG_MIN_COLUMNS columns. Column count is a poor
+  // proxy for a narrow grid whose cells hold sentences — FRM-913's four columns
+  // include a finding and a corrective action — so `true` forces it on and
+  // `false` forces it off.
+  rowDialog?: boolean;
 }
 export type GridRowValue = Record<string, any>;
+
+/** Grids this wide get the row dialog without being asked. */
+export const ROW_DIALOG_MIN_COLUMNS = 6;
+
+/** Whether a grid offers the per-row "open as a form" dialog. */
+export function gridRowDialogEnabled(field: GridField): boolean {
+  return field.rowDialog ?? field.columns.length >= ROW_DIALOG_MIN_COLUMNS;
+}
 
 export type FormField =
   | TextField | TextareaField | NumberField | DateField | CheckboxField

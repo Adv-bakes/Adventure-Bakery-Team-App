@@ -489,7 +489,7 @@ if __name__ == "__main__":
     # escalated finding carries the FRM-007 number rather than a bare note in the action column.
     s913 = load_schema("sop-drafts/FRM-913-gmp-inspection-schema.json")
     meta913 = {"form_no": "FRM-913", "title": "GMP / Food Safety Inspection Record",
-               "revision": "v2", "eff": "2026-09-02", "appr": "(pending)",
+               "revision": "v3", "eff": "2026-09-17", "appr": "GJM",
                "sqf": "2.4.2.1, 2.4.2.2, 2.5.4.3, 11.1-11.8",
                "footer": FOOT.format(no="FRM-913")}
     b913 = blocks_from_schema(s913)
