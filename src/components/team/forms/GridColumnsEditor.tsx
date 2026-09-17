@@ -333,6 +333,9 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
             {field.rows.labels.filter(Boolean).length > 0 && field.columns.length > 0 && (
               <DefaultValuesEditor field={field} onChange={onChange} />
             )}
+            {field.rows.labels.filter(Boolean).length > 0 && (
+              <GuidanceEditor field={field} onChange={onChange} />
+            )}
           </div>
         )}
       </div>
@@ -401,5 +404,48 @@ function DefaultValuesEditor({ field, onChange }: { field: GridField; onChange: 
         </table>
       </div>
     </div>
+  );
+}
+
+/**
+ * Per-row "what to look at" text, shown only at the top of the row pop-up.
+ * Parallel to `labels`, like defaultValues. Collapsed by default — a 34-row
+ * checklist would otherwise bury the rest of the builder.
+ */
+function GuidanceEditor({ field, onChange }: { field: GridField; onChange: (field: GridField) => void }) {
+  const rows = field.rows;
+  if (rows.mode !== "fixed") return null;
+  const labels = rows.labels;
+  const guidance = rows.guidance ?? [];
+  const filled = guidance.filter(g => g?.trim()).length;
+
+  const setGuidance = (rowIdx: number, value: string) => {
+    const next = labels.map((_, i) => guidance[i] ?? "");
+    next[rowIdx] = value;
+    const any = next.some(g => g.trim());
+    onChange({ ...field, rows: { ...rows, guidance: any ? next : undefined } });
+  };
+
+  return (
+    <details className="rounded border bg-white px-2 py-1.5" style={{ borderColor: "rgba(200,155,60,0.2)" }}>
+      <summary className="cursor-pointer text-[10px] text-muted-foreground">
+        Row guidance (optional) — shown at the top of each row's pop-up form only · {filled} of {labels.length} rows
+      </summary>
+      <p className="text-[10px] text-muted-foreground mt-1.5">
+        One point per line; start a line with "• " for a bullet. Turn on "Open a row as a form" above or nobody will see it.
+      </p>
+      <div className="space-y-2 mt-2">
+        {labels.map((label, rowIdx) => (
+          <div key={rowIdx} className="space-y-1">
+            <Label className="text-[10px] text-[#2A1F0E]/70">{label || `Row ${rowIdx + 1}`}</Label>
+            <Textarea
+              className="text-xs min-h-16"
+              value={guidance[rowIdx] ?? ""}
+              onChange={e => setGuidance(rowIdx, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }

@@ -141,6 +141,12 @@ export type GridRows =
       // Header text for the leading label column (e.g. "Location") — purely
       // cosmetic, blank renders no header text (prior behavior).
       labelHeader?: string;
+      // What to look at for each row, parallel to `labels` — shown ONLY at the top
+      // of the row pop-up (GridRowDialog), never in the table, the PDF or the
+      // printed blank. For a checklist whose label is just a clause heading
+      // ("11.1.2 Building Materials"), this is the part the inspector needs on
+      // the floor. One item per line; a line starting "• " renders as a bullet.
+      guidance?: string[];
     };
 export interface GridField extends FieldBase {
   type: "grid";
@@ -176,6 +182,21 @@ export const ROW_DIALOG_MIN_COLUMNS = 6;
 /** Whether a grid offers the per-row "open as a form" dialog. */
 export function gridRowDialogEnabled(field: GridField): boolean {
   return field.rowDialog ?? field.columns.length >= ROW_DIALOG_MIN_COLUMNS;
+}
+
+/**
+ * The pop-up guidance for one row of a fixed grid, or undefined. A plain
+ * checklist's rows cannot move, so position is the key; on a deletable register
+ * rows can be removed or renamed, so it is looked up by the row's label and a
+ * renamed or added row simply has none.
+ */
+export function gridRowGuidance(field: GridField, rowIndex: number, rowLabel?: string): string | undefined {
+  if (field.rows.mode !== "fixed" || !field.rows.guidance) return undefined;
+  const idx = field.rows.deletable
+    ? (rowLabel == null ? -1 : field.rows.labels.indexOf(rowLabel))
+    : rowIndex;
+  const text = idx >= 0 ? field.rows.guidance[idx]?.trim() : undefined;
+  return text || undefined;
 }
 
 export type FormField =

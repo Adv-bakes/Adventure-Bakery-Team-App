@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Maximize2, Plus, Trash2 } from "lucide-react";
 import {
-  applyLabelScan, gridRowDialogEnabled, newGridRow, resolveScanFact, scanWantedFacts,
+  applyLabelScan, gridRowDialogEnabled, gridRowGuidance, newGridRow, resolveScanFact, scanWantedFacts,
   type FillContext, type GridColumn, type GridField, type GridRowValue,
   type LabelFact, type LabelScanResult, type ScanMode,
 } from "@/lib/formSchema";
@@ -598,6 +598,11 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
             rowLabel={
               dialogRow != null && fixed
                 ? (rowsRef.current[dialogRow]?._label ?? fixedLabels[dialogRow])
+                : undefined
+            }
+            guidance={
+              dialogRow != null
+                ? gridRowGuidance(field, dialogRow, rowsRef.current[dialogRow]?._label ?? fixedLabels[dialogRow])
                 : undefined
             }
             rowKey={dialogRow != null ? rows[dialogRow]?.id : undefined}
