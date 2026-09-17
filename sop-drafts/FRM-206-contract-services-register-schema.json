@@ -1,0 +1,270 @@
+{
+  "sections": [
+    {
+      "id": "provider",
+      "title": "1. The provider",
+      "fields": [
+        {
+          "id": "how_this_works",
+          "text": "ONE ENTRY IS ONE CONTRACT SERVICE PROVIDER. The Entries list is the register - provider, service and whether it is current - and each entry carries the full description, the training its personnel must hold, and the contract itself as an attachment.\n\nWHAT 2.3.2.8 ASKS FOR. The description of services from a contract provider that affects product safety must be documented, CURRENT, give a full description of the services provided, and detail the relevant training requirements of all contract personnel. The auditor will ask to see a contract, which is why one is attached rather than referred to.\n\nA DISCONTINUED SERVICE STAYS ON THE REGISTER, marked Discontinued with the date. Deleting it would leave no record that the site ever used it, and \"current\" means the register says which services are live - not that it has been emptied of the ones that are not.\n\nTHIS REGISTER RECORDS WHO IS CONTRACTED AND FOR WHAT. It does not govern how the site controls the activity - pest prevention and chemical control are their own programmes. Two accounts of one activity is how a record stops being believed.",
+          "type": "info",
+          "label": "How this register works"
+        },
+        {
+          "id": "service_type",
+          "type": "select",
+          "label": "Service",
+          "width": "half",
+          "options": [
+            "Pest control",
+            "Chemical supply",
+            "Laundry / workwear",
+            "Waste haulage",
+            "Calibration",
+            "External laboratory",
+            "Sanitation / janitorial",
+            "Equipment maintenance",
+            "Other"
+          ],
+          "required": true,
+          "allowOther": true,
+          "showInList": true
+        },
+        {
+          "id": "provider_name",
+          "type": "text",
+          "label": "Provider",
+          "width": "half",
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "status",
+          "type": "select",
+          "label": "Status",
+          "width": "third",
+          "options": [
+            "Current",
+            "Discontinued"
+          ],
+          "required": true,
+          "showInList": true
+        },
+        {
+          "id": "engaged_from",
+          "type": "date",
+          "label": "Engaged from",
+          "width": "third"
+        },
+        {
+          "id": "discontinued_on",
+          "help": "Only where the status above is Discontinued.",
+          "type": "date",
+          "label": "Discontinued on",
+          "width": "third"
+        },
+        {
+          "id": "address",
+          "type": "textarea",
+          "label": "Address",
+          "required": true
+        },
+        {
+          "id": "contact_name",
+          "type": "text",
+          "label": "Contact",
+          "width": "third",
+          "required": true
+        },
+        {
+          "id": "contact_phone",
+          "type": "text",
+          "label": "Telephone",
+          "width": "third"
+        },
+        {
+          "id": "contact_email",
+          "type": "text",
+          "label": "Email",
+          "width": "third"
+        }
+      ]
+    },
+    {
+      "id": "services",
+      "title": "2. Services provided (2.3.2.8)",
+      "fields": [
+        {
+          "id": "services_info",
+          "text": "\"A full description\" means what an auditor could check the provider against: what they do, where they do it, and how often. \"Pest control\" on its own is not a description of a service.",
+          "type": "info",
+          "label": "What a full description means"
+        },
+        {
+          "id": "service_description",
+          "help": "What the provider does for the site, in enough detail to check them against it.",
+          "type": "textarea",
+          "label": "Full description of the services",
+          "required": true
+        },
+        {
+          "id": "frequency",
+          "help": "For example \"monthly, plus call-outs\".",
+          "type": "text",
+          "label": "How often they attend",
+          "width": "half"
+        },
+        {
+          "id": "areas",
+          "type": "textarea",
+          "label": "Areas of the site they access"
+        },
+        {
+          "id": "chemicals_used",
+          "help": "Anything applied or left on site. Each is subject to the site's chemical control; record \"none\" where they bring nothing.",
+          "type": "textarea",
+          "label": "Chemicals or materials they bring on site"
+        }
+      ]
+    },
+    {
+      "id": "training",
+      "title": "3. Training of contract personnel (2.3.2.8)",
+      "fields": [
+        {
+          "id": "training_info",
+          "text": "THIS IS THE LIMB THE FINDING WAS ABOUT. 2.3.2.8 asks for the relevant training requirements of all contract personnel - not the site's training, theirs. For a pest control technician that is the state pesticide applicator licence; for a contract laboratory it is the method accreditation; for a sanitation contractor it is chemical handling and GMP.\n\nRECORD WHAT THEY MUST HOLD, AND WHETHER THE SITE HAS SEEN IT. \"Not required\" is an acceptable answer where it is true and justified - an unjustified blank is not.",
+          "type": "info",
+          "label": "Whose training this is"
+        },
+        {
+          "id": "training_requirements",
+          "type": "textarea",
+          "label": "Training and licences their personnel must hold",
+          "required": true
+        },
+        {
+          "id": "evidence_held",
+          "type": "select",
+          "label": "Evidence held by the site",
+          "width": "half",
+          "options": [
+            "On file - attached to this entry",
+            "On file - held elsewhere",
+            "Requested, not yet received",
+            "Not required - justified above"
+          ],
+          "required": true
+        },
+        {
+          "id": "licence_reference",
+          "type": "text",
+          "label": "Licence / certificate reference",
+          "width": "half"
+        },
+        {
+          "id": "licence_expiry",
+          "type": "date",
+          "label": "Expires",
+          "width": "third"
+        }
+      ]
+    },
+    {
+      "id": "controls",
+      "title": "4. While they are on site",
+      "fields": [
+        {
+          "id": "controls_info",
+          "text": "Contract personnel are visitors for as long as they are on site: they sign in on FRM-905 and acknowledge the GMP rules on FRM-906, the same as anybody else who is not staff.\n\nANY CHEMICAL BROUGHT ON SITE is recorded in Section 2 and is subject to the site's chemical control - a provider's own product does not arrive pre-approved because the provider is approved.",
+          "type": "info",
+          "label": "They are visitors"
+        },
+        {
+          "id": "signs_in",
+          "type": "pass_fail",
+          "label": "Signs in on FRM-905 and acknowledges GMP on FRM-906",
+          "width": "half",
+          "required": true
+        },
+        {
+          "id": "supervision",
+          "type": "select",
+          "label": "Supervision",
+          "width": "half",
+          "options": [
+            "Escorted at all times",
+            "Unescorted in named areas only",
+            "Attends when the site is not operating"
+          ],
+          "required": true
+        },
+        {
+          "id": "records_left",
+          "help": "For example a service report per visit. These are site records once received.",
+          "type": "textarea",
+          "label": "Records they leave with the site"
+        }
+      ]
+    },
+    {
+      "id": "contract",
+      "title": "5. Contract and review",
+      "fields": [
+        {
+          "id": "contract_info",
+          "text": "ATTACH THE CONTRACT to this entry using the Attachments section at the bottom. \"Held elsewhere\" is acceptable if the location is named and somebody can produce it during an audit; \"no contract in place\" is a true answer for an informal arrangement and is better recorded than implied.\n\nSET A REVIEW DATE. 2.3.2.8 requires the description to be CURRENT, and a register nobody revisits stops being current the first time a provider changes what they do.",
+          "type": "info",
+          "label": "The contract itself"
+        },
+        {
+          "id": "contract_on_file",
+          "type": "select",
+          "label": "Contract",
+          "width": "half",
+          "options": [
+            "Attached to this entry",
+            "Held elsewhere - named below",
+            "No written contract in place"
+          ],
+          "required": true
+        },
+        {
+          "id": "contract_location",
+          "type": "text",
+          "label": "Where it is held",
+          "width": "half"
+        },
+        {
+          "id": "contract_renewal",
+          "type": "date",
+          "label": "Contract renewal date",
+          "width": "third"
+        },
+        {
+          "id": "next_review",
+          "help": "At least annually, and whenever the service changes.",
+          "type": "date",
+          "label": "Next review of this entry",
+          "width": "third",
+          "required": true
+        },
+        {
+          "id": "reviewed_by",
+          "role": "verifier",
+          "type": "signature",
+          "label": "Reviewed and approved by the SQF Practitioner",
+          "required": true,
+          "statement": "The description of services above is accurate and current, and the training requirements recorded are those this provider's personnel must hold."
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "requireVerification": true,
+    "instanceTitleTemplate": "{provider_name} — {service_type}"
+  },
+  "schemaVersion": 1
+}

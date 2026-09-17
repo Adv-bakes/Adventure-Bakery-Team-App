@@ -721,3 +721,27 @@ if __name__ == "__main__":
     b009 = blocks_from_schema(s009)
     build_pdf("sop-drafts/FRM-009-blank.pdf", meta009, b009)
     build_docx("sop-drafts/FRM-009-blank.docx", meta009, b009)
+
+    # FRM-206 - Contract Services Register. PORTRAIT, and the clearest case in the set: the form
+    # has NO GRIDS AT ALL. Thirty scalar fields over five sections, so nothing is competing for
+    # horizontal room.
+    #
+    # ONE SHEET IS ONE PROVIDER, not one sheet holding the whole register. The register is the set
+    # of sheets, which is the same shape as the digital form - where the entries list, carrying
+    # service / provider / status, IS the register. That is also why the contract attaches per
+    # entry rather than piling into one list.
+    #
+    # THE BLANK EXISTS FOR THE PROVIDER'S SIDE OF THE CONVERSATION. Sections 2 and 3 are answered
+    # from what the provider tells the site - the full description of services, and the training and
+    # licences their personnel hold - and that is a phone call or a visit, not a tablet session.
+    #
+    # rev New, effective 2026-09-16, approved GJM: seeded by 20260916000009 and issued by
+    # 20260916000010 under D-10. Mirrors the live row.
+    s206 = load_schema("sop-drafts/FRM-206-contract-services-register-schema.json")
+    meta206 = {"form_no": "FRM-206", "title": "Contract Services Register",
+               "revision": "New", "eff": "2026-09-16", "appr": "GJM",
+               "sqf": "2.3.2.8",
+               "footer": FOOT.format(no="FRM-206")}
+    b206 = blocks_from_schema(s206)
+    build_pdf("sop-drafts/FRM-206-blank.pdf", meta206, b206)
+    build_docx("sop-drafts/FRM-206-blank.docx", meta206, b206)
