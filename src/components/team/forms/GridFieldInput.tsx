@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Maximize2, Plus, Trash2 } from "lucide-react";
 import {
-  applyLabelScan, newGridRow, resolveScanFact, scanWantedFacts,
+  applyLabelScan, gridRowDialogEnabled, newGridRow, resolveScanFact, scanWantedFacts,
   type FillContext, type GridColumn, type GridField, type GridRowValue,
   type LabelFact, type LabelScanResult, type ScanMode,
 } from "@/lib/formSchema";
@@ -244,9 +244,9 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   // A grid narrow enough to read across does not need a second way to edit a row, and a
   // three-column checklist would just gain a control nobody presses. Six is where the table
   // starts outgrowing a tablet in portrait: six columns hit the 90px floor at ~570px plus
-  // gutters, and every column past that is scrolled to rather than seen.
-  const ROW_DIALOG_MIN_COLUMNS = 6;
-  const rowDialogEnabled = field.columns.length >= ROW_DIALOG_MIN_COLUMNS;
+  // gutters, and every column past that is scrolled to rather than seen. A narrow grid whose
+  // cells hold sentences opts in with `rowDialog: true` (see gridRowDialogEnabled).
+  const rowDialogEnabled = gridRowDialogEnabled(field);
   const [dialogRow, setDialogRow] = useState<number | null>(null);
 
   // Floor for the table under table-fixed: the sum of each column's minimum so a
