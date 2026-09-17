@@ -520,7 +520,9 @@ export default function FormEntry() {
   const downloadPdf = async () => {
     if (!doc || !response || !schema) return;
     try {
-      await generateFormResponsePdf(doc, schema, response, fillerName);
+      // What is on screen, not the last save: a reviewer checking a draft expects the PDF to
+      // show what they just typed. The status/revision header still comes from the saved row.
+      await generateFormResponsePdf(doc, schema, { ...response, data: form.getValues() }, fillerName);
     } catch (e: any) {
       toast.error(e.message ?? "Failed to generate PDF");
     }

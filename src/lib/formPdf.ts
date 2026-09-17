@@ -118,6 +118,24 @@ async function attachmentsSection(attachments: ResponseAttachment[]): Promise<Co
 }
 
 /**
+ * Table widths for a grid, as percentages of the page.
+ *
+ * pdfmake has no weighted star: `"2*"` is neither "*" nor "auto", so it is taken as a fixed width,
+ * parses to NaN, and pdfkit throws "unsupported number: NaN" inside pdfmake's async render —
+ * outside any try/catch, so Download PDF silently did nothing on every form whose grid columns
+ * carry a width (FRM-401, FRM-913). The column weights are converted to percentages instead, and
+ * a fixed grid's label column gets 1.4x the average column's share, as GridFieldInput does on
+ * screen. Scaled to 99.5% so rounding can never overflow the page.
+ */
+function gridPdfWidths(grid: GridField, fixed: boolean): string[] {
+  const weights = grid.columns.map(c => (typeof c.width === "number" && c.width > 0 ? c.width : 1));
+  const avg = weights.length ? weights.reduce((s, w) => s + w, 0) / weights.length : 1;
+  const all = fixed ? [avg * 1.4, ...weights] : weights;
+  const total = all.reduce((s, w) => s + w, 0) || 1;
+  return all.map(w => `${((w / total) * 99.5).toFixed(2)}%`);
+}
+
+/**
  * Render one filled entry as a paper-like PDF: SOP-style metadata header,
  * sections in schema order, grids as real tables, signatures as signed lines.
  */
@@ -206,10 +224,7 @@ export async function generateFormResponsePdf(
           body.push({
             table: {
               headerRows: 1,
-              widths: [
-                ...(fixed ? ["auto"] : []),
-                ...grid.columns.map(c => (c.width ? `${c.width}*` : "*")),
-              ],
+              widths: gridPdfWidths(grid, fixed),
               body: [header, ...(dataRows.length ? dataRows : [[
                 ...(fixed ? [{ text: " " } as TableCell] : []),
                 ...grid.columns.map(() => ({ text: " " } as TableCell)),
@@ -265,7 +280,9 @@ export async function generateFormResponsePdf(
 
   const fileName = `${show(response.form_number ?? doc.sop_number)} ${doc.title ?? "Form"} ${fmtDate(response.created_at, "yyyy-MM-dd")}.pdf`
     .replace(/[\\/:*?"<>|]/g, "-");
-  pdfMake.createPdf(docDefinition).download(fileName);
+  // pdfmake 0.3 renders asynchronously and returns a promise; awaiting it is what lets a render
+  // failure reach the caller's toast instead of vanishing as an unhandled rejection.
+  await pdfMake.createPdf(docDefinition).download(fileName);
 }
 
 /** Max data columns in the report PDF; wider forms point to the CSV export. */
@@ -335,7 +352,9 @@ export async function generateFormReportPdf(
   };
 
   const fileName = `${show(doc.sop_number)} report ${range.from} to ${range.to}.pdf`.replace(/[\\/:*?"<>|]/g, "-");
-  pdfMake.createPdf(docDefinition).download(fileName);
+  // pdfmake 0.3 renders asynchronously and returns a promise; awaiting it is what lets a render
+  // failure reach the caller's toast instead of vanishing as an unhandled rejection.
+  await pdfMake.createPdf(docDefinition).download(fileName);
 }
 
 /**
@@ -456,5 +475,7 @@ export async function generateDerivedReportPdf(
 
   const fileName = `${show(logDoc.sop_number)} ${logDoc.title ?? "log"}${meta.rangeLabel ? ` ${meta.rangeLabel}` : ""}.pdf`
     .replace(/[\\/:*?"<>|]/g, "-");
-  pdfMake.createPdf(docDefinition).download(fileName);
+  // pdfmake 0.3 renders asynchronously and returns a promise; awaiting it is what lets a render
+  // failure reach the caller's toast instead of vanishing as an unhandled rejection.
+  await pdfMake.createPdf(docDefinition).download(fileName);
 }

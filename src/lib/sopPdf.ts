@@ -257,5 +257,7 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
   };
 
   const fileName = `${row.sop_number ? `SOP-${row.sop_number} ` : ""}${row.title ?? "SOP"}.pdf`.replace(/[\\/:*?"<>|]/g, "-");
-  pdfMake.createPdf(docDefinition).download(fileName);
+  // pdfmake 0.3 renders asynchronously and returns a promise; awaiting it is what lets a render
+  // failure reach the caller's toast instead of vanishing as an unhandled rejection.
+  await pdfMake.createPdf(docDefinition).download(fileName);
 }
