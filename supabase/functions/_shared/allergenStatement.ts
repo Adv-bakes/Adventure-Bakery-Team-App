@@ -66,3 +66,29 @@ export function storageClass(instruction: string | undefined | null): StorageCla
   if (/cool,? dry|dry place|room temperature|ambient|shelf.?stable/.test(t)) return "Ambient";
   return undefined;
 }
+
+/**
+ * Cross-check of a transcribed ingredient statement against the allergens its Contains statement
+ * declares: every declared allergen should be named, by the same words, somewhere in the ingredients.
+ *
+ * This exists because a transcription can drop part of a dense panel without saying so - the first
+ * real scan (Pillsbury Creme Cake Base, 2026-09-18) replaced "NONFAT MILK, XANTHAN GUM, GUAR GUM"
+ * with an ingredient that is not on the bag. The Contains line declared milk; the transcribed list
+ * no longer named it. A label that declares milk only through "whey" or "casein" will also be
+ * flagged: a false alarm that costs a glance at the pack is the right way to be wrong here.
+ */
+export function ingredientsMissingDeclared(
+  ingredients: string | undefined | null,
+  declared: readonly MajorAllergen[],
+): string[] {
+  const text = (ingredients ?? "").toLowerCase();
+  if (!text.trim()) return [];
+  return declared
+    .filter(name => {
+      const re = PATTERNS.find(([n]) => n === name)?.[1];
+      return re ? !re.test(text) : false;
+    })
+    .map(name =>
+      `The Contains statement declares ${name}, but the transcribed ingredient statement does not name it. ` +
+      `Check the ingredient statement against the pack - part of it may have been missed or misread.`);
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { Camera, ImagePlus, Loader2 } from "lucide-react";
+import { Camera, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -181,6 +181,10 @@ function SectionLabelScan({ section, fields, form, onScanLabel }: {
 
   useEffect(() => {
     if (!scan) return;
+    // A scan that raised a warning stays until it is dismissed: a warning that the ingredient
+    // statement may be missing an allergen must not vanish on a timer while the filler is
+    // looking at the pack.
+    if (scan.warnings.length > 0) return;
     const timer = window.setTimeout(() => setScan(null), SCAN_UNDO_MS);
     return () => window.clearTimeout(timer);
   }, [scan]);
@@ -313,7 +317,21 @@ function SectionLabelScan({ section, fields, form, onScanLabel }: {
             <p className="text-[#2A1F0E]/70">Also read: {scan.unclaimed.join(" · ")}</p>
           )}
           {scan.warnings.length > 0 && (
-            <p className="text-[#9A6F1E]">{scan.warnings.join(" · ")}</p>
+            <div className="space-y-1 pt-0.5">
+              {scan.warnings.map(w => (
+                <p key={w} className="flex gap-1.5 text-amber-800">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px" />
+                  <span>{w}</span>
+                </p>
+              ))}
+              <button
+                type="button"
+                onClick={() => setScan(null)}
+                className="font-medium text-[#9A6F1E] hover:underline"
+              >
+                Dismiss
+              </button>
+            </div>
           )}
         </div>
       )}

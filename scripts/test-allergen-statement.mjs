@@ -18,7 +18,7 @@ await build({
   entryPoints: ["supabase/functions/_shared/allergenStatement.ts"],
   bundle: true, platform: "node", format: "esm", outfile: out, logLevel: "error",
 });
-const { allergensFromContains, storageClass, MAJOR_ALLERGENS } = await import(pathToFileURL(out).href);
+const { allergensFromContains, storageClass, ingredientsMissingDeclared, MAJOR_ALLERGENS } = await import(pathToFileURL(out).href);
 rmSync(dir, { recursive: true, force: true });
 
 let failed = 0;
@@ -54,6 +54,18 @@ eq("storage: refrigerate", storageClass("Keep refrigerated at or below 40°F"), 
 eq("storage: cool dry place", storageClass("Store in a cool, dry place"), "Ambient");
 eq("storage: silence is not ambient", storageClass(""), undefined);
 eq("storage: unrelated text", storageClass("Use Doughboy products everyday"), undefined);
+
+// Cross-check: the ingredient list must name every allergen the Contains line declares.
+const PILLSBURY_TRUE = "SUGAR, ENRICHED FLOUR BLEACHED (WHEAT FLOUR, NIACIN, IRON, THIAMIN MONONITRATE, RIBOFLAVIN, FOLIC ACID), SOYBEAN OIL, MODIFIED CORN STARCH. CONTAINS 2% OR LESS OF: MONO AND DIGLYCERIDES, MODIFIED WHEY, LEAVENING (BAKING SODA, SODIUM ALUMINUM PHOSPHATE), SALT, SODIUM STEAROYL LACTYLATE, SORBITAN MONOSTEARATE, CALCIUM ACETATE, NONFAT MILK, XANTHAN GUM, GUAR GUM, VITAL WHEAT GLUTEN, POLYSORBATE 60, NATURAL AND ARTIFICIAL FLAVOR, SOY FLOUR, EGG.";
+// What the first live scan actually returned: NONFAT MILK, XANTHAN GUM, GUAR GUM -> MONOCALCIUM PHOSPHATE
+const PILLSBURY_SCANNED = PILLSBURY_TRUE.replace("NONFAT MILK, XANTHAN GUM, GUAR GUM", "MONOCALCIUM PHOSPHATE");
+const declared = ["Milk", "Egg", "Wheat", "Soy"];
+eq("correct Pillsbury transcription passes", ingredientsMissingDeclared(PILLSBURY_TRUE, declared), []);
+eq("the real mis-scan is caught (milk dropped)",
+  ingredientsMissingDeclared(PILLSBURY_SCANNED, declared).map(w => w.split(",")[0]),
+  ["The Contains statement declares Milk"]);
+eq("milk only as whey is flagged (deliberate false alarm)", ingredientsMissingDeclared("SUGAR, WHEY, FLOUR (WHEAT)", ["Milk", "Wheat"]).length, 1);
+eq("no ingredient statement -> no cross-check", ingredientsMissingDeclared("", declared), []);
 
 console.log(failed ? `\n${failed} FAILED` : "\nall passed");
 process.exit(failed ? 1 : 0);

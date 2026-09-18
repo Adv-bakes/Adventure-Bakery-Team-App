@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { deriveDateValue, nextDerivedFill } from "@/lib/formSchema";
 import { loadSelectOptions } from "@/lib/formReport";
 import type {
-  DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
+  CheckboxField, DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
   PassFailField, SelectOptionsFrom, SignatureField, TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
@@ -273,6 +273,11 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
                   </Label>
                 </div>
                 {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
+                {(field as CheckboxField).clearOnScanOf && rhf.value !== true && (
+                  <p className="text-xs text-amber-700">
+                    Not yet checked. A label scan unticks this whenever it fills the text it covers.
+                  </p>
+                )}
                 {error && <p className="text-xs text-red-600">{error}</p>}
               </div>
             );
