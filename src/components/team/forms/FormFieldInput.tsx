@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useWatch, type Control } from "react-hook-form";
 import { format, parseISO } from "date-fns";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { deriveDateValue, nextDerivedFill } from "@/lib/formSchema";
+import { loadSelectOptions } from "@/lib/formReport";
 import type {
   DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
-  PassFailField, SignatureField, TextField, TextareaField,
+  PassFailField, SelectOptionsFrom, SignatureField, TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
@@ -117,11 +118,33 @@ interface FormFieldInputProps {
 }
 
 /**
+ * The live half of a select's list (SelectField.optionsFrom): null while loading, [] when
+ * nothing qualifies. Fetched on mount rather than cached, so an approval submitted in another
+ * tab is choosable the next time the entry is opened.
+ */
+function useLinkedOptions(spec: SelectOptionsFrom | undefined) {
+  const [state, setState] = useState<{ options: string[] | null; failed: boolean }>({ options: null, failed: false });
+  const key = spec ? JSON.stringify(spec) : "";
+  useEffect(() => {
+    if (!spec) return;
+    let live = true;
+    loadSelectOptions(spec)
+      .then(options => { if (live) setState({ options, failed: false }); })
+      .catch(() => { if (live) setState({ options: [], failed: true }); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return state;
+}
+
+/**
  * Renders one scalar schema field wired to react-hook-form. Grid fields are
  * handled by GridFieldInput; heading/info by FormRenderer directly. Unknown
  * types render a placeholder box (forward-compat: never crash, never drop data).
  */
 export function FormFieldInput({ field, control, disabled, isAdmin, signer }: FormFieldInputProps) {
+  const linkedSpec = field.type === "select" ? (field as SelectField).optionsFrom : undefined;
+  const linked = useLinkedOptions(linkedSpec);
   return (
     <Controller
       control={control}
@@ -255,33 +278,65 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
             );
           case "select": {
             const f = field as SelectField;
+            const own = f.options ?? [];
+            const offered = [...own, ...(linked.options ?? []).filter(o => !own.includes(o))];
+            const chosen: string[] = f.multiple
+              ? (Array.isArray(rhf.value) ? rhf.value : [])
+              : (rhf.value ? [String(rhf.value)] : []);
+            // A value saved earlier that the list no longer offers (e.g. a supplier since rejected)
+            // stays visible and flagged — silently dropping it would rewrite the record.
+            const stale = f.optionsFrom && linked.options !== null
+              ? chosen.filter(v => !offered.includes(v))
+              : [];
+            const staleNote = f.optionsFrom ? ` — not on ${f.optionsFrom.form}'s current list` : "";
+            const linkNote = f.optionsFrom && (
+              linked.options === null ? (
+                <p className="text-xs text-muted-foreground">Loading the list from {f.optionsFrom.form}…</p>
+              ) : linked.failed ? (
+                <p className="text-xs text-red-600">Couldn't load the list from {f.optionsFrom.form}. Reload the page to try again.</p>
+              ) : offered.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {f.optionsFrom.emptyText ?? `Nothing on ${f.optionsFrom.form} qualifies yet.`}
+                </p>
+              ) : null
+            );
             if (f.multiple) {
-              const values: string[] = Array.isArray(rhf.value) ? rhf.value : [];
+              const values = chosen;
               input = (
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-1">
-                  {f.options.map(opt => (
-                    <div key={opt} className="flex items-center gap-1.5">
-                      <Checkbox
-                        id={`fld-${field.id}-${opt}`}
-                        checked={values.includes(opt)}
-                        disabled={disabled}
-                        onCheckedChange={c => rhf.onChange(c ? [...values, opt] : values.filter(v => v !== opt))}
-                      />
-                      <Label htmlFor={`fld-${field.id}-${opt}`} className={cn("font-normal text-sm", !disabled && "cursor-pointer")}>
-                        {opt}
-                      </Label>
-                    </div>
-                  ))}
+                <div className="space-y-1">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-1">
+                    {[...offered, ...stale].map(opt => (
+                      <div key={opt} className="flex items-center gap-1.5">
+                        <Checkbox
+                          id={`fld-${field.id}-${opt}`}
+                          checked={values.includes(opt)}
+                          disabled={disabled}
+                          onCheckedChange={c => rhf.onChange(c ? [...values, opt] : values.filter(v => v !== opt))}
+                        />
+                        <Label
+                          htmlFor={`fld-${field.id}-${opt}`}
+                          className={cn("font-normal text-sm", !disabled && "cursor-pointer", stale.includes(opt) && "text-amber-700")}
+                        >
+                          {opt}{stale.includes(opt) && staleNote}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {linkNote}
                 </div>
               );
             } else {
               input = (
-                <Select value={rhf.value || undefined} onValueChange={rhf.onChange} disabled={disabled}>
-                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>
-                    {f.options.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-1">
+                  <Select value={rhf.value || undefined} onValueChange={rhf.onChange} disabled={disabled}>
+                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>
+                      {offered.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                      {stale.map(opt => <SelectItem key={opt} value={opt}>{opt}{staleNote}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {linkNote}
+                </div>
               );
             }
             break;

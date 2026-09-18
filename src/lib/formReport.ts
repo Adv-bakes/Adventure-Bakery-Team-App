@@ -11,7 +11,7 @@
 // entries; here the report reprojects a *different* form's data.
 
 import { supabase } from "@/integrations/supabase/client";
-import { formatFieldValue, getFormSchema, valueFields, type FormField, type FormSchema } from "@/lib/formSchema";
+import { formatFieldValue, getFormSchema, valueFields, type FormField, type FormSchema, type SelectOptionsFrom } from "@/lib/formSchema";
 import { fetchResponses, type FormResponse } from "@/lib/formResponses";
 
 export const REPORT_SCHEMA_VERSION = 1;
@@ -222,6 +222,33 @@ export function matchesFilter(f: ReportFilter, data: Record<string, any>): boole
     case "anyNotEmpty": return (f.fields ?? []).some(id => !isBlank(data?.[id]));
     default: return true;
   }
+}
+
+/**
+ * The options of a select whose list is another form's register (SelectField.optionsFrom):
+ * the distinct values of `spec.field` across SUBMITTED responses that pass every filter.
+ * Case-insensitive dedupe keeps the first spelling seen, so two approvals typed "Sysco" and
+ * "SYSCO" offer one choice rather than two. Pure — `loadSelectOptions` does the fetching.
+ */
+export function selectOptionsFromResponses(
+  spec: SelectOptionsFrom,
+  responses: Array<Pick<FormResponse, "status" | "data">>,
+): string[] {
+  const byKey = new Map<string, string>();
+  for (const r of responses) {
+    if (r.status !== "submitted") continue;
+    const data = r.data ?? {};
+    if (!(spec.filters ?? []).every(f => matchesFilter(f, data))) continue;
+    const value = rawString(data[spec.field]).trim();
+    if (value && !byKey.has(value.toLowerCase())) byKey.set(value.toLowerCase(), value);
+  }
+  return [...byKey.values()].sort((a, b) => a.localeCompare(b));
+}
+
+export async function loadSelectOptions(spec: SelectOptionsFrom): Promise<string[]> {
+  const doc = await fetchSourceForm(spec.form);
+  if (!doc) return [];
+  return selectOptionsFromResponses(spec, await fetchResponses(doc.id));
 }
 
 const inDateRange = (value: string, from?: string, to?: string): boolean => {

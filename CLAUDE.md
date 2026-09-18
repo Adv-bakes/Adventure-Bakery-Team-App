@@ -408,6 +408,17 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   from schema *position* (`fixedLabels[rowIdx]`); reordering would desync the label/data pairing, so sorting
   only activates when the label lives in the row's own data (`_label`, i.e. `deletable: true`) or the grid
   is fully dynamic.
+- **Dropdowns fed by another form's register (`SelectField.optionsFrom`):** `{ form, field, filters?, emptyText? }`
+  offers the distinct `field` values of every **submitted** entry of `form` that passes `filters` (same
+  shape and meaning as a derived report's `filters[]`, evaluated by `matchesFilter`), after any typed
+  `options`. First use: FRM-207's **Bought from** = every FRM-202 supplier that is Approved or
+  Conditionally Approved, with REP-201's filters copied verbatim so the two registers cannot disagree —
+  approving a supplier there is what makes it choosable here. Pure half `selectOptionsFromResponses`
+  (case-insensitive dedupe, drafts never count) + `loadSelectOptions` in `formReport.ts`; fetched on
+  mount by `useLinkedOptions` in `FormFieldInput` (no cache, so a new approval shows on next open). A
+  value saved earlier that later drops off the list is **kept and flagged amber**, never removed.
+  The builder allows saving such a select with no typed options and says where the list comes from.
+  ⚠️ **`allowOther` is not rendered anywhere** — a select with it is still a closed list. Offer "Other".
 - **Dictation & AI cleanup on every filler-facing textarea:** `DictationTextarea.tsx` wraps both the scalar
   `textarea` field type (`FormFieldInput.tsx`) and free-text grid cells (`GridFieldInput.tsx`'s default
   column type) with a mic button (Web Speech API `SpeechRecognition`, continuous, appends onto the
@@ -768,7 +779,7 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns), `verifierSignatureFields`/`unsignedVerifierFields` (which verifier lines an entry is still missing — drives the Request-signature action and closes the request); package-label scan helpers `LABEL_FACTS`/`LABEL_FACT_LABELS`, `inferScanFact`/`resolveScanFact`, `scanWantedFacts`, `applyLabelScan`. See "Dynamic Fillable Forms" below |
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse` (optional 2nd arg `prefill` seeds the new entry's `data` over `emptyValues(schema)`; a resumed existing draft is never clobbered — powers the FRM-401 temperature-review launcher), `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
-| `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
+| `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `selectOptionsFromResponses`/`loadSelectOptions` (options for a select linked to another form — see `optionsFrom`), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
 
 ---
 
