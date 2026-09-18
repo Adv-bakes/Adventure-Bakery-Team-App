@@ -279,7 +279,7 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
         if (!field.label.trim() && field.type !== "info") {
           return toast.error(`A ${FIELD_TYPE_LABELS[field.type]} field is missing its label`);
         }
-        if (field.type === "select" && (field as SelectField).options.length === 0) {
+        if (field.type === "select" && (field as SelectField).options.length === 0 && !(field as SelectField).optionsFrom) {
           return toast.error(`Dropdown "${field.label}" needs at least one option`);
         }
         if (field.type === "grid") {
@@ -492,6 +492,14 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                   )}
                   {field.type === "select" && (
                     <div className="space-y-2">
+                      {(field as SelectField).optionsFrom && (
+                        <p className="text-[11px] rounded border px-2 py-1.5 text-[#2A1F0E]/80" style={{ borderColor: "rgba(200,155,60,0.35)" }}>
+                          Also lists every <b>{(field as SelectField).optionsFrom!.field.replace(/_/g, " ")}</b> on a
+                          submitted <b>{(field as SelectField).optionsFrom!.form}</b> entry
+                          {(field as SelectField).optionsFrom!.filters?.length ? " that meets its conditions" : ""}.
+                          Options typed below are offered first.
+                        </p>
+                      )}
                       <div>
                         <Label className="text-[10px] text-muted-foreground">Options (one per line)</Label>
                         <Textarea

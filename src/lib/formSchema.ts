@@ -10,6 +10,7 @@
 //   for later production-floor field types).
 
 import { z } from "zod";
+import type { ReportFilter } from "./formReport";
 import { addDays, format, lastDayOfMonth } from "date-fns";
 
 export const FORM_SCHEMA_VERSION = 1;
@@ -68,7 +69,32 @@ export interface DateDerivation {
   label?: string;
 }
 export interface CheckboxField extends FieldBase { type: "checkbox"; }
-export interface SelectField   extends FieldBase { type: "select";   options: string[]; multiple?: boolean; allowOther?: boolean; }
+export interface SelectField   extends FieldBase {
+  type: "select";
+  options: string[];
+  multiple?: boolean;
+  // Stored on some seeded schemas but NOT rendered — there is no free-text "other"
+  // input. Offer "Other" as an option instead.
+  allowOther?: boolean;
+  /**
+   * Options read live from ANOTHER form's register, offered after `options`.
+   * FRM-207's "Bought from" lists the suppliers with a submitted FRM-202
+   * approval, so approving a supplier there is what makes it choosable here —
+   * nothing to maintain by hand, and a supplier that was never approved cannot
+   * be picked. Only SUBMITTED entries count: a draft approval is not an approval.
+   */
+  optionsFrom?: SelectOptionsFrom;
+}
+export interface SelectOptionsFrom {
+  /** sop_number of the source form, e.g. "FRM-202". */
+  form: string;
+  /** Field id on that form whose value becomes the option, e.g. "supplier_name". */
+  field: string;
+  /** Conditions an entry must meet — the same shape and meaning as a derived report's `filters`. */
+  filters?: ReportFilter[];
+  /** Shown when no submitted entry qualifies yet. */
+  emptyText?: string;
+}
 export interface PassFailField extends FieldBase {
   type: "pass_fail";
   naAllowed?: boolean;
