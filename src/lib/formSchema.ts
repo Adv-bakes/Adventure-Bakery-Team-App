@@ -36,8 +36,9 @@ export interface FieldBase {
   // admin-pinned override, keyword-inferred from the label when absent, "none"
   // opts out. Exists because a form can be built from scalar fields rather than
   // a grid (one entry per sample, not one row per sample) and would otherwise
-  // have no way to reach the scan at all.
-  scanFact?: LabelFact | "notes" | "none";
+  // have no way to reach the scan at all. Declarations (DECLARATION_FACTS) are
+  // only ever filled when PINNED here, and only by a "specification" scan.
+  scanFact?: ScanFact | "notes" | "none";
 }
 
 export interface TextField     extends FieldBase { type: "text";     maxLength?: number; placeholder?: string; }
@@ -245,6 +246,13 @@ export interface FormSection {
    */
   scanLabel?: boolean;
   scanMode?: ScanMode;
+  /**
+   * "form" lets this section's scan also fill fields in OTHER sections, but only
+   * fields that pin an explicit `scanFact` — nothing is filled across sections by
+   * a keyword guess. FRM-207 needs it: one photo of the pack carries identity
+   * (Section 2), storage (Section 3) and the allergen statement (Section 4).
+   */
+  scanScope?: "section" | "form";
 }
 
 export interface FormSettings {
@@ -538,6 +546,20 @@ export const LABEL_FACTS = [
 export type LabelFact = (typeof LABEL_FACTS)[number];
 
 /**
+ * What the pack DECLARES, as opposed to what identifies it. Read only by a
+ * "specification" scan, only into scalar fields that pin them, and never by the
+ * receiving scans — for a delivery, the allergen declaration must come off the
+ * spec sheet. `allergens` and `storage` are derived server-side from the
+ * verbatim `contains_statement` and storage instruction
+ * (supabase/functions/_shared/allergenStatement.ts), never taken from the model.
+ */
+export const DECLARATION_FACTS = ["ingredients", "contains_statement", "allergens", "may_contain", "storage"] as const;
+export type DeclarationFact = (typeof DECLARATION_FACTS)[number];
+export type ScanFact = LabelFact | DeclarationFact;
+const isDeclarationFact = (f: unknown): f is DeclarationFact =>
+  (DECLARATION_FACTS as readonly string[]).includes(f as string);
+
+/**
  * Which kind of pack is in the photo. The two disagree about what a lot code
  * LOOKS like, which is why this is a mode and not a prompt tweak:
  *
@@ -551,7 +573,15 @@ export type LabelFact = (typeof LABEL_FACTS)[number];
  *   values are introduced by their own printed labels ("Lot:", "Best By:")
  *   instead, which is a far easier and more reliable read.
  */
-export type ScanMode = "ingredient" | "finished_goods";
+export type ScanMode = "ingredient" | "finished_goods" | "specification";
+
+export const DECLARATION_FACT_LABELS: Record<DeclarationFact, string> = {
+  ingredients: "Ingredient statement",
+  contains_statement: "Contains statement",
+  allergens: "Allergens",
+  may_contain: "May contain",
+  storage: "Storage",
+};
 
 /** Human names — also the prefix used when a fact spills into the notes column. */
 export const LABEL_FACT_LABELS: Record<LabelFact, string> = {
@@ -568,7 +598,7 @@ export const LABEL_FACT_LABELS: Record<LabelFact, string> = {
 
 /** What `extract-package-label` returns (already whitelisted server-side). */
 export interface LabelScanResult {
-  facts: Partial<Record<LabelFact, string>>;
+  facts: Partial<Record<ScanFact, string>>;
   /** Other numbers on the pack that could plausibly be the lot — never auto-filled. */
   alternates?: { lot_code?: string[] };
   /** Readable details with no fact key of their own; destined for the notes column. */
@@ -768,7 +798,7 @@ export function inferScanFactForField(field: FormField): LabelFact | "notes" | u
 }
 
 /** Admin-pinned mapping wins over the keyword guess; "none" opts out. */
-export function resolveScanFactForField(field: FormField): LabelFact | "notes" | undefined {
+export function resolveScanFactForField(field: FormField): ScanFact | "notes" | undefined {
   if (field.scanFact === "none") return undefined;
   return field.scanFact ?? inferScanFactForField(field);
 }
@@ -784,15 +814,34 @@ function notesField(fields: FormField[]): FormField | undefined {
   );
 }
 
-/** Facts worth asking the model for — see scanWantedFacts for the grid twin. */
-export function scanWantedFactsForFields(fields: FormField[]): LabelFact[] {
-  if (notesField(fields)) return [...LABEL_FACTS];
-  const wanted = new Set<LabelFact>();
+/**
+ * Facts worth asking the model for — see scanWantedFacts for the grid twin.
+ * Declarations are asked for only where a field pins one; a notes field never
+ * pulls them in.
+ */
+export function scanWantedFactsForFields(fields: FormField[]): ScanFact[] {
+  const declared = DECLARATION_FACTS.filter(d => scannableFields(fields).some(f => f.scanFact === d));
+  if (notesField(fields)) return [...LABEL_FACTS, ...declared];
+  const wanted = new Set<ScanFact>();
   for (const f of scannableFields(fields)) {
     const fact = resolveScanFactForField(f);
     if (fact && fact !== "notes") wanted.add(fact);
   }
-  return LABEL_FACTS.filter(f => wanted.has(f));
+  return [...LABEL_FACTS.filter(f => wanted.has(f)), ...declared];
+}
+
+/**
+ * The fields a section's scan may write to. "section" (default): the section's
+ * own fields. "form": those, plus fields anywhere else in the form that PIN a
+ * scanFact explicitly — never a keyword-inferred field in another section.
+ */
+export function scanTargetFields(schema: FormSchema, section: FormSection): FormField[] {
+  if (section.scanScope !== "form") return section.fields;
+  const others = schema.sections
+    .filter(s => s.id !== section.id)
+    .flatMap(s => s.fields)
+    .filter(f => f.scanFact !== undefined && f.scanFact !== "none");
+  return [...section.fields, ...others];
 }
 
 /** Coerce a scanned string to a scalar field's type; undefined = don't write it. */
@@ -813,9 +862,19 @@ function coerceToField(field: FormField, raw: string | undefined): any {
     case "time":
       return /^\d{2}:\d{2}$/.test(value) ? value : undefined;
     case "select": {
+      // Exact option first, else the option the value opens ("Chilled" -> "Chilled - at or
+      // below 40°F"). A multi-select takes a comma list and keeps only values that are
+      // options: an allergen the form does not list is dropped, never invented as an option.
       const f = field as SelectField;
-      if (f.multiple) return undefined;
-      return (f.options ?? []).find(o => o.toLowerCase() === value.toLowerCase());
+      const match = (v: string) => {
+        const lc = v.trim().toLowerCase();
+        if (!lc) return undefined;
+        return (f.options ?? []).find(o => o.toLowerCase() === lc)
+          ?? (f.options ?? []).find(o => o.toLowerCase().startsWith(lc + " "));
+      };
+      if (!f.multiple) return match(value);
+      const picked = [...new Set(value.split(",").map(match).filter((o): o is string => !!o))];
+      return picked.length ? picked : undefined;
     }
     case "checkbox": case "pass_fail": case "signature": case "grid":
       return undefined; // nothing on a package label decides a check, a verdict or a signature
@@ -839,11 +898,17 @@ export function applyLabelScanToFields(
 ): { next: Record<string, any>; filled: string[]; unclaimed: string[] } {
   const next = { ...values };
   const filled: string[] = [];
-  const used = new Set<LabelFact>();
+  const used = new Set<ScanFact>();
 
   for (const field of scannableFields(fields)) {
     const fact = resolveScanFactForField(field);
-    if (!fact || fact === "notes" || used.has(fact)) continue; // 1st field claiming a fact wins
+    if (!fact || fact === "notes") continue;
+    // The 1st field claiming a fact by KEYWORD wins, so a guess never fills two places. A
+    // field that PINS the fact always gets it: FRM-207 pins the product name onto both its
+    // own Material name and the manufacturer's product name, on purpose.
+    const pinned = field.scanFact === fact;
+    if (used.has(fact) && !pinned) continue;
+    if (isDeclarationFact(fact) && !pinned) continue;
     const value = coerceToField(field, result.facts?.[fact]);
     if (value === undefined) continue;
     next[field.id] = value;
@@ -855,6 +920,11 @@ export function applyLabelScanToFields(
     ...LABEL_FACTS
       .filter(f => !used.has(f) && result.facts?.[f])
       .map(f => `${LABEL_FACT_LABELS[f]}: ${result.facts![f]}`),
+    // A declaration that was read but found no field (e.g. an allergen the form does not list)
+    // is shown rather than dropped - a missing declaration must be visible.
+    ...DECLARATION_FACTS
+      .filter(f => !used.has(f) && result.facts?.[f])
+      .map(f => `${DECLARATION_FACT_LABELS[f]}: ${result.facts![f]}`),
     ...(result.extras ?? [])
       .filter(e => e?.value)
       .map(e => (e.label ? `${e.label}: ${e.value}` : String(e.value))),

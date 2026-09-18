@@ -11,7 +11,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Maximize2, Plus, Tras
 import {
   applyLabelScan, gridRowDialogEnabled, gridRowGuidance, newGridRow, resolveScanFact, scanWantedFacts,
   type FillContext, type GridColumn, type GridField, type GridRowValue,
-  type LabelFact, type LabelScanResult, type ScanMode,
+  type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
 import { PassFailInput } from "./FormFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
@@ -170,7 +170,7 @@ export interface GridFieldInputProps {
 export interface ScanRequest {
   label: string;
   rowIndex?: number;
-  wanted: LabelFact[];
+  wanted: ScanFact[];
   keepPhoto: boolean;
   mode: ScanMode;
 }

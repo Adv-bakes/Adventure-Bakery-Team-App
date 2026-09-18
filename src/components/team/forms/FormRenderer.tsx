@@ -4,7 +4,7 @@ import { Camera, ImagePlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  applyLabelScanToFields, resolveScanFactForField, scanWantedFactsForFields,
+  applyLabelScanToFields, resolveScanFactForField, scanTargetFields, scanWantedFactsForFields,
   type FormSchema, type FormSection, type FormField as SchemaField, type InfoField,
   type ReferenceTableField,
 } from "@/lib/formSchema";
@@ -136,7 +136,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
                 {section.description && <p className="text-xs text-[#2A1F0E]/80 mt-0.5">{section.description}</p>}
               </div>
               {section.scanLabel && !readOnly && onScanLabel && (
-                <SectionLabelScan section={section} form={form} onScanLabel={onScanLabel} />
+                <SectionLabelScan section={section} fields={scanTargetFields(schema, section)} form={form} onScanLabel={onScanLabel} />
               )}
             </div>
           )}
@@ -167,8 +167,10 @@ interface SectionScan {
  * (useless on a desktop reviewing a photo already taken) or never does (useless
  * on the floor). Two inputs, two buttons, no feature detection.
  */
-function SectionLabelScan({ section, form, onScanLabel }: {
+function SectionLabelScan({ section, fields, form, onScanLabel }: {
   section: FormSection;
+  /** What this scan may fill - the section's fields, or more with scanScope "form". */
+  fields: SchemaField[];
   form: UseFormReturn<Record<string, any>>;
   onScanLabel: NonNullable<FormRendererProps["onScanLabel"]>;
 }) {
@@ -191,7 +193,7 @@ function SectionLabelScan({ section, form, onScanLabel }: {
     try {
       const result = await onScanLabel(file, {
         label: section.title ?? "this section",
-        wanted: scanWantedFactsForFields(section.fields),
+        wanted: scanWantedFactsForFields(fields),
         keepPhoto: true, // a finished pack IS the evidence for the record it identifies
         mode: section.scanMode ?? "ingredient",
       });
@@ -199,7 +201,7 @@ function SectionLabelScan({ section, form, onScanLabel }: {
       // Snapshot only the fields the scan could touch, so Undo restores exactly
       // what it changed and nothing the filler typed elsewhere in the meantime.
       const values = form.getValues();
-      const { next, filled, unclaimed } = applyLabelScanToFields(section.fields, values, result);
+      const { next, filled, unclaimed } = applyLabelScanToFields(fields, values, result);
       const prev: Record<string, any> = {};
       for (const id of Object.keys(next)) {
         if (next[id] !== values[id]) {

@@ -15,8 +15,15 @@
 // traceability spine of the record, so we would rather return nothing than a
 // confident-looking wrong number.
 //
-// Expects: { imageUrls: string[], wanted?: string[], mode?: "ingredient" | "finished_goods" }
+// THIRD MODE, "specification", for FRM-207 Material Specification Register: the same ingredient
+// pack, read for the RECORD OF THE MATERIAL rather than for one delivery - so it also transcribes
+// the ingredient statement, the "Contains" line, any "may contain" statement and the storage
+// instruction. The other two modes still never read declarations; see DECLARATION_KEYS.
+//
+// Expects: { imageUrls: string[], wanted?: string[], mode?: "ingredient" | "finished_goods" | "specification" }
 // Returns: { facts: {..}, alternates: { lot_code: string[] }, extras: [{label,value}], warnings: string[] }
+
+import { allergensFromContains, storageClass } from "../_shared/allergenStatement.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,6 +45,18 @@ const FACT_KEYS = [
 ] as const;
 type FactKey = (typeof FACT_KEYS)[number];
 
+// Declarations: read ONLY in "specification" mode, and only for FRM-207. In the receiving modes the
+// original rule stands - an allergen declaration for a DELIVERY must come off the spec sheet, not
+// off whatever part of a panel is in frame. For the SPECIFICATION of a material the printed label
+// is itself the manufacturer's regulated declaration, and the photo is kept with the entry as the
+// evidence for what was transcribed. Mirrors DECLARATION_FACTS in src/lib/formSchema.ts.
+//
+// "allergens" and "storage" are NEVER taken from the model. The model transcribes
+// contains_statement and a storage instruction verbatim; allergenStatement.ts turns those into the
+// ticked allergens and the storage class, so every ticked box is traceable to printed words.
+const DECLARATION_KEYS = ["ingredients", "contains_statement", "allergens", "may_contain", "storage"] as const;
+type DeclarationKey = (typeof DECLARATION_KEYS)[number];
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 // Which kind of pack is in frame. Mirrors ScanMode in src/lib/formSchema.ts.
@@ -51,7 +70,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 // than its surroundings" test finds nothing, and the ingredient prompt's rule
 // that a number belonging to the printed artwork is never the lot points at
 // exactly the wrong answer.
-const MODES = ["ingredient", "finished_goods"] as const;
+const MODES = ["ingredient", "finished_goods", "specification"] as const;
 type Mode = (typeof MODES)[number];
 
 const INGREDIENT_PROMPT = `You read a photograph of a FOOD INGREDIENT PACKAGE (a bag, case, sack, pail or tote received at a bakery) and report the identifying information printed on it. A worker is staging this ingredient for a production batch and needs its identity and lot code recorded.
@@ -120,14 +139,31 @@ OTHER RULES:
 Respond with ONLY this JSON object (no markdown):
 {"facts": {"lot_code": "...", ...}, "alternates": {"lot_code": ["..."]}, "extras": [{"label":"...","value":"..."}], "warnings": ["..."]}`;
 
+// Built from the ingredient prompt so the identity and lot rules cannot drift apart; only the
+// purpose line and the declarations rule are swapped. The asserts fail loudly at boot if the
+// ingredient prompt is ever reworded and a swap silently stops matching.
+const INGREDIENT_PURPOSE =
+  "A worker is staging this ingredient for a production batch and needs its identity and lot code recorded.";
+const INGREDIENT_NO_DECLARATIONS =
+  '- Do NOT read or report the ingredient statement, the allergen ("Contains:") statement, or nutrition panel. Ignore them entirely.';
+if (!INGREDIENT_PROMPT.includes(INGREDIENT_PURPOSE) || !INGREDIENT_PROMPT.includes(INGREDIENT_NO_DECLARATIONS)) {
+  throw new Error("SPECIFICATION_PROMPT no longer matches INGREDIENT_PROMPT - update the swaps.");
+}
+const SPECIFICATION_PROMPT = INGREDIENT_PROMPT
+  .replace(INGREDIENT_PURPOSE,
+    "A quality manager is recording the SPECIFICATION of this material - what it is, who makes it, what it declares - so it can be approved for use.")
+  .replace(INGREDIENT_NO_DECLARATIONS, '- ALSO READ THE DECLARATIONS, transcribed WORD FOR WORD exactly as printed - these are regulated statements and must not be paraphrased, summarised, corrected or completed:\n  - "ingredients": the full ingredient statement, starting after the word "INGREDIENTS". If any part is cut off, folded or unreadable, transcribe what is legible and add a warning saying the statement is incomplete.\n  - "contains_statement": the allergen statement beginning "Contains" (e.g. "CONTAINS WHEAT, MILK, SOY AND EGG INGREDIENTS."), including the word "Contains". Omit it if there is none - never build one from the ingredient list.\n  - "may_contain": any precautionary statement ("May contain...", "Made in a facility that also processes..."), verbatim. Omit if none.\n  - "storage_instruction": a printed storage instruction ("Keep frozen", "Store in a cool, dry place"), verbatim. Omit if none - never assume one.\n  Do not read the nutrition panel.');
+
 const PROMPTS: Record<Mode, string> = {
   ingredient: INGREDIENT_PROMPT,
   finished_goods: FINISHED_GOODS_PROMPT,
+  specification: SPECIFICATION_PROMPT,
 };
 
 const SUBJECT: Record<Mode, string> = {
   ingredient: "one ingredient package",
   finished_goods: "one finished packaged product",
+  specification: "one ingredient package, read for its specification",
 };
 
 const cleanString = (value: unknown, max = 200): string | undefined => {
@@ -138,7 +174,7 @@ const cleanString = (value: unknown, max = 200): string | undefined => {
 };
 
 /** Whitelist the model's output down to known keys + safe strings. */
-function sanitize(parsed: any, wanted: Set<FactKey>, mode: Mode) {
+function sanitize(parsed: any, wanted: Set<FactKey>, mode: Mode, declarations: Set<DeclarationKey>) {
   const facts: Record<string, string> = {};
   const extras: { label: string; value: string }[] = [];
   const warnings: string[] = Array.isArray(parsed?.warnings)
@@ -160,7 +196,7 @@ function sanitize(parsed: any, wanted: Set<FactKey>, mode: Mode) {
     // demoting it to an extra would throw away the one value FRM-703's retention
     // clock is computed from. The client stores it as text and derives the
     // discard date under FSQM-014 Part 6's last-day-of-month convention.
-    if (mode === "ingredient" && key === "best_by" && !ISO_DATE.test(value)) {
+    if (mode !== "finished_goods" && key === "best_by" && !ISO_DATE.test(value)) {
       extras.push({ label: "Date code", value });
       continue;
     }
@@ -178,6 +214,27 @@ function sanitize(parsed: any, wanted: Set<FactKey>, mode: Mode) {
     if (!value) continue;
     extras.push({ label: cleanString(item?.label, 60) ?? "Detail", value });
     if (extras.length >= 6) break;
+  }
+
+  // Declarations - specification mode only, and only the ones the form asked for.
+  if (mode === "specification" && declarations.size) {
+    const ingredients = cleanString(rawFacts.ingredients, 4000);
+    const contains = cleanString(rawFacts.contains_statement, 500);
+    const mayContain = cleanString(rawFacts.may_contain, 500);
+    const storageText = cleanString(rawFacts.storage_instruction, 300);
+    if (declarations.has("ingredients") && ingredients) facts.ingredients = ingredients;
+    if (declarations.has("contains_statement") && contains) facts.contains_statement = contains;
+    if (declarations.has("may_contain") && mayContain) facts.may_contain = mayContain;
+    if (declarations.has("allergens")) {
+      const reading = allergensFromContains(contains);
+      if (reading.allergens.length) facts.allergens = reading.allergens.join(", ");
+      warnings.push(...reading.warnings);
+    }
+    if (declarations.has("storage")) {
+      const cls = storageClass(storageText);
+      if (cls) facts.storage = cls;
+      if (storageText) extras.push({ label: "Storage instruction", value: storageText });
+    }
   }
 
   return { facts, alternates: { lot_code: lotAlternates }, extras, warnings };
@@ -203,7 +260,19 @@ Deno.serve(async (req) => {
     const requested = Array.isArray(wanted) && wanted.length
       ? new Set(FACT_KEYS.filter(k => wanted.includes(k)))
       : new Set(FACT_KEYS);
-    if (requested.size === 0) return json({ error: "No readable fields requested" }, 400);
+    const declarations = new Set<DeclarationKey>(
+      mode === "specification" && Array.isArray(wanted)
+        ? DECLARATION_KEYS.filter(k => wanted.includes(k))
+        : [],
+    );
+    if (requested.size === 0 && declarations.size === 0) {
+      return json({ error: "No readable fields requested" }, 400);
+    }
+    // What the model is asked to transcribe: allergens and storage are derived here, so it is
+    // asked for the printed statements they are derived from.
+    const asked = [...requested, ...[...declarations].map(k =>
+      k === "allergens" ? "contains_statement" : k === "storage" ? "storage_instruction" : k)]
+      .filter((k, i, all) => all.indexOf(k) === i);
 
     const userContent = [
       {
@@ -211,7 +280,7 @@ Deno.serve(async (req) => {
         text:
           `Photograph(s) of ${SUBJECT[mode]} follow. Report these facts ` +
           "(omit any you cannot read confidently): " +
-          [...requested].join(", "),
+          asked.join(", "),
       },
       ...imageUrls.slice(0, 4).map((url: string) => ({ type: "image_url", image_url: { url } })),
     ];
@@ -245,7 +314,7 @@ Deno.serve(async (req) => {
       parsed = JSON.parse(match[0]);
     }
 
-    return json(sanitize(parsed, requested as Set<FactKey>, mode));
+    return json(sanitize(parsed, requested as Set<FactKey>, mode, declarations));
   } catch (e) {
     console.error("extract-package-label error:", e);
     return json({ error: String(e) }, 500);

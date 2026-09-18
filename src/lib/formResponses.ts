@@ -7,7 +7,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
   emptyValues, getFormSchema, initialsFromName,
-  type FieldManifest, type FormSchema, type LabelFact, type LabelScanResult, type ScanMode,
+  type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
 
 export type ResponseStatus = "draft" | "submitted";
@@ -327,7 +327,7 @@ export async function extractFormAnswers(
  */
 export async function extractPackageLabel(
   imageUrls: string[],
-  wanted: LabelFact[],
+  wanted: ScanFact[],
   mode: ScanMode = "ingredient",
 ): Promise<LabelScanResult> {
   const { data, error } = await supabase.functions.invoke("extract-package-label", {

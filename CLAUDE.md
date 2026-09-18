@@ -377,6 +377,18 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   `deleteResponse` — an orphaned object is harmless, a failed scan is not). Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
   `onScanLabel` ← `FormEntry.tsx` (upload → attach → signed URL → invoke); admin toggle + per-column
   mapping live in `GridColumnsEditor`.
+- **Specification scan (FRM-207): one photo fills the whole entry, declarations included.** A third
+  `ScanMode`, `"specification"`, reads the identity facts **plus** `DECLARATION_FACTS` (`ingredients`,
+  `contains_statement`, `allergens`, `may_contain`, `storage`). The receiving modes keep their rule and
+  still never read declarations — for a *delivery* the allergen declaration comes off the spec sheet;
+  for a material's *specification* the printed label is the manufacturer's regulated declaration and the
+  photo stays on the entry. **`allergens` and `storage` are never the model's answer**: it transcribes the
+  Contains line and storage instruction verbatim, and `supabase/functions/_shared/allergenStatement.ts`
+  derives the ticked boxes by word matching (tested by `scripts/test-allergen-statement.mjs`). No Contains
+  statement → no allergen answer plus a warning; a scan never ticks "None". Declarations fill only fields
+  that **pin** them, and a pinned field always receives its fact (keyword-inferred ones stay
+  first-wins). `FormSection.scanScope: "form"` lets one section's camera fill pinned fields in other
+  sections (`scanTargetFields`). A multi-select takes a comma list and keeps only values that are options.
 - **AI extraction:** drawer Form tab "Generate with AI" (shown when a source `.docx` is attached) runs
   mammoth client-side (keeps the tables `sopDocxParser` drops), sends HTML to edge function
   **`generate-form-schema`** (Gemini via Lovable gateway; server-side whitelist/sanitize; also accepts
@@ -739,7 +751,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `generate-narration` | Accepts `{imageUrl}`; sends signed PNG URL to Gemini 2.5 Flash vision; returns `{text}` — 2–4 sentence trainer narration |
 | `generate-quiz` | Accepts `{title, narrations[], count}`; returns `{questions[]}` — MCQ with 4 options, hint, rationale |
 | `cleanup-narration` | Accepts `{text}`; returns `{text}` — grammar/style cleanup via Gemini |
-| `extract-package-label` | Accepts `{imageUrls[], wanted[]}`; reads a photographed **ingredient package** and returns `{facts, alternates:{lot_code[]}, extras[], warnings[]}` for filling one grid row. Closed fact whitelist server-side (no allergen key); prompted to distinguish a variable-applied lot code from pre-printed item/barcode numbers. See "Package-label scan" above |
+| `extract-package-label` | Accepts `{imageUrls[], wanted[], mode?}` (`ingredient` / `finished_goods` / `specification` — the last also transcribes declarations, see "Specification scan"); reads a photographed **ingredient package** and returns `{facts, alternates:{lot_code[]}, extras[], warnings[]}` for filling one grid row. Closed fact whitelist server-side (no allergen key); prompted to distinguish a variable-applied lot code from pre-printed item/barcode numbers. See "Package-label scan" above |
 | `verification-notifications` | Invoked by pg_cron twice daily (`0 11,19 * * *` UTC). Reads `verification_schedule`, derives each activity's last-completed from the evidence records, and raises one `internal_notifications` row per activity due or overdue — plus, for the retention review, a deep link per FRM-703 sample past its discard date. Dedupes on a unique index over `dedupe_key`; treats `23505` as "already raised" and refreshes instead. Closes what is no longer due with `resolved_at` (never `dismissed_at`). Decision half is `_shared/verificationSchedule.ts`, tested by `scripts/test-verification-schedule.mjs`. See "Verification Schedule & Notifications" below. |
 | `cleanup-form-text` | Accepts `{text}`; returns `{text}` — same shape as `cleanup-narration` but prompted for compliance-form free-text answers (incident reports, root-cause notes): fixes grammar/punctuation/capitalization/filler words into one clear statement, preserves every fact/name/quantity exactly. Powers the AI-cleanup Sparkles button in `DictationTextarea.tsx`. |
 | `admin-user-account` | Accepts `{action, userId, password?, redirectTo?}` — `status` / `set_password` / `reset_link`. Admin-only account management; see "Account Access" below. Caller gate is `has_role('admin') OR is_owner()` — deliberately **not** `is_staff_or_admin` (that helper includes staff). |
