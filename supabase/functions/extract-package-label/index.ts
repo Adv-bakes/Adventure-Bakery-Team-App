@@ -23,7 +23,7 @@
 // Expects: { imageUrls: string[], wanted?: string[], mode?: "ingredient" | "finished_goods" | "specification" }
 // Returns: { facts: {..}, alternates: { lot_code: string[] }, extras: [{label,value}], warnings: string[] }
 
-import { allergensFromContains, storageClass } from "../_shared/allergenStatement.ts";
+import { allergensFromContains, ingredientsMissingDeclared, storageClass } from "../_shared/allergenStatement.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -160,6 +160,16 @@ const PROMPTS: Record<Mode, string> = {
   specification: SPECIFICATION_PROMPT,
 };
 
+// A SPECIFICATION scan transcribes a dense, regulated ingredient panel word for word, and the fast
+// model was seen to drop three ingredients (one of them the milk) and substitute one that is not on
+// the pack. Those scans are rare - one per material - so they get the stronger model; the receiving
+// scans, which read a handful of short codes many times a day, stay on the fast one.
+const MODELS: Record<Mode, string> = {
+  ingredient: "google/gemini-2.5-flash",
+  finished_goods: "google/gemini-2.5-flash",
+  specification: "google/gemini-2.5-pro",
+};
+
 const SUBJECT: Record<Mode, string> = {
   ingredient: "one ingredient package",
   finished_goods: "one finished packaged product",
@@ -225,11 +235,14 @@ function sanitize(parsed: any, wanted: Set<FactKey>, mode: Mode, declarations: S
     if (declarations.has("ingredients") && ingredients) facts.ingredients = ingredients;
     if (declarations.has("contains_statement") && contains) facts.contains_statement = contains;
     if (declarations.has("may_contain") && mayContain) facts.may_contain = mayContain;
+    const reading = allergensFromContains(contains);
     if (declarations.has("allergens")) {
-      const reading = allergensFromContains(contains);
       if (reading.allergens.length) facts.allergens = reading.allergens.join(", ");
       warnings.push(...reading.warnings);
     }
+    // The transcription can silently drop part of a dense panel; every allergen the Contains line
+    // declares must be named in the transcribed ingredients, or the scan says so.
+    if (facts.ingredients) warnings.push(...ingredientsMissingDeclared(facts.ingredients, reading.allergens));
     if (declarations.has("storage")) {
       const cls = storageClass(storageText);
       if (cls) facts.storage = cls;
@@ -289,7 +302,7 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: MODELS[mode],
         messages: [
           { role: "system", content: PROMPTS[mode] },
           { role: "user", content: userContent },

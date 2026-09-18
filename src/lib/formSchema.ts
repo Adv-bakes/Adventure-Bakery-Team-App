@@ -69,7 +69,17 @@ export interface DateDerivation {
   /** Link text prefix, e.g. "Due" → "Due 30 Aug 2027". */
   label?: string;
 }
-export interface CheckboxField extends FieldBase { type: "checkbox"; }
+export interface CheckboxField extends FieldBase {
+  type: "checkbox";
+  /**
+   * A confirmation that a label scan withdraws. When a scan writes any of these field ids, this
+   * box is UNticked, so what was transcribed cannot be submitted until a person has checked it
+   * against the pack. FRM-207's "declarations checked" box: the first live scan misread the
+   * ingredient statement, and a "word for word" field nobody compared is worse than a blank one.
+   * Make it `required` so submit enforces it.
+   */
+  clearOnScanOf?: string[];
+}
 export interface SelectField   extends FieldBase {
   type: "select";
   options: string[];
@@ -841,7 +851,14 @@ export function scanTargetFields(schema: FormSchema, section: FormSection): Form
     .filter(s => s.id !== section.id)
     .flatMap(s => s.fields)
     .filter(f => f.scanFact !== undefined && f.scanFact !== "none");
-  return [...section.fields, ...others];
+  const targets = [...section.fields, ...others];
+  // A confirmation box withdrawn by the scan has to be reachable by it, wherever it sits.
+  const ids = new Set(targets.map(f => f.id));
+  const confirmations = schema.sections
+    .flatMap(s => s.fields)
+    .filter(f => f.type === "checkbox" && !ids.has(f.id)
+      && ((f as CheckboxField).clearOnScanOf ?? []).some(id => ids.has(id)));
+  return [...targets, ...confirmations];
 }
 
 /** Coerce a scanned string to a scalar field's type; undefined = don't write it. */
@@ -914,6 +931,15 @@ export function applyLabelScanToFields(
     next[field.id] = value;
     filled.push(field.label);
     used.add(fact);
+  }
+
+  // Withdraw any confirmation covering a field this scan just wrote: the new text has not been
+  // checked by anybody yet.
+  const written = new Set(Object.keys(next).filter(id => next[id] !== values[id]));
+  for (const f of fields) {
+    if (f.type !== "checkbox") continue;
+    const covers = (f as CheckboxField).clearOnScanOf ?? [];
+    if (covers.some(id => written.has(id)) && next[f.id] === true) next[f.id] = false;
   }
 
   const leftovers = [
