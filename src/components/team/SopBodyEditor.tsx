@@ -152,7 +152,16 @@ export function SopBodyEditor({ sopId, content, docType, onChange }: Props) {
                             {procBlockRuns(g.blocks).map((run, j) =>
                               run.kind === "bullet" ? (
                                 <ul key={j} className="list-disc pl-5 mt-1 space-y-0.5">
-                                  {run.texts.map((b, k) => <li key={k}><Inline text={b} /></li>)}
+                                  {run.texts.map((b, k) => (
+                                    <li key={k}>
+                                      <Inline text={b} />
+                                      {run.subs[k].length > 0 && (
+                                        <ul className="list-[circle] pl-5 mt-0.5 space-y-0.5">
+                                          {run.subs[k].map((s, m) => <li key={m}><Inline text={s} /></li>)}
+                                        </ul>
+                                      )}
+                                    </li>
+                                  ))}
                                 </ul>
                               ) : (
                                 run.texts.map((t, k) => (

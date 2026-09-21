@@ -553,6 +553,7 @@ Component in `src/components/team/`, rendered in the drawer's **Document** tab. 
 | plain text | a **numbered step** (in FSQM programs, a Part heading) |
 | `• text` (`•◦‣·-*` + space) | a **list item** under the step above it |
 | `> text` (`>` + space) | a **paragraph of prose** under the step above it |
+| `◦ text` (`◦` + space) | a **sub-item**, indented one level under the bullet above it (a plain bullet if there is none) |
 
 `procBlockRuns()` collapses consecutive bullets into one `<ul>`, so prose between two lists splits them correctly. **The `>` form exists because without it there were only two:** every explanatory sentence had to be written as a bullet, and a long program rendered as an undifferentiated wall of them — FSQM-009 was 69 bullets over 10 Parts with nothing to distinguish "here are the ten triggers" from "here is why the rule reads this way". A bullet is for a short, parallel, enumerable item; anything explanatory or narrative is prose. The marker **requires whitespace after `>`** deliberately: of all 606 stored procedure lines exactly one starts with `>`, a scanned SOP's `>10ppm shall not be reworked`, and it has no space so it is untouched.
 
