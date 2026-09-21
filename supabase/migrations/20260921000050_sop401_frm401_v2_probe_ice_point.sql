@@ -21,6 +21,10 @@
 --   FRM-401  five fields added to the "Device accuracy check" section ahead of the comparison grid,
 --            and that section's instruction rewritten to put the ice-point check first. Every
 --            existing field id survives, so existing entries still map.
+-- RENUMBERED from 20260921000004, which collided with the D-09 SOP-11.1.17 migration. The first push ran
+-- this file's body and committed it (its own begin/commit closed before the CLI's history insert),
+-- then failed on the duplicate version - so on this push both documents are already at v2 and the
+-- idempotent branches below skip; the verify block still runs, and the CLI records the version.
 -- Lines are found by their TEXT, never by index. Re-running against a database that already holds
 -- v2 is a no-op. Revised to v2, GJM, 2026-09-21; the history trigger snapshots New.
 
