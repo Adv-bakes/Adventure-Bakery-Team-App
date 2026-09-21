@@ -200,7 +200,12 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
             const parts: any[] = [inline(g.text)];
             for (const run of procBlockRuns(g.blocks)) {
               if (run.kind === "bullet") {
-                parts.push({ ul: run.texts.map(inline), margin: [0, 2, 0, 0] });
+                // A bullet with sub-items becomes a stack of its text and a nested list.
+                parts.push({
+                  ul: run.texts.map((t, k) =>
+                    run.subs[k].length ? { stack: [inline(t), { ul: run.subs[k].map(inline), type: "circle" }] } : inline(t)),
+                  margin: [0, 2, 0, 0],
+                });
               } else {
                 for (const t of run.texts) parts.push({ ...inline(t), margin: [0, 2, 0, 0] });
               }

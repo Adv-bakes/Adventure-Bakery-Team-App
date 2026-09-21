@@ -93,8 +93,20 @@ export function stripParagraphMarker(line: string): string {
 // to restart its numbering four times, and the numbering was never the thing that was wrong.
 const STEP_NUMBER = /^\s*(?:\d+(?:\.\d+)+[.)]?|\d+[.)])\s*/;
 
+// A line opening with "◦" + space is a SUB-ITEM of the bullet above it, rendered one level in -
+// e.g. the numbered levels of a scale under the bullet that names the scale. Before this there was
+// one list level only, so such levels either sat as bullets beside the rule they belonged to or
+// were run together inline. "◦" was chosen because no stored procedure line used it (0 of 1,061,
+// checked 2026-09-21), so nothing already written changes shape. With no bullet above it, a sub-item
+// falls back to an ordinary bullet rather than being dropped.
+const SUB_BULLET_LINE = /^\s*◦\s+/;
+
+export function isSubBulletStep(line: string): boolean {
+  return SUB_BULLET_LINE.test(line);
+}
+
 /** One piece of content under a numbered step: a list item, or a paragraph of prose. */
-export type ProcBlock = { kind: "bullet" | "para"; text: string };
+export type ProcBlock = { kind: "bullet" | "para"; text: string; sub?: string[] };
 
 export interface ProcGroup {
   text: string;
@@ -119,7 +131,12 @@ export function groupProcedureSteps(steps: string[]): ProcGroup[] {
   };
   for (const raw of steps) {
     const line = String(raw);
-    if (isBulletStep(line)) push({ kind: "bullet", text: stripBulletMarker(line) });
+    if (isSubBulletStep(line)) {
+      const text = line.replace(SUB_BULLET_LINE, "").trim();
+      const last = groups[groups.length - 1]?.blocks.at(-1);
+      if (last?.kind === "bullet") (last.sub ??= []).push(text);
+      else push({ kind: "bullet", text });
+    } else if (isBulletStep(line)) push({ kind: "bullet", text: stripBulletMarker(line) });
     else if (isParagraphStep(line)) push({ kind: "para", text: stripParagraphMarker(line) });
     else {
       // Strip a stored leading step number so the rendered list owns the numbering.
@@ -129,13 +146,17 @@ export function groupProcedureSteps(steps: string[]): ProcGroup[] {
   return groups;
 }
 
-/** Consecutive blocks of the same kind, so a renderer can emit one <ul> per bullet run. */
-export function procBlockRuns(blocks: ProcBlock[]): { kind: "bullet" | "para"; texts: string[] }[] {
-  const runs: { kind: "bullet" | "para"; texts: string[] }[] = [];
+/**
+ * Consecutive blocks of the same kind, so a renderer can emit one <ul> per bullet run.
+ * `subs[i]` holds the sub-items of `texts[i]` (empty when it has none) - parallel so callers
+ * that only read `texts` are unaffected.
+ */
+export function procBlockRuns(blocks: ProcBlock[]): { kind: "bullet" | "para"; texts: string[]; subs: string[][] }[] {
+  const runs: { kind: "bullet" | "para"; texts: string[]; subs: string[][] }[] = [];
   for (const b of blocks) {
     const last = runs[runs.length - 1];
-    if (last && last.kind === b.kind) last.texts.push(b.text);
-    else runs.push({ kind: b.kind, texts: [b.text] });
+    if (last && last.kind === b.kind) { last.texts.push(b.text); last.subs.push(b.sub ?? []); }
+    else runs.push({ kind: b.kind, texts: [b.text], subs: [b.sub ?? []] });
   }
   return runs;
 }
