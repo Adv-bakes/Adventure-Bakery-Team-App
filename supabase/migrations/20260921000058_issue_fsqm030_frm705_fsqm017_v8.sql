@@ -41,6 +41,18 @@ begin
   end if;
 end $guard$;
 
+-- Owner, 2026-09-21, after review: the most the scales weigh is 30 lb, not 50 lb. The 25 lb certified
+-- test weight still stands (about 83% of the working load); only FSQM-030's two statements of the
+-- scales' range are corrected before issue. The md5 guard above is on the reviewed draft, so this is
+-- the only change made to it.
+update public.sop_documents
+   set content = replace(replace(content::text,
+         'The scales weigh up to about 50 lb, so 25 lb tests them in the range they are used in',
+         'The scales weigh up to about 30 lb, so 25 lb tests them in the range they are used in'),
+         'for the scales, which weigh up to about 50 lb.',
+         'for the scales, which weigh up to about 30 lb.')::jsonb
+ where sop_number = 'FSQM-030';
+
 update public.sop_documents
    set status = 'active', approved_by = 'GJM', effective_date = date '2026-09-21'
  where sop_number in ('FSQM-030', 'FRM-705');
@@ -77,6 +89,11 @@ begin
    where sop_number in ('FSQM-030', 'FRM-705') and status = 'active' and approved_by = 'GJM'
      and effective_date = date '2026-09-21' and revision = 'New';
   if n <> 2 then raise exception 'FSQM-030 / FRM-705 did not both issue.'; end if;
+  if (select content::text from public.sop_documents where sop_number = 'FSQM-030') like '%50 lb%'
+     or (select count(*) from public.sop_documents where sop_number = 'FSQM-030'
+          and content::text like '%up to about 30 lb, so 25 lb%' and content::text like '%which weigh up to about 30 lb.%') <> 1 then
+    raise exception 'FSQM-030 scale range not corrected to 30 lb.';
+  end if;
   select * into v from public.verification_schedule where activity_key = 'calibration_check';
   if (v.status, v.frequency_unit, v.evidence_kind, v.evidence_document_number, v.owning_program)
      is distinct from ('active', 'month', 'form_entry', 'FRM-705', 'FSQM-030') or v.pending_deliverable is not null then
