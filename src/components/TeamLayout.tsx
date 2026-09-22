@@ -13,7 +13,8 @@ import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 import { CoachChat } from "@/components/CoachChat";
-import { VoiceCommandPanel } from "@/components/team/voice/VoiceCommandPanel";
+import { TeamCoachPanel } from "@/components/team/coach/TeamCoachPanel";
+import { clearCoachConversation } from "@/components/team/coach/coachConversation";
 import type { VoiceLang } from "@/lib/voiceLexicon";
 import { useUserRole } from "@/hooks/useUserRole";
 import { countOpenNotifications } from "@/lib/notifications";
@@ -158,6 +159,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
+    clearCoachConversation();
     if (error) toast.error("Error signing out");
     else { toast.success("Signed out"); navigate("/team"); }
   };
@@ -269,14 +271,17 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
         </main>
       </div>
 
-      {/* For anyone who fills forms, the Coach's panel records CCP checks by voice; auditor-only and
-          client users keep the plain panel. avoidBottomBar keeps the orb off FormEntry's Save bar. */}
+      {/* For anyone who fills forms, the Coach's panel answers questions from our documents and
+          records CCP checks by voice; auditor-only and client users keep the plain panel.
+          avoidBottomBar keeps the orb off FormEntry's Save bar. */}
       <CoachChat
         progress={0}
         currentSection="Concept"
         avoidBottomBar
-        tooltipText={canVoice ? "Tap to record a CCP check by voice." : undefined}
-        renderPanel={canVoice ? ({ close }) => <VoiceCommandPanel onDone={close} defaultLang={voiceLang} /> : undefined}
+        tooltipText={canVoice ? "Ask me about our SOPs, or record a CCP check by voice." : undefined}
+        renderPanel={canVoice ? ({ close }) => (
+          <TeamCoachPanel close={close} voiceLang={voiceLang} />
+        ) : undefined}
       />
     </div>
   );

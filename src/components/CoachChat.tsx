@@ -1,7 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { Bot, X } from "lucide-react";
+import { Bot } from "lucide-react";
 import aiBotIcon from "@/assets/ai-bot-icon.jpg";
-import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -76,7 +75,7 @@ export const CoachChat = ({
                     background:
                       "radial-gradient(circle, hsl(43,75%,75%) 0%, hsl(43,65%,58%) 50%, hsl(43,55%,48%) 100%)",
                     boxShadow:
-                      "0 0 35px hsl(43,70%,60%/0.7), 0 0 45px hsl(43,70%,60%/0.4), 0 4px 16px hsl(43,52%,50%/0.5)",
+                      "0 0 35px hsl(43 70% 60% / 0.7), 0 0 45px hsl(43 70% 60% / 0.4), 0 4px 16px hsl(43 52% 50% / 0.5)",
                     animation: "ai-orb-rotate 20s linear infinite, ai-glow-vibrant 2s ease-in-out infinite",
                   }}
                 >
@@ -85,7 +84,7 @@ export const CoachChat = ({
                     alt="AI Coach"
                     className="w-full h-full rounded-full object-cover"
                     style={{
-                      filter: "drop-shadow(0 2px 4px hsl(43,52%,20%/0.4))",
+                      filter: "drop-shadow(0 2px 4px hsl(43 52% 20% / 0.4))",
                     }}
                   />
                 </div>
@@ -93,7 +92,7 @@ export const CoachChat = ({
                 {/* Progress Ring */}
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
                   <svg className="w-7 h-7 -rotate-90" viewBox="0 0 40 40">
-                    <circle cx="20" cy="20" r="16" stroke="hsl(43,52%,50%/0.15)" strokeWidth="2" fill="none" />
+                    <circle cx="20" cy="20" r="16" stroke="hsl(43 52% 50% / 0.15)" strokeWidth="2" fill="none" />
                     <circle
                       cx="20"
                       cy="20"
@@ -105,7 +104,7 @@ export const CoachChat = ({
                       strokeDashoffset={floatingRingOffset}
                       strokeLinecap="round"
                       style={{
-                        filter: "drop-shadow(0 0 4px hsl(43,70%,60%/0.6))",
+                        filter: "drop-shadow(0 0 4px hsl(43 70% 60% / 0.6))",
                         transition: "stroke-dashoffset 0.5s ease-out",
                       }}
                     />
@@ -125,7 +124,7 @@ export const CoachChat = ({
               className="max-w-sm p-4 border"
               style={{
                 background: "linear-gradient(135deg,hsl(25,35%,12%)0%,hsl(25,30%,15%)100%)",
-                borderColor: "hsl(43,52%,50%/0.4)",
+                borderColor: "hsl(43 52% 50% / 0.4)",
                 color: "hsl(40,50%,98%)",
               }}
             >
@@ -144,38 +143,37 @@ export const CoachChat = ({
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent
           side="right"
-          className="w-[480px] p-0 border-l-2"
+          className={renderPanel ? "w-[480px] p-0 border-l-2 flex flex-col" : "w-[480px] p-0 border-l-2"}
           style={{
-            background: "linear-gradient(135deg,hsl(40,50%,98%/0.98)0%,hsl(40,50%,99%/0.98)100%)",
-            borderColor: "hsl(43,52%,50%/0.3)",
-            boxShadow: "-12px 0 48px hsl(43,52%,30%/0.15),inset 1px 0 0 hsl(0,0%,100%/0.4)",
+            background: "linear-gradient(135deg,hsl(40 50% 98% / 0.98)0%,hsl(40 50% 99% / 0.98)100%)",
+            borderColor: "hsl(43 52% 50% / 0.3)",
+            boxShadow: "-12px 0 48px hsl(43 52% 30% / 0.15),inset 1px 0 0 hsl(0 0% 100% / 0.4)",
           }}
         >
+          {/* SheetContent renders its own close button top-right; the header leaves room for it. */}
           <SheetHeader
-            className="p-5 border-b flex justify-between items-center"
+            className="p-5 pr-12 border-b flex-row items-center space-y-0"
             style={{
-              background: "linear-gradient(90deg,hsl(43,70%,65%/0.9)0%,hsl(43,60%,55%/0.9)100%)",
+              background: "linear-gradient(90deg,hsl(43 70% 65% / 0.9)0%,hsl(43 60% 55% / 0.9)100%)",
               color: "#fff",
               borderColor: "transparent",
-              boxShadow: "0 2px 6px hsl(43,52%,40%/0.3)",
+              boxShadow: "0 2px 6px hsl(43 52% 40% / 0.3)",
             }}
           >
-            <SheetTitle className="text-base font-semibold">Manufacturing Coach</SheetTitle>
-            <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-              <X className="h-4 w-4" color="#fff" />
-            </Button>
+            <SheetTitle className="text-base font-semibold text-white">Manufacturing Coach</SheetTitle>
           </SheetHeader>
 
+          {/* A custom panel fills the sheet and manages its own scrolling (the chat pins its input). */}
+          {renderPanel ? (
+            <div className="flex-1 min-h-0 flex flex-col">{renderPanel({ close: () => setIsOpen(false) })}</div>
+          ) : (
           <ScrollArea className="flex-1 p-5 space-y-4">
-            {renderPanel ? (
-              renderPanel({ close: () => setIsOpen(false) })
-            ) : (
               <>
                 <div
                   className="rounded-lg p-4 shadow-sm border"
                   style={{
-                    background: "hsl(0,0%,100%/0.7)",
-                    borderColor: "hsl(43,52%,50%/0.15)",
+                    background: "hsl(0 0% 100% / 0.7)",
+                    borderColor: "hsl(43 52% 50% / 0.15)",
                   }}
                 >
                   <p className="text-sm text-gray-800 leading-relaxed">
@@ -190,7 +188,7 @@ export const CoachChat = ({
                   className="rounded-lg p-4 shadow-sm border"
                   style={{
                     background: "linear-gradient(135deg,hsl(43,70%,97%)0%,hsl(40,60%,99%)100%)",
-                    borderColor: "hsl(43,52%,50%/0.2)",
+                    borderColor: "hsl(43 52% 50% / 0.2)",
                   }}
                 >
                   <p className="text-sm font-medium text-gray-900 mb-1">Next step suggestion:</p>
@@ -200,8 +198,8 @@ export const CoachChat = ({
                   </p>
                 </div>
               </>
-            )}
           </ScrollArea>
+          )}
         </SheetContent>
       </Sheet>
     </>

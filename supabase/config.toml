@@ -31,3 +31,8 @@ verify_jwt = true
 # notifications every member of staff reads, and must never be callable anonymously.
 [functions.verification-notifications]
 verify_jwt = true
+
+# Team Portal coach chat. Reads controlled documents with the caller's JWT and checks
+# is_staff_or_admin, so it must never be callable anonymously.
+[functions.team-coach]
+verify_jwt = true
