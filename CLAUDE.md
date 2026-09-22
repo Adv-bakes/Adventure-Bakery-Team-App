@@ -757,6 +757,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `cleanup-form-text` | Accepts `{text}`; returns `{text}` — same shape as `cleanup-narration` but prompted for compliance-form free-text answers (incident reports, root-cause notes): fixes grammar/punctuation/capitalization/filler words into one clear statement, preserves every fact/name/quantity exactly. Powers the AI-cleanup Sparkles button in `DictationTextarea.tsx`. |
 | `admin-user-account` | Accepts `{action, userId, password?, redirectTo?}` — `status` / `set_password` / `reset_link`. Admin-only account management; see "Account Access" below. Caller gate is `has_role('admin') OR is_owner()` — deliberately **not** `is_staff_or_admin` (that helper includes staff). |
 | `accept-invitation` | Accepts `{token, password, preferSpanish}`; provisions the invited auth user server-side via `auth.admin.createUser({email_confirm:true})`, then calls the accept RPC. `verify_jwt=false` — the caller has no account yet; the invite token is the credential. See "Invitations" below. |
+| `team-coach` | Accepts `{messages:[{role,content}]}`; returns `{reply, sources:[{id,number,title}]}`. The Team Portal Coach chat (see "Team Coach chat" below). Caller must pass `is_staff_or_admin`; reads active `sop_documents` with the caller's JWT (RLS). Two passes: Gemini picks up to 8 documents from a one-line catalog, merged with any document number typed and the top 3 keyword hits (a failed selection degrades to keywords), then answers from those bodies with `[FRM-509]`-style citations. |
 | `tts-elevenlabs` | Accepts `{text, voiceId?, lang?}`; calls ElevenLabs (`eleven_multilingual_v2`) and returns the MP3 bytes. **Returns `Content-Type: application/octet-stream`** (not `audio/mpeg`) so `supabase.functions.invoke` hands back a real `Blob` — any other type makes invoke run `response.text()` and corrupt the binary. Multilingual model auto-detects language, so one voice covers EN + ES. |
 
 **Required secrets (set via Supabase dashboard → Settings → Edge Functions):**
@@ -918,6 +919,16 @@ withdraw instead. The request lands in that person's feed with the note and a de
   anon. Unresolved; do not tighten piecemeal.
 
 ---
+
+## Team Coach chat — `components/team/coach/`
+
+The Manufacturing Coach orb in `TeamLayout` opens `TeamCoachPanel` for staff/admin/owner. It has two tabs: **Ask the Coach** (`TeamCoachChat` → edge fn `team-coach`) and **Record CCP** (the unchanged `VoiceCommandPanel`). The last tab used is remembered in `localStorage`. Before this change the orb had **never** been a working chat: `CoachChat` only ever showed placeholder cards, and the brand-oriented `manufacturing-coach` function (OpenAI, concept context) has no caller. The brand portal still gets the placeholder cards.
+
+- **It answers from our documents, not from the model.** The prompt forbids quoting any limit, concentration, temperature or frequency that is not in a supplied document. General knowledge must be labelled "General guidance, not from our SOPs:". "What do I do / fill out" questions are answered as *Procedures to follow* + *Records to fill out*. Replies carry gold source chips that deep-link to `/team/compliance/sops?doc=<id>`.
+- **Retrieval is two-pass on purpose.** The owner's real case — "the Hobart mixer's bowl lift broke, what do I fill out?" — never says "maintenance", so keyword matching alone misses FSQM-029/FRM-509. See the `team-coach` row in the Edge Functions table.
+- **Session-only history, in a module store (`coachConversation.ts`), not React state.** Two separate things would wipe React state: the Coach's Sheet unmounts its content on close, and **every route in `App.tsx` wraps its own `<TeamLayout>`**, so layout state is rebuilt on each page change (the first cut kept the conversation there and lost it on navigation). The store survives both, resets on reload, and is cleared on sign-out for shared tablets. Nothing is written to `chat_history`, whose `project_id` is brand-only.
+- An EN training module and its ES variant share one number, so `team-coach` keeps one source chip per number, in the reply's language.
+- When `CoachChat` gets `renderPanel`, the panel fills the sheet and scrolls itself instead of sitting in a `ScrollArea`, so the chat can pin its input to the bottom.
 
 ## Voice Commands (CCP records) — `lib/voiceCommands.ts`
 
