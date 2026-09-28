@@ -1,0 +1,50 @@
+-- D-36 Waste Management Program: FSQM-037, DRAFT.
+--
+-- Two Non-Compliant findings, 11.8.1.1 (documented methods for dry, wet and liquid waste) and 11.8.1.6
+-- (controlled disposal of trademarked material). The other eight limbs of 11.8 are judged on site, and
+-- the program covers them so the observation has something to be judged against. FSQM-037 is reserved in
+-- the remediation workbook.
+--
+-- Owner's answers, 2026-09-28: the building provides and empties a lidded dumpster outside and the site
+-- holds no waste contract of its own; waste is bagged and taken out; wash water goes down the drain;
+-- small amounts of syrup go down the drain and larger amounts go into containers and into the dumpster;
+-- mis-printed and spoiled labels go out INTACT.
+--
+-- That last one is the only thing this program changes: trademarked material is defaced - torn through
+-- the brand and through any lot code or best-by date - before it goes in the dumpster. Everything else
+-- writes down what the site already does.
+--
+-- No new form. Waste is already row 11.8.1 on the monthly GMP inspection (FRM-913), which is where
+-- 11.8.1.10 asks for it.
+
+begin;
+
+do $guard$
+begin
+  if exists (select 1 from public.sop_documents where sop_number = 'FSQM-037') then
+    raise exception 'FSQM-037 already exists.';
+  end if;
+  if (select count(*) from public.sop_documents
+       where sop_number in ('FRM-913', 'FRM-007', 'FRM-206', 'FSQM-012', 'FSQM-032', 'FSQM-035', 'FSQM-009')
+         and status = 'active') <> 7 then
+    raise exception 'a document D-36 names is missing or not active.';
+  end if;
+end $guard$;
+
+insert into public.sop_documents
+  (sop_number, title, type, category, status, revision, sqf_reference, sqf_required, content)
+values
+  ('FSQM-037', 'Waste Management Program', 'fsqm', 'Food Safety Quality Manual', 'draft', 'New',
+   '11.8.1.1, 11.8.1.2, 11.8.1.3, 11.8.1.4, 11.8.1.5, 11.8.1.6, 11.8.1.8, 11.8.1.9, 11.8.1.10', true, $q${"purpose": "This program states how Adventure Bakery collects, holds and disposes of its waste - dry, wet and liquid - so that waste never contaminates product, packaging or the areas they are in, and never attracts pests.", "scope": "All waste from the production, packaging and storage areas and from cleaning: trimmings and rejected product, used packaging, spoiled labels and printed packaging, empty containers, and liquid waste. Chemical containers are disposed of under FSQM-032.", "definitions": "Trademarked material: anything carrying a brand, product name or code - labels, printed cartons, master cases and coded packaging.\nWaste accumulation area: the lidded dumpster outside, provided and serviced by the building.", "responsibility": "Production staff - keep waste in the bins provided, take it out at the end of each run and at the end of the day, and deface trademarked material before it goes out.\nManagement team - keeps the bins serviceable, and raises anything the building's waste service is not doing with the landlord.\nSQF Practitioner - checks waste handling and the dumpster area on the monthly GMP inspection.", "procedure": ["Waste inside the building", "• Each production and packaging area has a bin for its waste. Bins are lined, are emptied before they are full, and are not allowed to stand full overnight (SQF 11.8.1.2).", "• Bins that hold food waste are kept covered when not in use.", "• Dry waste: trimmings, rejected or damaged product, empty ingredient packaging, spoiled pouches, and used packaging materials (SQF 11.8.1.5).", "• Waste is never put on a product-contact surface, never sits on a stock rack, and never travels through the dry storage room with open product.", "• Bins are washed at least weekly, and whenever they are soiled. Their condition is part of the monthly GMP inspection (SQF 11.8.1.4).", "Taking waste out", "• Waste goes out at the end of each run and at the end of the day, bagged and tied, into the lidded dumpster outside (SQF 11.8.1.1, 11.8.1.2).", "• The dumpster is provided and emptied by the building's waste service, not by a contract the site holds. The site's part is to keep its own waste bagged and the lid closed, and to tell the landlord if the dumpster is overfull or not being emptied (SQF 11.8.1.6).", "• The lid stays closed. An open dumpster beside a food plant is a pest attractant, and the dumpster stands away from the doors (SQF 11.8.1.8).", "• Anyone handling waste washes their hands before returning to production (FSQM-012).", "Liquid waste", "• Wash water from cleaning goes to the sink and the floor drain (SQF 11.8.1.3, 11.8.1.9).", "• Small amounts of leftover syrup go down the drain with plenty of water behind them. Larger amounts go into a closed container, and the closed container goes into the dumpster - never a loose or open container, and never poured out where it can stand (SQF 11.8.1.9).", "• No liquid waste is held on site overnight in an open container.", "Labels and printed packaging - trademarked material", "• Spoiled, mis-printed or obsolete labels, cartons, master cases and any other printed packaging are DEFACED BEFORE THEY GO OUT: torn through the brand name and through any lot code or best-by date, or marked through with a permanent marker, so they cannot be read or re-used (SQF 11.8.1.6).", "• They then go in the dumpster with the rest of the waste.", "> UNTIL NOW THEY WENT OUT INTACT. This is the change this program makes. A whole printed label carrying a customer's brand, a lot code or a best-by date is trademarked material: it can be read, taken and put on something else, and it is how a lot code ends up on product the site never made. Tearing it through the brand and the code costs nothing and closes the clause.", "• The same applies to anything else carrying a customer's brand - a damaged carton is defaced, not put out whole.", "What does not apply here", "• No waste leaves this site as animal feed, so no denaturant is used and 11.8.1.7 does not engage.", "• The site holds no waste disposal contract of its own; the building's service collects. If the site ever contracts one, its performance is reviewed at least annually and recorded on FRM-206 (SQF 11.8.1.6).", "Checks and review", "• Waste handling, the bins and the dumpster area are checked on the monthly GMP inspection (FRM-913, row 11.8.1), and anything found is recorded and corrected there (SQF 11.8.1.10, 2.5.4.3).", "• A repeated finding - an overflowing dumpster, waste left standing, labels going out intact - is raised as a corrective action on FRM-007 under FSQM-009."], "form_references": "FRM-913 - GMP / Food Safety Inspection Record (row 11.8.1, waste)\nFRM-007 - Corrective and Preventive Action record\nFRM-206 - Contract Services Register (only if the site ever contracts a waste service)", "records": "This program creates no record of its own. Waste is evidenced by the monthly GMP inspection on FRM-913 and by any corrective action raised on FRM-007.", "governing_reference": "SQF Food Safety Code: Food Manufacturing, Edition 9 - 11.8.1.1 to 11.8.1.10 (Waste Disposal).\n\nFSQM-012 Good Manufacturing Practices Program and FRM-913 - the monthly inspection that checks waste.\nFSQM-032 Chemical Control Program - empty chemical containers, which are rinsed and disposed of under that program, not this one.\nFSQM-035 Receipt, Storage and Handling Program - the storage areas waste must not travel through.\nFSQM-009 CAPA - repeated findings.", "revision_history": "New - 2026-09-28 - DRAFT under D-36, for the two Non-Compliant findings against 11.8.1.1 and 11.8.1.6, and covering the eight limbs of 11.8 that are judged by observation on site.\n\nWHAT THE SITE DOES NOW (owner, 2026-09-28): waste is bagged and taken out to a lidded dumpster outside, provided and emptied by the building's waste service - the site holds no waste contract of its own. Wash water goes down the drain; small amounts of leftover syrup go down the drain, and larger amounts go into containers and into the dumpster.\n\nTHE ONE CHANGE THIS PROGRAM MAKES: mis-printed and spoiled labels and printed packaging currently go out intact. 11.8.1.6 asks for controlled disposal of trademarked material, so they are now defaced - torn through the brand and through any lot code or best-by date - before they go in the dumpster. Nothing else in the program asks the site to do anything it is not already doing.\n\nNO NEW FORM: waste is already a row on the monthly GMP inspection (FRM-913, row 11.8.1), which is where 11.8.1.10 asks for it. A separate waste record would be a second account of one activity."}$q$::jsonb);
+
+do $verify$
+declare p jsonb;
+begin
+  select content->'procedure' into p from public.sop_documents where sop_number = 'FSQM-037';
+  if jsonb_array_length(p) <> 26 then raise exception 'FSQM-037 procedure is % lines, expected 26.', jsonb_array_length(p); end if;
+  if (select count(*) from jsonb_array_elements_text(p) l where l like '%DEFACED BEFORE THEY GO OUT%') <> 1 then
+    raise exception 'the trademarked-material rule is missing.';
+  end if;
+end $verify$;
+
+commit;
