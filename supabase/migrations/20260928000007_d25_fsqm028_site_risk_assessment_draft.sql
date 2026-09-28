@@ -1,0 +1,60 @@
+-- D-25 Site & Local Environment Risk Assessment: FSQM-028, DRAFT.
+--
+-- One Non-Compliant finding, 11.1.1.1: the site had not assessed local activities or its environment.
+-- The clause has a second limb the workbook flags separately - the premises being approved by the
+-- relevant authority - which is the licences, and the auditor asks for them.
+--
+-- Owner's answers, 2026-09-28: two units in a light industrial complex, neighbours are warehousing and
+-- light industry, no other food business; paved yard that drains, no standing water; nothing notable in
+-- the wider area; State licence, local business licence and certificate of occupancy, and FDA facility
+-- registration all held.
+--
+-- The assessment is short because the site is genuinely low-risk, and it says so. The two risks it does
+-- carry are pest pressure from a shared complex with a shared waste area, and severe weather - in Florida
+-- infrequent rather than unlikely, and consequential for the walk-ins. Both are named with their control.
+--
+-- It also states plainly that two controls it leans on are NOT in force: the pest prevention program
+-- (D-29) and the water and utilities program (D-31).
+--
+-- NOT HERE: the three approvals are attached through the app before issue - files cannot be attached by
+-- migration.
+
+begin;
+
+do $guard$
+begin
+  if exists (select 1 from public.sop_documents where sop_number = 'FSQM-028') then
+    raise exception 'FSQM-028 already exists.';
+  end if;
+  if (select count(*) from public.sop_documents
+       where sop_number in ('FSQM-012', 'FSQM-037', 'FSQM-018', 'SOP-401', 'FRM-913', 'FRM-702')
+         and status = 'active') <> 6 then
+    raise exception 'a document D-25 relies on is missing or not active.';
+  end if;
+  -- FSQM-016 is named as where process hazards are assessed and is still a DRAFT, so it is checked to
+  -- exist rather than to be active.
+  if not exists (select 1 from public.sop_documents where sop_number = 'FSQM-016') then
+    raise exception 'FSQM-016 does not exist.';
+  end if;
+end $guard$;
+
+insert into public.sop_documents
+  (sop_number, title, type, category, status, revision, sqf_reference, sqf_required, content)
+values
+  ('FSQM-028', 'Site and Local Environment Risk Assessment', 'fsqm', 'Food Safety Quality Manual', 'draft', 'New',
+   '11.1.1.1', true, $q${"purpose": "This assessment records what surrounds the site, what in the local area or on the grounds could affect the safety of the product made here, what controls the site relies on for each, and when the assessment is looked at again. It also holds the approvals under which the premises operate.", "scope": "Units 415 and 425 Specialty Pt - the buildings, their grounds and approach - and the activities in the surrounding area. Hazards inside the process are assessed in FSQM-016, not here.", "definitions": "Local activity: anything carried on outside the site's boundary whose effect can reach the site - a neighbouring operation, traffic, waste handling, construction, or weather.\nControl: something the site already does, named here with the document that governs it.", "responsibility": "Senior Site Management - owns this assessment, holds the operating approvals, and decides what to do when something in the area changes.\nSQF Practitioner - checks the grounds monthly on the GMP inspection and raises anything new for assessment.", "procedure": ["The site and what is around it", "• The site occupies two units, 415 and 425, in a light industrial complex. The neighbouring units are warehousing and light industry. There is no other food business in the complex, and no residential use.", "• The approach and yard are paved and drain well. There is no standing water after rain, no unsealed ground raising dust against the building, and no landscaping planted against the walls.", "• Waste leaves to a lidded dumpster in the complex, provided and emptied by the building (FSQM-037).", "• Deliveries and collections are made at the unit doors. Doors are kept closed except while goods are moving (FSQM-012).", "What was assessed, and what was found", "• NEIGHBOURING ACTIVITIES - warehousing and light industry. No process next door emits dust, smoke, odour or effluent that reaches the site, and no neighbour handles a material that would matter if it did. Risk: low. Control: doors kept closed; anything noticed from a neighbour is raised under this assessment.", "• A NEW OR CHANGED NEIGHBOUR is the risk this bullet really carries. A unit in a complex can change tenant without notice, and a tenant that raises dust or odour, or stores chemicals, changes the answer above. Control: the review trigger in the last Part.", "• TRAFFIC AND DUST - the complex carries ordinary commercial traffic on paved surfaces. Risk: low. Control: paved yard, doors closed, and the grounds checked monthly on FRM-913 (row 11.1.8).", "• PESTS FROM OUTSIDE - a shared complex with a shared waste area is where pest pressure comes from, not from inside. Risk: moderate, and the ordinary one for this site. Controls: the dumpster lid kept closed and waste out daily (FSQM-037); doors closed and the building's proofing checked monthly on FRM-913 (rows 11.1.5 and 11.1.8); a contracted pest control service.", "• DRAINAGE AND STANDING WATER - none observed on the paved yard. Standing water beside a food building breeds insects and can be tracked in. Risk: low while the paving drains. Control: the monthly grounds check; any pooling that appears is a finding.", "• SEVERE WEATHER - the site is in Florida, where a storm can bring flooding, a power loss long enough to matter to the walk-ins, or damage to the roof and doors. Risk: low in frequency, high in consequence. Controls: refrigeration is alarmed and monitored (SOP-401); after any storm that causes flooding, a power outage or visible damage, the building is inspected before production restarts, and product held under FSQM-018 if its condition is in doubt.", "• EXTERNAL CONTAMINATION SOURCES - there is no waste transfer station, landfill, farm, livestock, canal, pond or heavy industry in the area, and nothing overhead that discharges over the site. Risk: none identified.", "• UTILITIES AND SERVICES - water is supplied by the municipal system; there is no well and no on-site treatment. Risk: low, and assessed with the water program.", "• SECURITY OF THE SITE FROM OUTSIDE - deliberate contamination is assessed separately under the food defence program, not here.", "Controls this assessment relies on", "• FSQM-012 Good Manufacturing Practices - doors, grounds, proofing and the monthly inspection on FRM-913, whose rows 11.1.5 and 11.1.8 cover proofing and the grounds.", "• FSQM-037 Waste Management - the dumpster, its lid and daily removal.", "• SOP-401 Temperature-Controlled Storage - the alarmed walk-ins that make a power loss visible.", "• FSQM-018 Non-Conforming Product and Equipment - product whose condition is in doubt after an event.", "> TWO CONTROLS THIS ASSESSMENT LEANS ON ARE NOT YET IN FORCE. The pest prevention program and the water and utilities program are not written. Pest pressure from the complex and the municipal supply are the two external risks with the most weight on them, and this assessment is revisited when each program issues.", "Approval to operate", "• The premises are approved to operate by the relevant authorities and the site holds: a State food establishment or manufacturer licence; a local business licence and certificate of occupancy; and a current FDA food facility registration (SQF 11.1.1.1).", "• Copies are attached to this document. Each is renewed before it expires, and the renewed copy replaces the old one here.", "> THE FDA REGISTRATION RENEWS IN EVEN-NUMBERED YEARS, between 1 October and 31 December. 2026 is one. A lapsed registration is not a paperwork matter: it is a federal requirement for a facility that manufactures food, and an auditor asks to see it.", "Review", "• This assessment is reviewed at least once a year, and its review is evidenced by its revision (SQF 11.1.1.1).", "• It is reviewed before that whenever the area or the site changes: a new or changed neighbouring tenant, construction or demolition nearby, a change to the yard, drainage or waste arrangements, a storm or flood affecting the site, or a pest problem traced to something outside.", "• Anyone who notices such a change tells the SQF Practitioner, who decides whether the assessment is re-run."], "form_references": "FRM-913 - GMP / Food Safety Inspection Record (rows 11.1.5 pest proofing and 11.1.8 grounds)\nFRM-702 - Non-Conforming Material Hold & Tagging Record (product in doubt after an event)", "records": "The assessment itself is the record, together with the operating approvals attached to it. The monthly grounds and proofing checks are recorded on FRM-913.", "governing_reference": "SQF Food Safety Code: Food Manufacturing, Edition 9 - 11.1.1.1 (premises location and approval: assess local activities and the site environment, control identified risks, review on change, and operate premises approved by the relevant authority).\n\nFSQM-012 Good Manufacturing Practices Program - the controls this assessment relies on.\nFSQM-037 Waste Management Program - the waste area.\nSOP-401 Temperature-Controlled Storage - refrigeration alarms.\nFSQM-016 Food Safety Plan - hazards inside the process, which are not assessed here.", "revision_history": "New - 2026-09-28 - DRAFT under D-25, for the single Non-Compliant finding against 11.1.1.1: the site had not assessed local activities or its environment.\n\nWHAT THE OWNER DESCRIBED (2026-09-28): two units in a light industrial complex whose neighbours are warehousing and light industry; a paved yard that drains with no standing water; nothing notable in the wider area - no landfill, waste transfer, farm, water body or heavy industry; and all three approvals held - State licence, local business licence and certificate of occupancy, and FDA facility registration.\n\nSO THE ASSESSMENT IS SHORT, AND SAYS SO. A low-risk site honestly assessed produces a short document. What matters in it is not the list of risks that came back low, but the two that did not: pest pressure from a shared complex with a shared waste area, and severe weather, which in Florida is infrequent and consequential rather than unlikely. Both are named with the control they rely on.\n\nTWO CONTROLS ARE NOT YET IN FORCE - the pest prevention program (D-29) and the water and utilities program (D-31). The assessment says so rather than citing programs that do not exist, and is revisited when each issues.\n\nTO ATTACH BEFORE ISSUE: copies of the three approvals. The auditor asks for them, and 11.1.1.1's second limb is the approval, not the assessment."}$q$::jsonb);
+
+do $verify$
+declare p jsonb;
+begin
+  select content->'procedure' into p from public.sop_documents where sop_number = 'FSQM-028';
+  if jsonb_array_length(p) <> 29 then raise exception 'FSQM-028 procedure is % lines, expected 29.', jsonb_array_length(p); end if;
+  if (select count(*) from jsonb_array_elements_text(p) l where l like '%NOT YET IN FORCE%') <> 1 then
+    raise exception 'the not-yet-in-force controls statement is missing.';
+  end if;
+  if (select count(*) from jsonb_array_elements_text(p) l where l like '%approved to operate by the relevant authorities%') <> 1 then
+    raise exception 'the approval-to-operate limb is missing.';
+  end if;
+end $verify$;
+
+commit;
