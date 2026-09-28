@@ -27,9 +27,14 @@ begin
     raise exception 'FSQM-028 already exists.';
   end if;
   if (select count(*) from public.sop_documents
-       where sop_number in ('FSQM-012', 'FSQM-037', 'FSQM-018', 'FSQM-016', 'SOP-401', 'FRM-913', 'FRM-702')
-         and status = 'active') <> 7 then
-    raise exception 'a document D-25 names is missing or not active.';
+       where sop_number in ('FSQM-012', 'FSQM-037', 'FSQM-018', 'SOP-401', 'FRM-913', 'FRM-702')
+         and status = 'active') <> 6 then
+    raise exception 'a document D-25 relies on is missing or not active.';
+  end if;
+  -- FSQM-016 is named as where process hazards are assessed and is still a DRAFT, so it is checked to
+  -- exist rather than to be active.
+  if not exists (select 1 from public.sop_documents where sop_number = 'FSQM-016') then
+    raise exception 'FSQM-016 does not exist.';
   end if;
 end $guard$;
 
