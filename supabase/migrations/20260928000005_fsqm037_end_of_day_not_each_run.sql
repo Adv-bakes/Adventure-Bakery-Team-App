@@ -41,8 +41,8 @@ begin
   if jsonb_array_length(c->'procedure') <> 32 then
     raise exception 'FSQM-037 procedure is % lines, expected 32.', jsonb_array_length(c->'procedure');
   end if;
-  if c::text like '%end of each run%' then
-    raise exception 'FSQM-037 still says waste goes out at the end of each run.';
+  if (c->'procedure')::text like '%end of each run%' or (c->>'responsibility') like '%end of each run%' then
+    raise exception 'FSQM-037 still tells staff to take waste out at the end of each run.';
   end if;
   if (select count(*) from jsonb_array_elements_text(c->'procedure') l
        where l like '%goes out the same day it is made%') <> 1 then
