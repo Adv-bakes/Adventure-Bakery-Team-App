@@ -11,6 +11,7 @@
 --   (4) The syrup is not made every run: making it is conditional on none being in stock, and prepared
 --       syrup is held ambient in a sealed container. It has NO hold limit and NO label today, which the
 --       drawing now carries as a gap for the hazard analysis (Part 7).
+--   (5) The syrup is used at ROOM TEMPERATURE: syrup made on the day cools before dipping.
 --
 -- Attachment A is regenerated OUTSIDE this migration (scratchpad/flow_d14.py -> the .drawio master and
 -- the PDF in C:\AdventureBakes). Files cannot be attached by migration, so the owner re-uploads both to
@@ -43,7 +44,7 @@ update public.sop_documents
    set content = jsonb_set(content, '{procedure,4}', to_jsonb($t$• Composition: cake mix (containing wheat flour, sugar and nonfat dry milk), liquid whole eggs, soybean oil, water and flavour emulsion; the molds are sprayed with a pan release of soybean oil and soy lecithin before depositing; after baking, dipped in a syrup of water, sugar and rum.$t$::text))
                  || jsonb_build_object('revision_history', (content->>'revision_history') || $t$
 
-New (draft) - 2026-09-28 - ATTACHMENT A CORRECTED IN FOUR PLACES, found while the owner and the Senior Site Manager read the flow against the process.
+New (draft) - 2026-09-28 - ATTACHMENT A CORRECTED IN FIVE PLACES, found while the owner and the Senior Site Manager read the flow against the process.
 
 1. THE PAN RELEASE IS ITS OWN STEP. The molds are sprayed with Chef's Quality Pan Spray (soybean oil and soy lecithin) before the batter is deposited; the drawing had shown it only as an unnamed input to depositing. It is now step 5, 'Spray molds with pan release - done before, after or alongside mixing', which is how it is performed, and step 6 deposits into sprayed molds. The composition above names it.
 
@@ -52,6 +53,8 @@ New (draft) - 2026-09-28 - ATTACHMENT A CORRECTED IN FOUR PLACES, found while th
 3. THE COOL IS NOT NECESSARILY OVERNIGHT. Gabriela, 2026-09-28: what is required is cooling before depanning, and some batches are depanned later on Day 1 and some on Day 2. The delay now reads 'cool in the pans, covered, at room temperature on the racks, until cool enough to depan', with a note that depanning follows later on Day 1 or on Day 2. Writing it as a fixed overnight delay would have stated a control the site does not work to.
 
 4. MAKING THE SYRUP IS A CONDITIONAL STEP. Syrup is not made every run: step 10 runs only when no prepared syrup is in stock. Syrup kept for a later run is held ambient in a sealed container, and the dip step takes prepared syrup from stock as an input.
+
+5. THE SYRUP IS DIPPED AT ROOM TEMPERATURE. Syrup made on the day is cooled to room temperature before use, which the drawing carries as a delay off step 10; syrup taken from stock is already at room temperature. Step 11 reads 'Dip baked product in syrup at room temperature'. This matters to the hazard analysis in both directions: hot syrup on baked product is a different step from what the site performs, and a syrup cooling on the bench is itself a delay to be assessed.
 
 OPEN, AND ON THE DRAWING AS A GAP: stored syrup has NO HOLD LIMIT and NO LABEL today. How long it may be held, and what the container says, are decided in the hazard analysis (Part 7). A held food component with neither a limit nor a date is both a food safety question and a traceability one - a dipped batch cannot be tied to the syrup it was dipped in.
 
@@ -73,7 +76,7 @@ begin
   if jsonb_array_length(c->'procedure') <> 53 then
     raise exception 'FSQM-016 procedure length changed.';
   end if;
-  if (c->>'revision_history') not like '%ATTACHMENT A CORRECTED IN FOUR PLACES%'
+  if (c->>'revision_history') not like '%ATTACHMENT A CORRECTED IN FIVE PLACES%'
      or (c->>'revision_history') not like '%NO HOLD LIMIT and NO LABEL%' then
     raise exception 'revision history did not record the corrections.';
   end if;
