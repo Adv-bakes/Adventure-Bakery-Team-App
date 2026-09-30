@@ -207,6 +207,22 @@ export interface GridColumn {
    * suggestion has to be taken on purpose. See suggestedCellValue.
    */
   suggestFrom?: GridSuggestion;
+  /**
+   * A "Draft from records" button for this column in the row pop-up (GridRowDialog).
+   * "audit_evidence": FRM-010's Objective evidence - the draft-audit-evidence function reads the
+   * row's clause, the forms whose SQF reference bears on it and their last twelve months of
+   * entries, and writes up facts the code computed. The draft is PREVIEWED; only Use puts it
+   * in the cell, and it never proposes the result.
+   */
+  aiDraft?: "audit_evidence";
+}
+
+/** What an aiDraft column's "Draft from records" returns: the text plus the records it came from. */
+export interface AiCellDraft {
+  text: string;
+  window?: { from: string; to: string };
+  /** Built by the server from its query, never by the model. `submitted` is null for programs/SOPs. */
+  sources: { id: string; number: string; title: string; status: string; submitted: number | null; last: string | null }[];
 }
 
 /**

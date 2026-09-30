@@ -76,6 +76,26 @@ export function docsForSection(docs: GuideDoc[], section: string): GuideDoc[] {
     .sort((a, b) => a.sop_number.localeCompare(b.sop_number, undefined, { numeric: true }));
 }
 
+/**
+ * The Code's requirement text behind a findings line's Clause cell, for the evidence draft:
+ * the numbered clauses under a sub-section ("11.2.4" -> 11.2.4.1 ... 11.2.4.x), or the clause
+ * itself when it is already a numbered requirement. Null when the cell has no clause number
+ * or the number is not in the Food Manufacturing Code.
+ */
+export function clauseRequirements(cell: unknown): { clauseId: string; requirements: { id: string; text: string }[] } | null {
+  const m = /^\s*(\d+(?:\.\d+)+)(?=\s|$|[^\d.])/.exec(String(cell ?? ""));
+  if (!m) return null;
+  const clauseId = m[1];
+  // Numbered requirements are four levels deep in both parts of the Code (2.5.4.1, 11.2.4.3);
+  // the three-level entries are only sub-section titles.
+  const under = Object.keys(SQF_FOOD_CLAUSES)
+    .filter(k => k.startsWith(clauseId + ".") && k.split(".").length === 4)
+    .sort(compareIds);
+  const ids = under.length ? under : SQF_FOOD_CLAUSES[clauseId] ? [clauseId] : [];
+  if (ids.length === 0) return null;
+  return { clauseId, requirements: ids.map(id => ({ id, text: SQF_FOOD_CLAUSES[id].text.trim() })) };
+}
+
 /** The clause cell written for a sub-section: "11.5.1 Water Supply". */
 export function findingClauseLabel(sub: SubSection): string {
   return `${sub.id} ${sub.title}`;

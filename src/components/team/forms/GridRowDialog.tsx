@@ -1,12 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Controller, type Control } from "react-hook-form";
-import { Camera, ImageIcon, Loader2 } from "lucide-react";
+import { Camera, ImageIcon, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import type { GridColumn, GridField } from "@/lib/formSchema";
+import type { AiCellDraft, GridColumn, GridField } from "@/lib/formSchema";
 import { GridCell } from "./GridFieldInput";
 
 /**
@@ -52,10 +52,12 @@ export interface GridRowDialogProps {
   scanning?: boolean;
   /** Grey suggestion for a cell (column.suggestFrom), computed by the grid that owns the row. */
   suggestionFor?: (column: GridColumn, rowIndex: number) => string | null;
+  /** "Draft from records" for columns with `aiDraft` (FRM-010 evidence). Absent = no button. */
+  onDraftCell?: (column: GridColumn, rowIndex: number) => Promise<AiCellDraft | null>;
 }
 
 export function GridRowDialog({
-  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning, suggestionFor,
+  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning, suggestionFor, onDraftCell,
 }: GridRowDialogProps) {
   const open = rowIndex != null;
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -143,6 +145,13 @@ export function GridRowDialog({
                     {fieldState.error?.message && (
                       <p className="text-xs text-red-600">{fieldState.error.message}</p>
                     )}
+                    {column.aiDraft && onDraftCell && !disabled && (
+                      <AiDraftAssist
+                        value={f.value}
+                        onChange={f.onChange}
+                        draft={() => onDraftCell(column, rowIndex)}
+                      />
+                    )}
                   </>
                 )}
               />
@@ -190,6 +199,89 @@ function RowGuidance({ text }: { text: string }) {
           </ul>
         ),
       )}
+    </div>
+  );
+}
+
+/**
+ * "Draft from records" (GridColumn.aiDraft). The draft is SHOWN, never written: the auditor reads
+ * it with the records it came from and taps Use (or Replace / Add below when they have already
+ * typed something), which is an ordinary edit of the cell, saved by Save Draft. Discard leaves the
+ * cell exactly as it was. It lives inside the row's key, so moving to another row starts clean.
+ */
+function AiDraftAssist({ value, onChange, draft }: {
+  value: unknown;
+  onChange: (v: string) => void;
+  draft: () => Promise<AiCellDraft | null>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<AiCellDraft | null>(null);
+  const current = typeof value === "string" ? value.trim() : "";
+
+  const run = async () => {
+    setBusy(true);
+    try {
+      const r = await draft();
+      if (r) setResult(r);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const apply = (mode: "replace" | "append") => {
+    if (!result) return;
+    onChange(mode === "append" && current ? `${current}\n${result.text}` : result.text);
+    setResult(null);
+  };
+
+  if (!result) {
+    return (
+      <Button type="button" variant="outline" size="sm" className="h-8 text-xs" disabled={busy} onClick={run}>
+        {busy
+          ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Reading a year of records…</>
+          : <><Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#C89B3C]" />Draft from records</>}
+      </Button>
+    );
+  }
+  return (
+    <div className="rounded-md border px-3 py-2.5 space-y-2 bg-[#2A1F0E]/[0.03]" style={{ borderColor: "rgba(200,155,60,0.45)" }}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9A6F1E]">
+        Draft - not in the record until you use it
+      </p>
+      <p className="text-sm italic text-[#2A1F0E]/80 whitespace-pre-wrap">{result.text}</p>
+      {result.sources.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {result.sources.map(s => (
+            <a
+              key={s.id}
+              href={`/team/compliance/sops?doc=${s.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`${s.number} ${s.title}${s.last ? ` - last entry ${s.last}` : ""}`}
+              className="inline-flex items-center gap-1 rounded-full border border-[#C89B3C]/40 px-2 py-0.5 text-xs hover:bg-[#C89B3C]/10"
+            >
+              <span className="font-medium text-[#9A6F1E]">{s.number}</span>
+              {s.submitted != null && (
+                <span className={s.submitted === 0 ? "text-amber-700 font-medium" : "text-[#2A1F0E]/55"}>· {s.submitted}</span>
+              )}
+              {s.status === "draft" && <span className="text-[10px] uppercase text-[#2A1F0E]/50">draft</span>}
+            </a>
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-[#2A1F0E]/60">
+        Drafted from the records only{result.window ? ` (${result.window.from} to ${result.window.to})` : ""}. Add what you saw on the floor and who you asked.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {current ? (
+          <>
+            <Button type="button" size="sm" className="h-8 text-xs" onClick={() => apply("replace")}>Replace</Button>
+            <Button type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={() => apply("append")}>Add below</Button>
+          </>
+        ) : (
+          <Button type="button" size="sm" className="h-8 text-xs" onClick={() => apply("replace")}>Use</Button>
+        )}
+        <Button type="button" size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setResult(null)}>Discard</Button>
+      </div>
     </div>
   );
 }

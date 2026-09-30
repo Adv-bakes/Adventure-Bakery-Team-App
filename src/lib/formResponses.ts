@@ -7,7 +7,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
   emptyValues, getFormSchema, initialsFromName,
-  type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
+  type AiCellDraft, type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
 import type { GuideDoc } from "@/lib/auditGuide";
 
@@ -341,6 +341,26 @@ export async function extractPackageLabel(
     alternates: { lot_code: (data?.alternates?.lot_code ?? []) as string[] },
     extras: (data?.extras ?? []) as { label: string; value: string }[],
     warnings: (data?.warnings ?? []) as string[],
+  };
+}
+
+/**
+ * Draft FRM-010's "Objective evidence seen" for one findings line (draft-audit-evidence). The
+ * server computes the facts from the records in the twelve months up to `asOf` and the model
+ * writes them up; the caller previews the result and nothing is saved here.
+ */
+export async function draftAuditEvidence(payload: {
+  clause: string;
+  requirements: { id: string; text: string }[];
+  asOf: string;
+}): Promise<AiCellDraft> {
+  const { data, error } = await supabase.functions.invoke("draft-audit-evidence", { body: payload });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return {
+    text: String(data?.evidence ?? ""),
+    window: data?.window,
+    sources: (data?.sources ?? []) as AiCellDraft["sources"],
   };
 }
 

@@ -36,3 +36,8 @@ verify_jwt = true
 # is_staff_or_admin, so it must never be callable anonymously.
 [functions.team-coach]
 verify_jwt = true
+
+# Drafts FRM-010's internal-audit evidence from the site's records. Reads documents and form
+# entries with the caller's JWT and checks is_staff_or_admin, so it must never be anonymous.
+[functions.draft-audit-evidence]
+verify_jwt = true

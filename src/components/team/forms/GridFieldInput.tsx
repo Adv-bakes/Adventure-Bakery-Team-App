@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Check, Loader2, Maximize2, Plus, Trash2 } from "lucide-react";
 import {
   applyLabelScan, gridRowDialogEnabled, gridRowGuidance, newGridRow, resolveScanFact, scanWantedFacts, suggestedCellValue,
-  type FillContext, type GridColumn, type GridField, type GridRowValue,
+  type AiCellDraft, type FillContext, type GridColumn, type GridField, type GridRowValue,
   type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
 import { PassFailInput } from "./FormFieldInput";
@@ -179,6 +179,12 @@ export interface GridFieldInputProps {
    * the same reason onScanLabel is: this grid touches no supabase.
    */
   fillContext?: FillContext;
+  /**
+   * "Draft from records" for a column with `aiDraft`, shown in the row pop-up. Callback-shaped
+   * like onScanLabel: the entry page owns the edge-function call and what else it reads (the
+   * audit date). Resolve to null when it failed (the caller has already said why).
+   */
+  onDraftCell?: (column: GridColumn, row: GridRowValue) => Promise<AiCellDraft | null>;
 }
 
 /**
@@ -210,7 +216,7 @@ interface ScanOutcome {
  * removes rows (respecting min/max); fixed mode renders one row per configured
  * label with a read-only leading label column.
  */
-export function GridFieldInput({ field, control, disabled, onScanLabel, fillContext }: GridFieldInputProps) {
+export function GridFieldInput({ field, control, disabled, onScanLabel, fillContext, onDraftCell }: GridFieldInputProps) {
   const { fields: rows, append, remove, replace, update } = useFieldArray({ control, name: field.id });
   const fixed = field.rows.mode === "fixed";
   const fixedLabels = fixed ? (field.rows as { labels: string[] }).labels : [];
@@ -642,6 +648,9 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
             } : undefined}
             scanning={dialogRow != null && scanningRow === dialogRow}
             suggestionFor={suggestionFor}
+            onDraftCell={onDraftCell && !disabled
+              ? (column, rowIdx) => onDraftCell(column, rowsRef.current[rowIdx] ?? {})
+              : undefined}
           />
         </div>
       )}
