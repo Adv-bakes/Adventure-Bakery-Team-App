@@ -439,6 +439,13 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   signature**. Like the voice fill, the result is unsaved and dirty (`keepDefaultValues`) with one Undo.
   First use: **FRM-520 Production Lot Record** copies product + the ingredient grid with `supplier_lot` and
   `notes` blanked — a lot is never inherited from another day.
+- **Suggested cell values (`GridColumn.suggestFrom`):** `{ column, times? }` on a number column shows, while
+  the cell is EMPTY, a grey placeholder (another column of the row, optionally × a top-level number field)
+  and a check button that enters it. **It is never a default value** — the owner's rule: a prefilled weight
+  gets accepted without being checked, so it has to be taken on purpose. `suggestedCellValue` returns null
+  rather than guess when the multiplier is blank. FRM-520: Batch 1/2/3 weighed ← Expected qty per batch, no
+  multiplier — each batch is weighed separately, as the paper prep sheet records (an "all batches" total was
+  built first and dropped).
 - **Dictation & AI cleanup on every filler-facing textarea:** `DictationTextarea.tsx` wraps both the scalar
   `textarea` field type (`FormFieldInput.tsx`) and free-text grid cells (`GridFieldInput.tsx`'s default
   column type) with a mic button (Web Speech API `SpeechRecognition`, continuous, appends onto the
