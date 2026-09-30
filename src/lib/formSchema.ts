@@ -151,6 +151,47 @@ export interface GridColumn {
   // receiver first opened the form. Never touches a row that already exists,
   // and never overwrites a value — these are starting points, not answers.
   defaultTo?: GridColumnDefault;
+  /**
+   * A grey SUGGESTION for a number cell, never a value: shown only while the cell
+   * is empty, and entered only when the filler taps the accept button beside it.
+   * A default that is already in the cell gets accepted without being checked; a
+   * suggestion has to be taken on purpose. See suggestedCellValue.
+   */
+  suggestFrom?: GridSuggestion;
+}
+
+/**
+ * `column` is another column of the same row; `times` optionally names a
+ * top-level number field to multiply by (FRM-520: expected per batch × batches).
+ */
+export interface GridSuggestion {
+  column: string;
+  times?: string;
+}
+
+/**
+ * The suggestion for one cell, or null when there is nothing honest to offer —
+ * the source cell is blank or not a number, or the multiplier is named but not
+ * filled in (guessing "1 batch" would suggest the wrong total).
+ */
+export function suggestedCellValue(
+  column: GridColumn,
+  row: Record<string, any> | undefined,
+  multiplier?: unknown,
+): string | null {
+  const cfg = column.suggestFrom;
+  if (!cfg || !row) return null;
+  const raw = row[cfg.column];
+  if (raw === "" || raw == null) return null;
+  const base = Number(raw);
+  if (!Number.isFinite(base)) return null;
+  let times = 1;
+  if (cfg.times) {
+    if (multiplier === "" || multiplier == null) return null;
+    times = Number(multiplier);
+    if (!Number.isFinite(times) || times <= 0) return null;
+  }
+  return String(Math.round(base * times * 1000) / 1000);
 }
 /**
  * A default the column computes at fill time instead of storing a literal.

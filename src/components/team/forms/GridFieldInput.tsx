@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Loader2, Maximize2, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Check, Loader2, Maximize2, Plus, Trash2 } from "lucide-react";
 import {
-  applyLabelScan, gridRowDialogEnabled, gridRowGuidance, newGridRow, resolveScanFact, scanWantedFacts,
+  applyLabelScan, gridRowDialogEnabled, gridRowGuidance, newGridRow, resolveScanFact, scanWantedFacts, suggestedCellValue,
   type FillContext, type GridColumn, type GridField, type GridRowValue,
   type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
@@ -37,12 +37,14 @@ function compareCellValues(a: any, b: any): number {
  * GridRowDialog (`stacked`, where there is room to breathe and a free-text answer
  * should not be a 32px slot).
  */
-export function GridCell({ column, value, onChange, disabled, stacked }: {
+export function GridCell({ column, value, onChange, disabled, stacked, suggestion }: {
   column: GridColumn;
   value: any;
   onChange: (v: any) => void;
   disabled?: boolean;
   stacked?: boolean;
+  /** Grey placeholder + accept button while the cell is empty (column.suggestFrom). Never a value. */
+  suggestion?: string | null;
 }) {
   const inputClass = stacked ? "h-9 text-sm" : "h-8 text-xs";
   switch (column.type) {
@@ -63,17 +65,36 @@ export function GridCell({ column, value, onChange, disabled, stacked }: {
       );
     case "pass_fail":
       return <PassFailInput field={{}} value={value} onChange={onChange} disabled={disabled} compact={!stacked} />;
-    case "number":
+    case "number": {
+      // The suggestion shows only while the cell is empty, in the placeholder's grey,
+      // and is entered only by tapping the check — a value already in the cell would
+      // be accepted unread; this has to be taken on purpose.
+      const offer = !disabled && (value === "" || value == null) && suggestion != null ? suggestion : null;
       return (
-        <Input
-          type="number"
-          className={inputClass}
-          value={value ?? ""}
-          disabled={disabled}
-          step="any"
-          onChange={e => onChange(e.target.value)}
-        />
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            className={`${inputClass} flex-1 placeholder:text-[#2A1F0E]/35 placeholder:italic`}
+            value={value ?? ""}
+            disabled={disabled}
+            step="any"
+            placeholder={offer ?? undefined}
+            onChange={e => onChange(e.target.value)}
+          />
+          {offer != null && (
+            <button
+              type="button"
+              onClick={() => onChange(offer)}
+              title={`Enter ${offer} - only if that is what you weighed`}
+              aria-label={`Accept suggested ${offer}`}
+              className="shrink-0 rounded border border-[#C89B3C]/50 p-0.5 text-[#9A6F1E] hover:bg-[#C89B3C]/15"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       );
+    }
     case "date":
     case "time":
       return (
@@ -216,6 +237,15 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   // rows there would scramble the label/data pairing, so sorting is hidden.
   const sortable = !fixed || fixedDeletable;
   const watchedRows = useWatch({ control, name: field.id }) as GridRowValue[] | undefined;
+  // Top-level fields a column's suggestFrom multiplies by (FRM-520: batches). Watched so
+  // the grey suggestion follows the number of batches as it is typed.
+  const multiplierNames = [...new Set(field.columns.map(c => c.suggestFrom?.times).filter(Boolean) as string[])];
+  const multiplierValues = useWatch({ control, name: multiplierNames.length ? multiplierNames : ["__no_multiplier__"] }) as unknown[];
+  const suggestionFor = (col: GridColumn, rowIdx: number): string | null => {
+    if (!col.suggestFrom) return null;
+    const i = col.suggestFrom.times ? multiplierNames.indexOf(col.suggestFrom.times) : -1;
+    return suggestedCellValue(col, watchedRows?.[rowIdx], i >= 0 ? multiplierValues?.[i] : undefined);
+  };
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(null);
   const LABEL_SORT_KEY = "__label__";
 
@@ -468,7 +498,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                           defaultValue={col.type === "checkbox" ? false : ""}
                           render={({ field: cell, fieldState: cellState }) => (
                             <div>
-                              <GridCell column={col} value={cell.value} onChange={cell.onChange} disabled={disabled} />
+                              <GridCell column={col} value={cell.value} onChange={cell.onChange} disabled={disabled} suggestion={suggestionFor(col, rowIdx)} />
                               {cellState.error?.message && (
                                 <p className="text-[10px] text-red-600 mt-0.5">{cellState.error.message}</p>
                               )}
@@ -611,6 +641,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
               runScan(file);
             } : undefined}
             scanning={dialogRow != null && scanningRow === dialogRow}
+            suggestionFor={suggestionFor}
           />
         </div>
       )}

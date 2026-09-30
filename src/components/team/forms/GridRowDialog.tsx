@@ -50,10 +50,12 @@ export interface GridRowDialogProps {
    */
   onScanFile?: (file: File) => void;
   scanning?: boolean;
+  /** Grey suggestion for a cell (column.suggestFrom), computed by the grid that owns the row. */
+  suggestionFor?: (column: GridColumn, rowIndex: number) => string | null;
 }
 
 export function GridRowDialog({
-  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning,
+  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning, suggestionFor,
 }: GridRowDialogProps) {
   const open = rowIndex != null;
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -136,6 +138,7 @@ export function GridRowDialog({
                       onChange={f.onChange}
                       disabled={disabled}
                       stacked
+                      suggestion={suggestionFor?.(column, rowIndex)}
                     />
                     {fieldState.error?.message && (
                       <p className="text-xs text-red-600">{fieldState.error.message}</p>
