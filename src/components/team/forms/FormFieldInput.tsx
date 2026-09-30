@@ -6,11 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { deriveDateValue, nextDerivedFill } from "@/lib/formSchema";
+import { deriveDateValue, deriveTextValue, julianLotCode, nextDerivedFill } from "@/lib/formSchema";
 import { loadSelectOptions } from "@/lib/formReport";
 import type {
   CheckboxField, DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
-  PassFailField, SelectOptionsFrom, SignatureField, TextField, TextareaField,
+  PassFailField, SelectOptionsFrom, SignatureField, TextDerivation, TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
@@ -68,6 +68,56 @@ function DerivedDate({ derive, control, value, onChange }: {
       title={`The standard period, computed from ${derive.fromField.replace(/_/g, " ")}`}
     >
       {derive.label ?? "Due"} {format(parseISO(computed), "d MMM yyyy")}
+    </button>
+  );
+}
+
+/**
+ * A text field computed from a date field (TextDerivation) - FRM-520's lot code from
+ * its bake date. Filled, and kept in step with the date, until someone types over it
+ * (nextDerivedFill, the same rule the derived dates use). While the date is still
+ * blank there is nothing to follow, so it offers today's value as a link.
+ */
+function DerivedText({ derive, control, value, onChange }: {
+  derive: TextDerivation;
+  control: Control<Record<string, any>>;
+  value: unknown;
+  onChange: (value: string) => void;
+}) {
+  const source = useWatch({ control, name: derive.fromField });
+  const computed = deriveTextValue(derive, source);
+  const fill = useRef<DerivedFillState>({});
+
+  useEffect(() => {
+    const { write, state } = nextDerivedFill(typeof value === "string" ? value : "", computed, fill.current);
+    fill.current = state;
+    if (write !== undefined) onChange(write);
+  }, [computed, value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const from = derive.fromField.replace(/_/g, " ");
+  if (computed) {
+    if (value === computed) return <span className="text-xs text-[#2A1F0E]/50 shrink-0 whitespace-nowrap">from the {from}</span>;
+    return (
+      <button
+        type="button"
+        onClick={() => { fill.current = { ours: computed, seeded: true }; onChange(computed); }}
+        className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0 whitespace-nowrap"
+        title={`Computed from the ${from}`}
+      >
+        Use {computed}
+      </button>
+    );
+  }
+  const today = derive.as === "julian_lot" ? julianLotCode(format(new Date(), "yyyy-MM-dd")) : undefined;
+  if (!today || value) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(today)}
+      className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0 whitespace-nowrap"
+      title={`Today's code - set the ${from} and this follows it`}
+    >
+      Today {today}
     </button>
   );
 }
@@ -165,14 +215,25 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
         switch (field.type) {
           case "text":
             input = (
-              <Input
-                value={rhf.value ?? ""}
-                onChange={rhf.onChange}
-                onBlur={rhf.onBlur}
-                disabled={disabled}
-                maxLength={(field as TextField).maxLength}
-                placeholder={(field as TextField).placeholder}
-              />
+              <div className="flex items-center gap-1.5">
+                <Input
+                  value={rhf.value ?? ""}
+                  onChange={rhf.onChange}
+                  onBlur={rhf.onBlur}
+                  disabled={disabled}
+                  maxLength={(field as TextField).maxLength}
+                  placeholder={(field as TextField).placeholder}
+                  className="flex-1"
+                />
+                {!disabled && (field as TextField).derive && (
+                  <DerivedText
+                    derive={(field as TextField).derive!}
+                    control={control}
+                    value={rhf.value}
+                    onChange={rhf.onChange}
+                  />
+                )}
+              </div>
             );
             break;
           case "textarea":

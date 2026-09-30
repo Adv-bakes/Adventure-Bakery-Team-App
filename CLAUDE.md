@@ -446,6 +446,11 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   rather than guess when the multiplier is blank. FRM-520: Batch 1/2/3 weighed ← Expected qty per batch, no
   multiplier — each batch is weighed separately, as the paper prep sheet records (an "all batches" total was
   built first and dropped).
+- **Text derived from a date (`TextField.derive`):** `{ fromField, as: "julian_lot" }` FILLS a text field
+  from a date field and keeps it in step until someone types over it (`nextDerivedFill`, the rule derived
+  dates use); while the date is blank it offers today's value as a link. `julianLotCode` = year digit +
+  three-digit day of year (2026-09-30 → `6273`), UTC arithmetic so DST never shifts it. Filled rather than
+  suggested because it is notation, not a measurement — contrast `suggestFrom` for weights. FRM-520 lot code.
 - **Dictation & AI cleanup on every filler-facing textarea:** `DictationTextarea.tsx` wraps both the scalar
   `textarea` field type (`FormFieldInput.tsx`) and free-text grid cells (`GridFieldInput.tsx`'s default
   column type) with a mic button (Web Speech API `SpeechRecognition`, continuous, appends onto the
