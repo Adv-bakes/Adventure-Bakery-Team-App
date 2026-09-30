@@ -431,6 +431,14 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   value saved earlier that later drops off the list is **kept and flagged amber**, never removed.
   The builder allows saving such a select with no typed options and says where the list comes from.
   ⚠️ **`allowOther` is not rendered anywhere** — a select with it is still a closed list. Offer "Other".
+- **Copy from a previous entry (`settings.copyFrom`):** `{ fields, clear? }` puts a "Copy from a previous
+  entry" card on `FormEntry` (editable entries only). `CopyFromEntryDialog` lists every other entry of the
+  form, searchable by instance title — a **list, not "the last one"**, because a product variant (a Coconut
+  Rum Cake with its own flavoring) must start from ITS sheet. Pure half `copyFromEntry` in `formSchema.ts`
+  copies the named fields, blanks the `clear` grid columns in every copied row, and **never copies a
+  signature**. Like the voice fill, the result is unsaved and dirty (`keepDefaultValues`) with one Undo.
+  First use: **FRM-520 Production Lot Record** copies product + the ingredient grid with `supplier_lot` and
+  `notes` blanked — a lot is never inherited from another day.
 - **Dictation & AI cleanup on every filler-facing textarea:** `DictationTextarea.tsx` wraps both the scalar
   `textarea` field type (`FormFieldInput.tsx`) and free-text grid cells (`GridFieldInput.tsx`'s default
   column type) with a mic button (Web Speech API `SpeechRecognition`, continuous, appends onto the

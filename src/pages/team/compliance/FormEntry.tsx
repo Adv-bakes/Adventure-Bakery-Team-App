@@ -11,11 +11,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Camera, Download, ImagePlus, Loader2, LockOpen, Mic, PenLine, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowLeft, Camera, Copy, Download, ImagePlus, Loader2, LockOpen, Mic, PenLine, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  answerManifest, buildZodSchema, emptyValues, getFormSchema, initialsFromName, instanceTitle,
+  answerManifest, buildZodSchema, copyFromEntry, emptyValues, getFormSchema, initialsFromName, instanceTitle,
   mergeScanAnswers, valueFields,
   type FillContext, type FormSchema, type LabelScanResult,
 } from "@/lib/formSchema";
@@ -29,6 +29,7 @@ import {
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
 import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
+import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
 import { applyVoiceFill, type VoiceWarning } from "@/lib/voiceCommands";
@@ -100,6 +101,9 @@ export default function FormEntry() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
   const scanConsumed = useRef(false);
+  const [copyOpen, setCopyOpen] = useState(false);
+  // The last copy applied, kept so one Undo restores the entry exactly as it was before it.
+  const [copied, setCopied] = useState<{ title: string; count: number; prev: Record<string, any> } | null>(null);
 
   const schema: FormSchema | null = resolved?.schema ?? null;
 
@@ -302,6 +306,28 @@ export default function FormEntry() {
       toast.error("Fix the highlighted fields before submitting");
     },
   );
+
+  // Copy the settings.copyFrom fields from an earlier entry. Like the voice fill, the result is
+  // unsaved and dirty (keepDefaultValues): nothing is written until Save Draft, and Undo restores
+  // the entry as it was.
+  const applyCopy = (source: FormResponse, title: string) => {
+    if (!schema) return;
+    const prev = { ...emptyValues(schema), ...form.getValues() };
+    const { values, copied: count } = copyFromEntry(schema, prev, source.data ?? {});
+    setCopyOpen(false);
+    if (count === 0) {
+      toast.warning("That entry has nothing to copy.");
+      return;
+    }
+    form.reset(values, { keepDefaultValues: true });
+    setCopied({ title, count, prev });
+  };
+
+  const undoCopy = () => {
+    if (!copied) return;
+    form.reset(copied.prev, { keepDefaultValues: true });
+    setCopied(null);
+  };
 
   // Photograph the completed paper copy → AI reads it → pre-fill the fields for
   // review. Photos are kept as entry attachments (the audit source of the
@@ -629,6 +655,40 @@ export default function FormEntry() {
         <Card className="p-3 text-xs border border-amber-400 bg-amber-50 text-amber-800">
           This form has been revised since this entry was created (Rev {resolved.pinnedRevision} → Rev {doc.revision ?? "—"}),
           and the original layout is unavailable — some answers may not line up with the fields shown.
+        </Card>
+      )}
+
+      {/* Copy from a previous entry (forms that opt in via settings.copyFrom) */}
+      {canEdit && schema.settings?.copyFrom && (
+        <Card className="p-3 space-y-2 border" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.4)" }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Copy className="w-4 h-4 text-[#9A6F1E]" />
+            <p className="text-sm font-medium text-[#2A1F0E]">Copy from a previous entry</p>
+            <p className="text-xs text-[#2A1F0E]/60">
+              Start from an earlier sheet for the same product — its ingredient lines come across, the lots stay blank.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setCopyOpen(true)}>
+            <Copy className="w-3.5 h-3.5 mr-1.5" />Choose an entry…
+          </Button>
+          {copied && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs rounded border p-2" style={{ borderColor: "rgba(200,155,60,0.4)", background: "rgba(200,155,60,0.08)" }}>
+              <p className="text-[#2A1F0E]">
+                Copied {copied.count} field{copied.count === 1 ? "" : "s"} from <strong>{copied.title}</strong> — not saved yet. Fill in today's lots, then Save Draft.
+              </p>
+              <Button type="button" size="sm" variant="outline" onClick={undoCopy}>
+                <Undo2 className="w-3.5 h-3.5 mr-1.5" />Undo
+              </Button>
+            </div>
+          )}
+          <CopyFromEntryDialog
+            open={copyOpen}
+            onOpenChange={setCopyOpen}
+            documentId={doc.id}
+            excludeId={response.id}
+            schema={schema}
+            onPick={applyCopy}
+          />
         </Card>
       )}
 

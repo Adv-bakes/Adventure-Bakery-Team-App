@@ -271,6 +271,18 @@ export interface FormSettings {
   instanceTitleTemplate?: string;  // e.g. "{date} — {supplier_name}"; tokens: {date}, {user}, {<fieldId>}
   requireVerification?: boolean;   // surface the verifier signature prominently on submitted entries
   attachmentsEnabled?: boolean;    // default true; false = admin disabled file/photo attachments for this form
+  /** "Copy from a previous entry" — see copyFromEntry. Absent = the picker is not offered. */
+  copyFrom?: CopyFromSettings;
+}
+
+/**
+ * Which answers "Copy from a previous entry" carries over. `fields` are copied
+ * whole; `clear` names grid columns blanked in every copied row — the per-day
+ * facts (FRM-520's supplier lots) that must be written fresh, never inherited.
+ */
+export interface CopyFromSettings {
+  fields: string[];
+  clear?: Record<string, string[]>;
 }
 
 export interface FormSchema {
@@ -540,6 +552,44 @@ export function mergeScanAnswers(
     }
   }
   return merged;
+}
+
+// ---------- Copy from a previous entry ----------
+
+/**
+ * Carry the fields named by settings.copyFrom over from a chosen earlier entry
+ * onto `current`. A copied grid keeps its rows but blanks the `clear` columns, so
+ * a recipe's ingredient lines come across without yesterday's lots. Signatures
+ * are never copied, whatever the settings say — a signature attests to THIS entry.
+ * Returns how many fields were taken, so the caller can say so.
+ */
+export function copyFromEntry(
+  schema: FormSchema,
+  current: Record<string, any>,
+  source: Record<string, any>,
+): { values: Record<string, any>; copied: number } {
+  const cfg = schema.settings?.copyFrom;
+  const values = { ...current };
+  if (!cfg) return { values, copied: 0 };
+  const byId = new Map(valueFields(schema).map(f => [f.id, f]));
+  let copied = 0;
+  for (const id of cfg.fields) {
+    const field = byId.get(id);
+    if (!field || field.type === "signature" || isBlank(source[id])) continue;
+    if (field.type === "grid") {
+      if (!Array.isArray(source[id])) continue;
+      const blank = new Set(cfg.clear?.[id] ?? []);
+      values[id] = source[id].map((row: any) => {
+        const out = { ...(row ?? {}) };
+        for (const col of blank) out[col] = "";
+        return out;
+      });
+    } else {
+      values[id] = source[id];
+    }
+    copied++;
+  }
+  return { values, copied };
 }
 
 // ---------- Package-label scan (photograph an ingredient bag → fill ONE row) ----------
