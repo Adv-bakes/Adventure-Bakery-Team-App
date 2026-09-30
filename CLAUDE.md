@@ -451,6 +451,16 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   dates use); while the date is blank it offers today's value as a link. `julianLotCode` = year digit +
   three-digit day of year (2026-09-30 → `6273`), UTC arithmetic so DST never shifts it. Filled rather than
   suggested because it is notation, not a measurement — contrast `suggestFrom` for weights. FRM-520 lot code.
+- **Internal-audit guide (`SelectField.auditGuide`):** `{ findingsGrid, clauseColumn }` on a multi-select
+  whose options are SQF sections ("11.5 Water, ice and air"). Each ticked section gets a collapsible panel
+  (`SqfSectionGuide.tsx`, rendered by `FormRenderer` under the field): the Code's sub-sections from
+  **`sqfFoodClauses.ts`** (Food Manufacturing — not the Quality Code map, which also has 2.x), the site
+  documents whose `sqf_reference` falls in the section, **looked up live** (`loadAuditGuideData` in
+  `formResponses.ts`, so a newly issued program appears with no form edit), grouped programs / records /
+  training, and each form's submitted entries in the last 12 months (an active form with none is amber).
+  "Add to findings" appends one line per sub-section not already in the grid (`appendFindingRows`, reuses
+  the seeded blank row). Pure half in `src/lib/auditGuide.ts`. First use: **FRM-010 Internal Audit Record**
+  (FSQM-038, D-19).
 - **Dictation & AI cleanup on every filler-facing textarea:** `DictationTextarea.tsx` wraps both the scalar
   `textarea` field type (`FormFieldInput.tsx`) and free-text grid cells (`GridFieldInput.tsx`'s default
   column type) with a mic button (Web Speech API `SpeechRecognition`, continuous, appends onto the
