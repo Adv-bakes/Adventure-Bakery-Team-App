@@ -11,11 +11,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Camera, Copy, Download, ImagePlus, Loader2, LockOpen, Mic, PenLine, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, Copy, Download, ImagePlus, Loader2, LockOpen, Mic, PenLine, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  answerManifest, buildZodSchema, copyFromEntry, emptyValues, getFormSchema, initialsFromName, instanceTitle,
+  answerManifest, buildZodSchema, copyFromEntry, describeFormErrors, emptyValues, getFormSchema, initialsFromName, instanceTitle,
   mergeScanAnswers, valueFields,
   type FillContext, type FormSchema, type LabelScanResult,
 } from "@/lib/formSchema";
@@ -102,6 +102,9 @@ export default function FormEntry() {
   const scanInputRef = useRef<HTMLInputElement>(null);
   const scanConsumed = useRef(false);
   const [copyOpen, setCopyOpen] = useState(false);
+  // What stopped the last Submit, listed in the action bar until the next attempt. A toast alone
+  // read too much like the success one and vanished before anyone found the empty field.
+  const [missing, setMissing] = useState<string[] | null>(null);
   // The last copy applied, kept so one Undo restores the entry exactly as it was before it.
   const [copied, setCopied] = useState<{ title: string; count: number; prev: Record<string, any> } | null>(null);
 
@@ -284,6 +287,7 @@ export default function FormEntry() {
   const doSubmit = form.handleSubmit(
     async values => {
       if (!response) return;
+      setMissing(null);
       setConfirmSubmit(false);
       setSubmitting(true);
       try {
@@ -301,9 +305,14 @@ export default function FormEntry() {
         setSubmitting(false);
       }
     },
-    () => {
+    errors => {
       setConfirmSubmit(false);
-      toast.error("Fix the highlighted fields before submitting");
+      const lines = schema ? describeFormErrors(schema, errors as Record<string, any>) : [];
+      setMissing(lines.length ? lines : ["An answer on this form"]);
+      toast.error(
+        `Not submitted - ${lines.length || "some"} required answer${lines.length === 1 ? " is" : "s are"} missing`,
+        { description: "The list is above the Submit button.", duration: 10000 },
+      );
     },
   );
 
@@ -792,6 +801,23 @@ export default function FormEntry() {
         className="sticky bottom-0 -mx-1 px-1 py-3 flex flex-wrap items-center gap-2 border-t backdrop-blur"
         style={{ borderColor: "rgba(200,155,60,0.3)", background: "rgba(42,31,14,0.85)" }}
       >
+        {missing && !isSubmitted && (
+          <div role="alert" className="basis-full rounded-md border-2 border-red-500 bg-red-50 px-3 py-2 text-red-900">
+            <div className="flex items-start justify-between gap-2">
+              <p className="flex items-center gap-1.5 text-sm font-semibold">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+                Not submitted - {missing.length} required answer{missing.length === 1 ? " is" : "s are"} missing
+              </p>
+              <button type="button" onClick={() => setMissing(null)} className="text-xs text-red-700 hover:underline shrink-0">
+                Hide
+              </button>
+            </div>
+            <ul className="mt-1 list-disc pl-6 text-xs space-y-0.5 max-h-32 overflow-y-auto">
+              {missing.map((line, i) => <li key={i}>{line}</li>)}
+            </ul>
+            <p className="mt-1 text-[11px] text-red-800/80">Fill these in (they are outlined in red on the form), then Submit again. Save Draft keeps what you have.</p>
+          </div>
+        )}
         <Link
           to={backHref}
           className="inline-flex items-center gap-1 text-xs text-[#C89B3C] hover:underline"

@@ -1380,3 +1380,38 @@ export function instanceTitle(
   }).replace(/\s+/g, " ").trim();
   return title.replace(/^[—\-\s]+|[—\-\s]+$/g, "") || fallback;
 }
+
+// ---------- Describing a failed submit ----------
+
+/**
+ * Turn react-hook-form's submit errors into lines a filler can act on:
+ * "Lot code", or for a grid cell "Ingredients and processing aids used - row 3:
+ * Lot on the container". In schema order, so the list reads top to bottom like
+ * the form. Anything unmatched falls back to its raw path rather than vanishing.
+ */
+export function describeFormErrors(schema: FormSchema, errors: Record<string, any>): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const field of valueFields(schema)) {
+    const err = errors?.[field.id];
+    if (!err) continue;
+    seen.add(field.id);
+    if (field.type === "grid" && Array.isArray(err)) {
+      const cols = new Map((field as GridField).columns.map(c => [c.id, c.label]));
+      err.forEach((rowErr: any, i: number) => {
+        if (!rowErr || typeof rowErr !== "object") return;
+        for (const colId of Object.keys(rowErr)) {
+          if (rowErr[colId]?.message !== undefined || rowErr[colId]?.type) {
+            out.push(`${field.label} - row ${i + 1}: ${cols.get(colId) ?? colId}`);
+          }
+        }
+      });
+      const arrayErr = err as any;
+      if (arrayErr.root?.message || arrayErr.message) out.push(field.label);
+    } else {
+      out.push(field.label);
+    }
+  }
+  for (const key of Object.keys(errors ?? {})) if (!seen.has(key)) out.push(key);
+  return out;
+}
