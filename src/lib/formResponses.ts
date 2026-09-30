@@ -9,6 +9,7 @@ import {
   emptyValues, getFormSchema, initialsFromName,
   type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
+import type { GuideDoc } from "@/lib/auditGuide";
 
 export type ResponseStatus = "draft" | "submitted";
 
@@ -396,6 +397,38 @@ export async function fetchProfileNames(userIds: string[]): Promise<Map<string, 
     .in("id", ids);
   if (error) throw error;
   return new Map((data ?? []).map((p: any) => [p.id, (p.full_name?.trim() || p.email || "")]));
+}
+
+/**
+ * What the internal-audit guide needs (auditGuide.ts): every active or draft document that
+ * carries an SQF reference, and how many SUBMITTED entries each form has had in the last
+ * twelve months - the records an auditor samples, where an empty form is often the finding.
+ * Paged, because a select is capped at 1000 rows and a busy daily form passes that in a year.
+ */
+export async function loadAuditGuideData(): Promise<{ docs: GuideDoc[]; counts: Map<string, number> }> {
+  const { data: docs, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, sop_number, title, status, sqf_reference")
+    .in("status", ["active", "draft"])
+    .not("sqf_reference", "is", null);
+  if (error) throw error;
+
+  const since = new Date();
+  since.setFullYear(since.getFullYear() - 1);
+  const counts = new Map<string, number>();
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error: err } = await table()
+      .select("document_id")
+      .eq("status", "submitted")
+      .gte("submitted_at", since.toISOString())
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (err) throw err;
+    for (const r of data ?? []) counts.set(r.document_id, (counts.get(r.document_id) ?? 0) + 1);
+    if (!data || data.length < PAGE) break;
+  }
+  return { docs: ((docs ?? []) as GuideDoc[]).filter(d => d.sop_number), counts };
 }
 
 /** Shortened user id for display when no profile name/email could be resolved. */

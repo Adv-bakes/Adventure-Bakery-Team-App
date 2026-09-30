@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 import {
   applyLabelScanToFields, resolveScanFactForField, scanTargetFields, scanWantedFactsForFields,
   type FormSchema, type FormSection, type FormField as SchemaField, type InfoField,
-  type ReferenceTableField,
+  type ReferenceTableField, type SelectField,
 } from "@/lib/formSchema";
 import { FormFieldInput } from "./FormFieldInput";
+import { SqfSectionGuide } from "./SqfSectionGuide";
 import { GridFieldInput, type GridFieldInputProps } from "./GridFieldInput";
 import type { Signer } from "./SignatureFieldInput";
 
@@ -111,6 +112,14 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
             signer={signer}
           />
         );
+        if (field.type === "select" && (field as SelectField).auditGuide) {
+          el = (
+            <div className="space-y-2">
+              {el}
+              <SqfSectionGuide field={field as SelectField} form={form} disabled={readOnly} />
+            </div>
+          );
+        }
     }
     return (
       <div key={field.id} className={cn("col-span-1", widthClass)}>

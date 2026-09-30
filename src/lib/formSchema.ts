@@ -133,6 +133,17 @@ export interface SelectField   extends FieldBase {
    * be picked. Only SUBMITTED entries count: a draft approval is not an approval.
    */
   optionsFrom?: SelectOptionsFrom;
+  /**
+   * The options are SQF Code sections ("11.5 Water, ice and air"): ticking one opens its
+   * audit guide - the Code's sub-sections, the site documents whose SQF reference falls in
+   * the section (looked up live), and the records to sample. FRM-010. See auditGuide.ts.
+   */
+  auditGuide?: AuditGuideSettings;
+}
+/** Where the audit guide's "Add to findings" writes: a dynamic grid and its clause column. */
+export interface AuditGuideSettings {
+  findingsGrid: string;
+  clauseColumn: string;
 }
 export interface SelectOptionsFrom {
   /** sop_number of the source form, e.g. "FRM-202". */
