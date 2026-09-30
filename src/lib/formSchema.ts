@@ -41,7 +41,45 @@ export interface FieldBase {
   scanFact?: ScanFact | "notes" | "none";
 }
 
-export interface TextField     extends FieldBase { type: "text";     maxLength?: number; placeholder?: string; }
+export interface TextField     extends FieldBase {
+  type: "text";
+  maxLength?: number;
+  placeholder?: string;
+  /** Fill this text from another field's date (see TextDerivation). */
+  derive?: TextDerivation;
+}
+
+/**
+ * A text value computed from a date field and FILLED (unlike a DateDerivation,
+ * which is only offered): the result is a notation of the date, not a claim
+ * about the product, so there is nothing to confirm - only arithmetic to get
+ * wrong by hand. It follows the date until someone types over it
+ * (nextDerivedFill), and while the date is blank the field offers today's value.
+ *
+ * `julian_lot`: last digit of the year + three-digit day of the year -
+ * Adventure Bakery's lot code (SOP-2.2.3, FSQM-021). 2026-09-30 -> "6273".
+ */
+export interface TextDerivation {
+  fromField: string;
+  as: "julian_lot";
+}
+
+/** The Julian lot code of a yyyy-MM-dd date, or undefined when it cannot be read. */
+export function julianLotCode(date: unknown): string | undefined {
+  if (typeof date !== "string") return undefined;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim());
+  if (!m) return undefined;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const t = Date.UTC(y, mo - 1, d);
+  const back = new Date(t);
+  if (back.getUTCMonth() !== mo - 1 || back.getUTCDate() !== d) return undefined; // e.g. 2026-02-30
+  const day = Math.round((t - Date.UTC(y, 0, 1)) / 86400000) + 1;
+  return `${y % 10}${String(day).padStart(3, "0")}`;
+}
+
+export function deriveTextValue(derive: TextDerivation, source: unknown): string | undefined {
+  return derive.as === "julian_lot" ? julianLotCode(source) : undefined;
+}
 export interface TextareaField extends FieldBase { type: "textarea"; rows?: number; }
 export interface NumberField   extends FieldBase { type: "number";   min?: number; max?: number; step?: number; unit?: string; }
 export interface DateField     extends FieldBase {
