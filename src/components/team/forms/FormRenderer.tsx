@@ -32,6 +32,8 @@ interface FormRendererProps {
   onScanLabel?: GridFieldInputProps["onScanLabel"];
   /** Supplies grid columns whose `defaultTo` needs the filler's identity. */
   fillContext?: GridFieldInputProps["fillContext"];
+  /** "Draft from records" for grid columns with `aiDraft`; omitted in the builder Preview. */
+  onDraftCell?: GridFieldInputProps["onDraftCell"];
 }
 
 /**
@@ -39,7 +41,7 @@ interface FormRendererProps {
  * instance (the caller decides defaultValues, resolver, and what save/submit
  * mean — the entry editor and the builder Preview both reuse this).
  */
-export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLabel, fillContext }: FormRendererProps) {
+export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLabel, fillContext, onDraftCell }: FormRendererProps) {
   const renderField = (field: SchemaField) => {
     // Grids and reference tables always take the full row regardless of width hint
     const widthClass = field.type === "grid" || field.type === "reference_table"
@@ -70,6 +72,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
             disabled={readOnly}
             onScanLabel={onScanLabel}
             fillContext={fillContext}
+            onDraftCell={onDraftCell}
           />
         );
         break;

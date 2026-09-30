@@ -17,10 +17,11 @@ import { format } from "date-fns";
 import {
   answerManifest, buildZodSchema, copyFromEntry, describeFormErrors, emptyValues, getFormSchema, initialsFromName, instanceTitle,
   mergeScanAnswers, valueFields,
-  type FillContext, type FormSchema, type LabelScanResult,
+  type AiCellDraft, type FillContext, type FormSchema, type GridColumn, type GridRowValue, type LabelScanResult,
 } from "@/lib/formSchema";
+import { clauseRequirements } from "@/lib/auditGuide";
 import {
-  StaleResponseError, deleteResponse, extractFormAnswers, extractPackageLabel, fetchProfileNames,
+  StaleResponseError, deleteResponse, draftAuditEvidence, extractFormAnswers, extractPackageLabel, fetchProfileNames,
   fetchResponse, getResponseAttachmentUrl, removeResponseAttachment, reopenResponse,
   resolveSchemaForResponse, saveResponseAttachments, saveResponseData, shortUserId, submitResponse,
   uploadResponseAttachment,
@@ -427,6 +428,30 @@ export default function FormEntry() {
     }
   };
 
+  // "Draft from records" (GridColumn.aiDraft) - FRM-010's objective evidence for one findings
+  // line. Only fetches: the dialog previews the draft and the auditor decides whether to Use it.
+  // The window is the twelve months up to the entry's Audit date, or today while that is blank.
+  const draftCellFromRecords = async (
+    column: GridColumn,
+    row: GridRowValue,
+  ): Promise<AiCellDraft | null> => {
+    if (column.aiDraft !== "audit_evidence") return null;
+    const clause = String(row.clause ?? "").trim();
+    const reqs = clauseRequirements(clause);
+    if (!reqs) {
+      toast.error("Enter a clause number in Clause first, e.g. 11.2.4 Pest Prevention.");
+      return null;
+    }
+    const auditDate = form.getValues("audit_date");
+    const asOf = typeof auditDate === "string" && auditDate ? auditDate : format(new Date(), "yyyy-MM-dd");
+    try {
+      return await draftAuditEvidence({ clause, requirements: reqs.requirements, asOf });
+    } catch (e: any) {
+      toast.error(e.message ?? "Couldn't draft the evidence");
+      return null;
+    }
+  };
+
   // "New from Photo" (Entries tab) navigates here carrying the selected page
   // image(s) in router state; run the scan once the entry has loaded and is
   // editable, then clear the state so a back/refresh doesn't re-trigger it.
@@ -764,6 +789,7 @@ export default function FormEntry() {
         isAdmin={isAdmin}
         signer={signer}
         onScanLabel={canEdit ? scanLabelIntoRow : undefined}
+        onDraftCell={canEdit ? draftCellFromRecords : undefined}
         fillContext={fillContext}
       />
 

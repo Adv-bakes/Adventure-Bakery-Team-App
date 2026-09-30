@@ -461,6 +461,18 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   "Add to findings" appends one line per sub-section not already in the grid (`appendFindingRows`, reuses
   the seeded blank row). Pure half in `src/lib/auditGuide.ts`. First use: **FRM-010 Internal Audit Record**
   (FSQM-038, D-19).
+- **AI evidence draft (`GridColumn.aiDraft: "audit_evidence"`):** a "Draft from records" button under that
+  column in the row pop-up (`AiDraftAssist` in `GridRowDialog.tsx`), wired like `onScanLabel`
+  (`FormEntry.draftCellFromRecords` → `FormRenderer`/`GridFieldInput` `onDraftCell`). Edge fn
+  `draft-audit-evidence` reads the row's Clause, relates documents by `sqf_reference` **in both directions**
+  (cites the clause or finer, or a broader section containing it), and **computes the facts in code**
+  (`_shared/auditEvidence.ts`, tested by `scripts/test-audit-evidence.mjs`): submitted entries in the twelve
+  months up to the Audit date, first/last, longest gap (window edges included), entries with a failed answer,
+  draft count, CAPAs naming the clause or its forms. The model only writes them up. **Evidence only - it never
+  proposes the Result - and the draft is previewed** with source chips built from the query, not the model;
+  Use / Replace / Add below is an ordinary cell edit, Discard leaves the cell untouched. The audit record
+  itself (FRM-010) is never a source. Requirement text comes from the client (`clauseRequirements` in
+  `auditGuide.ts`, four-level clauses from `sqfFoodClauses.ts`) because an edge function cannot import `src/`.
 - **Dictation & AI cleanup on every filler-facing textarea:** `DictationTextarea.tsx` wraps both the scalar
   `textarea` field type (`FormFieldInput.tsx`) and free-text grid cells (`GridFieldInput.tsx`'s default
   column type) with a mic button (Web Speech API `SpeechRecognition`, continuous, appends onto the
@@ -788,6 +800,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `admin-user-account` | Accepts `{action, userId, password?, redirectTo?}` — `status` / `set_password` / `reset_link`. Admin-only account management; see "Account Access" below. Caller gate is `has_role('admin') OR is_owner()` — deliberately **not** `is_staff_or_admin` (that helper includes staff). |
 | `accept-invitation` | Accepts `{token, password, preferSpanish}`; provisions the invited auth user server-side via `auth.admin.createUser({email_confirm:true})`, then calls the accept RPC. `verify_jwt=false` — the caller has no account yet; the invite token is the credential. See "Invitations" below. |
 | `team-coach` | Accepts `{messages:[{role,content}]}`; returns `{reply, sources:[{id,number,title}]}`. The Team Portal Coach chat (see "Team Coach chat" below). Caller must pass `is_staff_or_admin`; reads active `sop_documents` with the caller's JWT (RLS). Two passes: Gemini picks up to 8 documents from a one-line catalog, merged with any document number typed and the top 3 keyword hits (a failed selection degrades to keywords), then answers from those bodies with `[FRM-509]`-style citations. |
+| `draft-audit-evidence` | Accepts `{clause, requirements[], asOf}`; returns `{evidence, window, sources[]}`. FRM-010's "Draft from records" (see "AI evidence draft"). Caller must pass `is_staff_or_admin`; reads with the caller's JWT. Facts computed in `_shared/auditEvidence.ts`, prose by `aiJSON`. `verify_jwt = true`. |
 | `tts-elevenlabs` | Accepts `{text, voiceId?, lang?}`; calls ElevenLabs (`eleven_multilingual_v2`) and returns the MP3 bytes. **Returns `Content-Type: application/octet-stream`** (not `audio/mpeg`) so `supabase.functions.invoke` hands back a real `Blob` — any other type makes invoke run `response.text()` and corrupt the binary. Multilingual model auto-detects language, so one voice covers EN + ES. |
 
 **Required secrets (set via Supabase dashboard → Settings → Edge Functions):**
