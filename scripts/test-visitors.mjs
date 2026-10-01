@@ -136,6 +136,9 @@ check("route options are spelled as the schema spells them",
 const firstVisit = V.buildSignInData(answers, AT, null);
 check("first visit: the server fills in the acknowledgement", [firstVisit.ack_response_id, firstVisit.ack_date], ["", ""]);
 check("first visit entry passes its schema", validate(S905, firstVisit).success, true);
+check("a walk-in who knows nobody is recorded as such, and passes",
+  validate(S905, V.buildSignInData({ ...answers, host: V.HOST_UNKNOWN }, AT, null)).success
+    && V.buildSignInData({ ...answers, host: V.HOST_UNKNOWN }, AT, null).host, "Not known — no appointment");
 check("a visit with no host is rejected", validate(S905, V.buildSignInData({ ...answers, host: " " }, AT, null)).success, false);
 
 const refused = V.buildSignInData({ ...answers, noSymptoms: "fail" }, AT, { id: "ack-1", ackDate: "2026-10-01" });

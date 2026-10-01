@@ -41,7 +41,7 @@ import {
   type VisitorDesk, type VisitorOnSite,
 } from "@/lib/formResponses";
 import {
-  ackState, buildAckData, buildSignInData, findVisitorMatches, isRefused, localDate, localTime,
+  HOST_UNKNOWN, ackState, buildAckData, buildSignInData, findVisitorMatches, isRefused, localDate, localTime,
   type AckRecord, type VisitAnswers, type VisitorMatch,
 } from "@/lib/visitors";
 import { SignaturePad } from "@/components/team/forms/SignaturePad";
@@ -358,7 +358,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                         <p className="font-medium truncate">{v.name}{v.company ? ` — ${v.company}` : ""}</p>
                         <p className="text-xs text-[#2A1F0E]/65">
                           In at {v.timeIn}{v.visitDate !== today ? ` on ${prettyDate(v.visitDate)}` : ""}
-                          {v.host ? ` · seeing ${v.host}` : ""}
+                          {v.host === HOST_UNKNOWN ? " · no appointment" : v.host ? ` · seeing ${v.host}` : ""}
                         </p>
                       </div>
                       <Button
@@ -493,7 +493,10 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                       <Choice
                         value={answers.host || null}
                         onChange={v => set({ host: v })}
-                        options={staff.map(n => ({ key: n, label: n, tone: "neutral" as const }))}
+                        options={[
+                          ...staff.map(n => ({ key: n, label: n, tone: "neutral" as const })),
+                          { key: HOST_UNKNOWN, label: "I don't know", tone: "neutral" as const },
+                        ]}
                       />
                     ) : (
                       <Input aria-label="Who are you here to see?" className="h-12 text-base" autoComplete="off" value={answers.host} onChange={e => set({ host: e.target.value })} />
