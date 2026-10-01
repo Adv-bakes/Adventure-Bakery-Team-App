@@ -4,7 +4,7 @@
 // visit and stays valid for twelve months, or until FRM-906 is revised. FRM-905 (Visitor Sign-In
 // Log) is written at EVERY visit and records which acknowledgement it relied on. This module
 // decides who a returning visitor is, whether their acknowledgement still counts, and what the
-// two entries contain. The page (VisitorSignIn.tsx) only collects answers and writes.
+// two entries contain. The page (VisitorSignIn.tsx) only collects answers; the server writes.
 
 export const VISITOR_FORMS = { signIn: "FRM-905", acknowledgement: "FRM-906" } as const;
 
@@ -12,16 +12,20 @@ export const isVisitorForm = (sopNumber: string | null | undefined) =>
   sopNumber === VISITOR_FORMS.signIn || sopNumber === VISITOR_FORMS.acknowledgement;
 
 export const VISITOR_SIGN_IN_PATH = "/team/compliance/visitors";
+/** The same screen with no portal around it, for the entrance tablet's `kiosk` account. */
+export const VISITOR_KIOSK_PATH = "/team/visitor-kiosk";
 
 /**
- * Whether a visitor form's schema is the one the sign-in page writes (v3 onwards): the visitor's
- * signature is drawn. Until the v3 migration has run the forms are still filled as ordinary
- * entries, so New Entry only hands over to the page when this is true.
+ * Whether a visitor form's schema is the one the sign-in page writes (v4 onwards): the visitor's
+ * drawn signature is the ONLY signature. Earlier revisions also required a host signature, which
+ * a tablet with nobody from the site logged in cannot give. Until the forms are at such a revision
+ * they are filled as ordinary entries, and New Entry only hands over to the page when this is true.
  */
-export function isVisitorFlowSchema(schema: { sections?: Array<{ fields?: unknown[] }> } | null | undefined): boolean {
-  return !!schema?.sections?.some(s =>
-    (s.fields as Array<Record<string, unknown>> | undefined)?.some(f =>
-      f.id === "visitor_signature" && f.type === "signature" && f.capture === "drawn"));
+export function isVisitorKioskSchema(schema: { sections?: Array<{ fields?: unknown[] }> } | null | undefined): boolean {
+  const signatures = (schema?.sections ?? [])
+    .flatMap(s => (s.fields as Array<Record<string, unknown>> | undefined) ?? [])
+    .filter(f => f.type === "signature");
+  return signatures.length === 1 && signatures[0].id === "visitor_signature" && signatures[0].capture === "drawn";
 }
 
 /** How long an acknowledgement stays valid. Also stated in FSQM-012 Part 6 and on FRM-906. */
@@ -29,7 +33,6 @@ export const ACK_VALID_MONTHS = 12;
 
 // FRM-905's `entry_route` options, exactly as the schema spells them.
 export const ROUTE_BRIEFED = "Briefed — FRM-906 completed and signed";
-export const ROUTE_BOTH = "Both";
 export const ROUTE_REFUSED = "Entry refused";
 
 /** One submitted FRM-906 entry, reduced to what a lookup needs (never the signature image). */
@@ -76,7 +79,9 @@ const personKey = (r: Pick<AckRecord, "name" | "company">) =>
  * word of the name or company. Fewer than four digits or two letters matches nobody — the list of
  * people who have visited is never shown to somebody who has not said who they are.
  *
- * One row per person (name + company), carrying their newest acknowledgement.
+ * The server (visitor_lookup) applies the same floor and narrows the candidates; this does the
+ * exact matching on what it returns. One row per person (name + company), carrying their newest
+ * acknowledgement.
  */
 export function findVisitorMatches(index: AckRecord[], query: string): VisitorMatch[] {
   const q = query.trim();
@@ -125,6 +130,7 @@ export type AckState =
  * Whether an acknowledgement lets its holder in today without re-reading the rules.
  * It must be at FRM-906's CURRENT revision (a revision changes what was acknowledged) and less
  * than twelve months old: signed 2026-10-01, it is good through 2027-09-30.
+ * visitor_sign_in re-checks both on the server.
  */
 export function ackState(ack: AckRecord | null | undefined, currentRevision: string | null, today: string): AckState {
   if (!ack || !/^\d{4}-\d{2}-\d{2}$/.test(ack.ackDate)) return { valid: false, reason: "none" };
@@ -134,30 +140,26 @@ export function ackState(ack: AckRecord | null | undefined, currentRevision: str
   return { valid: true, expiresOn };
 }
 
-/** A drawn signature value. `witnessedBy` is the logged-in host who handed over the device. */
+/** A drawn signature value. The server stamps `witnessed_by` with the account holding the device. */
 export interface DrawnSignature {
   user_id: null;
   name: string;
   signed_at: string;
   image: string;
-  witnessed_by: string;
 }
-export interface StampSignature { user_id: string; name: string; signed_at: string; }
 
 export interface VisitAnswers {
   name: string;
   company: string;
   phone: string;
   purpose: string;
-  areas: string;
+  /** Who the visitor is here to see — picked from the team's names. */
+  host: string;
   noSymptoms: "pass" | "fail";
   woundsCovered: "pass" | "fail" | "na";
   healthNotes: string;
-  escortName: string;
   signatureImage: string;
 }
-
-export interface Host { userId: string; name: string; }
 
 /**
  * Entry is refused when the visitor declares a symptom (11.3.4.3). An uncovered cut is not a
@@ -166,11 +168,8 @@ export interface Host { userId: string; name: string; }
  */
 export const isRefused = (a: Pick<VisitAnswers, "noSymptoms">) => a.noSymptoms === "fail";
 
-const visitorSignature = (a: VisitAnswers, host: Host, at: Date): DrawnSignature => ({
-  user_id: null, name: a.name.trim(), signed_at: at.toISOString(), image: a.signatureImage, witnessed_by: host.userId,
-});
-const hostSignature = (host: Host, at: Date): StampSignature => ({
-  user_id: host.userId, name: host.name, signed_at: at.toISOString(),
+const visitorSignature = (a: VisitAnswers, at: Date): DrawnSignature => ({
+  user_id: null, name: a.name.trim(), signed_at: at.toISOString(), image: a.signatureImage,
 });
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -178,24 +177,24 @@ export const localDate = (at: Date) => `${at.getFullYear()}-${pad2(at.getMonth()
 export const localTime = (at: Date) => `${pad2(at.getHours())}:${pad2(at.getMinutes())}`;
 
 /** The answers of a new FRM-906 entry (overlaid on the schema's empty values by the caller). */
-export function buildAckData(a: VisitAnswers, host: Host, at: Date): Record<string, unknown> {
+export function buildAckData(a: VisitAnswers, at: Date): Record<string, unknown> {
   return {
     ack_date: localDate(at),
     visitor_name: a.name.trim(),
     company: a.company.trim(),
     phone: a.phone.trim(),
-    visitor_signature: visitorSignature(a, host, at),
-    briefed_by: hostSignature(host, at),
+    visitor_signature: visitorSignature(a, at),
   };
 }
 
 /**
- * The answers of a new FRM-905 entry. `ack` is the acknowledgement the visit relies on — the one
- * just signed, or the one on file. A refused visit carries none of it: time out equals time in,
- * so the visitor never appears as on site.
+ * The answers of a new FRM-905 entry. `ack` is the acknowledgement already on file that the visit
+ * relies on; pass null when one is being signed in the same sign-in (the server fills in its id)
+ * or when entry is refused. A refused visit relies on none: time out equals time in, so the
+ * visitor never appears as on site.
  */
 export function buildSignInData(
-  a: VisitAnswers, host: Host, at: Date, ack: { id: string; ackDate: string } | null,
+  a: VisitAnswers, at: Date, ack: { id: string; ackDate: string } | null,
 ): Record<string, unknown> {
   const refused = isRefused(a);
   const time = localTime(at);
@@ -204,8 +203,7 @@ export function buildSignInData(
     visitor_name: a.name.trim(),
     company: a.company.trim(),
     purpose: a.purpose,
-    host: host.name,
-    areas: refused ? "" : a.areas.trim(),
+    host: a.host.trim(),
     time_in: time,
     time_out: refused ? time : "",
     no_symptoms: a.noSymptoms,
@@ -213,10 +211,8 @@ export function buildSignInData(
     health_notes: a.healthNotes.trim(),
     ack_date: !refused && ack ? ack.ackDate : "",
     ack_response_id: !refused && ack ? ack.id : "",
-    entry_route: refused ? ROUTE_REFUSED : a.escortName.trim() ? ROUTE_BOTH : ROUTE_BRIEFED,
-    escort_name: refused ? "" : a.escortName.trim(),
+    entry_route: refused ? ROUTE_REFUSED : ROUTE_BRIEFED,
     entry_notes: refused ? "Entry refused on the health declaration (SQF 11.3.4.3). The visitor did not enter." : "",
-    visitor_signature: visitorSignature(a, host, at),
-    host_signature: hostSignature(host, at),
+    visitor_signature: visitorSignature(a, at),
   };
 }

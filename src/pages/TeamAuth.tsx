@@ -14,7 +14,7 @@ import { highestRole, type AppRole } from "@/hooks/useUserRole";
 // Roles admitted to the Team Portal. "auditor" is a read-only SQF contractor —
 // they belong here (their SOPs/training routes live under /team), not in the
 // Brand Portal the rejection toast points at.
-const TEAM_PORTAL_ROLES: AppRole[] = ["owner", "admin", "staff", "auditor"];
+const TEAM_PORTAL_ROLES: AppRole[] = ["owner", "admin", "staff", "auditor", "kiosk"];
 
 // Where each role lands. Keyed by highest-privilege role held; mirrors the
 // destination convention in AcceptInvite.
@@ -23,6 +23,7 @@ const LANDING_BY_ROLE: Partial<Record<AppRole, string>> = {
   admin: "/team/dashboard",
   staff: "/team/operations-hub",
   auditor: "/team/compliance/sops",
+  kiosk: "/team/visitor-kiosk",
 };
 
 const TeamAuth = () => {

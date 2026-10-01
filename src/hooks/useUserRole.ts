@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "owner" | "admin" | "staff" | "auditor" | "user";
+export type AppRole = "owner" | "admin" | "staff" | "auditor" | "user" | "kiosk";
 
 // Highest-privilege wins when deriving the single back-compat `role`.
 // A user may hold several roles at once (user_roles is keyed UNIQUE(user_id, role));
 // permissions union additively at the DB layer via has_role()/is_staff_or_admin().
-export const ROLE_PRIORITY: AppRole[] = ["owner", "admin", "staff", "user", "auditor"];
+export const ROLE_PRIORITY: AppRole[] = ["owner", "admin", "staff", "user", "auditor", "kiosk"];
 
 /**
  * The single role that should drive UI decisions for a multi-role user.

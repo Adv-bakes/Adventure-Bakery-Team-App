@@ -79,7 +79,7 @@ src/
 
 **Route protection:** `ProtectedRoute` accepts a `roles` prop (e.g. `["admin","owner"]`); redirects unauthenticated users to `/team` or `/k2f-login`
 
-**Roles:** `owner | admin | staff | user` — fetched from `user_roles` table via `useUserRole()`
+**Roles:** `owner | admin | staff | auditor | user | kiosk` — fetched from `user_roles` table via `useUserRole()` (`kiosk` = the entrance tablet; see "Visitor Sign-In")
 
 ---
 
@@ -835,7 +835,7 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `verificationSchedule.ts` | Due-date maths for the schedule — `nextDue`, `rowState`, `assessDue`, `addFrequency`, `frequencyLabel`, `dedupeKeyFor`, `formLink`/`documentLink`, `retentionLinks`, `FROM_NOTIFICATIONS`. **Byte-identical twin** of `supabase/functions/_shared/verificationSchedule.ts` below the header; edit both and run `scripts/test-verification-schedule.mjs` |
 | `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns), `verifierSignatureFields`/`unsignedVerifierFields` (which verifier lines an entry is still missing — drives the Request-signature action and closes the request); package-label scan helpers `LABEL_FACTS`/`LABEL_FACT_LABELS`, `inferScanFact`/`resolveScanFact`, `scanWantedFacts`, `applyLabelScan`. See "Dynamic Fillable Forms" below |
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse` (optional 2nd arg `prefill` seeds the new entry's `data` over `emptyValues(schema)`; a resumed existing draft is never clobbered — powers the FRM-401 temperature-review launcher), `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
-| `visitors.ts` | Visitor sign-in, pure half: `findVisitorMatches` (phone / last 4 / name), `ackState` (twelve months + current revision), `addMonthsIso`, `buildAckData`/`buildSignInData` (the FRM-906 / FRM-905 entries), `isRefused`, `isVisitorForm`/`isVisitorFlowSchema`. No imports; tested by `scripts/test-visitors.mjs`. See "Visitor Sign-In" |
+| `visitors.ts` | Visitor sign-in, pure half: `findVisitorMatches` (phone / last 4 / name), `ackState` (twelve months + current revision), `addMonthsIso`, `buildAckData`/`buildSignInData` (the FRM-906 / FRM-905 entries), `isRefused`, `isVisitorForm`/`isVisitorKioskSchema`. No imports; tested by `scripts/test-visitors.mjs`. See "Visitor Sign-In" |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
 | `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `selectOptionsFromResponses`/`loadSelectOptions` (options for a select linked to another form — see `optionsFrom`), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
 
@@ -966,45 +966,65 @@ withdraw instead. The request lands in that person's feed with the note and a de
 
 ## Visitor Sign-In — `pages/team/compliance/VisitorSignIn.tsx` + `lib/visitors.ts`
 
-`/team/compliance/visitors` (Compliance nav, admin/staff/owner). One short screen on a tablet **the
-host is logged into**, handed to the visitor. It replaces filling FRM-905 and FRM-906 as two generic
-entries at every arrival.
+One short screen the visitor completes **alone**; nobody from the site takes part. It replaces
+filling FRM-905 and FRM-906 as two generic entries at every arrival. Two routes, one component:
+
+- **`/team/visitor-kiosk`** (`kiosk` prop, outside `TeamLayout`) — the entrance tablet, signed in
+  once as a **`kiosk`-role account** and left that way.
+- **`/team/compliance/visitors`** (Compliance nav, admin/staff/owner) — the same screen in the portal.
+
+**The `kiosk` role has no table access at all.** It is outside `is_staff_or_admin()` and
+`is_compliance_viewer()`, so every RLS policy refuses it; a tablet at the door is one a stranger can
+pick up. Everything the screen does goes through four `SECURITY DEFINER` functions gated on
+`is_visitor_desk()` (kiosk OR staff/admin/owner), and staff use the same ones, so there is one path:
+`visitor_desk_context()` (the two schemas, the team's names, who is on site), `visitor_lookup(query)`,
+`visitor_sign_in(visit, ack, rev905, rev906)`, `sign_out_visitor(id, time)`. Wrappers:
+`loadVisitorDesk` / `lookupVisitors` / `visitorSignIn` / `signOutVisitor` in `formResponses.ts`.
+**Do not give the kiosk a table policy** — add to the functions instead. `user_roles.role` is TEXT
+with a CHECK, so the role was a constraint change. Adding a role touches a list in each of:
+`AppRole` + `ROLE_PRIORITY`, `TeamAuth` (`TEAM_PORTAL_ROLES` + landing), `ProtectedRoute` fallback,
+`HrDirectory` (`TEAM_ROLES`, labels, invite options), `TeamMemberDetail` `ROLE_OPTIONS`,
+`create_team_invitation`'s whitelist. A kiosk account is created by inviting it with the role
+**Visitor kiosk** and opening the copied invitation link on the tablet.
 
 - **FRM-906 (GMP acknowledgement) is signed on the FIRST visit** and stays valid **twelve months,
-  and only at FRM-906's current revision** (`ackState`). **FRM-905 is written at every visit** and
-  records the acknowledgement it relied on (`ack_response_id`, `ack_date`). The health declaration
-  (illness, cuts) lives on FRM-905 because it is a fact about today. FSQM-012 Part 6 (v3) says the same.
-- **Returning visitors look themselves up** by phone, its last four digits, or name
-  (`findVisitorMatches`). Four or more digits are a phone lookup that matches when either number
-  ends with the other, so a visitor who gave only `4471` is found by the full number and vice versa.
-  **Nothing is listed until something is typed** — the visitor list is never shown to somebody who
-  has not said who they are. The index is fetched by JSON path (`fetchVisitorIndex`), so signature
-  images never leave the database; do not use `fetchResponses` for it.
-- **Steps:** lookup → details → health → rules (only when no valid acknowledgement, and never for a
-  refused visitor) → visitor draws signature → host confirms. The wording a visitor reads comes from
-  the two forms' own schemas, so the page cannot drift from the controlled documents.
-- **Nothing is written until the host confirms, and both entries are inserted already submitted**
-  (`createSubmittedResponse`, validated with `buildZodSchema` first). A draft would leave the
-  visitor's signature editable by the host while the visitor is on site. Time out is added later by
-  the **`sign_out_visitor` RPC** (`SECURITY DEFINER`, `is_staff_or_admin`), which writes only
-  `data.time_out`, once — needed because RLS locks submitted rows and a different member of staff
-  may see the visitor out.
+  and only at FRM-906's current revision** (`ackState`; `visitor_sign_in` re-checks both).
+  **FRM-905 is written at every visit** and records the acknowledgement it relied on
+  (`ack_response_id`, `ack_date` — set by the server, never taken from the tablet). The health
+  declaration (illness, cuts) lives on FRM-905 because it is a fact about today. FSQM-012 Part 6
+  (v3) says the same.
+- **Returning visitors look themselves up** by phone, its last four digits, or name. The server
+  narrows and **refuses fewer than four digits or two letters**, so the visitor list cannot be paged
+  through; `findVisitorMatches` then matches exactly (either number ends with the other, so `4471`
+  finds a full number and vice versa; every typed word must begin a word of name or company).
+  `visitor_fold` in SQL mirrors `normalizeName` — change one, change both.
+- **Steps:** lookup → details (name, company, optional phone, **who are you here to see** as buttons
+  of the team's names, purpose) → health → rules (only without a valid acknowledgement, never for a
+  refused visitor) → sign. The wording comes from the two forms' own schemas.
+- **There is no host confirmation and no host signature** (v4; owner decision 2026-10-01 after
+  trying v3 at the door). What the host used to attest — jewellery removed (11.3.4.2), protective
+  clothing, staff entrance and handwashing (11.3.4.4) — is in the statement the **visitor** signs.
+  `isVisitorKioskSchema` (the drawn visitor signature is the form's only signature) decides whether
+  the page is switched on and whether New Entry on FRM-905/906 hands over to it.
+- **Nothing is written until the visitor signs**; then `visitor_sign_in` writes both entries in one
+  transaction, already submitted, pinning number and revision from the live documents, rejecting
+  answer keys the form does not have, and stamping `witnessed_by` with the account holding the
+  device. `sign_out_visitor` later writes only `data.time_out`, once.
 - **A declared symptom is a refusal** (11.3.4.3): the visit is still recorded, with route
   `Entry refused`, a note, and time out = time in. An uncovered cut is not a refusal — the page holds
   the visitor at that question until it is dressed.
-- **The four host pass/fails of v2 are one host statement** on the `host_signature` field.
+- **Sign-out** is from the on-site list on the home screen (owner's choice: the list is shown on the
+  kiosk). The button arms on the first tap and signs out on the second, since it cannot be undone.
 - **Drawn signatures (`SignatureField.capture: "drawn"`)** are a generic form feature built for this:
   typed name + `SignaturePad` (pointer events on a canvas — finger, stylus or mouse, no tablet
   detection). Value is `{ user_id: null, name, signed_at, image (PNG data URL), witnessed_by }`; the
-  logged-in user is the **witness, never the signer**. `scalarZod` names `image`/`witnessed_by`
+  logged-in account is the **witness, never the signer**. `scalarZod` names `image`/`witnessed_by`
   because a plain `z.object` strips unknown keys at submit, and requires the image on a required
   drawn field. `formatFieldValue` stays name + date, so lists and CSV never carry the image; the
   entry PDF prints it. `entryHasFail` (audit evidence) skips `data:` strings.
-- **New Entry on FRM-905/906 hands over to this page** (`FormEntriesTab`, `FormEntryStart`), but only
-  when `isVisitorFlowSchema` is true (the visitor signature is drawn). Until the v3 migration has
-  run the forms behave as before and the page says it is not switched on.
-- Migrations `20261001000002` (both forms v2 → v3), `…03` (RPC), `…04` (FSQM-012 v2 → v3).
-  `scripts/test-visitors.mjs` validates what the page builds against the real schemas in `sop-drafts/`.
+- Migrations `20261001000002` (forms v3), `…03` (sign-out RPC), `…04` (FSQM-012 v3), `…05` (kiosk
+  role + functions), `…06` (forms v4, host signatures removed). `scripts/test-visitors.mjs`
+  validates what the page builds against the real schemas in `sop-drafts/`.
 
 ## Team Coach chat — `components/team/coach/`
 

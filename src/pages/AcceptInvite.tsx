@@ -11,7 +11,7 @@ import { Eye, EyeOff, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const ROLE_LABEL: Record<string, string> = {
-  owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor (read-only)", user: "Client",
+  owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor (read-only)", user: "Client", kiosk: "Visitor kiosk",
 };
 
 // Kept in step with the accept-invitation edge function, which re-checks it.

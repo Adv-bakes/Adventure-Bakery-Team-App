@@ -54,7 +54,7 @@
         {
           "id": "host",
           "type": "text",
-          "label": "Host (authorized employee responsible for this visitor)",
+          "label": "Host (the employee the visitor is here to see, responsible for them on site)",
           "width": "half",
           "required": true
         },
@@ -124,7 +124,7 @@
     },
     {
       "id": "entry",
-      "title": "Entry — completed by the host",
+      "title": "Entry",
       "fields": [
         {
           "id": "entry_info",
@@ -181,17 +181,9 @@
           "type": "signature",
           "capture": "drawn",
           "label": "Visitor",
-          "width": "half",
+          "width": "full",
           "required": true,
-          "statement": "My health declaration above is true today, and I will follow the site's food safety and hygiene rules for the whole of my visit."
-        },
-        {
-          "id": "host_signature",
-          "type": "signature",
-          "label": "Host",
-          "width": "half",
-          "required": true,
-          "statement": "Where entry was permitted: this visitor showed no visible signs of illness (11.3.4.3), removed jewellery and loose objects (11.3.4.2), was issued and is wearing the protective clothing — hairnet, beard cover where applicable, lab coat, footwear — and entered by the staff entrance and washed their hands (11.3.4.4)."
+          "statement": "My health declaration above is true today. If I am admitted: I have removed jewellery and loose objects (11.3.4.2); I will wear the protective clothing issued to me — hairnet, beard cover where applicable, lab coat, footwear; I will enter and leave by the staff entrance and wash my hands on entering (11.3.4.4); and I will follow the site's food safety and hygiene rules for the whole of my visit."
         },
         {
           "id": "retention_note",

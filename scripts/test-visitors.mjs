@@ -83,58 +83,66 @@ check("unreadable date", V.ackState(rec("y", "A", "", "", ""), "v3", "2026-10-01
 check("a date in the future is not valid", V.ackState(ack, "v3", "2026-09-30"), { valid: false, reason: "expired" });
 
 // ---- which schemas the page takes over
-check("v3 FRM-905 is the visitor flow", V.isVisitorFlowSchema(S905), true);
-check("v3 FRM-906 is the visitor flow", V.isVisitorFlowSchema(S906), true);
-check("a stamp-signature schema is not", V.isVisitorFlowSchema({ sections: [{ fields: [{ id: "visitor_signature", type: "signature" }] }] }), false);
-check("no schema is not", V.isVisitorFlowSchema(null), false);
+check("v4 FRM-905 is the kiosk flow", V.isVisitorKioskSchema(S905), true);
+check("v4 FRM-906 is the kiosk flow", V.isVisitorKioskSchema(S906), true);
+check("a schema that also needs a host signature is not (v3)", V.isVisitorKioskSchema({ sections: [{ fields: [
+  { id: "visitor_signature", type: "signature", capture: "drawn" }, { id: "host_signature", type: "signature" }] }] }), false);
+check("a stamp-signature schema is not (v2)", V.isVisitorKioskSchema({ sections: [{ fields: [{ id: "visitor_signature", type: "signature" }] }] }), false);
+check("no schema is not", V.isVisitorKioskSchema(null), false);
 check("FRM-905 is a visitor form", V.isVisitorForm("FRM-905"), true);
 check("FRM-507 is not", V.isVisitorForm("FRM-507"), false);
 
 // ---- the entries, against the real schemas
 const AT = new Date(2026, 9, 1, 9, 5); // 1 Oct 2026 09:05 local
-const HOST = { userId: "host-uuid", name: "Gabriela Mercer" };
 const PNG = "data:image/png;base64,iVBORw0KGgo=";
 const answers = {
-  name: "  Maria Lopez ", company: "Acme Pest", phone: "4471", purpose: "Pest control", areas: "Production floor",
-  noSymptoms: "pass", woundsCovered: "na", healthNotes: "", escortName: "", signatureImage: PNG,
+  name: "  Maria Lopez ", company: "Acme Pest", phone: "4471", purpose: "Pest control", host: "Gabriela Mercer",
+  noSymptoms: "pass", woundsCovered: "na", healthNotes: "", signatureImage: PNG,
 };
 const validate = (schema, data) => F.buildZodSchema(schema).safeParse({ ...F.emptyValues(schema), ...data });
+const ids = schema => F.valueFields(schema).map(f => f.id);
 
-const ackData = V.buildAckData(answers, HOST, AT);
+const ackData = V.buildAckData(answers, AT);
 const ackCheck = validate(S906, ackData);
 check("FRM-906 entry passes its schema", ackCheck.success, true);
 check("FRM-906 keeps the drawn image through validation", ackCheck.success && ackCheck.data.visitor_signature.image, PNG);
 check("FRM-906 visitor signature is not a staff stamp", ackData.visitor_signature.user_id, null);
-check("FRM-906 host is the witness", ackData.visitor_signature.witnessed_by, "host-uuid");
-check("FRM-906 briefed by the host", ackData.briefed_by.user_id, "host-uuid");
 check("FRM-906 name trimmed", ackData.visitor_name, "Maria Lopez");
 check("FRM-906 date", ackData.ack_date, "2026-10-01");
 check("FRM-906 title", F.instanceTitle(S906, { data: ackData, created_at: AT.toISOString() }).includes("Maria Lopez"), true);
+check("FRM-906 has no host signature to give", ids(S906).includes("briefed_by"), false);
 
-const visit = V.buildSignInData(answers, HOST, AT, { id: "ack-1", ackDate: "2026-10-01" });
+const visit = V.buildSignInData(answers, AT, { id: "ack-1", ackDate: "2026-10-01" });
 const visitCheck = validate(S905, visit);
 check("FRM-905 entry passes its schema", visitCheck.success, true);
 check("FRM-905 keeps the drawn image through validation", visitCheck.success && visitCheck.data.visitor_signature.image, PNG);
 check("FRM-905 records the acknowledgement relied on", [visit.ack_response_id, visit.ack_date], ["ack-1", "2026-10-01"]);
 check("FRM-905 route is briefed", visit.entry_route, V.ROUTE_BRIEFED);
 check("FRM-905 time in, no time out", [visit.time_in, visit.time_out], ["09:05", ""]);
-check("FRM-905 host", [visit.host, visit.host_signature.user_id], ["Gabriela Mercer", "host-uuid"]);
-check("every key the page writes is a field of FRM-905",
-  Object.keys(visit).filter(k => !F.valueFields(S905).some(f => f.id === k)), []);
-check("every key the page writes is a field of FRM-906",
-  Object.keys(ackData).filter(k => !F.valueFields(S906).some(f => f.id === k)), []);
+check("FRM-905 host is who the visitor came to see", visit.host, "Gabriela Mercer");
+check("FRM-905 has no host signature to give", ids(S905).includes("host_signature"), false);
+check("the visitor's statement carries what the host used to attest",
+  ["11.3.4.2", "11.3.4.4"].every(c =>
+    S905.sections.flatMap(s => s.fields).find(f => f.id === "visitor_signature").statement.includes(c)), true);
+// visitor_sign_in rejects an answer key the form does not have, so this is what keeps it working.
+check("every key the page writes is a field of FRM-905", Object.keys(visit).filter(k => !ids(S905).includes(k)), []);
+check("every key the page writes is a field of FRM-906", Object.keys(ackData).filter(k => !ids(S906).includes(k)), []);
+check("the validated FRM-905 payload carries no key the form lacks",
+  Object.keys(visitCheck.data).filter(k => !ids(S905).includes(k)), []);
 check("route options are spelled as the schema spells them",
-  [V.ROUTE_BRIEFED, V.ROUTE_BOTH, V.ROUTE_REFUSED].every(r =>
+  [V.ROUTE_BRIEFED, V.ROUTE_REFUSED].every(r =>
     S905.sections.flatMap(s => s.fields).find(f => f.id === "entry_route").options.includes(r)), true);
 
-const escorted = V.buildSignInData({ ...answers, escortName: "Rich" }, HOST, AT, { id: "ack-1", ackDate: "2026-10-01" });
-check("an escort makes the route Both", [escorted.entry_route, escorted.escort_name], [V.ROUTE_BOTH, "Rich"]);
+const firstVisit = V.buildSignInData(answers, AT, null);
+check("first visit: the server fills in the acknowledgement", [firstVisit.ack_response_id, firstVisit.ack_date], ["", ""]);
+check("first visit entry passes its schema", validate(S905, firstVisit).success, true);
+check("a visit with no host is rejected", validate(S905, V.buildSignInData({ ...answers, host: " " }, AT, null)).success, false);
 
-const refused = V.buildSignInData({ ...answers, noSymptoms: "fail" }, HOST, AT, { id: "ack-1", ackDate: "2026-10-01" });
+const refused = V.buildSignInData({ ...answers, noSymptoms: "fail" }, AT, { id: "ack-1", ackDate: "2026-10-01" });
 check("a declared symptom is a refusal", V.isRefused({ noSymptoms: "fail" }), true);
 check("refused: route", refused.entry_route, V.ROUTE_REFUSED);
 check("refused: never on site", [refused.time_in, refused.time_out], ["09:05", "09:05"]);
-check("refused: relies on no acknowledgement", [refused.ack_response_id, refused.ack_date, refused.areas], ["", "", ""]);
+check("refused: relies on no acknowledgement", [refused.ack_response_id, refused.ack_date], ["", ""]);
 check("refused: note says why", /refused/i.test(refused.entry_notes), true);
 check("refused entry passes its schema", validate(S905, refused).success, true);
 

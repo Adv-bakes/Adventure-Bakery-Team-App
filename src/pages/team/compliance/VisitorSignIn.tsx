@@ -1,26 +1,30 @@
-// Visitor sign-in (FRM-905 + FRM-906) as one short screen on a tablet the host is logged into.
+// Visitor sign-in (FRM-905 + FRM-906) as one short screen the visitor completes alone.
 //
 // A visitor reads and signs the GMP acknowledgement (FRM-906) on their FIRST visit. It stays valid
 // for twelve months, or until FRM-906 is revised. After that they find themselves by phone number,
 // its last four digits, or name, and answer only the two health questions. Every visit writes an
 // FRM-905 entry that records which acknowledgement it relied on.
 //
-// NOTHING IS WRITTEN UNTIL THE HOST CONFIRMS, and both entries are then inserted already
-// submitted. A draft would leave the visitor's signature and health declaration editable by the
-// host for as long as the visitor is on site. The time out is added later by sign_out_visitor,
-// which can write that one value and nothing else.
+// TWO PLACES, ONE SCREEN. The entrance tablet runs it full-screen as a `kiosk` account
+// (/team/visitor-kiosk, the `kiosk` prop) — an account that can reach nothing else. Staff also have
+// it inside the portal (/team/compliance/visitors). Nobody from the site takes part in a sign-in:
+// the visitor says who they are here to see, declares the entry conditions themselves, and signs.
 //
-// The wording a visitor reads — the rules, the questions, the statements they sign against — comes
+// NOTHING IS WRITTEN UNTIL THE VISITOR SIGNS, and then visitor_sign_in writes both entries in one
+// transaction, already submitted. The time out is added later by sign_out_visitor, which can write
+// that one value and nothing else. All data access is through those server functions — see
+// "Visitor sign-in" in formResponses.ts.
+//
+// The wording a visitor reads — the rules, the questions, the statement they sign against — comes
 // from the two forms' own schemas, so this page cannot drift from the controlled documents.
 //
 // The decisions (who matches a lookup, whether an acknowledgement still counts, what each entry
 // contains) are in src/lib/visitors.ts and tested by scripts/test-visitors.mjs.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, CheckCircle2, DoorOpen, Loader2, LogOut, Search, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,36 +32,31 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
-  buildZodSchema, emptyValues, getFormSchema,
+  buildZodSchema, emptyValues,
   type FormField, type FormSchema, type InfoField, type PassFailField, type ReferenceTableField,
   type SelectField, type SignatureField,
 } from "@/lib/formSchema";
 import {
-  createSubmittedResponse, fetchProfileNames, fetchVisitorIndex, fetchVisitorsOnSite, signOutVisitor,
-  type VisitorOnSite,
+  loadVisitorDesk, lookupVisitors, signOutVisitor, visitorSignIn,
+  type VisitorDesk, type VisitorOnSite,
 } from "@/lib/formResponses";
 import {
-  VISITOR_FORMS, ackState, addMonthsIso, buildAckData, buildSignInData, findVisitorMatches,
-  isRefused, isVisitorFlowSchema, localDate, localTime,
-  type AckRecord, type Host, type VisitAnswers, type VisitorMatch,
+  ackState, buildAckData, buildSignInData, findVisitorMatches, isRefused, localDate, localTime,
+  type AckRecord, type VisitAnswers, type VisitorMatch,
 } from "@/lib/visitors";
 import { SignaturePad } from "@/components/team/forms/SignaturePad";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
 
-interface VisitorDoc {
-  id: string;
-  sop_number: string | null;
-  revision: string | null;
-  schema: FormSchema;
-}
-
-type Step = "home" | "lookup" | "details" | "health" | "rules" | "sign" | "host";
+type Step = "home" | "lookup" | "details" | "health" | "rules" | "sign" | "done";
 
 const BLANK: VisitAnswers = {
-  name: "", company: "", phone: "", purpose: "", areas: "",
-  noSymptoms: "pass", woundsCovered: "na", healthNotes: "", escortName: "", signatureImage: "",
+  name: "", company: "", phone: "", purpose: "", host: "",
+  noSymptoms: "pass", woundsCovered: "na", healthNotes: "", signatureImage: "",
 };
+
+// How long the "you are signed in" screen stays before the tablet is ready for the next person.
+const DONE_MS = 8000;
 
 // Supabase errors are plain objects with a message, not Error instances.
 const messageOf = (e: unknown, fallback: string) => (e as { message?: string } | null)?.message ?? fallback;
@@ -72,26 +71,9 @@ const prettyDate = (iso: string) => {
     : iso;
 };
 
-/** Load both active visitor forms. Called at the start of every sign-in so a tablet left open
- *  overnight never writes against a revision that has since been superseded. */
-async function loadVisitorDocs(): Promise<{ signIn: VisitorDoc; ack: VisitorDoc } | null> {
-  const { data, error } = await supabase
-    .from("sop_documents")
-    .select("id, sop_number, revision, content")
-    .in("sop_number", [VISITOR_FORMS.signIn, VISITOR_FORMS.acknowledgement])
-    .eq("status", "active");
-  if (error) throw error;
-  const pick = (num: string): VisitorDoc | null => {
-    const row = (data ?? []).find(d => d.sop_number === num);
-    const schema = row ? getFormSchema(row.content) : null;
-    return row && schema && isVisitorFlowSchema(schema)
-      ? { id: row.id, sop_number: row.sop_number, revision: row.revision, schema }
-      : null;
-  };
-  const signIn = pick(VISITOR_FORMS.signIn);
-  const ack = pick(VISITOR_FORMS.acknowledgement);
-  return signIn && ack ? { signIn, ack } : null;
-}
+/** Whether a typed query says enough to look anybody up (the server applies the same floor). */
+const canLookUp = (q: string) =>
+  q.replace(/\D/g, "").length >= 4 || q.replace(/[^a-z]/gi, "").length >= 2;
 
 /** Large, tablet-sized answer buttons for one question. */
 function Choice({ value, onChange, options }: {
@@ -125,75 +107,81 @@ function Choice({ value, onChange, options }: {
   );
 }
 
-export default function VisitorSignIn() {
-  const [docs, setDocs] = useState<{ signIn: VisitorDoc; ack: VisitorDoc } | null>(null);
-  const [host, setHost] = useState<Host | null>(null);
-  const [index, setIndex] = useState<AckRecord[]>([]);
-  const [onSite, setOnSite] = useState<VisitorOnSite[]>([]);
+export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
+  const [desk, setDesk] = useState<VisitorDesk | null>(null);
   const [loading, setLoading] = useState(true);
-  const [notReady, setNotReady] = useState(false);
 
   const [step, setStep] = useState<Step>("home");
   const [query, setQuery] = useState("");
+  const [candidates, setCandidates] = useState<AckRecord[]>([]);
+  const [searching, setSearching] = useState(false);
   const [picked, setPicked] = useState<VisitorMatch | null>(null);
   const [answers, setAnswers] = useState<VisitAnswers>(BLANK);
   const [health, setHealth] = useState<{ symptoms: string | null; wounds: string | null }>({ symptoms: null, wounds: null });
   const [rulesRead, setRulesRead] = useState(false);
-  // The acknowledgement written by a sign-in whose second write failed: a retry must rely on it,
-  // not sign a second one.
-  const [ackWritten, setAckWritten] = useState<{ id: string; ackDate: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState<{ name: string; time: string; refused: boolean } | null>(null);
+  // Signing somebody out is not undoable, and on the kiosk the list is other people's names:
+  // the first tap arms the button, the second signs out.
+  const [armed, setArmed] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState<string | null>(null);
 
   const today = localDate(new Date());
   const set = (patch: Partial<VisitAnswers>) => setAnswers(a => ({ ...a, ...patch }));
 
   const refresh = useCallback(async () => {
-    const loaded = await loadVisitorDocs();
-    setDocs(loaded);
-    setNotReady(!loaded);
-    if (!loaded) return null;
-    const [ix, here] = await Promise.all([
-      fetchVisitorIndex(loaded.ack.id),
-      fetchVisitorsOnSite(loaded.signIn.id, addMonthsIso(localDate(new Date()), -1)),
-    ]);
-    setIndex(ix);
-    setOnSite(here);
+    const loaded = await loadVisitorDesk();
+    setDesk(loaded);
     return loaded;
   }, []);
 
   useEffect(() => {
     let live = true;
-    (async () => {
-      try {
-        const { data: auth } = await supabase.auth.getUser();
-        const user = auth?.user;
-        if (user) {
-          const names = await fetchProfileNames([user.id]);
-          if (live) setHost({ userId: user.id, name: names.get(user.id) || user.email || "Unknown" });
-        }
-        await refresh();
-      } catch (e) {
-        toast.error(messageOf(e, "Could not load the visitor forms"));
-      } finally {
-        if (live) setLoading(false);
-      }
-    })();
+    refresh()
+      .catch(e => toast.error(messageOf(e, "Could not load the visitor forms")))
+      .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [refresh]);
 
-  const matches = useMemo(() => findVisitorMatches(index, query), [index, query]);
+  // Returning-visitor lookup: asked of the server once the visitor has typed enough to be somebody.
+  const lookupSeq = useRef(0);
+  useEffect(() => {
+    if (step !== "lookup") return;
+    const q = query.trim();
+    if (!canLookUp(q)) { setCandidates([]); setSearching(false); return; }
+    const seq = ++lookupSeq.current;
+    setSearching(true);
+    const timer = setTimeout(() => {
+      lookupVisitors(q)
+        .then(rows => { if (seq === lookupSeq.current) setCandidates(rows); })
+        .catch(() => { if (seq === lookupSeq.current) setCandidates([]); })
+        .finally(() => { if (seq === lookupSeq.current) setSearching(false); });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query, step]);
 
-  const pickedState = docs && picked ? ackState(picked.ack, docs.ack.revision, today) : null;
+  // After a sign-in the tablet returns to the start by itself, ready for the next visitor.
+  useEffect(() => {
+    if (step !== "done") return;
+    const timer = setTimeout(() => setStep("home"), DONE_MS);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  const forms = desk?.forms ?? null;
+  const matches = useMemo(() => findVisitorMatches(candidates, query), [candidates, query]);
+
+  const pickedState = forms && picked ? ackState(picked.ack, forms.ack.revision, today) : null;
   const refused = health.symptoms === "fail";
   // The rules are read when there is no acknowledgement that still counts — and never by somebody
   // who is not going in.
-  const needsRules = !refused && !ackWritten && !pickedState?.valid;
+  const needsRules = !refused && !pickedState?.valid;
 
   const begin = async () => {
-    setQuery(""); setPicked(null); setAnswers(BLANK); setRulesRead(false); setAckWritten(null);
-    setHealth({ symptoms: null, wounds: null });
+    setQuery(""); setCandidates([]); setPicked(null); setAnswers(BLANK); setRulesRead(false);
+    setHealth({ symptoms: null, wounds: null }); setArmed(null);
     setStep("lookup");
+    // Re-read the forms at the start of every sign-in, so a tablet left open overnight never
+    // shows a visitor a revision that has since been superseded.
     try { await refresh(); } catch (e) { toast.error(messageOf(e, "Could not refresh the visitor forms")); }
   };
 
@@ -204,46 +192,34 @@ export default function VisitorSignIn() {
   };
 
   const finish = async () => {
-    if (!docs || !host) return;
+    if (!forms) return;
     setSaving(true);
     try {
-      // Re-read the forms: the revision an entry is pinned to must be the one in force now.
-      const current = await loadVisitorDocs();
-      if (!current) throw new Error("The visitor forms are not available. Tell the SQF Practitioner.");
-      if (current.ack.revision !== docs.ack.revision || current.signIn.revision !== docs.signIn.revision) {
-        setDocs(current);
-        throw new Error("The visitor forms were revised a moment ago. Please start this sign-in again.");
-      }
-
       const at = new Date();
       const full: VisitAnswers = {
         ...answers,
         noSymptoms: refused ? "fail" : "pass",
         woundsCovered: health.wounds === "pass" ? "pass" : "na",
       };
+      const onFile = pickedState?.valid && picked ? { id: picked.ack.id, ackDate: picked.ack.ackDate } : null;
 
-      let ack: { id: string; ackDate: string } | null =
-        ackWritten ?? (pickedState?.valid && picked ? { id: picked.ack.id, ackDate: picked.ack.ackDate } : null);
-
-      if (!ack && !isRefused(full)) {
-        const data = { ...emptyValues(current.ack.schema), ...buildAckData(full, host, at) };
-        const check = buildZodSchema(current.ack.schema).safeParse(data);
+      let ack: Record<string, unknown> | null = null;
+      if (!onFile && !isRefused(full)) {
+        const check = buildZodSchema(forms.ack.schema)
+          .safeParse({ ...emptyValues(forms.ack.schema), ...buildAckData(full, at) });
         if (!check.success) throw new Error(check.error.issues[0]?.message ?? "The acknowledgement is incomplete.");
-        const row = await createSubmittedResponse(current.ack, check.data);
-        ack = { id: row.id, ackDate: localDate(at) };
-        setAckWritten(ack);
+        ack = check.data;
       }
 
-      const data = { ...emptyValues(current.signIn.schema), ...buildSignInData(full, host, at, ack) };
-      const check = buildZodSchema(current.signIn.schema).safeParse(data);
+      const check = buildZodSchema(forms.signIn.schema)
+        .safeParse({ ...emptyValues(forms.signIn.schema), ...buildSignInData(full, at, onFile) });
       if (!check.success) throw new Error(check.error.issues[0]?.message ?? "The sign-in is incomplete.");
-      await createSubmittedResponse(current.signIn, check.data);
 
-      toast.success(isRefused(full)
-        ? `Refused entry recorded for ${full.name.trim()}.`
-        : `${full.name.trim()} is signed in at ${localTime(at)}.`);
-      setStep("home");
-      await refresh();
+      await visitorSignIn(check.data, ack, { signIn: forms.signIn.revision, ack: forms.ack.revision });
+
+      setDone({ name: full.name.trim(), time: localTime(at), refused: isRefused(full) });
+      setStep("done");
+      refresh().catch(() => undefined);
     } catch (e) {
       toast.error(messageOf(e, "Could not record the sign-in"));
     } finally {
@@ -252,6 +228,7 @@ export default function VisitorSignIn() {
   };
 
   const signOut = async (v: VisitorOnSite) => {
+    if (armed !== v.id) { setArmed(v.id); return; }
     setSigningOut(v.id);
     try {
       const time = localTime(new Date());
@@ -262,14 +239,20 @@ export default function VisitorSignIn() {
       toast.error(messageOf(e, "Could not sign the visitor out"));
     } finally {
       setSigningOut(null);
+      setArmed(null);
     }
   };
 
+  // The kiosk has no portal around it, so it brings the portal's own backdrop.
+  const shell = (children: React.ReactNode) => kiosk
+    ? <div className="team-portal team-portal-bg min-h-screen">{children}</div>
+    : <>{children}</>;
+
   if (loading) {
-    return (
+    return shell(
       <div className="flex items-center gap-2 p-6 tp-on-bg-dim">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading…
-      </div>
+      </div>,
     );
   }
 
@@ -277,17 +260,18 @@ export default function VisitorSignIn() {
     <div>
       <h1 className="text-2xl font-semibold flex items-center gap-2 tp-on-bg">
         <DoorOpen className="w-5 h-5 text-[hsl(var(--tp-gold))]" />
-        Visitor Sign-In
+        {kiosk ? "Welcome to Adventure Bakery" : "Visitor Sign-In"}
       </h1>
       <p className="text-sm tp-on-bg-dim mt-1">
-        Every visitor signs in at every visit (FRM-905). The food safety rules are read and signed on
-        the first visit, and again after twelve months (FRM-906).
+        {kiosk
+          ? "Every visitor signs in here before entering, and signs out on leaving."
+          : "Every visitor signs in at every visit (FRM-905). The food safety rules are read and signed on the first visit, and again after twelve months (FRM-906)."}
       </p>
     </div>
   );
 
-  if (notReady || !docs) {
-    return (
+  if (!forms) {
+    return shell(
       <div className="max-w-2xl mx-auto p-6 space-y-4 tp-fade-up">
         {header}
         <Card className="border" style={cardStyle}>
@@ -295,41 +279,39 @@ export default function VisitorSignIn() {
             <p className="font-medium flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600" /> This screen is not switched on yet.
             </p>
-            <p>
-              It needs revision v3 of FRM-905 and FRM-906, both active. Until then, sign visitors in
-              from each form's Entries tab in the <Link className="underline" to="/team/compliance/sops">SOPs Library</Link>.
-            </p>
+            {kiosk ? (
+              <p>Please ask a member of staff to sign you in.</p>
+            ) : (
+              <p>
+                It needs revision v4 of FRM-905 and FRM-906, both active. Until then, sign visitors in
+                from each form's Entries tab in the <Link className="underline" to="/team/compliance/sops">SOPs Library</Link>.
+              </p>
+            )}
           </CardContent>
         </Card>
-      </div>
+      </div>,
     );
   }
 
-  const s905 = docs.signIn.schema;
-  const s906 = docs.ack.schema;
+  const s905 = forms.signIn.schema;
+  const s906 = forms.ack.schema;
   const purposes = fieldOf<SelectField>(s905, "purpose")?.options ?? [];
   const symptomsQ = fieldOf<PassFailField>(s905, "no_symptoms");
   const woundsQ = fieldOf<PassFailField>(s905, "wounds_covered");
   const rules = fieldOf<ReferenceTableField>(s906, "rules_table");
   const visitorStatement = fieldOf<SignatureField>(s905, "visitor_signature")?.statement;
-  const hostStatement = fieldOf<SignatureField>(s905, "host_signature")?.statement;
   const ackStatement = fieldOf<InfoField>(s906, "ack_statement")?.text;
+  const staff = desk?.staff ?? [];
+  const onSite = desk?.onSite ?? [];
 
-  const steps: Step[] = ["lookup", "details", "health", ...(needsRules ? ["rules" as Step] : []), "sign", "host"];
-  const go = (dir: 1 | -1) => {
-    const i = steps.indexOf(step);
-    const next = steps[i + dir];
-    setStep(next ?? "home");
-  };
+  const steps: Step[] = ["lookup", "details", "health", ...(needsRules ? ["rules" as Step] : []), "sign"];
+  const go = (dir: 1 | -1) => setStep(steps[steps.indexOf(step) + dir] ?? "home");
 
-  const canLeave: Record<Step, boolean> = {
-    home: true,
-    lookup: true,
-    details: !!answers.name.trim() && !!answers.purpose,
+  const canLeave: Partial<Record<Step, boolean>> = {
+    details: !!answers.name.trim() && !!answers.purpose && !!answers.host.trim(),
     health: health.symptoms === "fail" || (health.symptoms === "pass" && (health.wounds === "pass" || health.wounds === "na")),
     rules: rulesRead,
     sign: !!answers.signatureImage && !!answers.name.trim(),
-    host: true,
   };
 
   const nav = (nextLabel = "Next") => (
@@ -341,7 +323,7 @@ export default function VisitorSignIn() {
         type="button"
         className="min-h-12 px-6 bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#B58A30]"
         disabled={!canLeave[step] || saving}
-        onClick={() => (step === "host" ? finish() : go(1))}
+        onClick={() => (step === "sign" ? finish() : go(1))}
       >
         {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         {nextLabel}
@@ -349,7 +331,7 @@ export default function VisitorSignIn() {
     </div>
   );
 
-  return (
+  return shell(
     <div className="max-w-2xl mx-auto p-6 space-y-4 tp-fade-up">
       {header}
 
@@ -360,12 +342,12 @@ export default function VisitorSignIn() {
             className="w-full min-h-16 text-lg bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#B58A30]"
             onClick={begin}
           >
-            <UserPlus className="w-5 h-5 mr-2" /> Sign in a visitor
+            <UserPlus className="w-5 h-5 mr-2" /> {kiosk ? "Sign in" : "Sign in a visitor"}
           </Button>
 
           <Card className="border" style={cardStyle}>
             <CardContent className="p-5 text-[#2A1F0E]">
-              <h2 className="font-semibold mb-2">On site now ({onSite.length})</h2>
+              <h2 className="font-semibold mb-2">{kiosk ? "Leaving? Sign out here" : `On site now (${onSite.length})`}</h2>
               {onSite.length === 0 ? (
                 <p className="text-sm text-[#2A1F0E]/65">No visitors are signed in.</p>
               ) : (
@@ -375,14 +357,21 @@ export default function VisitorSignIn() {
                       <div className="min-w-0">
                         <p className="font-medium truncate">{v.name}{v.company ? ` — ${v.company}` : ""}</p>
                         <p className="text-xs text-[#2A1F0E]/65">
-                          In at {v.timeIn}{v.visitDate !== today ? ` on ${prettyDate(v.visitDate)}` : ""} · host {v.host}
+                          In at {v.timeIn}{v.visitDate !== today ? ` on ${prettyDate(v.visitDate)}` : ""}
+                          {v.host ? ` · seeing ${v.host}` : ""}
                         </p>
                       </div>
-                      <Button type="button" variant="outline" disabled={signingOut === v.id} onClick={() => signOut(v)}>
+                      <Button
+                        type="button"
+                        variant={armed === v.id ? "destructive" : "outline"}
+                        className="min-h-11 shrink-0"
+                        disabled={signingOut === v.id}
+                        onClick={() => signOut(v)}
+                      >
                         {signingOut === v.id
                           ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                           : <LogOut className="w-4 h-4 mr-1" />}
-                        Sign out
+                        {armed === v.id ? "Tap again to confirm" : "Sign out"}
                       </Button>
                     </li>
                   ))}
@@ -393,7 +382,31 @@ export default function VisitorSignIn() {
         </>
       )}
 
-      {step !== "home" && (
+      {step === "done" && done && (
+        <Card className="border" style={cardStyle}>
+          <CardContent className="p-6 space-y-3 text-[#2A1F0E] text-center">
+            {done.refused ? (
+              <>
+                <AlertTriangle className="w-10 h-10 mx-auto text-red-600" />
+                <h2 className="text-xl font-semibold">Please do not enter, {done.name}</h2>
+                <p className="text-sm">
+                  You declared a symptom of illness, so you cannot go into the production areas today.
+                  This has been recorded. Please speak to the person you came to see.
+                </p>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-10 h-10 mx-auto text-green-600" />
+                <h2 className="text-xl font-semibold">You are signed in, {done.name}</h2>
+                <p className="text-sm">Signed in at {done.time}. Please sign out here when you leave.</p>
+              </>
+            )}
+            <Button type="button" variant="outline" className="min-h-12" onClick={() => setStep("home")}>Done</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {step !== "home" && step !== "done" && (
         <Card className="border" style={cardStyle}>
           <CardContent className="p-5 space-y-4 text-[#2A1F0E]">
             <p className="text-xs text-[#2A1F0E]/55">Step {steps.indexOf(step) + 1} of {steps.length}</p>
@@ -414,13 +427,15 @@ export default function VisitorSignIn() {
                     />
                   </div>
                 </div>
-                {query.trim() && (
+                {canLookUp(query) && (
                   <div className="space-y-2">
                     {matches.length === 0 && (
-                      <p className="text-sm text-[#2A1F0E]/65">No match yet. Keep typing, or choose first visit below.</p>
+                      <p className="text-sm text-[#2A1F0E]/65">
+                        {searching ? "Looking…" : "No match. Keep typing, or choose first visit below."}
+                      </p>
                     )}
                     {matches.map(m => {
-                      const state = ackState(m.ack, docs.ack.revision, today);
+                      const state = ackState(m.ack, forms.ack.revision, today);
                       return (
                         <button
                           key={m.ack.id}
@@ -472,6 +487,20 @@ export default function VisitorSignIn() {
                   </div>
                 )}
                 <div>
+                  <Label>Who are you here to see?</Label>
+                  <div className="mt-1">
+                    {staff.length > 0 ? (
+                      <Choice
+                        value={answers.host || null}
+                        onChange={v => set({ host: v })}
+                        options={staff.map(n => ({ key: n, label: n, tone: "neutral" as const }))}
+                      />
+                    ) : (
+                      <Input aria-label="Who are you here to see?" className="h-12 text-base" autoComplete="off" value={answers.host} onChange={e => set({ host: e.target.value })} />
+                    )}
+                  </div>
+                </div>
+                <div>
                   <Label>Purpose of visit</Label>
                   <div className="mt-1">
                     <Choice
@@ -502,7 +531,7 @@ export default function VisitorSignIn() {
                 {health.symptoms === "fail" ? (
                   <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
                     <p className="font-semibold">You cannot enter the production areas today.</p>
-                    <p>Please tell your host. The next two steps record that entry was refused.</p>
+                    <p>Please sign on the next screen so this is recorded, then speak to the person you came to see.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -518,13 +547,13 @@ export default function VisitorSignIn() {
                     />
                     {health.wounds === "fail" && (
                       <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                        Ask your host for a dressing. Once the cut is covered, choose "{woundsQ?.labels?.pass ?? "Yes — covered"}".
+                        Please ask for a dressing. Once the cut is covered, choose "{woundsQ?.labels?.pass ?? "Yes — covered"}".
                       </p>
                     )}
                   </div>
                 )}
                 <div>
-                  <Label htmlFor="v-health-notes">Anything your host should know (optional)</Label>
+                  <Label htmlFor="v-health-notes">Anything we should know (optional)</Label>
                   <Textarea id="v-health-notes" rows={2} value={answers.healthNotes} onChange={e => set({ healthNotes: e.target.value })} />
                 </div>
                 {nav()}
@@ -565,60 +594,21 @@ export default function VisitorSignIn() {
             {step === "sign" && (
               <>
                 <h2 className="text-lg font-semibold">Sign, {answers.name.trim()}</h2>
-                <p className="text-sm">{visitorStatement}</p>
-                {needsRules && <p className="text-sm">{ackStatement}</p>}
-                <SignaturePad value={answers.signatureImage || undefined} onChange={img => set({ signatureImage: img ?? "" })} />
-                <p className="text-sm font-medium">Now please hand the tablet back to your host.</p>
-                {nav()}
-              </>
-            )}
-
-            {step === "host" && (
-              <>
-                <h2 className="text-lg font-semibold">Host: {host?.name}</h2>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                  <dt className="text-[#2A1F0E]/60">Visitor</dt>
-                  <dd>{answers.name.trim()}{answers.company.trim() ? ` — ${answers.company.trim()}` : ""}</dd>
-                  <dt className="text-[#2A1F0E]/60">Purpose</dt>
-                  <dd>{answers.purpose}</dd>
-                  <dt className="text-[#2A1F0E]/60">Rules</dt>
-                  <dd>
-                    {refused
-                      ? "Not applicable — entry refused"
-                      : pickedState?.valid && picked
-                        ? `Signed ${prettyDate(picked.ack.ackDate)}, valid until ${prettyDate(pickedState.expiresOn)}`
-                        : "Read and signed today"}
-                  </dd>
-                </dl>
                 {refused ? (
-                  <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
-                    <p className="font-semibold flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Entry refused</p>
-                    <p>The visitor declared a symptom of illness and must not enter any food handling area (SQF 11.3.4.3). Confirming records the refusal.</p>
-                  </div>
+                  <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                    You declared a symptom of illness, so you cannot enter today (SQF 11.3.4.3).
+                    Signing records your declaration.
+                  </p>
                 ) : (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label htmlFor="v-areas">Areas the visitor will enter</Label>
-                        <Input id="v-areas" autoComplete="off" value={answers.areas} onChange={e => set({ areas: e.target.value })} />
-                      </div>
-                      <div>
-                        <Label htmlFor="v-escort">Escort, if escorted (optional)</Label>
-                        <Input id="v-escort" autoComplete="off" value={answers.escortName} onChange={e => set({ escortName: e.target.value })} />
-                      </div>
-                    </div>
-                    <p className="rounded-md border border-[#C89B3C]/50 bg-[#C89B3C]/5 p-3 text-sm flex gap-2">
-                      <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-[#9A6F1E]" />
-                      <span>{hostStatement}</span>
-                    </p>
-                  </>
+                  <p className="text-sm">{visitorStatement}</p>
                 )}
-                {nav(refused ? `Record refused entry as ${host?.name}` : `Confirm and sign as ${host?.name}`)}
+                <SignaturePad value={answers.signatureImage || undefined} onChange={img => set({ signatureImage: img ?? "" })} />
+                {nav(refused ? "Sign and finish" : "Sign in")}
               </>
             )}
           </CardContent>
         </Card>
       )}
-    </div>
+    </div>,
   );
 }

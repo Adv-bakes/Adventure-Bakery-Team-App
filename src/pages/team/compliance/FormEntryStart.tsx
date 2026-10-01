@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createResponse } from "@/lib/formResponses";
 import { getFormSchema } from "@/lib/formSchema";
-import { VISITOR_SIGN_IN_PATH, isVisitorFlowSchema, isVisitorForm } from "@/lib/visitors";
+import { VISITOR_SIGN_IN_PATH, isVisitorKioskSchema, isVisitorForm } from "@/lib/visitors";
 
 export default function FormEntryStart() {
   const { docId } = useParams<{ docId: string }>();
@@ -46,7 +46,7 @@ export default function FormEntryStart() {
         if (!doc) throw new Error("That form no longer exists.");
 
         // Visitor entries are written by the sign-in page, never started blank.
-        if (isVisitorForm(doc.sop_number) && isVisitorFlowSchema(getFormSchema(doc.content))) {
+        if (isVisitorForm(doc.sop_number) && isVisitorKioskSchema(getFormSchema(doc.content))) {
           navigate(VISITOR_SIGN_IN_PATH, { replace: true });
           return;
         }
