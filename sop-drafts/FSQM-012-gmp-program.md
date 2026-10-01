@@ -11,8 +11,8 @@ body through a migration and re-run the script; never edit this file directly.
 | Type | `fsqm (Food Safety Quality Manual)` |
 | Category | Food Safety Quality Manual |
 | Status | active |
-| Revision | v2 |
-| Effective | 2026-09-01 |
+| Revision | v3 |
+| Effective | 2026-10-01 |
 | SQF reference | `2.4.2.1, 2.4.2.2, 2.5.4.3, 11.3.1, 11.3.2, 11.3.3, 11.3.4, 11.3.5, 11.4.1` |
 | Supersedes | **SOP-11.3** Personnel Hygiene & Visitor Policy (archived 2026-09-01) |
 | Exemption analysis | **FSQM-013** Module 11 Applicability & Exemption Analysis |
@@ -118,14 +118,14 @@ Maintenance — maintain handwashing stations, amenities and the facility provis
 
   - Every visitor — including contractors, maintenance personnel, auditors, suppliers, customers, guests and **management staff** — shall comply with this Part.
   - **Sign in on FRM-905** (Visitor Sign-In Log) before entering any food handling, processing or storage area.
-  - **Read and acknowledge the site's food safety and hygiene rules on FRM-906** (Visitor GMP Acknowledgement) before entry. A visitor who has completed the FRM-906 briefing satisfies the training requirement of 11.3.4.1; **any visitor who has not shall be escorted at all times** by an authorized employee.
+  - **Read and acknowledge the site's food safety and hygiene rules on FRM-906** (Visitor GMP Acknowledgement) on the first visit. The acknowledgement is **renewed every twelve months and whenever FRM-906 is revised**, and a health declaration is made on **FRM-905 at every visit**. A visitor holding a valid FRM-906 acknowledgement satisfies the training requirement of 11.3.4.1; **any visitor who does not shall be escorted at all times** by an authorized employee.
   - **Remove jewellery and loose objects** in accordance with Part 5. This applies to management staff equally.
   - Wear suitable clothing and footwear and the protective wear issued at entry — hairnet, beard cover where applicable, lab coat, and shoe covers or dedicated footwear.
   - **Enter and exit through the proper staff entrance points only**, and comply with the handwashing requirements of Part 3 and the processing practices of Part 8.
   - Remain within approved areas, and not touch ingredients, packaging, product or equipment unless authorized by the SQF Practitioner.
   - **Visitors showing visible signs of illness shall not be permitted to enter** any area where food is handled or processed. The rules of Part 2 apply to visitors as they do to staff.
   - **Contractors** additionally: agree the work area and its segregation with the SQF Practitioner or Supervisor before starting; account for all tools, parts and materials before and after the work; and where the work introduces glass or brittle plastic, comply with SOP-11.7.3 and record it on FRM-907.
-  - Completed visitor records are retained by QA for a minimum of **twelve months**.
+  - Completed visitor records are retained by QA for a minimum of **twelve months**. An FRM-906 acknowledgement is retained for twelve months after the last visit that relied on it.
 
 **7. STAFF AMENITIES AND WELFARE (SQF 11.3.5.1 to 11.3.5.10)**
 
@@ -226,3 +226,7 @@ PART 10 IS CORRECTED IN THE SAME BREATH, because as issued it was wrong. It said
 
 OPEN ACTIONS AT ISSUE — a third item joins the two already listed.
 3. SPANISH TRAINING FOR 2.9.2.2. Two things are needed and they are different sizes. (a) TRN-002 already has an active Spanish deck, so a Spanish-preferring employee can be assigned it directly — this is an assignment decision, not a build, and it affects a real person's training record, so it is left to the SQF Practitioner rather than done by migration. (b) TRN-002A and TRN-002B have no Spanish version and no generator source in the repository, so producing one means either translating the original decks or authoring the content afresh from the existing English narrations. That is a build, not an afternoon. Until both are done, the position stated in Part 10 stands.
+
+
+
+v3, 2026-10-01 — VISITOR ACKNOWLEDGEMENT SIGNED ONCE, NOT AT EVERY VISIT. Part 6 required every visitor to read and acknowledge the rules on FRM-906 before entry, which in practice meant at every entry. 11.3.4.1 requires that a visitor is trained before entering or is escorted; a briefing given and signed for remains given. The acknowledgement is now completed on the first visit and renewed every twelve months and whenever FRM-906 is revised. The health declaration, which concerns the day of the visit, is made on FRM-905 at every visit, and each FRM-905 entry records the acknowledgement it relied on. Retention is extended so that an acknowledgement is kept for twelve months after the last visit that relied on it. The visitor's signature on both forms is now the visitor's own, drawn on the device, with the host recorded as witness.

@@ -142,8 +142,8 @@ DOCS = [
             "type": "fsqm (Food Safety Quality Manual)",
             "category": "Food Safety Quality Manual",
             "status": "active",
-            "revision": "v2",
-            "effective": "2026-09-01",
+            "revision": "v3",
+            "effective": "2026-10-01",
             "sqf": "2.4.2.1, 2.4.2.2, 2.5.4.3, 11.3.1, 11.3.2, 11.3.3, 11.3.4, 11.3.5, 11.4.1",
             "extra": [
                 ("Supersedes", "**SOP-11.3** Personnel Hygiene & Visitor Policy "

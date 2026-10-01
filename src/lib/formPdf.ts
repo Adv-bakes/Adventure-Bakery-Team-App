@@ -7,8 +7,9 @@ import type { TDocumentDefinitions, Content, TableCell } from "pdfmake/interface
 import { format } from "date-fns";
 import { confidentialFooter, loadLogoDataUrl, PDF_GOLD } from "@/lib/sopPdf";
 import {
-  formatFieldValue,
+  formatFieldValue, SIGNATURE_IMAGE_RE,
   type FormSchema, type GridField, type GridRowValue, type InfoField, type ReferenceTableField, type ReportColumn,
+  type SignatureValue,
 } from "@/lib/formSchema";
 import { getResponseAttachmentUrl, type FormResponse, type ResponseAttachment } from "@/lib/formResponses";
 
@@ -269,6 +270,12 @@ export async function generateFormResponsePdf(
             ],
             margin: [0, 4, 0, 4],
           });
+          // A drawn signature prints under its line. Checked against the strict pattern first:
+          // a malformed image throws inside pdfmake's async render, where nothing catches it.
+          const image = (data[field.id] as SignatureValue | null)?.image;
+          if (value && image && SIGNATURE_IMAGE_RE.test(image)) {
+            body.push({ image, fit: [180, 60], margin: [0, 0, 0, 6] });
+          }
           break;
         }
         default: {

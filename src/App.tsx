@@ -95,6 +95,7 @@ import FormRecords from "./pages/team/compliance/Records";
 import Notifications from "./pages/team/Notifications";
 import VerificationSchedule from "./pages/team/compliance/VerificationSchedule";
 import FormEntryStart from "./pages/team/compliance/FormEntryStart";
+import VisitorSignIn from "./pages/team/compliance/VisitorSignIn";
 import VoiceCommandScripts from "./pages/team/compliance/VoiceCommandScripts";
 import TrainingSops from "./pages/team/hr/TrainingSops";
 import TrainingCompliance from "./pages/team/hr/TrainingCompliance";
@@ -473,6 +474,13 @@ const App = () => (
           <Route path="/team/compliance/voice-commands/print" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <VoiceCommandScripts />
+            </ProtectedRoute>
+          } />
+          {/* Visitor sign-in writes FRM-905 / FRM-906 entries, so it is for the people who can
+              fill forms; the auditor reads the resulting entries in Form Records. */}
+          <Route path="/team/compliance/visitors" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><VisitorSignIn /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/compliance/forms/:docId/start" element={

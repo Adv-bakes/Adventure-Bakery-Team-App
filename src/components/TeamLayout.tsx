@@ -7,7 +7,7 @@ import {
   Home, Users, FileText, Kanban, Boxes, TrendingUp, Factory, BarChart2,
   ClipboardCheck, ClipboardList, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
   ListTodo, Inbox, DollarSign, Database, Settings, User as UserIcon,
-  LogOut, PanelLeftClose, PanelLeft, Thermometer, Bell, CalendarCheck,
+  LogOut, PanelLeftClose, PanelLeft, Thermometer, Bell, CalendarCheck, DoorOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
@@ -56,6 +56,7 @@ const navSections: NavSection[] = [
     { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library", auditorOk: true },
     { path: "/team/compliance/register", icon: Database, label: "Document Register", auditorOk: true },
     { path: "/team/compliance/records", icon: ClipboardList, label: "Form Records", auditorOk: true },
+    { path: "/team/compliance/visitors", icon: DoorOpen, label: "Visitor Sign-In" },
     { path: "/team/compliance/verification", icon: CalendarCheck, label: "Verification Schedule", auditorOk: true },
     { path: "/team/compliance/traceability", icon: ClipboardCheck, label: "Traceability" },
     { path: "/team/compliance/temperature", icon: Thermometer, label: "Temperature Logs", auditorOk: true },

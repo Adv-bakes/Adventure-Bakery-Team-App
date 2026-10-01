@@ -91,6 +91,8 @@ const FAIL_WORDS = /\b(fail(ed)?|non[- ]?conform\w*|rejected|held|on hold|not ac
 export function entryHasFail(data: Record<string, unknown> | null | undefined): boolean {
   const walk = (v: unknown): boolean => {
     if (v === "fail") return true;
+    // A drawn signature is base64, and "/held+" inside it is not somebody recording a hold.
+    if (typeof v === "string" && v.startsWith("data:")) return false;
     if (typeof v === "string") return FAIL_WORDS.test(v) && !/\bno\b.*\b(fail|non[- ]?conform)/i.test(v);
     if (Array.isArray(v)) return v.some(walk);
     if (v && typeof v === "object") return Object.entries(v).some(([k, x]) => k !== "name" && walk(x));

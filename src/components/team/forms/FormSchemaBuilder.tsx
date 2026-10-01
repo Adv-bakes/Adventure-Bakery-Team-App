@@ -541,6 +541,16 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                           </SelectContent>
                         </Select>
                       </div>
+                      <div className="w-44">
+                        <Label className="text-[10px] text-muted-foreground">Captured as</Label>
+                        <Select value={(field as SignatureField).capture ?? "stamp"} onValueChange={v => patchField(sIdx, fIdx, { capture: v === "drawn" ? "drawn" : undefined } as any)}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="stamp">Stamp of the signed-in user</SelectItem>
+                            <SelectItem value="drawn">Drawn (visitor, no account)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="flex-1 min-w-48">
                         <Label className="text-[10px] text-muted-foreground">Statement (optional)</Label>
                         <Input className="h-8 text-xs" placeholder="I certify the above is accurate" value={(field as SignatureField).statement ?? ""} onChange={e => patchField(sIdx, fIdx, { statement: e.target.value || undefined } as any)} />
