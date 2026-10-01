@@ -198,6 +198,8 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
   const [step, setStep] = useState<Step>("home");
   const [query, setQuery] = useState("");
+  // Whether the visitor has said they have been here before, which is what shows the search box.
+  const [returning, setReturning] = useState(false);
   const [candidates, setCandidates] = useState<AckRecord[]>([]);
   const [searching, setSearching] = useState(false);
   const [picked, setPicked] = useState<VisitorMatch | null>(null);
@@ -270,7 +272,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
   const needsRules = !refused && !pickedState?.valid;
 
   const begin = async () => {
-    setQuery(""); setCandidates([]); setPicked(null); setAnswers(BLANK); setRulesRead(false);
+    setQuery(""); setCandidates([]); setPicked(null); setAnswers(BLANK); setRulesRead(false); setReturning(false);
     setHealth({ symptoms: null, wounds: null }); setArmed(null);
     setStep("lookup");
     // Re-read the forms at the start of every sign-in, so a tablet left open overnight never
@@ -523,51 +525,80 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
             {step === "lookup" && (
               <>
                 <h2 className="text-lg font-semibold">Have you visited before?</h2>
-                <div>
-                  <Label htmlFor="visitor-lookup">Your phone number, its last 4 digits, or your name</Label>
-                  <div className="relative mt-1">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#2A1F0E]/40" />
-                    <Input
-                      id="visitor-lookup"
-                      className="pl-9 h-12 text-base"
-                      autoComplete="off"
-                      value={query}
-                      onChange={e => setQuery(e.target.value)}
-                    />
-                  </div>
-                </div>
-                {canLookUp(query) && (
-                  <div className="space-y-2">
-                    {matches.length === 0 && (
-                      <p className="text-sm text-[#2A1F0E]/65">
-                        {searching ? "Looking…" : "No match. Keep typing, or choose first visit below."}
-                      </p>
+                {/* The question is answered first, with two buttons. When the search box led the
+                    screen, first-time visitors started typing their phone number into it before
+                    they saw there was a first-visit button underneath. */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => choose(null)}
+                    className="min-h-20 rounded-md border px-4 py-3 text-left bg-[#C89B3C] text-[#2A1F0E] border-[#C89B3C] hover:bg-[#B58A30]"
+                  >
+                    <span className="block text-base font-semibold">No — this is my first visit</span>
+                    <span className="block text-xs opacity-80">Takes about two minutes</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={returning}
+                    onClick={() => setReturning(true)}
+                    className={cn(
+                      "min-h-20 rounded-md border px-4 py-3 text-left transition-colors",
+                      returning
+                        ? "bg-[#2A1F0E] text-white border-[#2A1F0E]"
+                        : "bg-white text-[#2A1F0E] border-[#2A1F0E]/25 hover:bg-[#C89B3C]/10",
                     )}
-                    {matches.map(m => {
-                      const state = ackState(m.ack, forms.ack.revision, today);
-                      return (
-                        <button
-                          key={m.ack.id}
-                          type="button"
-                          onClick={() => choose(m)}
-                          className="w-full text-left rounded-md border border-[#2A1F0E]/20 px-4 py-3 hover:bg-[#C89B3C]/10"
-                        >
-                          <span className="font-medium">{m.name}</span>
-                          {m.company && <span className="text-[#2A1F0E]/70"> — {m.company}</span>}
-                          <span className="block text-xs text-[#2A1F0E]/60">
-                            {state.valid ? "Rules already signed — two quick questions" : "The rules need reading again"}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  >
+                    <span className="block text-base font-semibold">Yes — I have been here before</span>
+                    <span className="block text-xs opacity-80">Find yourself and skip the rules</span>
+                  </button>
+                </div>
+                {returning && (
+                  <>
+                    <div>
+                      <Label htmlFor="visitor-lookup">Your phone number, its last 4 digits, or your name</Label>
+                      <div className="relative mt-1">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#2A1F0E]/40" />
+                        <Input
+                          id="visitor-lookup"
+                          className="pl-9 h-12 text-base"
+                          autoComplete="off"
+                          autoFocus
+                          value={query}
+                          onChange={e => setQuery(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    {canLookUp(query) && (
+                      <div className="space-y-2">
+                        {matches.length === 0 && (
+                          <p className="text-sm text-[#2A1F0E]/65">
+                            {searching ? "Looking…" : "No match yet. Keep typing, or sign in as a first visit."}
+                          </p>
+                        )}
+                        {matches.map(m => {
+                          const state = ackState(m.ack, forms.ack.revision, today);
+                          return (
+                            <button
+                              key={m.ack.id}
+                              type="button"
+                              onClick={() => choose(m)}
+                              className="w-full text-left rounded-md border border-[#2A1F0E]/20 px-4 py-3 hover:bg-[#C89B3C]/10"
+                            >
+                              <span className="font-medium">{m.name}</span>
+                              {m.company && <span className="text-[#2A1F0E]/70"> — {m.company}</span>}
+                              <span className="block text-xs text-[#2A1F0E]/60">
+                                {state.valid ? "Rules already signed — two quick questions" : "The rules need reading again"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
-                <div className="flex items-center justify-between pt-2">
+                <div className="pt-2">
                   <Button type="button" variant="ghost" onClick={() => setStep("home")}>
                     <ArrowLeft className="w-4 h-4 mr-1" /> Cancel
-                  </Button>
-                  <Button type="button" variant="outline" className="min-h-12" onClick={() => choose(null)}>
-                    This is my first visit
                   </Button>
                 </div>
               </>
@@ -635,8 +666,8 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                     value={health.symptoms}
                     onChange={v => setHealth(h => ({ ...h, symptoms: v }))}
                     options={[
-                      { key: "pass", label: symptomsQ?.labels?.pass ?? "Yes — none of these", tone: "good" },
-                      { key: "fail", label: symptomsQ?.labels?.fail ?? "No — I have one of these", tone: "bad" },
+                      { key: "pass", label: symptomsQ?.labels?.pass ?? "No, I have none of these", tone: "good" },
+                      { key: "fail", label: symptomsQ?.labels?.fail ?? "Yes, I have at least one of these", tone: "bad" },
                     ]}
                   />
                 </div>
@@ -653,13 +684,13 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                       onChange={v => setHealth(h => ({ ...h, wounds: v }))}
                       options={[
                         { key: "na", label: woundsQ?.labels?.na ?? "No cuts or grazes", tone: "good" },
-                        { key: "pass", label: woundsQ?.labels?.pass ?? "Yes — covered", tone: "good" },
-                        { key: "fail", label: woundsQ?.labels?.fail ?? "No — not covered", tone: "bad" },
+                        { key: "pass", label: woundsQ?.labels?.pass ?? "Yes, and it is covered", tone: "good" },
+                        { key: "fail", label: woundsQ?.labels?.fail ?? "Yes, and it is not covered", tone: "bad" },
                       ]}
                     />
                     {health.wounds === "fail" && (
                       <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                        Please ask for a dressing. Once the cut is covered, choose "{woundsQ?.labels?.pass ?? "Yes — covered"}".
+                        Please ask for a dressing. Once the cut is covered, choose "{woundsQ?.labels?.pass ?? "Yes, and it is covered"}".
                       </p>
                     )}
                   </div>

@@ -506,7 +506,7 @@ if __name__ == "__main__":
     # Made fillable at v2 by 20260901000016.
     s905 = load_schema("sop-drafts/FRM-905-visitor-signin-schema.json")
     meta905 = {"form_no": "FRM-905", "title": "Visitor Sign-In Log",
-               "revision": "v4", "eff": "2026-10-01", "appr": "GJM",
+               "revision": "v5", "eff": "2026-10-01", "appr": "GJM",
                "sqf": "11.3.4", "footer": FOOT.format(no="FRM-905")}
     b905 = blocks_from_schema(s905)
     build_pdf("sop-drafts/FRM-905-blank.pdf", meta905, b905)
