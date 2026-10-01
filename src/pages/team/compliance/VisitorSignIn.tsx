@@ -155,10 +155,23 @@ function KioskExit() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={exit} className="space-y-3">
+            {/* Deliberately NOT type="password". A password field makes the browser offer every
+                saved login for this site - including this account's - to whoever is holding the
+                tablet, which hands a visitor the very thing this dialog asks for. Chrome ignores
+                autocomplete="off" on password fields, so the field is plain text, masked with
+                text-security, and carries the opt-out hints the common password managers honour. */}
             <Input
-              type="password"
+              type="text"
+              name="kiosk-exit-code"
               aria-label="Account password"
-              autoComplete="current-password"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
+              style={{ WebkitTextSecurity: "disc" } as React.CSSProperties}
               autoFocus
               value={password}
               onChange={e => setPassword(e.target.value)}
