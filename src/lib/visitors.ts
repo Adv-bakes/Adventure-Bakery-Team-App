@@ -35,6 +35,13 @@ export const ACK_VALID_MONTHS = 12;
 export const ROUTE_BRIEFED = "Briefed — FRM-906 completed and signed";
 export const ROUTE_REFUSED = "Entry refused";
 
+/**
+ * What FRM-905's required `host` holds for somebody who walked in unannounced — a cold caller
+ * knows nobody here and recognises none of the names. Recorded as a plain statement of that,
+ * rather than making them pick a name at random, which would put a false host on the record.
+ */
+export const HOST_UNKNOWN = "Not known — no appointment";
+
 /** One submitted FRM-906 entry, reduced to what a lookup needs (never the signature image). */
 export interface AckRecord {
   id: string;
