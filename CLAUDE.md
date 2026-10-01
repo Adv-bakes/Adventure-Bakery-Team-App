@@ -1013,6 +1013,10 @@ with a CHECK, so the role was a constraint change. Adding a role touches a list 
 - **A declared symptom is a refusal** (11.3.4.3): the visit is still recorded, with route
   `Entry refused`, a note, and time out = time in. An uncovered cut is not a refusal — the page holds
   the visitor at that question until it is dressed.
+- **Signing the TABLET out** (not a visitor): the kiosk home screen has a small "Staff: sign this tablet
+  out" link (`KioskExit`). It asks for the account's password first — verified by signing in again
+  as the same account — because a one-tap sign-out would let any visitor leave the tablet on the
+  login page. The kiosk has no portal and no account menu, so this is the only way out.
 - **Sign-out** is from the on-site list on the home screen (owner's choice: the list is shown on the
   kiosk). The button arms on the first tap and signs out on the second, since it cannot be undone.
 - **Drawn signatures (`SignatureField.capture: "drawn"`)** are a generic form feature built for this:

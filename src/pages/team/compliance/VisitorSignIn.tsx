@@ -27,6 +27,8 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, DoorOpen, Loader2, LogOut, Sear
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -104,6 +106,74 @@ function Choice({ value, onChange, options }: {
         );
       })}
     </div>
+  );
+}
+
+/**
+ * The way out of the kiosk, for staff. The kiosk screen has no portal around it and so no account
+ * menu; without this the only way to sign the tablet out was to clear the browser's site data.
+ *
+ * It asks for the account's password first. The tablet sits where visitors can reach it, and a
+ * one-tap sign-out would let anybody leave it on the login page with nobody able to sign in.
+ * The password is checked by signing in again as the same account, which changes nothing if it
+ * is right and leaves the session alone if it is wrong.
+ */
+function KioskExit() {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const exit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error("This tablet is not signed in.");
+      const { error } = await supabase.auth.signInWithPassword({ email: user.email, password });
+      if (error) throw new Error("That is not this account's password.");
+      await supabase.auth.signOut();
+      window.location.replace("/team");
+    } catch (err) {
+      toast.error(messageOf(err, "Could not sign out"));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="pt-6 text-center">
+        <button type="button" className="text-xs tp-on-bg-dim underline underline-offset-2" onClick={() => { setPassword(""); setOpen(true); }}>
+          Staff: sign this tablet out
+        </button>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sign this tablet out</DialogTitle>
+            <DialogDescription>
+              Visitors cannot sign in until somebody signs the tablet back in. Enter this account's password to continue.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={exit} className="space-y-3">
+            <Input
+              type="password"
+              aria-label="Account password"
+              autoComplete="current-password"
+              autoFocus
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+            />
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+              <Button type="submit" disabled={!password || busy}>
+                {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Sign out
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -379,6 +449,8 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
               )}
             </CardContent>
           </Card>
+
+          {kiosk && <KioskExit />}
         </>
       )}
 
