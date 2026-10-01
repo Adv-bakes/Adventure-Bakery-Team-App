@@ -20,6 +20,21 @@ def load_schema(path):
 
 
 # -------- turn a schema (+ overrides) into an ordered list of layout blocks --------
+def pf_options(f):
+    """The printed choices of a pass_fail field.
+
+    A form may word its own answers - FRM-905 asks "Do you have any of the following symptoms
+    today?" and offers "No, I have none of these" / "Yes, I have at least one of these". Printing
+    the generic Pass / Fail beside a question is not an answer to it, so the field's own labels are
+    used when it has any, one per line. Returns (labels, custom).
+    """
+    labels = f.get("labels") or {}
+    opts = [labels.get("pass", "Pass"), labels.get("fail", "Fail")]
+    if f.get("naAllowed") or ("na" in labels and f.get("naAllowed") is not False):
+        opts.append(labels.get("na", "N/A"))
+    return opts, bool(labels)
+
+
 def blocks_from_schema(schema, completion_as_log=None):
     """completion_as_log: optional dict {section_id: log_columns} to replace a single-entry
     section with a multi-row log table (for periodic forms)."""
@@ -36,7 +51,10 @@ def blocks_from_schema(schema, completion_as_log=None):
             if t == "info":
                 blocks.append({"k": "info", "text": f.get("text", "")}); i += 1
             elif t == "reference_table":
-                blocks.append({"k": "reftable", "columns": f["columns"], "rows": f["rows"]}); i += 1
+                # A leading "#" column holds a row number; at an equal share it takes half the page.
+                numbered = len(f["columns"]) == 2 and f["columns"][0].strip() == "#"
+                blocks.append({"k": "reftable", "columns": f["columns"], "rows": f["rows"],
+                               **({"weights": [1, 14]} if numbered else {})}); i += 1
             elif t == "grid":
                 blocks.append({"k": "grid", "field": f}); i += 1
             elif t == "signature":
@@ -171,10 +189,13 @@ def build_pdf(out, meta, blocks, landscape_page=False):
                     ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8)]))
             E.append(t); E.append(Spacer(1, 4))
         elif k == "passfail":
-            f = b["field"]; na = f.get("naAllowed")
-            pf = f'Pass {box}&nbsp;&nbsp;&nbsp;Fail {box}' + (f'&nbsp;&nbsp;&nbsp;N/A {box}' if na else "")
-            t = Table([[P(f["label"], cellb), Paragraph(pf, ParagraphStyle("pf", parent=cell, fontSize=10))]],
-                      colWidths=[W * 0.62, W * 0.38])
+            f = b["field"]; opts, custom = pf_options(f)
+            if custom:
+                pf = "<br/>".join(f'{box}&nbsp;&nbsp;{o.replace("&", "&amp;")}' for o in opts)
+            else:
+                pf = "&nbsp;&nbsp;&nbsp;".join(f'{o} {box}' for o in opts)
+            t = Table([[P(f["label"], cellb), Paragraph(pf, ParagraphStyle("pf", parent=cell, fontSize=10, leading=15))]],
+                      colWidths=[W * 0.56, W * 0.44] if custom else [W * 0.62, W * 0.38])
             t.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.5, colors.black), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("BACKGROUND", (0, 0), (0, 0), CREAM), ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8)]))
             E.append(t); E.append(Spacer(1, 4))
@@ -346,8 +367,14 @@ def build_docx(out, meta, blocks, landscape_page=False):
         elif k == "passfail":
             f = b["field"]; t = d.add_table(rows=1, cols=2); t.style = "Table Grid"; widths(t, [4.5, 2.8])
             para(t.cell(0, 0), f["label"], bold=True); shade(t.cell(0, 0), CREAM_HEX)
-            p = t.cell(0, 1).paragraphs[0]; p.add_run("Pass "); checkbox_run(p); p.add_run("    Fail "); checkbox_run(p)
-            if f.get("naAllowed"): p.add_run("    N/A "); checkbox_run(p)
+            opts, custom = pf_options(f)
+            p = t.cell(0, 1).paragraphs[0]
+            for oi, o in enumerate(opts):
+                if custom:
+                    if oi: p = t.cell(0, 1).add_paragraph()
+                    checkbox_run(p); p.add_run("  " + o)
+                else:
+                    p.add_run(("    " if oi else "") + o + " "); checkbox_run(p)
             d.add_paragraph()
         elif k == "sig":
             f = b["field"]; t = d.add_table(rows=1, cols=4); t.style = "Table Grid"; widths(t, [1.9, 2.9, 0.7, 1.8])
