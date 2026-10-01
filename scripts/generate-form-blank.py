@@ -501,12 +501,12 @@ if __name__ == "__main__":
     # reference table, which is the whole point of it - a signed acknowledgement that does not show
     # what was acknowledged is weak evidence.
     #
-    # Both rev v3, effective 2026-10-01 (20261001000002): FRM-906 is signed on the first visit and
+    # Both rev v4, effective 2026-10-01 (20261001000002, ...06): FRM-906 is signed on the first visit and
     # is valid twelve months; the health declaration moved to FRM-905, which is filled every visit.
     # Made fillable at v2 by 20260901000016.
     s905 = load_schema("sop-drafts/FRM-905-visitor-signin-schema.json")
     meta905 = {"form_no": "FRM-905", "title": "Visitor Sign-In Log",
-               "revision": "v3", "eff": "2026-10-01", "appr": "GJM",
+               "revision": "v4", "eff": "2026-10-01", "appr": "GJM",
                "sqf": "11.3.4", "footer": FOOT.format(no="FRM-905")}
     b905 = blocks_from_schema(s905)
     build_pdf("sop-drafts/FRM-905-blank.pdf", meta905, b905)
@@ -514,7 +514,7 @@ if __name__ == "__main__":
 
     s906 = load_schema("sop-drafts/FRM-906-visitor-gmp-acknowledgement-schema.json")
     meta906 = {"form_no": "FRM-906", "title": "Visitor GMP Acknowledgement",
-               "revision": "v3", "eff": "2026-10-01", "appr": "GJM",
+               "revision": "v4", "eff": "2026-10-01", "appr": "GJM",
                "sqf": "11.3.4", "footer": FOOT.format(no="FRM-906")}
     b906 = blocks_from_schema(s906)
     build_pdf("sop-drafts/FRM-906-blank.pdf", meta906, b906)

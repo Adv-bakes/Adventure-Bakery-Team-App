@@ -63,6 +63,7 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
         role === "owner" || role === "admin" ? "/team/dashboard" :
         role === "staff" ? "/team/operations-hub" :
         role === "auditor" ? "/team/compliance/sops" :
+        role === "kiosk" ? "/team/visitor-kiosk" :
         "/brand-portal"
       );
       window.location.replace(fallback);

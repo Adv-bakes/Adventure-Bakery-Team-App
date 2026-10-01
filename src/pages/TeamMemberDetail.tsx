@@ -23,6 +23,7 @@ const ROLE_OPTIONS: { value: AppRole; label: string; hint: string; ownerGrantOnl
   { value: "staff", label: "Staff", hint: "Fill forms, take training" },
   { value: "auditor", label: "Auditor", hint: "Read-only compliance access (SQF contractor)" },
   { value: "user", label: "Client", hint: "Brand portal only" },
+  { value: "kiosk", label: "Visitor kiosk", hint: "Entrance tablet: the visitor sign-in screen only" },
 ];
 
 interface StaffProfile {

@@ -122,14 +122,7 @@
           "type": "signature",
           "capture": "drawn",
           "label": "Visitor",
-          "width": "half",
-          "required": true
-        },
-        {
-          "id": "briefed_by",
-          "type": "signature",
-          "label": "Briefed by (host)",
-          "width": "half",
+          "width": "full",
           "required": true
         },
         {

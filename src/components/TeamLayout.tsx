@@ -168,7 +168,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
   if (!user) return null;
 
   const ROLE_LABEL: Record<string, string> = {
-    owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor", user: "Client",
+    owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor", user: "Client", kiosk: "Visitor kiosk",
   };
   const displayName = fullName || user.email || "Signed in";
   const initials = (fullName

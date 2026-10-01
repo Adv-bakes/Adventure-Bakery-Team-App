@@ -478,6 +478,13 @@ const App = () => (
           } />
           {/* Visitor sign-in writes FRM-905 / FRM-906 entries, so it is for the people who can
               fill forms; the auditor reads the resulting entries in Form Records. */}
+          {/* The entrance tablet. Outside TeamLayout on purpose: the kiosk account has no portal,
+              and a visitor holding the tablet should see nothing but the sign-in screen. */}
+          <Route path="/team/visitor-kiosk" element={
+            <ProtectedRoute allowedRoles={["kiosk", "admin", "staff", "owner"]}>
+              <VisitorSignIn kiosk />
+            </ProtectedRoute>
+          } />
           <Route path="/team/compliance/visitors" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><VisitorSignIn /></TeamLayout>

@@ -10,7 +10,7 @@ import {
   type AiCellDraft, type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
 import type { GuideDoc } from "@/lib/auditGuide";
-import type { AckRecord } from "@/lib/visitors";
+import { VISITOR_FORMS, isVisitorKioskSchema, type AckRecord } from "@/lib/visitors";
 
 export type ResponseStatus = "draft" | "submitted";
 
@@ -152,57 +152,17 @@ export async function createResponse(doc: {
 }
 
 // ---------- Visitor sign-in (FRM-905 / FRM-906) — see src/lib/visitors.ts ----------
+//
+// Everything here goes through SECURITY DEFINER functions (migration 20261001000005) rather than
+// the tables. The entrance tablet runs as a `kiosk` account that no RLS policy admits, so the
+// functions are the only thing it can reach; staff use the same ones from the portal page, which
+// keeps it to one path.
 
-/**
- * Insert an entry that is submitted from the moment it exists. The visitor sign-in page collects
- * everything first and writes once, so there is never a draft holding a visitor's signature that
- * the host could still edit. The caller validates `data` with buildZodSchema first.
- */
-export async function createSubmittedResponse(doc: {
+export interface VisitorFormDoc {
   id: string;
-  sop_number: string | null;
+  sop_number: string;
   revision: string | null;
-}, data: Record<string, any>): Promise<FormResponse> {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth?.user?.id;
-  if (!userId) throw new Error("Not signed in");
-  const { data: row, error } = await table()
-    .insert({
-      document_id: doc.id,
-      form_number: doc.sop_number,
-      form_revision: doc.revision,
-      data,
-      status: "submitted",
-      created_by: userId,
-      submitted_by: userId,
-      submitted_at: new Date().toISOString(),
-    })
-    .select("*")
-    .single();
-  if (error) throw error;
-  return row as FormResponse;
-}
-
-/**
- * Every submitted FRM-906 acknowledgement, reduced to what a returning-visitor lookup needs.
- * Selected by JSON path, so the drawn signature images never leave the database.
- */
-export async function fetchVisitorIndex(ackDocId: string): Promise<AckRecord[]> {
-  const { data, error } = await table()
-    .select("id, form_revision, ack_date:data->>ack_date, name:data->>visitor_name, company:data->>company, phone:data->>phone")
-    .eq("document_id", ackDocId)
-    .eq("status", "submitted")
-    .order("submitted_at", { ascending: false })
-    .limit(1000);
-  if (error) throw error;
-  return (data ?? []).map((r: any) => ({
-    id: r.id,
-    formRevision: r.form_revision ?? null,
-    ackDate: r.ack_date ?? "",
-    name: r.name ?? "",
-    company: r.company ?? "",
-    phone: r.phone ?? "",
-  }));
+  schema: FormSchema;
 }
 
 export interface VisitorOnSite {
@@ -214,27 +174,75 @@ export interface VisitorOnSite {
   timeIn: string;
 }
 
-/** Visitors signed in since `sinceDate` (yyyy-MM-dd) with no time out yet, newest first. */
-export async function fetchVisitorsOnSite(signInDocId: string, sinceDate: string): Promise<VisitorOnSite[]> {
-  const { data, error } = await table()
-    .select("id, name:data->>visitor_name, company:data->>company, host:data->>host, visit_date:data->>visit_date, time_in:data->>time_in, time_out:data->>time_out")
-    .eq("document_id", signInDocId)
-    .eq("status", "submitted")
-    .gte("data->>visit_date", sinceDate)
-    .order("created_at", { ascending: false })
-    .limit(200);
+export interface VisitorDesk {
+  /** Null when either form is missing, inactive, or not yet at a revision the page can write. */
+  forms: { signIn: VisitorFormDoc; ack: VisitorFormDoc } | null;
+  /** Team members' names, for "who are you here to see?". */
+  staff: string[];
+  onSite: VisitorOnSite[];
+}
+
+const rpc = (name: string, args?: Record<string, unknown>) => (supabase as any).rpc(name, args);
+
+/** The two visitor forms, the team's names, and who is on site now. */
+export async function loadVisitorDesk(): Promise<VisitorDesk> {
+  const { data, error } = await rpc("visitor_desk_context");
   if (error) throw error;
-  return (data ?? [])
-    .filter((r: any) => !String(r.time_out ?? "").trim())
-    .map((r: any) => ({
+  const form = (num: string): VisitorFormDoc | null => {
+    const row = data?.forms?.[num];
+    const schema = row ? getFormSchema({ form_schema: row.form_schema }) : null;
+    return row && schema && isVisitorKioskSchema(schema)
+      ? { id: row.id, sop_number: row.sop_number, revision: row.revision ?? null, schema }
+      : null;
+  };
+  const signIn = form(VISITOR_FORMS.signIn);
+  const ack = form(VISITOR_FORMS.acknowledgement);
+  return {
+    forms: signIn && ack ? { signIn, ack } : null,
+    staff: Array.isArray(data?.staff) ? data.staff : [],
+    onSite: (Array.isArray(data?.on_site) ? data.on_site : []).map((r: any) => ({
       id: r.id, name: r.name ?? "", company: r.company ?? "", host: r.host ?? "",
       visitDate: r.visit_date ?? "", timeIn: r.time_in ?? "",
-    }));
+    })),
+  };
+}
+
+/**
+ * Acknowledgements that could belong to whoever typed `query`. The server narrows (and refuses a
+ * query too short to identify anybody); findVisitorMatches does the exact matching on the result.
+ */
+export async function lookupVisitors(query: string): Promise<AckRecord[]> {
+  const { data, error } = await rpc("visitor_lookup", { _query: query });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    formRevision: r.form_revision ?? null,
+    ackDate: r.ack_date ?? "",
+    name: r.name ?? "",
+    company: r.company ?? "",
+    phone: r.phone ?? "",
+  }));
+}
+
+/**
+ * Write one visit: the FRM-906 acknowledgement when `ack` is given, and the FRM-905 entry, in a
+ * single transaction and already submitted. The revisions are the ones the screen was showing —
+ * the server refuses if either form has been revised since.
+ */
+export async function visitorSignIn(
+  visit: Record<string, any>,
+  ack: Record<string, any> | null,
+  revisions: { signIn: string | null; ack: string | null },
+): Promise<void> {
+  const { error } = await rpc("visitor_sign_in", {
+    _visit: visit, _ack: ack, _revision_905: revisions.signIn, _revision_906: revisions.ack,
+  });
+  if (error) throw error;
 }
 
 /** Stamp the time out (HH:MM) on a submitted FRM-905 entry — see the sign_out_visitor RPC. */
 export async function signOutVisitor(responseId: string, timeOut: string): Promise<void> {
-  const { error } = await (supabase as any).rpc("sign_out_visitor", { _response_id: responseId, _time_out: timeOut });
+  const { error } = await rpc("sign_out_visitor", { _response_id: responseId, _time_out: timeOut });
   if (error) throw error;
 }
 

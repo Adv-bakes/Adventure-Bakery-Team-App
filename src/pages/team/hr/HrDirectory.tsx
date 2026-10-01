@@ -16,9 +16,9 @@ import { UserSquare2, Search, ChevronRight, UserPlus, Copy, Check, Clock, Ban, M
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
 import { DEPARTMENTS } from "@/lib/training";
 
-const TEAM_ROLES: AppRole[] = ["owner", "admin", "staff", "auditor"];
+const TEAM_ROLES: AppRole[] = ["owner", "admin", "staff", "auditor", "kiosk"];
 const ROLE_LABEL: Record<string, string> = {
-  owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor", user: "Client",
+  owner: "Owner", admin: "Admin", staff: "Staff", auditor: "Auditor", user: "Client", kiosk: "Visitor kiosk",
 };
 const NO_DEPT = "__none__";
 
@@ -72,7 +72,7 @@ export default function HrDirectory() {
   const [copied, setCopied] = useState(false);
 
   // Owner can invite any role; admin can invite staff/auditor only (matches RLS).
-  const inviteRoleOptions: AppRole[] = isOwner ? ["owner", "admin", "staff", "auditor"] : ["staff", "auditor"];
+  const inviteRoleOptions: AppRole[] = isOwner ? ["owner", "admin", "staff", "auditor", "kiosk"] : ["staff", "auditor", "kiosk"];
 
   const resetInvite = () => {
     setInviteEmail(""); setInviteRole("staff"); setInviteDept(NO_DEPT);
