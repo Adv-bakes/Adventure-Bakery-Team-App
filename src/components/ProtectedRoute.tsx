@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole, AppRole } from "@/hooks/useUserRole";
+import { VISITOR_KIOSK_PATH } from "@/lib/visitors";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -52,6 +53,14 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
     if (!authed) {
       // Determine which login page based on the current path
       const isTeamRoute = window.location.pathname.startsWith("/team");
+      // The visitor kiosk is never a place to come back to. Signing the tablet out fires this
+      // redirect (it runs after the kiosk's own), and a "return to the kiosk" parameter then sent
+      // whoever signed in next - a member of staff - straight back to the kiosk screen. The kiosk
+      // account lands there anyway, by its role.
+      if (window.location.pathname === VISITOR_KIOSK_PATH) {
+        window.location.replace("/team");
+        return;
+      }
       const redirect = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.replace(`${isTeamRoute ? "/team" : "/brand"}?redirect=${redirect}`);
       return;
