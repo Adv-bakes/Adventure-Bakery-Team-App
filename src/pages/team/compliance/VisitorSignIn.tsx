@@ -666,8 +666,8 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                     value={health.symptoms}
                     onChange={v => setHealth(h => ({ ...h, symptoms: v }))}
                     options={[
-                      { key: "pass", label: symptomsQ?.labels?.pass ?? "Yes — none of these", tone: "good" },
-                      { key: "fail", label: symptomsQ?.labels?.fail ?? "No — I have one of these", tone: "bad" },
+                      { key: "pass", label: symptomsQ?.labels?.pass ?? "No, I have none of these", tone: "good" },
+                      { key: "fail", label: symptomsQ?.labels?.fail ?? "Yes, I have at least one of these", tone: "bad" },
                     ]}
                   />
                 </div>
@@ -684,13 +684,13 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                       onChange={v => setHealth(h => ({ ...h, wounds: v }))}
                       options={[
                         { key: "na", label: woundsQ?.labels?.na ?? "No cuts or grazes", tone: "good" },
-                        { key: "pass", label: woundsQ?.labels?.pass ?? "Yes — covered", tone: "good" },
-                        { key: "fail", label: woundsQ?.labels?.fail ?? "No — not covered", tone: "bad" },
+                        { key: "pass", label: woundsQ?.labels?.pass ?? "Yes, and it is covered", tone: "good" },
+                        { key: "fail", label: woundsQ?.labels?.fail ?? "Yes, and it is not covered", tone: "bad" },
                       ]}
                     />
                     {health.wounds === "fail" && (
                       <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                        Please ask for a dressing. Once the cut is covered, choose "{woundsQ?.labels?.pass ?? "Yes — covered"}".
+                        Please ask for a dressing. Once the cut is covered, choose "{woundsQ?.labels?.pass ?? "Yes, and it is covered"}".
                       </p>
                     )}
                   </div>
