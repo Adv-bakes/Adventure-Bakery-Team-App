@@ -23,7 +23,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, CheckCircle2, DoorOpen, Loader2, LogOut, Search, UserPlus } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, DoorOpen, Loader2, LogOut, Search, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +59,8 @@ const BLANK: VisitAnswers = {
 
 // How long the "you are signed in" screen stays before the tablet is ready for the next person.
 const DONE_MS = 8000;
+// How long a sign-out button stays armed before it stands down.
+const ARMED_MS = 10000;
 
 // Supabase errors are plain objects with a message, not Error instances.
 const messageOf = (e: unknown, fallback: string) => (e as { message?: string } | null)?.message ?? fallback;
@@ -242,6 +244,14 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
     }, 300);
     return () => clearTimeout(timer);
   }, [query, step]);
+
+  // An armed "Tap again to confirm" must not wait for the next person to walk up: one stray tap
+  // would then sign somebody else out. It stands down by itself.
+  useEffect(() => {
+    if (!armed) return;
+    const timer = setTimeout(() => setArmed(null), ARMED_MS);
+    return () => clearTimeout(timer);
+  }, [armed]);
 
   // After a sign-in the tablet returns to the start by itself, ready for the next visitor.
   useEffect(() => {
@@ -444,18 +454,32 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                           {v.host === HOST_UNKNOWN ? " · no appointment" : v.host ? ` · seeing ${v.host}` : ""}
                         </p>
                       </div>
-                      <Button
-                        type="button"
-                        variant={armed === v.id ? "destructive" : "outline"}
-                        className="min-h-11 shrink-0"
-                        disabled={signingOut === v.id}
-                        onClick={() => signOut(v)}
-                      >
-                        {signingOut === v.id
-                          ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                          : <LogOut className="w-4 h-4 mr-1" />}
-                        {armed === v.id ? "Tap again to confirm" : "Sign out"}
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          type="button"
+                          variant={armed === v.id ? "destructive" : "outline"}
+                          className="min-h-11"
+                          disabled={signingOut === v.id}
+                          onClick={() => signOut(v)}
+                        >
+                          {signingOut === v.id
+                            ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            : <LogOut className="w-4 h-4 mr-1" />}
+                          {armed === v.id ? "Tap again to confirm" : "Sign out"}
+                        </Button>
+                        {/* The way back from a wrong tap: the wrong person, or not leaving after all. */}
+                        {armed === v.id && signingOut !== v.id && (
+                          <button
+                            type="button"
+                            aria-label="Cancel sign out"
+                            title="Cancel"
+                            onClick={() => setArmed(null)}
+                            className="h-11 w-9 inline-flex items-center justify-center rounded-md text-[#2A1F0E]/45 hover:text-[#2A1F0E] hover:bg-[#2A1F0E]/5"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
