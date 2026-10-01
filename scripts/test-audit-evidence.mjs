@@ -15,7 +15,7 @@ const out = mkdtempSync(join(tmpdir(), "auditevidence-"));
 const file = join(out, "shared.mjs");
 execFileSync("npx", ["esbuild", "supabase/functions/_shared/auditEvidence.ts", "--bundle", "--format=esm", `--outfile=${file}`],
   { stdio: ["ignore", "ignore", "inherit"], shell: true });
-const { clauseIdOf, relatedToClause, flattenEntry, entryHasFail, summariseForm, auditWindow } =
+const { clauseIdOf, relatedToClause, flattenEntry, entryHasFail, summariseForm, auditWindow, assembleEvidence } =
   await import("file://" + file.replace(/\\/g, "/"));
 
 let failures = 0;
@@ -87,6 +87,26 @@ check("empty form", summariseForm([], "2025-10-01", "2026-09-30"), { submitted: 
 // auditWindow
 check("window", auditWindow("2026-09-30"), { from: "2025-10-01", to: "2026-09-30" });
 check("leap window", auditWindow("2028-02-29"), { from: "2027-03-02", to: "2028-02-29" });
+
+// assembleEvidence - one line per requirement, in order, whatever the model returns
+const W = { from: "2025-10-01", to: "2026-09-30" };
+const ids = ["2.1.1.1", "2.1.1.2", "2.1.1.3"];
+const cov = { "2.1.1.1": ["FSQM-002"], "2.1.1.2": [], "2.1.1.3": ["FSQM-004"] };
+const ev = assembleEvidence(W, ids, [
+  { clause: "2.1.1.3", text: "FSQM-004 sets out the structure." },
+  { clause: "2.1.1.1", text: "2.1.1.1: FSQM-002 is the  policy statement." },
+  { clause: "9.9.9", text: "invented" },
+], cov);
+check("assemble: header + every requirement in Code order", ev.split("\n"), [
+  "Records reviewed (2025-10-01 to 2026-09-30):",
+  "2.1.1.1: FSQM-002 is the policy statement.",
+  "2.1.1.2: No site document or record references this requirement.",
+  "2.1.1.3: FSQM-004 sets out the structure.",
+]);
+check("assemble: skipped but referenced requirement is flagged, not dropped",
+  assembleEvidence(W, ["2.1.1.1"], [], cov).split("\n")[1],
+  "2.1.1.1: Referenced by FSQM-002 - no summary was drafted; review these directly.");
+check("assemble: non-array model output", assembleEvidence(W, ["2.1.1.2"], null, cov).split("\n").length, 2);
 
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1); }

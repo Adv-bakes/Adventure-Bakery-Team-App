@@ -147,6 +147,37 @@ export function summariseForm(entries: EntryLite[], from: string, to: string): F
   };
 }
 
+/**
+ * The draft, one line per numbered requirement, in the Code's order. EXHAUSTIVE BY CONSTRUCTION:
+ * the model is asked for a line per requirement, but whatever it skips is written here instead -
+ * "no site document or record references it" when nothing is tagged to the requirement, so a gap
+ * shows as a gap rather than silently dropping out of the evidence (the first cut summarised the
+ * clause as a whole and left 2.1.1.1's policy statement out entirely).
+ */
+export function assembleEvidence(
+  window: { from: string; to: string },
+  requirementIds: string[],
+  modelLines: unknown,
+  coverage: Record<string, string[]>,
+  maxLine = 450,
+): string {
+  const given = new Map<string, string>();
+  for (const l of Array.isArray(modelLines) ? modelLines : []) {
+    const id = typeof (l as any)?.clause === "string" ? clauseIdOf((l as any).clause) : null;
+    const text = typeof (l as any)?.text === "string" ? (l as any).text.replace(/\s+/g, " ").trim() : "";
+    if (id && text && !given.has(id)) given.set(id, text.replace(new RegExp(`^${id.replace(/\./g, "\\.")}\\s*[:\\-]\\s*`), ""));
+  }
+  const lines = requirementIds.map(id => {
+    const docs = coverage[id] ?? [];
+    const text = given.get(id)
+      ?? (docs.length
+        ? `Referenced by ${docs.join(", ")} - no summary was drafted; review these directly.`
+        : "No site document or record references this requirement.");
+    return `${id}: ${clip(text, maxLine)}`;
+  });
+  return [`Records reviewed (${window.from} to ${window.to}):`, ...lines].join("\n");
+}
+
 /** The window: the twelve months up to and including `asOf` (yyyy-MM-dd). */
 export function auditWindow(asOf: string): { from: string; to: string } {
   const to = /^\d{4}-\d{2}-\d{2}$/.test(asOf) ? asOf : new Date().toISOString().slice(0, 10);
