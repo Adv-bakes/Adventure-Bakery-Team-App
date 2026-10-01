@@ -166,8 +166,29 @@ export interface SignatureField extends FieldBase {
   type: "signature";
   role?: "filler" | "verifier"; // verifier: only admin/owner can sign
   statement?: string;           // e.g. "I certify the above is accurate"
+  /**
+   * "drawn": signed by somebody who has NO account — a visitor on FRM-905 / FRM-906. They type
+   * their name and draw their signature with a finger, stylus or mouse; the logged-in user is
+   * recorded as the witness, never as the signer. Without it a visitor's line was stamped with
+   * whichever member of staff held the tablet, which is a record of the wrong person.
+   */
+  capture?: "drawn";
 }
-export interface SignatureValue { user_id: string; name: string; signed_at: string; }
+/**
+ * A stamp carries the signer's `user_id`. A drawn signature carries `user_id: null`, the drawing
+ * as a PNG data URL in `image`, and the logged-in user who handed over the device in
+ * `witnessed_by`.
+ */
+export interface SignatureValue {
+  user_id: string | null;
+  name: string;
+  signed_at: string;
+  image?: string;
+  witnessed_by?: string;
+}
+
+/** A drawn signature is only ever a PNG data URL — anything else is not rendered or printed. */
+export const SIGNATURE_IMAGE_RE = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/;
 
 export interface HeadingField extends FieldBase { type: "heading"; }
 export interface InfoField    extends FieldBase { type: "info"; text: string; }
@@ -1242,9 +1263,19 @@ function scalarZod(field: FormField): z.ZodTypeAny {
         : base;
     }
     case "signature": {
-      const sig = z.object({ user_id: z.string(), name: z.string(), signed_at: z.string() });
+      // image / witnessed_by are named so a non-passthrough object does not strip them at submit.
+      const sig = z.object({
+        user_id: z.string().nullable(),
+        name: z.string(),
+        signed_at: z.string(),
+        image: z.string().regex(SIGNATURE_IMAGE_RE).optional(),
+        witnessed_by: z.string().optional(),
+      });
+      const drawn = (field as SignatureField).capture === "drawn";
       return field.required
-        ? sig.nullable().refine(v => !!v, { message: `${field.label} must be signed` })
+        ? sig.nullable().refine(v => !!v?.name?.trim() && (!drawn || !!v.image), {
+            message: `${field.label} must be signed`,
+          })
         : sig.nullable().optional();
     }
     case "select": {

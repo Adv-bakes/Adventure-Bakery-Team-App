@@ -16,6 +16,8 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createResponse } from "@/lib/formResponses";
+import { getFormSchema } from "@/lib/formSchema";
+import { VISITOR_SIGN_IN_PATH, isVisitorFlowSchema, isVisitorForm } from "@/lib/visitors";
 
 export default function FormEntryStart() {
   const { docId } = useParams<{ docId: string }>();
@@ -42,6 +44,12 @@ export default function FormEntryStart() {
           .maybeSingle();
         if (error) throw error;
         if (!doc) throw new Error("That form no longer exists.");
+
+        // Visitor entries are written by the sign-in page, never started blank.
+        if (isVisitorForm(doc.sop_number) && isVisitorFlowSchema(getFormSchema(doc.content))) {
+          navigate(VISITOR_SIGN_IN_PATH, { replace: true });
+          return;
+        }
 
         const response = await createResponse(doc as never, undefined, { resumeAnyDraft: true });
         const qs = from ? `?from=${encodeURIComponent(from)}` : "";

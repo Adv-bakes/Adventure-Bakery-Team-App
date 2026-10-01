@@ -10,6 +10,7 @@ import {
   type AiCellDraft, type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
 import type { GuideDoc } from "@/lib/auditGuide";
+import type { AckRecord } from "@/lib/visitors";
 
 export type ResponseStatus = "draft" | "submitted";
 
@@ -148,6 +149,93 @@ export async function createResponse(doc: {
     .single();
   if (error) throw error;
   return data as FormResponse;
+}
+
+// ---------- Visitor sign-in (FRM-905 / FRM-906) — see src/lib/visitors.ts ----------
+
+/**
+ * Insert an entry that is submitted from the moment it exists. The visitor sign-in page collects
+ * everything first and writes once, so there is never a draft holding a visitor's signature that
+ * the host could still edit. The caller validates `data` with buildZodSchema first.
+ */
+export async function createSubmittedResponse(doc: {
+  id: string;
+  sop_number: string | null;
+  revision: string | null;
+}, data: Record<string, any>): Promise<FormResponse> {
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth?.user?.id;
+  if (!userId) throw new Error("Not signed in");
+  const { data: row, error } = await table()
+    .insert({
+      document_id: doc.id,
+      form_number: doc.sop_number,
+      form_revision: doc.revision,
+      data,
+      status: "submitted",
+      created_by: userId,
+      submitted_by: userId,
+      submitted_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return row as FormResponse;
+}
+
+/**
+ * Every submitted FRM-906 acknowledgement, reduced to what a returning-visitor lookup needs.
+ * Selected by JSON path, so the drawn signature images never leave the database.
+ */
+export async function fetchVisitorIndex(ackDocId: string): Promise<AckRecord[]> {
+  const { data, error } = await table()
+    .select("id, form_revision, ack_date:data->>ack_date, name:data->>visitor_name, company:data->>company, phone:data->>phone")
+    .eq("document_id", ackDocId)
+    .eq("status", "submitted")
+    .order("submitted_at", { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    formRevision: r.form_revision ?? null,
+    ackDate: r.ack_date ?? "",
+    name: r.name ?? "",
+    company: r.company ?? "",
+    phone: r.phone ?? "",
+  }));
+}
+
+export interface VisitorOnSite {
+  id: string;
+  name: string;
+  company: string;
+  host: string;
+  visitDate: string;
+  timeIn: string;
+}
+
+/** Visitors signed in since `sinceDate` (yyyy-MM-dd) with no time out yet, newest first. */
+export async function fetchVisitorsOnSite(signInDocId: string, sinceDate: string): Promise<VisitorOnSite[]> {
+  const { data, error } = await table()
+    .select("id, name:data->>visitor_name, company:data->>company, host:data->>host, visit_date:data->>visit_date, time_in:data->>time_in, time_out:data->>time_out")
+    .eq("document_id", signInDocId)
+    .eq("status", "submitted")
+    .gte("data->>visit_date", sinceDate)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? [])
+    .filter((r: any) => !String(r.time_out ?? "").trim())
+    .map((r: any) => ({
+      id: r.id, name: r.name ?? "", company: r.company ?? "", host: r.host ?? "",
+      visitDate: r.visit_date ?? "", timeIn: r.time_in ?? "",
+    }));
+}
+
+/** Stamp the time out (HH:MM) on a submitted FRM-905 entry — see the sign_out_visitor RPC. */
+export async function signOutVisitor(responseId: string, timeOut: string): Promise<void> {
+  const { error } = await (supabase as any).rpc("sign_out_visitor", { _response_id: responseId, _time_out: timeOut });
+  if (error) throw error;
 }
 
 /**

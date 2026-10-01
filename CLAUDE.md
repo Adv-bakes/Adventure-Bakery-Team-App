@@ -835,6 +835,7 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `verificationSchedule.ts` | Due-date maths for the schedule — `nextDue`, `rowState`, `assessDue`, `addFrequency`, `frequencyLabel`, `dedupeKeyFor`, `formLink`/`documentLink`, `retentionLinks`, `FROM_NOTIFICATIONS`. **Byte-identical twin** of `supabase/functions/_shared/verificationSchedule.ts` below the header; edit both and run `scripts/test-verification-schedule.mjs` |
 | `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns), `verifierSignatureFields`/`unsignedVerifierFields` (which verifier lines an entry is still missing — drives the Request-signature action and closes the request); package-label scan helpers `LABEL_FACTS`/`LABEL_FACT_LABELS`, `inferScanFact`/`resolveScanFact`, `scanWantedFacts`, `applyLabelScan`. See "Dynamic Fillable Forms" below |
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse` (optional 2nd arg `prefill` seeds the new entry's `data` over `emptyValues(schema)`; a resumed existing draft is never clobbered — powers the FRM-401 temperature-review launcher), `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
+| `visitors.ts` | Visitor sign-in, pure half: `findVisitorMatches` (phone / last 4 / name), `ackState` (twelve months + current revision), `addMonthsIso`, `buildAckData`/`buildSignInData` (the FRM-906 / FRM-905 entries), `isRefused`, `isVisitorForm`/`isVisitorFlowSchema`. No imports; tested by `scripts/test-visitors.mjs`. See "Visitor Sign-In" |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
 | `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `selectOptionsFromResponses`/`loadSelectOptions` (options for a select linked to another form — see `optionsFrom`), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
 
@@ -962,6 +963,48 @@ withdraw instead. The request lands in that person's feed with the note and a de
   anon. Unresolved; do not tighten piecemeal.
 
 ---
+
+## Visitor Sign-In — `pages/team/compliance/VisitorSignIn.tsx` + `lib/visitors.ts`
+
+`/team/compliance/visitors` (Compliance nav, admin/staff/owner). One short screen on a tablet **the
+host is logged into**, handed to the visitor. It replaces filling FRM-905 and FRM-906 as two generic
+entries at every arrival.
+
+- **FRM-906 (GMP acknowledgement) is signed on the FIRST visit** and stays valid **twelve months,
+  and only at FRM-906's current revision** (`ackState`). **FRM-905 is written at every visit** and
+  records the acknowledgement it relied on (`ack_response_id`, `ack_date`). The health declaration
+  (illness, cuts) lives on FRM-905 because it is a fact about today. FSQM-012 Part 6 (v3) says the same.
+- **Returning visitors look themselves up** by phone, its last four digits, or name
+  (`findVisitorMatches`). Four or more digits are a phone lookup that matches when either number
+  ends with the other, so a visitor who gave only `4471` is found by the full number and vice versa.
+  **Nothing is listed until something is typed** — the visitor list is never shown to somebody who
+  has not said who they are. The index is fetched by JSON path (`fetchVisitorIndex`), so signature
+  images never leave the database; do not use `fetchResponses` for it.
+- **Steps:** lookup → details → health → rules (only when no valid acknowledgement, and never for a
+  refused visitor) → visitor draws signature → host confirms. The wording a visitor reads comes from
+  the two forms' own schemas, so the page cannot drift from the controlled documents.
+- **Nothing is written until the host confirms, and both entries are inserted already submitted**
+  (`createSubmittedResponse`, validated with `buildZodSchema` first). A draft would leave the
+  visitor's signature editable by the host while the visitor is on site. Time out is added later by
+  the **`sign_out_visitor` RPC** (`SECURITY DEFINER`, `is_staff_or_admin`), which writes only
+  `data.time_out`, once — needed because RLS locks submitted rows and a different member of staff
+  may see the visitor out.
+- **A declared symptom is a refusal** (11.3.4.3): the visit is still recorded, with route
+  `Entry refused`, a note, and time out = time in. An uncovered cut is not a refusal — the page holds
+  the visitor at that question until it is dressed.
+- **The four host pass/fails of v2 are one host statement** on the `host_signature` field.
+- **Drawn signatures (`SignatureField.capture: "drawn"`)** are a generic form feature built for this:
+  typed name + `SignaturePad` (pointer events on a canvas — finger, stylus or mouse, no tablet
+  detection). Value is `{ user_id: null, name, signed_at, image (PNG data URL), witnessed_by }`; the
+  logged-in user is the **witness, never the signer**. `scalarZod` names `image`/`witnessed_by`
+  because a plain `z.object` strips unknown keys at submit, and requires the image on a required
+  drawn field. `formatFieldValue` stays name + date, so lists and CSV never carry the image; the
+  entry PDF prints it. `entryHasFail` (audit evidence) skips `data:` strings.
+- **New Entry on FRM-905/906 hands over to this page** (`FormEntriesTab`, `FormEntryStart`), but only
+  when `isVisitorFlowSchema` is true (the visitor signature is drawn). Until the v3 migration has
+  run the forms behave as before and the page says it is not switched on.
+- Migrations `20261001000002` (both forms v2 → v3), `…03` (RPC), `…04` (FSQM-012 v2 → v3).
+  `scripts/test-visitors.mjs` validates what the page builds against the real schemas in `sop-drafts/`.
 
 ## Team Coach chat — `components/team/coach/`
 

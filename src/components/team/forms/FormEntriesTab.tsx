@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { formatFieldValue, getFormSchema, instanceTitle, listFields } from "@/lib/formSchema";
 import { createResponse, fetchProfileNames, fetchResponses, shortUserId, type FormResponse } from "@/lib/formResponses";
 import { useUserRole } from "@/hooks/useUserRole";
+import { VISITOR_SIGN_IN_PATH, isVisitorFlowSchema, isVisitorForm } from "@/lib/visitors";
 
 const statusBadge: Record<string, string> = {
   draft: "bg-[#C89B3C]/20 text-[#9A6F1E] border-[#C89B3C]/40",
@@ -58,7 +59,11 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
     return () => { cancelled = true; };
   }, [doc.id]);
 
+  // FRM-905 / FRM-906 are written by the Visitor Sign-In page (one screen, both records).
+  const visitorFlow = isVisitorForm(doc.sop_number) && isVisitorFlowSchema(schema);
+
   const newEntry = async () => {
+    if (visitorFlow) { navigate(VISITOR_SIGN_IN_PATH); return; }
     setCreating(true);
     try {
       const response = await createResponse(doc);
@@ -110,12 +115,12 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
               size="sm"
               variant="outline"
               onClick={() => photoInputRef.current?.click()}
-              disabled={creating || !schema}
+              disabled={creating || !schema || visitorFlow}
             >
               <Camera className="w-3.5 h-3.5 mr-1" />New from Photo
             </Button>
             <Button type="button" size="sm" onClick={newEntry} disabled={creating || !schema} className="bg-[#C89B3C] hover:bg-[#B8892C]">
-              <Plus className="w-3.5 h-3.5 mr-1" />{creating ? "Creating…" : "New Entry"}
+              <Plus className="w-3.5 h-3.5 mr-1" />{creating ? "Creating…" : visitorFlow ? "Sign in a visitor" : "New Entry"}
             </Button>
           </div>
         )}

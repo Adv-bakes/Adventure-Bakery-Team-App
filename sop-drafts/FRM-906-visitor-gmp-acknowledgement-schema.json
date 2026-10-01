@@ -33,6 +33,14 @@
           "label": "Company / organisation",
           "width": "third",
           "showInList": true
+        },
+        {
+          "id": "phone",
+          "type": "text",
+          "label": "Phone number, or its last four digits (optional)",
+          "width": "third",
+          "maxLength": 30,
+          "help": "Only used so you can find yourself at your next visit."
         }
       ]
     },
@@ -44,7 +52,7 @@
           "id": "rules_intro",
           "type": "info",
           "label": "Please read before entering",
-          "text": "Adventure Bakery makes food. Everything below exists to keep what we make safe for the people who eat it. Read these rules, ask your host if anything is unclear, and sign at the bottom to confirm you have understood them.\n\nThis briefing is what SQF 11.3.4.1 requires before a visitor enters a food handling area. If you have not been briefed, you must be escorted at all times instead."
+          "text": "Adventure Bakery makes food. Everything below exists to keep what we make safe for the people who eat it. Read these rules, ask your host if anything is unclear, and sign at the bottom to confirm you have understood them.\n\nThis briefing is what SQF 11.3.4.1 requires before a visitor enters a food handling area. You sign it on your first visit; it stays valid for twelve months, or until these rules are revised, and you will be asked to read and sign it again after that. If you have not been briefed, you must be escorted at all times instead."
         },
         {
           "id": "rules_table",
@@ -57,7 +65,7 @@
           "rows": [
             [
               "1",
-              "Sign in on FRM-905 before entering any food handling, processing or storage area."
+              "Sign in on FRM-905 at every visit, before entering any food handling, processing or storage area."
             ],
             [
               "2",
@@ -89,45 +97,13 @@
             ],
             [
               "9",
-              "Do not enter if you have any symptom of illness — see the health declaration below."
+              "Do not enter if you have any symptom of illness. You make a health declaration on FRM-905 at every visit."
             ],
             [
               "10",
               "Contractors: agree your work area and its segregation with the SQF Practitioner or Supervisor before starting; account for all tools, parts and materials before and after the work; and if the work introduces glass or brittle plastic, it must be recorded on FRM-907 under SOP-11.7.3."
             ]
           ]
-        }
-      ]
-    },
-    {
-      "id": "health",
-      "title": "Health Declaration",
-      "fields": [
-        {
-          "id": "health_info",
-          "type": "info",
-          "label": "Why we ask",
-          "text": "SQF 11.3.4.3 requires that visitors showing visible signs of illness are not permitted into any area where food is handled or processed. The same rules apply to our own staff."
-        },
-        {
-          "id": "no_symptoms",
-          "type": "pass_fail",
-          "width": "full",
-          "required": true,
-          "label": "I have none of the following today: vomiting, diarrhoea, jaundice, fever with sore throat, discharge from the eyes, ears or nose, or an infected wound, boil or sore"
-        },
-        {
-          "id": "wounds_covered",
-          "type": "pass_fail",
-          "width": "half",
-          "required": true,
-          "label": "Any cut or graze on my hands or exposed skin is covered with the dressing provided"
-        },
-        {
-          "id": "health_notes",
-          "type": "textarea",
-          "label": "Anything the host should know",
-          "width": "full"
         }
       ]
     },
@@ -139,11 +115,12 @@
           "id": "ack_statement",
           "type": "info",
           "label": "Acknowledgement",
-          "text": "I have read and understood the food safety and hygiene rules above. I will follow them for the whole of my visit, and I will do what my host asks of me while I am on site. I understand that not following them means being asked to leave the production areas."
+          "text": "I have read and understood the food safety and hygiene rules above. I will follow them on every visit while this acknowledgement is valid, and I will do what my host asks of me while I am on site. I understand that not following them means being asked to leave the production areas."
         },
         {
           "id": "visitor_signature",
           "type": "signature",
+          "capture": "drawn",
           "label": "Visitor",
           "width": "half",
           "required": true
@@ -159,7 +136,7 @@
           "id": "retention_note",
           "type": "info",
           "label": "Retention",
-          "text": "Completed visitor records are retained by QA for a minimum of twelve months (FSQM-012 Part 6)."
+          "text": "This acknowledgement is valid for twelve months from the date above, or until FRM-906 is revised. It is retained by QA for a minimum of twelve months after the last visit that relied on it (FSQM-012 Part 6)."
         }
       ]
     }

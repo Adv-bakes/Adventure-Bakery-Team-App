@@ -67,6 +67,7 @@ check("held on FRM-702", entryHasFail({ c: "Did not match - held on FRM-702" }),
 check("no non-conformances", entryHasFail({ c: "No non-conformances found" }), false);
 check("all pass", entryHasFail({ a: "pass", b: "Matches the lot code above" }), false);
 check("signature name ignored", entryHasFail({ s: { name: "Held Smith" } }), false);
+check("drawn signature image ignored", entryHasFail({ s: { name: "A Visitor", image: "data:image/png;base64,AAAA/held+AAAA" } }), false);
 
 // summariseForm
 const e = (status, submitted_at, data = {}) => ({ id: submitted_at ?? "d", status, submitted_at, created_at: submitted_at ?? "2026-09-01T00:00:00Z", data });
