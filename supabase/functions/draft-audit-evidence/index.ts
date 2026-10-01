@@ -13,7 +13,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { aiJSON } from "../_shared/ai.ts";
 import {
-  auditWindow, clauseIdOf, flattenEntry, relatedToClause, summariseForm, type EntryLite,
+  assembleEvidence, auditWindow, clauseIdOf, flattenEntry, relatedToClause, summariseForm, type EntryLite,
 } from "../_shared/auditEvidence.ts";
 
 const corsHeaders = {
@@ -28,7 +28,9 @@ const MAX_ENTRIES_PER_FORM = 300;
 const RECENT_LINES = 25;
 const MAX_PROGRAM_CHARS = 2500;
 const MAX_PROMPT_CHARS = 60000;
-const PROGRAM_KEYS = ["purpose", "scope", "responsibility", "procedure", "records"];
+// `statement` is where a POLICY keeps its text (FSQM-002) - leaving it out sent the policy empty and
+// the draft never mentioned it for 2.1.1.1.
+const PROGRAM_KEYS = ["statement", "purpose", "scope", "responsibility", "procedure", "records"];
 
 const asText = (v: unknown): string => {
   if (v == null) return "";
@@ -39,18 +41,18 @@ const asText = (v: unknown): string => {
 };
 const prefixOf = (n: string) => n.trim().toUpperCase().split("-")[0];
 
-const SYSTEM = `You draft the "Objective evidence seen" line of an SQF internal audit finding for Adventure Bakery, a small bakery.
-You are given the clause being audited, its requirements, the site documents that govern it, and FACTS computed from the site's records for the audit window.
+const SYSTEM = `You draft the "Objective evidence seen" of an SQF internal audit finding for Adventure Bakery, a small bakery.
+You are given the numbered requirements of the clause being audited and, UNDER EACH REQUIREMENT, the site documents and records referenced to it with FACTS computed from the records for the audit window. The full text of the governing documents follows.
 
-Rules:
-- Use ONLY the facts and documents given. Never state a number, date, name or form that is not in them. Copy counts and dates exactly.
-- Cite every record by its form number (e.g. FRM-914) with the count and dates from the facts. Cite a program or SOP by number when you say what it requires.
-- If a form has no submitted entries in the window, say so plainly. If a governing document requires something at a frequency and the facts show fewer records or a long gap, state the gap factually (e.g. "no entry between 2026-03-02 and 2026-06-12").
-- Mention failed checks and CAPAs listed in the facts, with their dates.
-- Do NOT say whether the site is compliant or non-compliant, and do not grade anything. The auditor decides the result.
-- Records are only part of the evidence: do not describe observations or interviews - none were given to you.
-- Plain text, English, 2 to 6 sentences, at most 900 characters. Start with "Records reviewed (<from> to <to>):".
-Return JSON: {"evidence": "<the text>"}`;
+Write ONE line per requirement, for EVERY requirement listed, in the order given.
+- Use ONLY what is given. Never state a number, date, name or form that is not in it. Copy counts and dates exactly.
+- Say which document addresses the requirement and, in a few words, how (e.g. "FSQM-002 Food Safety and Quality Policy is the site's policy statement, covering ..."). Cite each record by form number with its count and dates.
+- If a form has no submitted entries in the window, say so. If a document requires something at a frequency and the facts show fewer records or a long gap, state the gap factually.
+- Mention failed checks and CAPAs given, with their dates.
+- If nothing is referenced to a requirement, write exactly: "No site document or record references this requirement."
+- Do NOT say whether the site is compliant, and do not grade anything. The auditor decides. Do not describe observations or interviews - none were given to you.
+- Plain English, 1 to 3 sentences and at most 400 characters per line. Do not repeat the requirement number inside the text.
+Return JSON: {"lines": [{"clause": "<requirement number>", "text": "<the line>"}]}`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -69,10 +71,12 @@ Deno.serve(async (req) => {
     const clauseCell = String(body?.clause ?? "").slice(0, 200);
     const clauseId = clauseIdOf(clauseCell);
     if (!clauseId) return json({ error: "The Clause cell needs a clause number, e.g. 11.2.4." }, 400);
-    const requirements = (Array.isArray(body?.requirements) ? body.requirements : [])
-      .filter((r: any) => typeof r?.id === "string" && typeof r?.text === "string")
+    const supplied: { id: string; text: string }[] = (Array.isArray(body?.requirements) ? body.requirements : [])
+      .filter((r: any) => typeof r?.id === "string" && clauseIdOf(r.id) && typeof r?.text === "string")
       .slice(0, 40)
-      .map((r: any) => `${r.id} ${r.text.slice(0, 1200)}`);
+      .map((r: any) => ({ id: clauseIdOf(r.id)!, text: r.text.slice(0, 1200) }));
+    // Every numbered requirement gets a line; without any, the clause itself is the one line.
+    const reqs = supplied.length ? supplied : [{ id: clauseId, text: clauseCell }];
     const { from, to } = auditWindow(String(body?.asOf ?? ""));
 
     const { data: docRows, error: docErr } = await caller
@@ -132,14 +136,25 @@ Deno.serve(async (req) => {
       return { doc: f, s };
     });
 
-    // ---- The prompt: facts first, recent entry lines last (trimmed first when over budget) ----
-    const factLines = sources.map(({ doc, s }) =>
-      `- ${doc.sop_number} ${doc.title}${doc.status === "draft" ? " (DRAFT form, not yet issued)" : ""}: ` +
-      (s.submitted === 0
-        ? `0 submitted entries in the window`
-        : `${s.submitted} submitted entr${s.submitted === 1 ? "y" : "ies"}, first ${s.first}, last ${s.last}, longest gap ${s.longestGapDays} days` +
-          (s.withFail.length ? `, entries with a failed or non-conforming answer on ${s.withFail.join(", ")}` : ", no failed or non-conforming answers")) +
-      (s.drafts ? `; ${s.drafts} unsubmitted draft${s.drafts === 1 ? "" : "s"}` : ""));
+    // ---- The prompt: per requirement, what is referenced to it and the facts; then the documents ----
+    const factFor = new Map(sources.map(({ doc, s }) => [doc.id, s]));
+    const describe = (d: any): string => {
+      const draft = d.status === "draft" ? " (DRAFT, not yet issued)" : "";
+      const s = factFor.get(d.id);
+      if (!s) return `${d.sop_number} ${d.title}${draft}`;
+      return `${d.sop_number} ${d.title}${draft}: ` +
+        (s.submitted === 0
+          ? "0 submitted entries in the window"
+          : `${s.submitted} submitted entr${s.submitted === 1 ? "y" : "ies"}, first ${s.first}, last ${s.last}, longest gap ${s.longestGapDays} days` +
+            (s.withFail.length ? `, failed or non-conforming answers on ${s.withFail.join(", ")}` : ", no failed or non-conforming answers")) +
+        (s.drafts ? `; ${s.drafts} unsubmitted draft${s.drafts === 1 ? "" : "s"}` : "");
+    };
+    const coverage: Record<string, string[]> = {};
+    const reqBlocks = reqs.map(r => {
+      const docs = related.filter((d: any) => relatedToClause(d.sqf_reference, r.id));
+      coverage[r.id] = docs.map((d: any) => d.sop_number);
+      return `## ${r.id}: ${r.text}\nReferenced: ${docs.length ? "\n" + docs.map((d: any) => `- ${describe(d)}`).join("\n") : "nothing"}`;
+    });
     const programText = programs.map((p: any) => {
       const c = p.content ?? {};
       const t = PROGRAM_KEYS.map(k => asText(c[k])).filter(Boolean).join("\n");
@@ -154,11 +169,10 @@ Deno.serve(async (req) => {
     const head = [
       `CLAUSE: ${clauseCell}`,
       `AUDIT WINDOW: ${from} to ${to}`,
-      `REQUIREMENTS:\n${requirements.join("\n") || "(not supplied)"}`,
-      `FACTS FROM RECORDS (computed, exact):\n${factLines.join("\n") || "- No form in the Team Portal references this clause."}`,
+      `REQUIREMENTS (one line each, in this order):\n\n${reqBlocks.join("\n\n")}`,
       `CAPAs (FRM-007) naming this clause or its forms:\n${capaLines.join("\n") || "- none"}`,
       `TRAINING MODULES referencing this clause: ${training.map((t: any) => t.sop_number).join(", ") || "none"}`,
-      `GOVERNING PROGRAMS AND SOPs:\n${programText.join("\n\n") || "- none reference this clause"}`,
+      `GOVERNING DOCUMENTS (text):\n${programText.join("\n\n") || "- none reference this clause"}`,
     ].join("\n\n");
     let tail = recent;
     let prompt = `${head}\n\nRECENT ENTRIES (most recent first, for detail only):\n${tail.join("\n")}`;
@@ -169,8 +183,8 @@ Deno.serve(async (req) => {
     if (prompt.length > MAX_PROMPT_CHARS) prompt = prompt.slice(0, MAX_PROMPT_CHARS);
 
     const out = await aiJSON({ system: SYSTEM, user: prompt });
-    const evidence = typeof out?.evidence === "string" ? out.evidence.trim().slice(0, 1500) : "";
-    if (!evidence) return json({ error: "The AI returned no draft. Try again." }, 502);
+    if (!Array.isArray(out?.lines) || out.lines.length === 0) return json({ error: "The AI returned no draft. Try again." }, 502);
+    const evidence = assembleEvidence({ from, to }, reqs.map(r => r.id), out.lines, coverage);
 
     return json({
       evidence,
