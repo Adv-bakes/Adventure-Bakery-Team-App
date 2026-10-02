@@ -89,6 +89,11 @@ Applied in `loadReportBase` (so `select`-param dropdowns only see eligible rows)
 
 Parameters apply **live** (client-side) — there is no separate Run button.
 
+Every `date-range` parameter gets a **Period** selector beside its From/To inputs (`PERIODS` in
+`FormReportTab.tsx`): All dates, Last 30 days, Last 90 days, Last year. A period only fills From and To
+(ending today), so the filter, the PDF's range label and the View SQL panel need nothing extra; dates typed
+by hand show as "Custom dates". It is a viewer feature - nothing is stored in `report_schema`.
+
 ## Where the code lives (canonical, not prose)
 
 | File | Role |

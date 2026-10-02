@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Check, Copy, Database, Download, FileText, Pencil, Play } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, subDays, subYears } from "date-fns";
 import {
   buildReportSql, distinctColumnValues, filterReportRows, getReportSchema, loadReportBase,
   type ParamValues, type ReportBase, type ReportSchema,
@@ -29,6 +29,20 @@ interface FormReportTabProps {
 }
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
+
+/** Quick periods for a report's date range. Each ends today; "all" clears the range. */
+const PERIODS: { id: string; label: string; from: () => string }[] = [
+  { id: "30", label: "Last 30 days", from: () => format(subDays(new Date(), 30), "yyyy-MM-dd") },
+  { id: "90", label: "Last 90 days", from: () => format(subDays(new Date(), 90), "yyyy-MM-dd") },
+  { id: "year", label: "Last year", from: () => format(subYears(new Date(), 1), "yyyy-MM-dd") },
+];
+
+/** Which period the From/To dates amount to: a preset, "all" when both are blank, else "custom". */
+function periodOf(range: { from?: string; to?: string }): string {
+  if (!range.from && !range.to) return "all";
+  if (range.to !== todayStr()) return "custom";
+  return PERIODS.find(p => p.from() === range.from)?.id ?? "custom";
+}
 
 /**
  * The drawer's Report tab: renders a derived register (this log form projected
@@ -94,6 +108,13 @@ export function FormReportTab({ doc, isAdmin, onContentChange }: FormReportTabPr
   const setRange = (patch: { from?: string; to?: string }) =>
     rangeParam && setValues(v => ({ ...v, [rangeParam.id]: { ...rangeVal, ...patch } }));
 
+  const period = periodOf(rangeVal);
+  const setPeriod = (id: string) => {
+    if (id === "custom") return; // "Custom" only describes dates typed by hand
+    const preset = PERIODS.find(p => p.id === id);
+    setRange(preset ? { from: preset.from(), to: todayStr() } : { from: "", to: "" });
+  };
+
   const rangeLabel = rangeVal.from || rangeVal.to ? `${rangeVal.from || "…"} to ${rangeVal.to || "…"}` : "all dates";
 
   function exportPdf() {
@@ -134,6 +155,17 @@ export function FormReportTab({ doc, isAdmin, onContentChange }: FormReportTabPr
           if (param.type === "date-range") {
             return (
               <div key={param.id} className="flex items-end gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">Period</Label>
+                  <Select value={period} onValueChange={setPeriod}>
+                    <SelectTrigger className="h-8 w-36 bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All dates</SelectItem>
+                      {PERIODS.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
+                      {period === "custom" && <SelectItem value="custom">Custom dates</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <div className="flex items-center justify-between">
                     <Label className="text-[10px] text-muted-foreground">{param.label} — From</Label>
