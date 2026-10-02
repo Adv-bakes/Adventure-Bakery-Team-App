@@ -91,6 +91,7 @@ check("dispatches by product, not just code", orig.dispatches.map(d => `${d.cust
 check("other product's dispatch stays with its lot", coco.dispatches.map(d => d.quantity), ["60 units"]);
 check("retention + release found", [orig.retention.length, orig.releases.length, coco.retention.length], [1, 1, 0]);
 check("material receipts", m.materialReceipts.map(r => r.date), ["2026-09-20"]);
+check("a sibling product on the same code is another lot, not a mismatch", [orig.otherProduct.length, coco.otherProduct.length], [0, 0]);
 check("hold on the supplier lot", m.holds.map(h => h.tag), ["H-7"]);
 check("contact matched / unmatched", m.customers.map(c => [c.customer, c.matched, c.rows.length]), [["Island Treats LLC", true, 1], ["Gift Co", false, 1]]);
 check("essential contacts", m.essential.map(r => r.label), ["SQFI", "FDA"]);
