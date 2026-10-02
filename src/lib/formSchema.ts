@@ -398,6 +398,12 @@ export interface FormSettings {
   instanceTitleTemplate?: string;  // e.g. "{date} — {supplier_name}"; tokens: {date}, {user}, {<fieldId>}
   requireVerification?: boolean;   // surface the verifier signature prominently on submitted entries
   attachmentsEnabled?: boolean;    // default true; false = admin disabled file/photo attachments for this form
+  /**
+   * The recall workspace above the entry (RecallWorkspace): mode banner, the 4-hour and 24-hour
+   * clocks, FSQM-023's steps ticked from the record itself, and the lot trace that fills it.
+   * Coupled to FRM-012's field ids (see RECALL_FORM in lotTrace.ts) - not a general feature.
+   */
+  recallWorkspace?: boolean;
   /** "Copy from a previous entry" — see copyFromEntry. Absent = the picker is not offered. */
   copyFrom?: CopyFromSettings;
 }

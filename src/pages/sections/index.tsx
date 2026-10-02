@@ -71,13 +71,6 @@ export const ComplianceSops = () => (
   />
 );
 
-export const ComplianceTraceability = () => (
-  <SectionPlaceholder
-    title="Production Traceability"
-    subtitle="Lot code → ingredients → batch → order → client → shipped."
-  />
-);
-
 export const ComplianceCertifications = () => (
   <SectionPlaceholder
     title="Certifications"

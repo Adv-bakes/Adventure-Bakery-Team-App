@@ -31,6 +31,7 @@ import { FormRenderer } from "@/components/team/forms/FormRenderer";
 import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
+import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
 import { applyVoiceFill, type VoiceWarning } from "@/lib/voiceCommands";
@@ -693,6 +694,10 @@ export default function FormEntry() {
       )}
 
       {/* Copy from a previous entry (forms that opt in via settings.copyFrom) */}
+      {/* Keyed on the entry's own (resolved) schema, not the live settings: the workspace is tied to
+          the field ids of the revision the entry was filled under. */}
+      {schema.settings?.recallWorkspace && <RecallWorkspace form={form} canEdit={canEdit} />}
+
       {canEdit && schema.settings?.copyFrom && (
         <Card className="p-3 space-y-2 border" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.4)" }}>
           <div className="flex flex-wrap items-center gap-2">
