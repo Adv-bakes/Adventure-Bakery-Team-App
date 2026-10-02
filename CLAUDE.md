@@ -457,6 +457,14 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   the library. New tab, so the entry being filled stays open; renders nothing if the form is missing.
   Not rendered for `checkbox`/`signature` fields (they return early). First use: FRM-012's
   "Contact list (FRM-011)" check links to the current contact list.
+- **Document numbers in a form's text are links (`DocRefText`):** a number written in a fixed row label,
+  a help line, an info block, a section description or a grid's label ("Chemicals locked away
+  (FSQM-032)") opens that document in the SOPs Library in a new tab. Nothing is authored: `FormEntry`
+  collects the numbers from the resolved schema (`collectDocRefs` in `src/lib/docRefs.ts`, pure, tested by
+  `scripts/test-doc-refs.mjs`), looks the ids up once (`fetchDocIdsByNumber`) and provides them through
+  `DocLinksContext`. The form's own number and a number with no active or draft document stay plain text;
+  with no provider (the builder's preview) the text renders as before. Scalar field labels are not
+  linked - use `linkTo` there.
 - **Internal-audit guide (`SelectField.auditGuide`):** `{ findingsGrid, clauseColumn }` on a multi-select
   whose options are SQF sections ("11.5 Water, ice and air"). Each ticked section gets a collapsible panel
   (`SqfSectionGuide.tsx`, rendered by `FormRenderer` under the field): the Code's sub-sections from

@@ -10,6 +10,7 @@ import {
 } from "@/lib/formSchema";
 import { FormFieldInput } from "./FormFieldInput";
 import { SqfSectionGuide } from "./SqfSectionGuide";
+import { DocRefText } from "./DocRefText";
 import { GridFieldInput, type GridFieldInputProps } from "./GridFieldInput";
 import type { Signer } from "./SignatureFieldInput";
 
@@ -60,7 +61,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
       case "info":
         el = (
           <p className="text-xs text-[#2A1F0E]/80 whitespace-pre-wrap rounded-md bg-[#C89B3C]/5 p-2.5">
-            {(field as InfoField).text || field.label}
+            <DocRefText text={(field as InfoField).text || field.label} />
           </p>
         );
         break;
@@ -145,7 +146,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
             <div className="flex items-start justify-between gap-3">
               <div>
                 {section.title && <h2 className="font-semibold text-[#2A1F0E]">{section.title}</h2>}
-                {section.description && <p className="text-xs text-[#2A1F0E]/80 mt-0.5">{section.description}</p>}
+                {section.description && <p className="text-xs text-[#2A1F0E]/80 mt-0.5"><DocRefText text={section.description} /></p>}
               </div>
               {section.scanLabel && !readOnly && onScanLabel && (
                 <SectionLabelScan section={section} fields={scanTargetFields(schema, section)} form={form} onScanLabel={onScanLabel} />
