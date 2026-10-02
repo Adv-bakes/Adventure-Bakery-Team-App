@@ -10,6 +10,7 @@ import { deriveDateValue, deriveTextValue, julianLotCode, nextDerivedFill } from
 import { loadSelectOptions } from "@/lib/formReport";
 import { fetchFormLinkTarget, type FormLinkTarget } from "@/lib/formResponses";
 import { ExternalLink } from "lucide-react";
+import { DocRefText } from "./DocRefText";
 import type {
   FieldLink, CheckboxField, DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
   PassFailField, SelectOptionsFrom, SignatureField, TextDerivation, TextField, TextareaField,
@@ -363,7 +364,7 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
                     {field.required && <span className="text-red-600 ml-0.5">*</span>}
                   </Label>
                 </div>
-                {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
+                {field.help && <p className="text-xs text-muted-foreground"><DocRefText text={field.help} /></p>}
                 {(field as CheckboxField).clearOnScanOf && rhf.value !== true && (
                   <p className="text-xs text-amber-700">
                     Not yet checked. A label scan unticks this whenever it fills the text it covers.
@@ -475,7 +476,7 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
           <div className="space-y-1">
             {labelEl}
             {input}
-            {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
+            {field.help && <p className="text-xs text-muted-foreground"><DocRefText text={field.help} /></p>}
             {field.linkTo && <FormLink spec={field.linkTo} />}
             {error && <p className="text-xs text-red-600">{error}</p>}
           </div>

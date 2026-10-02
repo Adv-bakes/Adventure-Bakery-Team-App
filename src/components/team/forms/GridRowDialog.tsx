@@ -1,3 +1,4 @@
+import { DocRefText } from "./DocRefText";
 import { useRef, useState } from "react";
 import { Controller, type Control } from "react-hook-form";
 import { Camera, ImageIcon, Loader2, Sparkles } from "lucide-react";
@@ -73,7 +74,7 @@ export function GridRowDialog({
           </DialogTitle>
           <DialogDescription>
             {rowLabel
-              ? rowLabel.split("\n")[0]
+              ? <DocRefText text={rowLabel.split("\n")[0]} />
               : "Every column of this row, top to bottom. Changes are kept as you make them."}
           </DialogDescription>
         </DialogHeader>

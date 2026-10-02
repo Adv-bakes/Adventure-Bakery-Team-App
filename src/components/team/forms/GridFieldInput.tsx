@@ -16,6 +16,7 @@ import {
 import { PassFailInput } from "./FormFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
 import { GridRowDialog } from "./GridRowDialog";
+import { DocRefText } from "./DocRefText";
 
 /** How long the "label scan filled …" chip stays up before fading out. */
 const SCAN_UNDO_MS = 12000;
@@ -146,7 +147,7 @@ function FixedRowLabel({ label }: { label: string }) {
   const [title, ...rest] = lines;
   return (
     <div className="space-y-0.5 py-0.5">
-      <p className="text-xs font-semibold text-[#2A1F0E]">{title}</p>
+      <p className="text-xs font-semibold text-[#2A1F0E]"><DocRefText text={title} /></p>
       {rest.map((line, i) => {
         const isTarget = /^target:/i.test(line);
         return (
@@ -154,7 +155,7 @@ function FixedRowLabel({ label }: { label: string }) {
             key={i}
             className={isTarget ? "text-[11px] font-medium text-[#9A6F1E]" : "text-[11px] italic text-[#2A1F0E]/70"}
           >
-            {line}
+            <DocRefText text={line} />
           </p>
         );
       })}
@@ -367,7 +368,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
       render={({ fieldState }) => (
         <div className="space-y-1.5">
           <Label className="text-xs text-[#2A1F0E]/90">
-            {field.label}
+            <DocRefText text={field.label} />
             {field.required && <span className="text-red-600 ml-0.5">*</span>}
           </Label>
           <div className="rounded-md border overflow-x-auto" style={{ borderColor: "rgba(200,155,60,0.35)" }}>
@@ -622,7 +623,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
               <Plus className="w-3.5 h-3.5 mr-1" />{addLabel ?? (fixed ? "Add Item" : "Add Row")}
             </Button>
           )}
-          {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
+          {field.help && <p className="text-xs text-muted-foreground"><DocRefText text={field.help} /></p>}
           {fieldState.error?.message && <p className="text-xs text-red-600">{fieldState.error.message}</p>}
 
           <GridRowDialog
