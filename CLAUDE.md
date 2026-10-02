@@ -1006,6 +1006,13 @@ with a CHECK, so the role was a constraint change. Adding a role touches a list 
   letter after each space or hyphen; nothing is ever lowered, so "McDonald" survives). It is skipped
   while an on-screen keyboard is composing a word and applied on `compositionend` and blur instead,
   because rewriting a value mid-composition makes some Android keyboards double letters.
+- **The kiosk sizes itself to the tablet.** Everything on the page is in rem, so on the kiosk route
+  the root font size is set to `clamp(16px, 1.7vw, 24px)` (about 22px on the 1280x800 entrance tablet;
+  restored on unmount), the column widens to `max-w-[50rem]`, the welcome header shrinks to one line
+  during a sign-in, and the Back/Next bar is `sticky bottom-0` because the larger type makes some
+  steps taller than the screen. The portal version keeps its `max-w-2xl` column and normal root size.
+  The preview cannot sign in; to check the layout, render `<VisitorSignIn kiosk />` on a temporary
+  route with `supabase.rpc` stubbed from the two schemas in `sop-drafts/`, and do not commit it.
 - **There is no host confirmation and no host signature** (v4; owner decision 2026-10-01 after
   trying v3 at the door). What the host used to attest — jewellery removed (11.3.4.2), protective
   clothing, staff entrance and handwashing (11.3.4.4) — is in the statement the **visitor** signs.

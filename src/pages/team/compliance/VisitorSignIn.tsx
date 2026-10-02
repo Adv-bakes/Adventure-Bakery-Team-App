@@ -96,7 +96,7 @@ function Choice({ value, onChange, options }: {
             aria-pressed={on}
             onClick={() => onChange(o.key)}
             className={cn(
-              "min-h-12 rounded-md border px-4 py-2 text-sm font-medium transition-colors",
+              "min-h-12 rounded-md border px-4 py-2 text-base font-medium transition-colors",
               on && o.tone === "good" && "bg-green-600 text-white border-green-600",
               on && o.tone === "bad" && "bg-red-600 text-white border-red-600",
               on && o.tone === "neutral" && "bg-[#2A1F0E] text-white border-[#2A1F0E]",
@@ -144,7 +144,7 @@ function KioskExit() {
   return (
     <>
       <div className="pt-6 text-center">
-        <button type="button" className="text-xs tp-on-bg-dim underline underline-offset-2" onClick={() => { setPassword(""); setOpen(true); }}>
+        <button type="button" className="text-sm tp-on-bg-dim underline underline-offset-2" onClick={() => { setPassword(""); setOpen(true); }}>
           Staff: sign this tablet out
         </button>
       </div>
@@ -212,6 +212,18 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
   // the first tap arms the button, the second signs out.
   const [armed, setArmed] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState<string | null>(null);
+
+  // The entrance tablet is read standing up, at arm's length. Everything on this page is sized in
+  // rem, so on the kiosk the root size follows the width of the screen (about 22px on a 1280px
+  // tablet, never below the normal 16px) and the whole screen - type, buttons, dialogs, toasts -
+  // grows together. The kiosk is its own page, and the size is put back when it is left.
+  useEffect(() => {
+    if (!kiosk) return;
+    const root = document.documentElement;
+    const before = root.style.fontSize;
+    root.style.fontSize = "clamp(16px, 1.7vw, 24px)";
+    return () => { root.style.fontSize = before; };
+  }, [kiosk]);
 
   const today = localDate(new Date());
   const set = (patch: Partial<VisitAnswers>) => setAnswers(a => ({ ...a, ...patch }));
@@ -351,23 +363,30 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
     );
   }
 
+  // On the kiosk the welcome is large on the home screen and shrinks to one line during a sign-in,
+  // so the questions - and the on-screen keyboard - have the room.
+  const welcome = kiosk && (step === "home" || step === "done");
   const header = (
     <div>
-      <h1 className="text-2xl font-semibold flex items-center gap-2 tp-on-bg">
-        <DoorOpen className="w-5 h-5 text-[hsl(var(--tp-gold))]" />
+      <h1 className={cn("font-semibold flex items-center tp-on-bg", welcome ? "text-4xl gap-3" : "text-2xl gap-2")}>
+        <DoorOpen className={cn("text-[hsl(var(--tp-gold))]", welcome ? "w-8 h-8" : "w-5 h-5")} />
         {kiosk ? "Welcome to Adventure Bakery" : "Visitor Sign-In"}
       </h1>
-      <p className="text-sm tp-on-bg-dim mt-1">
-        {kiosk
-          ? "Every visitor signs in here before entering, and signs out on leaving."
-          : "Every visitor signs in at every visit (FRM-905). The food safety rules are read and signed on the first visit, and again after twelve months (FRM-906)."}
-      </p>
+      {(!kiosk || welcome) && (
+        <p className={cn("tp-on-bg-dim mt-1", welcome ? "text-lg" : "text-sm")}>
+          {kiosk
+            ? "Every visitor signs in here before entering, and signs out on leaving."
+            : "Every visitor signs in at every visit (FRM-905). The food safety rules are read and signed on the first visit, and again after twelve months (FRM-906)."}
+        </p>
+      )}
     </div>
   );
+  // The kiosk has the whole screen to itself; inside the portal the page keeps its column.
+  const column = cn("mx-auto p-6 space-y-4 tp-fade-up", kiosk ? "max-w-[50rem]" : "max-w-2xl");
 
   if (!forms) {
     return shell(
-      <div className="max-w-2xl mx-auto p-6 space-y-4 tp-fade-up">
+      <div className={column}>
         {header}
         <Card className="border" style={cardStyle}>
           <CardContent className="p-5 text-sm text-[#2A1F0E] space-y-2">
@@ -409,14 +428,19 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
     sign: !!answers.signatureImage && !!answers.name.trim(),
   };
 
+  // On the kiosk the larger type makes some steps taller than the screen, and a Next button below
+  // the fold reads as a dead end. There the bar stays in view at the bottom while the step scrolls.
   const nav = (nextLabel = "Next") => (
-    <div className="flex items-center justify-between pt-2">
-      <Button type="button" variant="ghost" onClick={() => go(-1)} disabled={saving}>
+    <div className={cn(
+      "flex items-center justify-between pt-2",
+      kiosk && "sticky bottom-0 z-10 -mx-6 !-mb-6 px-6 py-3 bg-white border-t border-[#2A1F0E]/10 rounded-b-lg",
+    )}>
+      <Button type="button" variant="ghost" className="min-h-12 text-base" onClick={() => go(-1)} disabled={saving}>
         <ArrowLeft className="w-4 h-4 mr-1" /> Back
       </Button>
       <Button
         type="button"
-        className="min-h-12 px-6 bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#B58A30]"
+        className="min-h-12 px-8 text-base bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#B58A30]"
         disabled={!canLeave[step] || saving}
         onClick={() => (step === "sign" ? finish() : go(1))}
       >
@@ -427,31 +451,31 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
   );
 
   return shell(
-    <div className="max-w-2xl mx-auto p-6 space-y-4 tp-fade-up">
+    <div className={column}>
       {header}
 
       {step === "home" && (
         <>
           <Button
             type="button"
-            className="w-full min-h-16 text-lg bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#B58A30]"
+            className={cn("w-full bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#B58A30]", kiosk ? "min-h-24 text-2xl" : "min-h-16 text-lg")}
             onClick={begin}
           >
-            <UserPlus className="w-5 h-5 mr-2" /> {kiosk ? "Sign in" : "Sign in a visitor"}
+            <UserPlus className={cn("mr-2", kiosk ? "!w-7 !h-7" : "w-5 h-5")} /> {kiosk ? "Sign in" : "Sign in a visitor"}
           </Button>
 
           <Card className="border" style={cardStyle}>
             <CardContent className="p-5 text-[#2A1F0E]">
-              <h2 className="font-semibold mb-2">{kiosk ? "Leaving? Sign out here" : `On site now (${onSite.length})`}</h2>
+              <h2 className="text-lg font-semibold mb-2">{kiosk ? "Leaving? Sign out here" : `On site now (${onSite.length})`}</h2>
               {onSite.length === 0 ? (
-                <p className="text-sm text-[#2A1F0E]/65">No visitors are signed in.</p>
+                <p className="text-base text-[#2A1F0E]/65">No visitors are signed in.</p>
               ) : (
                 <ul className="divide-y divide-[#2A1F0E]/10">
                   {onSite.map(v => (
-                    <li key={v.id} className="flex items-center justify-between gap-3 py-2">
+                    <li key={v.id} className="flex items-center justify-between gap-3 py-3">
                       <div className="min-w-0">
-                        <p className="font-medium truncate">{v.name}{v.company ? ` — ${v.company}` : ""}</p>
-                        <p className="text-xs text-[#2A1F0E]/65">
+                        <p className="text-lg font-medium truncate">{v.name}{v.company ? ` — ${v.company}` : ""}</p>
+                        <p className="text-sm text-[#2A1F0E]/65">
                           In at {v.timeIn}{v.visitDate !== today ? ` on ${prettyDate(v.visitDate)}` : ""}
                           {v.host === HOST_UNKNOWN ? " · no appointment" : v.host ? ` · seeing ${v.host}` : ""}
                         </p>
@@ -460,7 +484,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                         <Button
                           type="button"
                           variant={armed === v.id ? "destructive" : "outline"}
-                          className="min-h-11"
+                          className="min-h-12 px-5 text-base"
                           disabled={signingOut === v.id}
                           onClick={() => signOut(v)}
                         >
@@ -476,7 +500,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                             aria-label="Cancel sign out"
                             title="Cancel"
                             onClick={() => setArmed(null)}
-                            className="h-11 w-9 inline-flex items-center justify-center rounded-md text-[#2A1F0E]/45 hover:text-[#2A1F0E] hover:bg-[#2A1F0E]/5"
+                            className="h-12 w-10 inline-flex items-center justify-center rounded-md text-[#2A1F0E]/45 hover:text-[#2A1F0E] hover:bg-[#2A1F0E]/5"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -495,36 +519,36 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
       {step === "done" && done && (
         <Card className="border" style={cardStyle}>
-          <CardContent className="p-6 space-y-3 text-[#2A1F0E] text-center">
+          <CardContent className="p-8 space-y-4 text-[#2A1F0E] text-center">
             {done.refused ? (
               <>
-                <AlertTriangle className="w-10 h-10 mx-auto text-red-600" />
-                <h2 className="text-xl font-semibold">Please do not enter, {done.name}</h2>
-                <p className="text-sm">
+                <AlertTriangle className="w-14 h-14 mx-auto text-red-600" />
+                <h2 className="text-2xl font-semibold">Please do not enter, {done.name}</h2>
+                <p className="text-lg">
                   You declared a symptom of illness, so you cannot go into the production areas today.
                   This has been recorded. Please speak to the person you came to see.
                 </p>
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-10 h-10 mx-auto text-green-600" />
-                <h2 className="text-xl font-semibold">You are signed in, {done.name}</h2>
-                <p className="text-sm">Signed in at {done.time}. Please sign out here when you leave.</p>
+                <CheckCircle2 className="w-14 h-14 mx-auto text-green-600" />
+                <h2 className="text-2xl font-semibold">You are signed in, {done.name}</h2>
+                <p className="text-lg">Signed in at {done.time}. Please sign out here when you leave.</p>
               </>
             )}
-            <Button type="button" variant="outline" className="min-h-12" onClick={() => setStep("home")}>Done</Button>
+            <Button type="button" variant="outline" className="min-h-12 px-8 text-base" onClick={() => setStep("home")}>Done</Button>
           </CardContent>
         </Card>
       )}
 
       {step !== "home" && step !== "done" && (
         <Card className="border" style={cardStyle}>
-          <CardContent className="p-5 space-y-4 text-[#2A1F0E]">
-            <p className="text-xs text-[#2A1F0E]/55">Step {steps.indexOf(step) + 1} of {steps.length}</p>
+          <CardContent className="p-6 space-y-5 text-[#2A1F0E]">
+            <p className="text-sm text-[#2A1F0E]/55">Step {steps.indexOf(step) + 1} of {steps.length}</p>
 
             {step === "lookup" && (
               <>
-                <h2 className="text-lg font-semibold">Have you visited before?</h2>
+                <h2 className="text-2xl font-semibold">Have you visited before?</h2>
                 {/* The question is answered first, with two buttons. When the search box led the
                     screen, first-time visitors started typing their phone number into it before
                     they saw there was a first-visit button underneath. */}
@@ -532,35 +556,35 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                   <button
                     type="button"
                     onClick={() => choose(null)}
-                    className="min-h-20 rounded-md border px-4 py-3 text-left bg-[#C89B3C] text-[#2A1F0E] border-[#C89B3C] hover:bg-[#B58A30]"
+                    className="min-h-24 rounded-md border px-5 py-4 text-left bg-[#C89B3C] text-[#2A1F0E] border-[#C89B3C] hover:bg-[#B58A30]"
                   >
-                    <span className="block text-base font-semibold">No — this is my first visit</span>
-                    <span className="block text-xs opacity-80">Takes about two minutes</span>
+                    <span className="block text-lg font-semibold">No — this is my first visit</span>
+                    <span className="block text-sm opacity-80">Takes about two minutes</span>
                   </button>
                   <button
                     type="button"
                     aria-pressed={returning}
                     onClick={() => setReturning(true)}
                     className={cn(
-                      "min-h-20 rounded-md border px-4 py-3 text-left transition-colors",
+                      "min-h-24 rounded-md border px-5 py-4 text-left transition-colors",
                       returning
                         ? "bg-[#2A1F0E] text-white border-[#2A1F0E]"
                         : "bg-white text-[#2A1F0E] border-[#2A1F0E]/25 hover:bg-[#C89B3C]/10",
                     )}
                   >
-                    <span className="block text-base font-semibold">Yes — I have been here before</span>
-                    <span className="block text-xs opacity-80">Find yourself and skip the rules</span>
+                    <span className="block text-lg font-semibold">Yes — I have been here before</span>
+                    <span className="block text-sm opacity-80">Find yourself and skip the rules</span>
                   </button>
                 </div>
                 {returning && (
                   <>
                     <div>
-                      <Label htmlFor="visitor-lookup">Your phone number, its last 4 digits, or your name</Label>
+                      <Label className="text-base" htmlFor="visitor-lookup">Your phone number, its last 4 digits, or your name</Label>
                       <div className="relative mt-1">
                         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#2A1F0E]/40" />
                         <Input
                           id="visitor-lookup"
-                          className="pl-9 h-12 text-base"
+                          className="pl-9 h-12 text-base md:text-base"
                           autoComplete="off"
                           autoFocus
                           value={query}
@@ -571,7 +595,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                     {canLookUp(query) && (
                       <div className="space-y-2">
                         {matches.length === 0 && (
-                          <p className="text-sm text-[#2A1F0E]/65">
+                          <p className="text-base text-[#2A1F0E]/65">
                             {searching ? "Looking…" : "No match yet. Keep typing, or sign in as a first visit."}
                           </p>
                         )}
@@ -584,9 +608,9 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                               onClick={() => choose(m)}
                               className="w-full text-left rounded-md border border-[#2A1F0E]/20 px-4 py-3 hover:bg-[#C89B3C]/10"
                             >
-                              <span className="font-medium">{m.name}</span>
-                              {m.company && <span className="text-[#2A1F0E]/70"> — {m.company}</span>}
-                              <span className="block text-xs text-[#2A1F0E]/60">
+                              <span className="text-lg font-medium">{m.name}</span>
+                              {m.company && <span className="text-lg text-[#2A1F0E]/70"> — {m.company}</span>}
+                              <span className="block text-sm text-[#2A1F0E]/60">
                                 {state.valid ? "Rules already signed — two quick questions" : "The rules need reading again"}
                               </span>
                             </button>
@@ -597,7 +621,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                   </>
                 )}
                 <div className="pt-2">
-                  <Button type="button" variant="ghost" onClick={() => setStep("home")}>
+                  <Button type="button" variant="ghost" className="min-h-12 text-base" onClick={() => setStep("home")}>
                     <ArrowLeft className="w-4 h-4 mr-1" /> Cancel
                   </Button>
                 </div>
@@ -606,16 +630,16 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
             {step === "details" && (
               <>
-                <h2 className="text-lg font-semibold">{picked ? `Welcome back, ${picked.name}` : "Your details"}</h2>
+                <h2 className="text-2xl font-semibold">{picked ? `Welcome back, ${picked.name}` : "Your details"}</h2>
                 {!picked && (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <Label htmlFor="v-name">Full name</Label>
+                      <Label className="text-base" htmlFor="v-name">Full name</Label>
                       {/* Capitals are put in as the name is typed. While an on-screen keyboard is still
                           composing a word the text is left alone (rewriting it mid-word makes some
                           Android keyboards double letters) and is tidied when the word is committed. */}
                       <Input
-                        id="v-name" className="h-12 text-base" autoComplete="off" autoCapitalize="words"
+                        id="v-name" className="h-12 text-base md:text-base" autoComplete="off" autoCapitalize="words"
                         value={answers.name}
                         onChange={e => {
                           const el = e.target;
@@ -632,20 +656,20 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="v-company">Company / organisation</Label>
-                      <Input id="v-company" className="h-12 text-base" autoComplete="off" value={answers.company} onChange={e => set({ company: e.target.value })} />
+                      <Label className="text-base" htmlFor="v-company">Company / organisation</Label>
+                      <Input id="v-company" className="h-12 text-base md:text-base" autoComplete="off" value={answers.company} onChange={e => set({ company: e.target.value })} />
                     </div>
                   </div>
                 )}
                 {(!picked || !pickedState?.valid) && (
                   <div>
-                    <Label htmlFor="v-phone">Phone number, or just its last 4 digits (optional)</Label>
-                    <Input id="v-phone" className="h-12 text-base sm:max-w-xs" inputMode="tel" autoComplete="off" maxLength={30} value={answers.phone} onChange={e => set({ phone: e.target.value })} />
-                    <p className="text-xs text-[#2A1F0E]/60 mt-1">Only used so you can find yourself next time.</p>
+                    <Label className="text-base" htmlFor="v-phone">Phone number, or just its last 4 digits (optional)</Label>
+                    <Input id="v-phone" className="h-12 text-base md:text-base sm:max-w-xs" inputMode="tel" autoComplete="off" maxLength={30} value={answers.phone} onChange={e => set({ phone: e.target.value })} />
+                    <p className="text-sm text-[#2A1F0E]/60 mt-1">Only used so you can find yourself next time.</p>
                   </div>
                 )}
                 <div>
-                  <Label>Who are you here to see?</Label>
+                  <Label className="text-base">Who are you here to see?</Label>
                   <div className="mt-1">
                     {staff.length > 0 ? (
                       <Choice
@@ -657,12 +681,12 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                         ]}
                       />
                     ) : (
-                      <Input aria-label="Who are you here to see?" className="h-12 text-base" autoComplete="off" value={answers.host} onChange={e => set({ host: e.target.value })} />
+                      <Input aria-label="Who are you here to see?" className="h-12 text-base md:text-base" autoComplete="off" value={answers.host} onChange={e => set({ host: e.target.value })} />
                     )}
                   </div>
                 </div>
                 <div>
-                  <Label>Purpose of visit</Label>
+                  <Label className="text-base">Purpose of visit</Label>
                   <div className="mt-1">
                     <Choice
                       value={answers.purpose || null}
@@ -677,9 +701,9 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
             {step === "health" && (
               <>
-                <h2 className="text-lg font-semibold">Health today</h2>
+                <h2 className="text-2xl font-semibold">Health today</h2>
                 <div className="space-y-2">
-                  <p className="text-sm">{symptomsQ?.label}</p>
+                  <p className="text-lg">{symptomsQ?.label}</p>
                   <Choice
                     value={health.symptoms}
                     onChange={v => setHealth(h => ({ ...h, symptoms: v }))}
@@ -690,13 +714,13 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                   />
                 </div>
                 {health.symptoms === "fail" ? (
-                  <div className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                  <div className="rounded-md border border-red-300 bg-red-50 p-4 text-base text-red-800">
                     <p className="font-semibold">You cannot enter the production areas today.</p>
                     <p>Please sign on the next screen so this is recorded, then speak to the person you came to see.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-sm">{woundsQ?.label}</p>
+                    <p className="text-lg">{woundsQ?.label}</p>
                     <Choice
                       value={health.wounds}
                       onChange={v => setHealth(h => ({ ...h, wounds: v }))}
@@ -707,15 +731,15 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                       ]}
                     />
                     {health.wounds === "fail" && (
-                      <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                      <p className="rounded-md border border-amber-300 bg-amber-50 p-4 text-base text-amber-900">
                         Please ask for a dressing. Once the cut is covered, choose "{woundsQ?.labels?.pass ?? "Yes, and it is covered"}".
                       </p>
                     )}
                   </div>
                 )}
                 <div>
-                  <Label htmlFor="v-health-notes">Anything we should know (optional)</Label>
-                  <Textarea id="v-health-notes" rows={2} value={answers.healthNotes} onChange={e => set({ healthNotes: e.target.value })} />
+                  <Label className="text-base" htmlFor="v-health-notes">Anything we should know (optional)</Label>
+                  <Textarea id="v-health-notes" rows={2} className="text-base md:text-base" value={answers.healthNotes} onChange={e => set({ healthNotes: e.target.value })} />
                 </div>
                 {nav()}
               </>
@@ -723,26 +747,26 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
             {step === "rules" && (
               <>
-                <h2 className="text-lg font-semibold">Food safety and hygiene rules</h2>
+                <h2 className="text-2xl font-semibold">Food safety and hygiene rules</h2>
                 {pickedState && "reason" in pickedState && picked && (
-                  <p className="text-sm text-[#2A1F0E]/70">
+                  <p className="text-base text-[#2A1F0E]/70">
                     {pickedState.reason === "revised"
                       ? "The rules have been revised since you last signed them."
                       : "It is more than twelve months since you last signed these."} Please read them again.
                   </p>
                 )}
-                <ol className="space-y-2 text-sm">
+                <ol className="space-y-3 text-base">
                   {(rules?.rows ?? []).map(row => (
                     <li key={row[0]} className="flex gap-3">
-                      <span className="font-semibold text-[#9A6F1E] w-5 shrink-0 text-right">{row[0]}</span>
+                      <span className="font-semibold text-[#9A6F1E] w-6 shrink-0 text-right">{row[0]}</span>
                       <span>{row[1]}</span>
                     </li>
                   ))}
                 </ol>
-                <label className="flex items-start gap-3 rounded-md border border-[#C89B3C]/50 bg-[#C89B3C]/5 p-3 text-sm cursor-pointer">
+                <label className="flex items-start gap-3 rounded-md border border-[#C89B3C]/50 bg-[#C89B3C]/5 p-4 text-base cursor-pointer">
                   <input
                     type="checkbox"
-                    className="mt-0.5 h-5 w-5 accent-[#C89B3C]"
+                    className="mt-0.5 h-6 w-6 shrink-0 accent-[#C89B3C]"
                     checked={rulesRead}
                     onChange={e => setRulesRead(e.target.checked)}
                   />
@@ -754,16 +778,20 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
             {step === "sign" && (
               <>
-                <h2 className="text-lg font-semibold">Sign, {answers.name.trim()}</h2>
+                <h2 className="text-2xl font-semibold">Sign, {answers.name.trim()}</h2>
                 {refused ? (
-                  <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+                  <p className="rounded-md border border-red-300 bg-red-50 p-4 text-base text-red-800">
                     You declared a symptom of illness, so you cannot enter today (SQF 11.3.4.3).
                     Signing records your declaration.
                   </p>
                 ) : (
-                  <p className="text-sm">{visitorStatement}</p>
+                  <p className="text-base">{visitorStatement}</p>
                 )}
-                <SignaturePad value={answers.signatureImage || undefined} onChange={img => set({ signatureImage: img ?? "" })} />
+                {/* The pad keeps its 500:160 shape, so its width is capped: full width on the kiosk
+                    would push the Sign in button below the bottom of the screen. */}
+                <div className="max-w-[34rem]">
+                  <SignaturePad value={answers.signatureImage || undefined} onChange={img => set({ signatureImage: img ?? "" })} />
+                </div>
                 {nav(refused ? "Sign and finish" : "Sign in")}
               </>
             )}
