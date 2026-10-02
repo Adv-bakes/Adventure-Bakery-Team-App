@@ -212,6 +212,10 @@ function lotTitle(e: TraceEntry): string {
 function buildLot(records: TraceRecords, receipts: Map<string, ReceiptLine[]>, code: string, product: string,
   entries: TraceEntry[], triggerLot: string): LotTrace {
   const key = normLot(code);
+  // Other products baked under the same code are other LOTS, with their own records - not a
+  // mismatch to check. Only a product name no Production Lot Record explains is flagged.
+  const siblings = records.lots.filter(e => normLot(e.data.lot_code) === key && !namesMatch(e.data.product, product)).map(e => e.data.product);
+  const sibling = (name: unknown) => normName(name) !== "" && siblings.some(s => namesMatch(s, name));
   const inputs: InputLine[] = [];
   for (const e of entries) {
     const r520 = ref("lots", e, lotTitle(e));
@@ -250,7 +254,7 @@ function buildLot(records: TraceRecords, receipts: Map<string, ReceiptLine[]>, c
       if (namesMatch(row.product, product)) {
         lot.dispatches.push({ customer: str(e.data.customer), product: str(row.product), quantity: str(row.quantity),
           date: str(e.data.dispatch_date) || day(e.date), ref: r });
-      } else lot.otherProduct.push({ ...r, title: `${r.title} (${str(row.product)})` });
+      } else if (!sibling(row.product)) lot.otherProduct.push({ ...r, title: `${r.title} (${str(row.product)})` });
     }
   }
   for (const e of records.retention) {
@@ -259,7 +263,7 @@ function buildLot(records: TraceRecords, receipts: Map<string, ReceiptLine[]>, c
     if (namesMatch(e.data.product_name, product)) {
       lot.retention.push({ product: str(e.data.product_name), customer: str(e.data.customer), units: str(e.data.units_retained),
         location: str(e.data.storage_location), disposition: str(e.data.disposition), ref: r });
-    } else lot.otherProduct.push(r);
+    } else if (!sibling(e.data.product_name)) lot.otherProduct.push(r);
   }
   for (const e of records.releases) {
     if (normLot(e.data.lot_code) !== key) continue;
@@ -267,7 +271,7 @@ function buildLot(records: TraceRecords, receipts: Map<string, ReceiptLine[]>, c
     if (namesMatch(e.data.product_name, product)) {
       lot.releases.push({ product: str(e.data.product_name), customer: str(e.data.customer),
         quantity: str(e.data.quantity_released), decision: str(e.data.decision), ref: r });
-    } else lot.otherProduct.push(r);
+    } else if (!sibling(e.data.product_name)) lot.otherProduct.push(r);
   }
   return lot;
 }
