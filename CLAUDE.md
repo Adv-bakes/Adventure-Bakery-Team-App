@@ -1002,6 +1002,10 @@ with a CHECK, so the role was a constraint change. Adding a role touches a list 
 - **Steps:** first visit or returning (two buttons, asked BEFORE the search box is shown — with the box leading the screen, first-time visitors typed their phone number into it) → lookup → details (name, company, optional phone, **who are you here to see** as buttons
   of the team's names plus **"I don't know"** for a walk-in, stored as `HOST_UNKNOWN` rather than a name picked at random, purpose) → health → rules (only without a valid acknowledgement, never for a
   refused visitor) → sign. The wording comes from the two forms' own schemas.
+- **The Full name field capitalises as it is typed** (`capitalizeName`: the first letter and the
+  letter after each space or hyphen; nothing is ever lowered, so "McDonald" survives). It is skipped
+  while an on-screen keyboard is composing a word and applied on `compositionend` and blur instead,
+  because rewriting a value mid-composition makes some Android keyboards double letters.
 - **There is no host confirmation and no host signature** (v4; owner decision 2026-10-01 after
   trying v3 at the door). What the host used to attest — jewellery removed (11.3.4.2), protective
   clothing, staff entrance and handwashing (11.3.4.4) — is in the statement the **visitor** signs.

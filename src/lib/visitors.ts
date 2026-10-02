@@ -74,7 +74,19 @@ export function normalizeName(s: string | null | undefined): string {
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-const personKey = (r: Pick<AckRecord, "name" | "company">) =>
+/**
+ * A name as it is typed at the door: the first letter, and the letter after every space or hyphen,
+ * in capitals ("mary-jo o'brien smith" -> "Mary-Jo O'brien Smith"). Nothing is ever lowered, so
+ * "McDonald" and "DeShawn" stay as typed, and the length never changes, so the caret stays put.
+ */
+export function capitalizeName(s: string): string {
+  return s.replace(/(^|[\s-])(\p{Ll})/gu, (whole, before: string, letter: string) => {
+    const upper = letter.toUpperCase();
+    return upper.length === letter.length ? before + upper : whole;
+  });
+}
+
+const personKey =(r: Pick<AckRecord, "name" | "company">) =>
   `${normalizeName(r.name)}|${normalizeName(r.company)}`;
 
 /**
