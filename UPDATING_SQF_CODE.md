@@ -7,7 +7,7 @@ text on hover and links to the exact page of the code PDF.
 
 ## How the feature is wired (what depends on what)
 
-**Two codes are hosted** — the Quality Code and the Food Safety Code: Food Manufacturing (for Module 11 / 11.x references). They are independent PDFs + clause maps; the renderer resolves a token against Quality first, then Food Manufacturing.
+**Two codes are hosted** — the Quality Code and the Food Safety Code: Food Manufacturing (for Module 11 / 11.x references). They are independent PDFs + clause maps; the renderer resolves a token against Food Manufacturing first (the code the site certifies to), then the Quality Code.
 
 | Piece | Location | Role |
 |-------|----------|------|

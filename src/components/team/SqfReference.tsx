@@ -42,10 +42,13 @@ function firstDescendant(token: string, map: Record<string, SqfClause>): string 
   return best;
 }
 
-const QUALITY = { map: SQF_CLAUSES, lookup: lookupSqfClause, href: sqfPdfHref, label: "SQF Code" };
+const QUALITY = { map: SQF_CLAUSES, lookup: lookupSqfClause, href: sqfPdfHref, label: "SQF Quality Code" };
 const FOOD = { map: SQF_FOOD_CLAUSES, lookup: lookupSqfFoodClause, href: sqfFoodPdfHref, label: "Food Mfg Code" };
-// Quality first, then Food Manufacturing: 11.x lives only in Food; 2.x present in both prefers Quality.
-const CODES = [QUALITY, FOOD];
+// Food Manufacturing first: it is the code the site is certifying to and the one every controlled
+// document cites. The two codes number Part 2 differently (2.6.3.1 is recall in Food Manufacturing and a
+// crisis-supply clause in the Quality Code, which has no 2.6.3.4 at all), so Quality-first showed the
+// wrong clause text and opened the wrong PDF. The Quality Code is the fallback for numbers only it has.
+const CODES = [FOOD, QUALITY];
 
 /**
  * Resolve a reference token to a linkable clause:
