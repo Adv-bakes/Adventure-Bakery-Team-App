@@ -999,7 +999,7 @@ with a CHECK, so the role was a constraint change. Adding a role touches a list 
   through; `findVisitorMatches` then matches exactly (either number ends with the other, so `4471`
   finds a full number and vice versa; every typed word must begin a word of name or company).
   `visitor_fold` in SQL mirrors `normalizeName` — change one, change both.
-- **Steps:** first visit or returning (two buttons, asked BEFORE the search box is shown — with the box leading the screen, first-time visitors typed their phone number into it) → lookup → details (name, company, optional phone, **who are you here to see** as buttons
+- **Steps:** "Have you signed in on this screen before?" — worded about the screen, not about visiting, because someone who had been to the site before the kiosk existed answered yes to "visited before" (two buttons, asked BEFORE the search box is shown — with the box leading the screen, first-time visitors typed their phone number into it) → lookup → details (name, company, optional phone, **who are you here to see** as buttons
   of the team's names plus **"I don't know"** for a walk-in, stored as `HOST_UNKNOWN` rather than a name picked at random, purpose) → health → rules (only without a valid acknowledgement, never for a
   refused visitor) → sign. The wording comes from the two forms' own schemas.
 - **The Full name field capitalises as it is typed** (`capitalizeName`: the first letter and the

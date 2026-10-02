@@ -198,7 +198,8 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
   const [step, setStep] = useState<Step>("home");
   const [query, setQuery] = useState("");
-  // Whether the visitor has said they have been here before, which is what shows the search box.
+  // Whether the visitor has said they have signed in on this screen before, which is what shows
+  // the search box.
   const [returning, setReturning] = useState(false);
   const [candidates, setCandidates] = useState<AckRecord[]>([]);
   const [searching, setSearching] = useState(false);
@@ -548,17 +549,20 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
             {step === "lookup" && (
               <>
-                <h2 className="text-2xl font-semibold">Have you visited before?</h2>
+                <h2 className="text-2xl font-semibold">Have you signed in on this screen before?</h2>
                 {/* The question is answered first, with two buttons. When the search box led the
                     screen, first-time visitors started typing their phone number into it before
-                    they saw there was a first-visit button underneath. */}
+                    they saw there was a first-visit button underneath.
+                    It asks about SIGNING IN ON THIS SCREEN, not about visiting: a contractor who
+                    had been to the site before the kiosk existed answered "visited before" with
+                    yes, and then could not find himself. */}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={() => choose(null)}
                     className="min-h-24 rounded-md border px-5 py-4 text-left bg-[#C89B3C] text-[#2A1F0E] border-[#C89B3C] hover:bg-[#B58A30]"
                   >
-                    <span className="block text-lg font-semibold">No — this is my first visit</span>
+                    <span className="block text-lg font-semibold">No — this is my first time</span>
                     <span className="block text-sm opacity-80">Takes about two minutes</span>
                   </button>
                   <button
@@ -572,7 +576,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                         : "bg-white text-[#2A1F0E] border-[#2A1F0E]/25 hover:bg-[#C89B3C]/10",
                     )}
                   >
-                    <span className="block text-lg font-semibold">Yes — I have been here before</span>
+                    <span className="block text-lg font-semibold">Yes — I have signed in here before</span>
                     <span className="block text-sm opacity-80">Find yourself and skip the rules</span>
                   </button>
                 </div>
@@ -596,7 +600,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                       <div className="space-y-2">
                         {matches.length === 0 && (
                           <p className="text-base text-[#2A1F0E]/65">
-                            {searching ? "Looking…" : "No match yet. Keep typing, or sign in as a first visit."}
+                            {searching ? "Looking…" : "No match yet. Keep typing, or choose \"No — this is my first time\" above."}
                           </p>
                         )}
                         {matches.map(m => {
