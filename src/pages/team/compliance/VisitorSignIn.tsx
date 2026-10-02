@@ -43,7 +43,7 @@ import {
   type VisitorDesk, type VisitorOnSite,
 } from "@/lib/formResponses";
 import {
-  HOST_UNKNOWN, ackState, buildAckData, buildSignInData, findVisitorMatches, isRefused, localDate, localTime,
+  HOST_UNKNOWN, ackState, buildAckData, buildSignInData, capitalizeName, findVisitorMatches, isRefused, localDate, localTime,
   type AckRecord, type VisitAnswers, type VisitorMatch,
 } from "@/lib/visitors";
 import { SignaturePad } from "@/components/team/forms/SignaturePad";
@@ -611,7 +611,25 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <Label htmlFor="v-name">Full name</Label>
-                      <Input id="v-name" className="h-12 text-base" autoComplete="off" value={answers.name} onChange={e => set({ name: e.target.value })} />
+                      {/* Capitals are put in as the name is typed. While an on-screen keyboard is still
+                          composing a word the text is left alone (rewriting it mid-word makes some
+                          Android keyboards double letters) and is tidied when the word is committed. */}
+                      <Input
+                        id="v-name" className="h-12 text-base" autoComplete="off" autoCapitalize="words"
+                        value={answers.name}
+                        onChange={e => {
+                          const el = e.target;
+                          if ((e.nativeEvent as InputEvent).isComposing) { set({ name: el.value }); return; }
+                          const at = el.selectionStart;
+                          set({ name: capitalizeName(el.value) });
+                          // React moves the caret to the end when it rewrites the value; put it back.
+                          requestAnimationFrame(() => {
+                            if (at != null && document.activeElement === el) el.setSelectionRange(at, at);
+                          });
+                        }}
+                        onCompositionEnd={e => set({ name: capitalizeName(e.currentTarget.value) })}
+                        onBlur={e => set({ name: capitalizeName(e.target.value) })}
+                      />
                     </div>
                     <div>
                       <Label htmlFor="v-company">Company / organisation</Label>

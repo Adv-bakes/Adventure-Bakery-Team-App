@@ -51,6 +51,17 @@ check("last4 of four digits", V.last4("4471"), "4471");
 check("last4 of too few digits", V.last4("47"), "");
 check("last4 of nothing", V.last4(null), "");
 
+// ---- capitals in a typed name
+check("first letter", V.capitalizeName("m"), "M");
+check("after a space", V.capitalizeName("maria lopez"), "Maria Lopez");
+check("after a hyphen", V.capitalizeName("mary-jo smith-jones"), "Mary-Jo Smith-Jones");
+check("nothing is lowered", V.capitalizeName("McDonald DeShawn"), "McDonald DeShawn");
+check("accented letters", V.capitalizeName("josé álvarez"), "José Álvarez");
+check("a trailing space or hyphen is kept", V.capitalizeName("ann-"), "Ann-");
+check("only spaces and hyphens start a word", V.capitalizeName("o'brien"), "O'brien");
+check("length never changes", V.capitalizeName("ßen  x").length, 6);
+check("empty", V.capitalizeName(""), "");
+
 // ---- lookup
 check("last four finds both people who share them, newest ack each", names("4471"), ["José Pérez|b1", "Maria Lopez|a1"]);
 check("full number finds a visitor who gave only the last four", names("407-555-4471"), ["José Pérez|b1", "Maria Lopez|a1"]);
