@@ -83,7 +83,7 @@ import PssIntake from "./pages/public/PssIntake";
 // Other section skeletons (Phase 0)
 import {
   OpsPipeline, OpsSchedule, OpsFloorExecution, OpsInsights,
-  ComplianceTraceability, ComplianceCertifications,
+  ComplianceCertifications,
   InternalEmail, InternalFinance,
 } from "./pages/sections";
 import HrDirectory from "./pages/team/hr/HrDirectory";
@@ -92,6 +92,7 @@ import DocumentRegister from "./pages/team/compliance/DocumentRegister";
 import TemperatureReport from "./pages/team/compliance/TemperatureReport";
 import FormEntry from "./pages/team/compliance/FormEntry";
 import FormRecords from "./pages/team/compliance/Records";
+import LotTrace from "./pages/team/compliance/LotTrace";
 import Notifications from "./pages/team/Notifications";
 import VerificationSchedule from "./pages/team/compliance/VerificationSchedule";
 import FormEntryStart from "./pages/team/compliance/FormEntryStart";
@@ -467,6 +468,11 @@ const App = () => (
               <TeamLayout><FormRecords /></TeamLayout>
             </ProtectedRoute>
           } />
+          <Route path="/team/compliance/traceability" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><LotTrace /></TeamLayout>
+            </ProtectedRoute>
+          } />
           {/* Resumes the caller's newest open draft, else creates one, then redirects to it.
               A notification link performs a write, so it has to be safe to click twice. */}
           {/* The voice command wall card. Deliberately outside TeamLayout so the sidebar and the
@@ -531,7 +537,6 @@ const App = () => (
             ["/team/ops/schedule", OpsSchedule],
             ["/team/ops/floor", OpsFloorExecution],
             ["/team/ops/insights", OpsInsights],
-            ["/team/compliance/traceability", ComplianceTraceability],
             ["/team/compliance/certifications", ComplianceCertifications],
             ["/team/internal/email", InternalEmail],
           ].map(([path, Comp]: any) => (

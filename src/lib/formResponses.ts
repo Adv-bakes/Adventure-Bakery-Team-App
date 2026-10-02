@@ -10,6 +10,10 @@ import {
   type AiCellDraft, type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
 import type { GuideDoc } from "@/lib/auditGuide";
+import {
+  RECALL_FORM, TRACE_FORMS, checkTraceMapping,
+  type TraceEntry, type TraceKind, type TraceRecords,
+} from "@/lib/lotTrace";
 import { VISITOR_FORMS, isVisitorKioskSchema, type AckRecord } from "@/lib/visitors";
 
 export type ResponseStatus = "draft" | "submitted";
@@ -521,6 +525,79 @@ export async function fetchProfileNames(userIds: string[]): Promise<Map<string, 
  * twelve months - the records an auditor samples, where an empty form is often the finding.
  * Paged, because a select is capped at 1000 rows and a busy daily form passes that in a year.
  */
+/** The id of each active or draft form among `numbers`, for links into the library. */
+export async function fetchDocIdsByNumber(numbers: string[]): Promise<Record<string, string>> {
+  const { data, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, sop_number, status")
+    .in("sop_number", numbers)
+    .in("status", ["active", "draft"]);
+  if (error) throw error;
+  const out: Record<string, string> = {};
+  for (const d of (data ?? []) as { id: string; sop_number: string; status: string }[]) {
+    if (!out[d.sop_number] || d.status === "active") out[d.sop_number] = d.id;
+  }
+  return out;
+}
+
+export interface TraceDoc { id: string; sop_number: string; revision: string | null; status: string; content: any }
+export interface TraceData {
+  records: TraceRecords;
+  /** The live document of every form the trace reads, and of FRM-012, by number. */
+  docs: Record<string, TraceDoc>;
+  /** Source forms whose mapped fields have moved: the trace must not run while any exist. */
+  sourceProblems: string[];
+  /** FRM-012 fields the trace writes that are missing: a record cannot be started or filled. */
+  recallProblems: string[];
+}
+
+/**
+ * Everything the lot trace reads (lotTrace.ts): the entries, submitted AND draft, of the seven
+ * source forms. Only the mapped answer keys are selected - entry data can hold drawn-signature
+ * images - and each form is paged, since a daily receiving log passes the 1000-row cap. Drafts
+ * are included on purpose: in a recall, an unsubmitted lot record is still where the lot went.
+ */
+export async function loadTraceRecords(): Promise<TraceData> {
+  const numbers = [...Object.values(TRACE_FORMS).map(s => s.form), RECALL_FORM];
+  const { data: docRows, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, sop_number, revision, status, content")
+    .in("sop_number", numbers)
+    .eq("type", "form")
+    .in("status", ["active", "draft"]);
+  if (error) throw error;
+  const docs: Record<string, TraceDoc> = {};
+  for (const d of (docRows ?? []) as TraceDoc[]) {
+    // One number should be one document; if it ever is two, the issued one is the record.
+    if (!docs[d.sop_number] || d.status === "active") docs[d.sop_number] = d;
+  }
+  const schemas = Object.fromEntries(Object.entries(docs).map(([n, d]) => [n, getFormSchema(d.content)]));
+  const sourceProblems = checkTraceMapping(schemas, false);
+  const recallProblems = checkTraceMapping(schemas).filter(p => !sourceProblems.includes(p));
+
+  const records = Object.fromEntries(Object.keys(TRACE_FORMS).map(k => [k, [] as TraceEntry[]])) as TraceRecords;
+  const PAGE = 1000;
+  await Promise.all((Object.keys(TRACE_FORMS) as TraceKind[]).map(async kind => {
+    const spec = TRACE_FORMS[kind];
+    const doc = docs[spec.form];
+    if (!doc) return;
+    const keys = [...spec.fields, ...Object.keys(spec.grids)];
+    const select = ["id", "status", "submitted_at", "created_at", ...keys.map(k => `v_${k}:data->${k}`)].join(", ");
+    for (let from = 0; ; from += PAGE) {
+      const { data, error: err } = await table().select(select).eq("document_id", doc.id).order("id").range(from, from + PAGE - 1);
+      if (err) throw err;
+      for (const r of (data ?? []) as any[]) {
+        records[kind].push({
+          id: r.id, docId: doc.id, status: r.status, date: r.submitted_at ?? r.created_at,
+          data: Object.fromEntries(keys.map(k => [k, r[`v_${k}`]])),
+        });
+      }
+      if (!data || data.length < PAGE) break;
+    }
+  }));
+  return { records, docs, sourceProblems, recallProblems };
+}
+
 export async function loadAuditGuideData(): Promise<{ docs: GuideDoc[]; counts: Map<string, number> }> {
   const { data: docs, error } = await (supabase as any)
     .from("sop_documents")

@@ -134,7 +134,7 @@ which live counter feeds an item's gold pill; `TeamLayout` owns both counts (pla
 Query, and `refetchInterval` appears nowhere in `src/`). The pill still renders when the sidebar
 is collapsed. Before D-18 this was `item.path === "/team/sales/dashboard"` inline in the render.
 | Operations | `/team/ops/orders`, `/team/ops/inventory`, `/team/ops/floor`, `/team/ops/insights` | floor & insights are Phase 0 |
-| Compliance | `/team/compliance/sops`, `/team/compliance/verification`, `/team/compliance/traceability`, `/team/compliance/temperature`, `/team/compliance/certifications` | traceability & certifications Phase 0 |
+| Compliance | `/team/compliance/sops`, `/team/compliance/verification`, `/team/compliance/traceability`, `/team/compliance/temperature`, `/team/compliance/certifications` | certifications Phase 0 |
 | HR | `/team/hr/directory`, `/team/hr/trainings`, `/team/hr/traceability` | traceability is Phase 0 |
 | Internal | `/team/internal/email`, `/team/internal/finance` (owner only), `/team/sourcing`, `/team/account`, `/team/settings` | email/finance Phase 0 |
 
@@ -836,6 +836,7 @@ The training "Listen" feature plays narration in the company's cloned ElevenLabs
 | `formSchema.ts` | Dynamic form schema types + pure helpers: `getFormSchema`/`hasFormSchema`, `buildZodSchema` (submit-time validation), `emptyValues`, `formatFieldValue`, `flattenForReport`, `instanceTitle`, `slugifyFieldId`, `valueFields`, `listFields` (fields with `showInList: true`, for Entries-list extra columns), `verifierSignatureFields`/`unsignedVerifierFields` (which verifier lines an entry is still missing — drives the Request-signature action and closes the request); package-label scan helpers `LABEL_FACTS`/`LABEL_FACT_LABELS`, `inferScanFact`/`resolveScanFact`, `scanWantedFacts`, `applyLabelScan`. See "Dynamic Fillable Forms" below |
 | `formResponses.ts` | Supabase access for `sop_document_responses`/`sop_document_history` — `createResponse` (optional 2nd arg `prefill` seeds the new entry's `data` over `emptyValues(schema)`; a resumed existing draft is never clobbered — powers the FRM-401 temperature-review launcher), `saveResponseData`/`submitResponse` (optimistic-concurrency guard, throws `StaleResponseError`), `reopenResponse`, `deleteResponse(id, attachmentPaths?)` (also best-effort cleans up storage), `resolveSchemaForResponse` (live/snapshot/fallback), `fetchProfileNames`, `extractPackageLabel` (photographed ingredient pack → facts for one grid row), and entry-attachment helpers `uploadResponseAttachment`/`removeResponseAttachment`/`getResponseAttachmentUrl`/`saveResponseAttachments` (`form-attachments` bucket, no concurrency guard — see "Dynamic Fillable Forms") |
 | `visitors.ts` | Visitor sign-in, pure half: `findVisitorMatches` (phone / last 4 / name), `ackState` (twelve months + current revision), `addMonthsIso`, `buildAckData`/`buildSignInData` (the FRM-906 / FRM-905 entries), `isRefused`, `isVisitorForm`/`isVisitorKioskSchema`. No imports; tested by `scripts/test-visitors.mjs`. See "Visitor Sign-In" |
+| `lotTrace.ts` | Lot trace + recall workspace, pure half: `TRACE_FORMS`, `runTrace`, `startOptions`, `toRecordFill`, `checkTraceMapping`, `deriveRecallSteps`, `clockState`, `normLot`/`sumQty`. No imports; tested by `scripts/test-lot-trace.mjs`. See "Lot Trace & Recall Workspace" |
 | `formPdf.ts` | `generateFormResponsePdf(doc, schema, response)` (paper-like entry PDF), `generateFormReportPdf(...)` (landscape report, clamps to 10 columns), and `generateDerivedReportPdf(...)` (derived log/register PDF); reuses `sopPdf.ts`'s logo/footer exports |
 | `formReport.ts` | Derived-report engine for log forms (`content.report_schema`): `getReportSchema`/`hasReportSchema`, declarative `ColumnSource` (`field/template/map/cases/const`), `resolveReportColumns`, `loadReportBase`+`filterReportRows` (client-side projection), `matchesFilter` (fixed `filters[]` conditions), `selectOptionsFromResponses`/`loadSelectOptions` (options for a select linked to another form — see `optionsFrom`), `runReport`, `distinctColumnValues`, `buildReportSql` (read-only SQL equivalent). See `FORM_REPORTS.md` |
 
@@ -1029,6 +1030,47 @@ with a CHECK, so the role was a constraint change. Adding a role touches a list 
 - Migrations `20261001000002` (forms v3), `…03` (sign-out RPC), `…04` (FSQM-012 v3), `…05` (kiosk
   role + functions), `…06` (forms v4, host signatures removed). `scripts/test-visitors.mjs`
   validates what the page builds against the real schemas in `sop-drafts/`.
+
+## Lot Trace & Recall Workspace — `lib/lotTrace.ts` + `components/team/trace/`
+
+A recall (FSQM-023) or the annual mock recall touches eight forms. Every one already carries the lot
+codes; nothing joined them. The trace pulls the records so nobody hunts for them under stress.
+
+- **Two surfaces, one engine.** `/team/compliance/traceability` (`LotTrace.tsx`, replaced the Phase-0
+  placeholder) answers the everyday question — a supplier notice arrives, who got that lot? — and can
+  start an FRM-012 pre-filled from the result (`createResponse(doc, prefill)`). Every FRM-012 entry
+  carries `RecallWorkspace` above the form when `settings.recallWorkspace` is set (keyed on the entry's
+  resolved schema, because it is tied to field ids).
+- **`runTrace(records, start)`** starts from a supplier lot (matches FRM-520 `ingredients.supplier_lot`
+  and `film_lot`) or from one of our lot codes. One card per finished lot — **a lot is product + code**,
+  since two products baked the same day share a code. Per lot: inputs with their FRM-301 receipts,
+  FRM-801 dispatches, FRM-703 retention, FRM-701 release; plus FRM-702 holds and the FRM-011 contacts.
+- **It must never come back quietly empty.** Lots compare normalised (`normLot`: case, spaces, dashes
+  ignored). A record with the same code under a product name that does not match is listed under
+  "check these", never dropped. **Drafts are included and flagged** (owner's decision: a missed lot is
+  worse than an unfinished record). `checkTraceMapping` compares `TRACE_FORMS` — the single map of form
+  numbers to field ids — with the live schemas, and the panel shows "FRM-801 no longer has…" instead of
+  a trace. Renaming a field on any of the eight forms means updating `TRACE_FORMS`.
+- **`gaps[]` is computed, not written by a model**: missing receipts (one line per lot, not per
+  ingredient), no dispatch, no retention sample, drafts, a customer with no contact, quantities that
+  cannot be added. Quantities are free text (`"3 cases"`), so `sumQty` adds only same-unit values.
+- **`toRecordFill`** writes the trace into FRM-012's grids with a readable `source` column and a hidden
+  `_src` (`"docId/responseId"`) per row. "Still on site", "disposed" and "unaccounted" are **left blank
+  on purpose** — they are physical counts no record holds (the weights rule again). Applied like "Copy
+  from a previous entry": unsaved, dirty, one Undo.
+- **Steps are derived, never stored** (`deriveRecallSteps`): Hold, Trace, Decide, Notify, Recover,
+  Reconcile, CAPA, Close, each ticked from the record's own fields, so a tick cannot disagree with the
+  record. Decide and Recover do not apply to a mock recall.
+- **Clocks** (`clockState`): 4-hour trace target from `started`, stopped by `completed`; the 24-hour
+  written notice (SQFI, certification body, FDA) from `decided_at` else `started`, real events only.
+  `started` is a datetime-local string and is parsed as LOCAL time.
+- **Mock recalls show a "do not notify" banner**; contacts are plain text everywhere. Deliberately not
+  built (owner, 2026-10-01): a one-tap notification log, pre-written notices, launch-prefilled Hold/CAPA.
+- **Performance:** `FormEntry` re-renders on every keystroke, so `RecallWorkspace` is `memo` with stable
+  props and each changing value is read in a leaf with a narrow `useWatch`. The records load once
+  (`useTraceData`); the loader selects only mapped JSON paths (entry data can hold signature images) and
+  pages each form.
+- Tested by `scripts/test-lot-trace.mjs`. `lotTrace.ts` has no imports so the script can bundle it.
 
 ## Team Coach chat — `components/team/coach/`
 
