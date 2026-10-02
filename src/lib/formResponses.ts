@@ -525,6 +525,47 @@ export async function fetchProfileNames(userIds: string[]): Promise<Map<string, 
  * twelve months - the records an auditor samples, where an empty form is often the finding.
  * Paged, because a select is capped at 1000 rows and a busy daily form passes that in a year.
  */
+export interface FormLinkTarget {
+  docId: string;
+  title: string;
+  /** The entry to open, when one was asked for and exists. */
+  responseId: string | null;
+  draft: boolean;
+  /** The entry's date (submitted, else created), yyyy-MM-dd. */
+  date: string | null;
+}
+
+/**
+ * Where a FieldLink points: the form by number and, with `latestEntry`, its newest submitted
+ * entry - else its newest draft, flagged, since an unsubmitted list is still the one in use.
+ * Null when the form does not exist.
+ */
+export async function fetchFormLinkTarget(form: string, latestEntry?: boolean): Promise<FormLinkTarget | null> {
+  const { data: docs, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, title, status")
+    .eq("sop_number", form)
+    .in("status", ["active", "draft"]);
+  if (error) throw error;
+  const doc = (docs ?? []).find((d: any) => d.status === "active") ?? (docs ?? [])[0];
+  if (!doc) return null;
+  const target: FormLinkTarget = { docId: doc.id, title: doc.title ?? form, responseId: null, draft: false, date: null };
+  if (!latestEntry) return target;
+  const pick = async (status: string, column: string) => {
+    const { data, error: err } = await table().select("id, status, submitted_at, created_at")
+      .eq("document_id", doc.id).eq("status", status).order(column, { ascending: false }).limit(1);
+    if (err) throw err;
+    return (data ?? [])[0] as { id: string; status: string; submitted_at: string | null; created_at: string } | undefined;
+  };
+  const entry = (await pick("submitted", "submitted_at")) ?? (await pick("draft", "created_at"));
+  if (entry) {
+    target.responseId = entry.id;
+    target.draft = entry.status !== "submitted";
+    target.date = (entry.submitted_at ?? entry.created_at).slice(0, 10);
+  }
+  return target;
+}
+
 /** The id of each active or draft form among `numbers`, for links into the library. */
 export async function fetchDocIdsByNumber(numbers: string[]): Promise<Record<string, string>> {
   const { data, error } = await (supabase as any)

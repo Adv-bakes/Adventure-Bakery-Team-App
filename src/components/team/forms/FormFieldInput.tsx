@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { deriveDateValue, deriveTextValue, julianLotCode, nextDerivedFill } from "@/lib/formSchema";
 import { loadSelectOptions } from "@/lib/formReport";
+import { fetchFormLinkTarget, type FormLinkTarget } from "@/lib/formResponses";
+import { ExternalLink } from "lucide-react";
 import type {
-  CheckboxField, DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
+  FieldLink, CheckboxField, DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
   PassFailField, SelectOptionsFrom, SignatureField, TextDerivation, TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
@@ -172,6 +174,34 @@ interface FormFieldInputProps {
  * nothing qualifies. Fetched on mount rather than cached, so an approval submitted in another
  * tab is choosable the next time the entry is opened.
  */
+/**
+ * The link under a field with `linkTo`: the other form's newest entry, or the form itself. Looked
+ * up once on mount; renders nothing until it resolves, and nothing if the form is missing - a
+ * convenience must not get in the way of filling the field.
+ */
+function FormLink({ spec }: { spec: FieldLink }) {
+  const [target, setTarget] = useState<FormLinkTarget | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetchFormLinkTarget(spec.form, spec.latestEntry).then(t => { if (live) setTarget(t); }).catch(() => { /* no link */ });
+    return () => { live = false; };
+  }, [spec.form, spec.latestEntry]);
+  if (!target) return null;
+  const href = target.responseId
+    ? `/team/compliance/forms/${target.docId}/entries/${target.responseId}`
+    : `/team/compliance/sops?doc=${target.docId}`;
+  return (
+    <p className="text-xs">
+      <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-[#9A6F1E] hover:underline">
+        {target.responseId ? `Open the current ${spec.form} - ${target.title}${target.date ? ` (${target.date})` : ""}` : `Open ${spec.form} - ${target.title}`}
+        <ExternalLink className="h-3 w-3 opacity-60" />
+      </a>
+      {target.responseId && target.draft && <span className="ml-1.5 rounded bg-amber-100 px-1 text-[10px] font-semibold uppercase text-amber-800">draft - not submitted</span>}
+      {spec.latestEntry && !target.responseId && <span className="ml-1.5 text-amber-700">no entry has been filled in yet</span>}
+    </p>
+  );
+}
+
 function useLinkedOptions(spec: SelectOptionsFrom | undefined) {
   const [state, setState] = useState<{ options: string[] | null; failed: boolean }>({ options: null, failed: false });
   const key = spec ? JSON.stringify(spec) : "";
@@ -446,6 +476,7 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
             {labelEl}
             {input}
             {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
+            {field.linkTo && <FormLink spec={field.linkTo} />}
             {error && <p className="text-xs text-red-600">{error}</p>}
           </div>
         );
