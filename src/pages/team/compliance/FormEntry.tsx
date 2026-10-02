@@ -696,7 +696,7 @@ export default function FormEntry() {
       {/* Copy from a previous entry (forms that opt in via settings.copyFrom) */}
       {/* Keyed on the entry's own (resolved) schema, not the live settings: the workspace is tied to
           the field ids of the revision the entry was filled under. */}
-      {schema.settings?.recallWorkspace && <RecallWorkspace form={form} canEdit={canEdit} />}
+      {schema.settings?.recallWorkspace && <RecallWorkspace form={form} canEdit={canEdit} schema={schema} />}
 
       {canEdit && schema.settings?.copyFrom && (
         <Card className="p-3 space-y-2 border" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.4)" }}>

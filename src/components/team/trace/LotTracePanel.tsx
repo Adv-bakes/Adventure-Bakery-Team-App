@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { AlertTriangle, ExternalLink, Loader2, Search } from "lucide-react";
+import { AlertTriangle, Download, ExternalLink, Loader2, Mail, Search } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { loadTraceRecords, type TraceData } from "@/lib/formResponses";
 import {
-  normLot, normName, runTrace, startOptions,
-  type ContactRow, type LotTrace, type RecordRef, type TraceResult, type TraceStart,
+  mailtoHref, normLot, normName, runTrace, startOptions,
+  type ContactRow, type EmailDraft, type LotTrace, type RecordRef, type TraceResult, type TraceStart,
 } from "@/lib/lotTrace";
+import { generateTracePdf } from "@/lib/tracePdf";
 
 const HAIR = "rgba(200,155,60,0.35)";
 
@@ -136,20 +138,39 @@ function LotCard({ lot }: { lot: LotTrace }) {
   );
 }
 
-function ContactLine({ c }: { c: ContactRow }) {
+/**
+ * `mail` decides the envelope beside an address: undefined = a plain mailto; a function = the draft
+ * read at the moment of the click (the recall record's Reason, which may have just been edited);
+ * false = no link at all (a mock recall - nobody is to be contacted).
+ */
+type MailOption = (() => EmailDraft | null) | false | undefined;
+
+function ContactLine({ c, mail }: { c: ContactRow; mail: MailOption }) {
   return (
     <div className="text-xs">
       <span className="font-medium text-[#2A1F0E]">{c.label}</span>
       {c.name && ` - ${c.name}`}
       {c.phone && <span className="ml-2 select-all">{c.phone}</span>}
       {c.email && <span className="ml-2 select-all">{c.email}</span>}
+      {c.email && mail !== false && (
+        <a
+          href={mailtoHref(c.email)}
+          onClick={e => { e.currentTarget.href = mailtoHref(c.email, mail?.()); }}
+          title={mail ? `Email ${c.email} - your mail app opens with this record's Reason as the text. Change it there before you send.` : `Email ${c.email}`}
+          aria-label={`Email ${c.label}`}
+          className="ml-1.5 inline-flex h-6 w-6 items-center justify-center rounded border border-[#C89B3C]/50 align-middle text-[#9A6F1E] hover:bg-[#C89B3C]/10"
+        >
+          <Mail className="h-3.5 w-3.5" />
+        </a>
+      )}
       {!c.phone && !c.email && <span className="ml-2 text-amber-700">no phone or email on the list</span>}
       {c.when && <div className="text-[#2A1F0E]/55">{c.when}</div>}
     </div>
   );
 }
 
-export function TraceContacts({ result, mock }: { result: TraceResult; mock?: boolean }) {
+export function TraceContacts({ result, mock, emailDraft }: { result: TraceResult; mock?: boolean; emailDraft?: () => EmailDraft | null }) {
+  const mail: MailOption = mock ? false : emailDraft;
   return (
     <div className="rounded-lg border bg-white p-3 space-y-2" style={{ borderColor: HAIR }}>
       <div className="flex flex-wrap items-center gap-x-3">
@@ -166,11 +187,11 @@ export function TraceContacts({ result, mock }: { result: TraceResult; mock?: bo
         <div key={c.customer} className="space-y-1">
           <p className="text-xs font-semibold text-[#2A1F0E]/80">Customer: {c.customer}</p>
           {c.matched
-            ? c.rows.map((r, n) => <ContactLine key={n} c={r} />)
+            ? c.rows.map((r, n) => <ContactLine key={n} c={r} mail={mail} />)
             : (
               <>
                 <p className="text-xs text-amber-700">Not found by name on the contact list{c.rows.length ? " - the customers on the list are:" : "."}</p>
-                {c.rows.map((r, n) => <ContactLine key={n} c={r} />)}
+                {c.rows.map((r, n) => <ContactLine key={n} c={r} mail={mail} />)}
               </>
             )}
         </div>
@@ -178,7 +199,7 @@ export function TraceContacts({ result, mock }: { result: TraceResult; mock?: bo
       {result.essential.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-semibold text-[#2A1F0E]/80">Essential organizations (SQF 2.6.3.1 iv)</p>
-          {result.essential.map((r, n) => <ContactLine key={n} c={r} />)}
+          {result.essential.map((r, n) => <ContactLine key={n} c={r} mail={mail} />)}
         </div>
       )}
     </div>
@@ -193,6 +214,10 @@ export interface LotTracePanelProps {
   /** Start the trace from this (the recall record's own trigger). */
   initialStart?: TraceStart | null;
   mock?: boolean;
+  /** Inside a recall record: the email offered for a contact, read when the envelope is clicked. */
+  emailDraft?: () => EmailDraft | null;
+  /** Named on the PDF, e.g. the recall record the trace was run from. */
+  pdfTitle?: () => string | undefined;
   /** Rendered under a finished trace - the page's "Start a record" or the record's "Put into the record". */
   actions?: (result: TraceResult) => ReactNode;
 }
@@ -202,7 +227,18 @@ export interface LotTracePanelProps {
  * finished lot involved with links to each source record, the contacts, and what the records cannot
  * show. Pure display over runTrace - nothing here writes.
  */
-export function LotTracePanel({ data, loading, error, onReload, initialStart, mock, actions }: LotTracePanelProps) {
+export function LotTracePanel({ data, loading, error, onReload, initialStart, mock, emailDraft, pdfTitle, actions }: LotTracePanelProps) {
+  const [printing, setPrinting] = useState(false);
+  const downloadPdf = async (r: TraceResult) => {
+    setPrinting(true);
+    try {
+      await generateTracePdf(r, { recordTitle: pdfTitle?.(), mock });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't make the PDF");
+    } finally {
+      setPrinting(false);
+    }
+  };
   const [kind, setKind] = useState<"material" | "lot">(initialStart?.kind ?? "material");
   const [text, setText] = useState(initialStart ? [initialStart.name, initialStart.lot].filter(Boolean).join(" ") : "");
   const [start, setStart] = useState<TraceStart | null>(initialStart ?? null);
@@ -284,12 +320,17 @@ export function LotTracePanel({ data, loading, error, onReload, initialStart, mo
 
       {result && (
         <div className="space-y-3">
-          <p className="text-sm text-[#2A1F0E]">
-            <span className="font-semibold">
-              {result.lots.length === 0 ? "No finished lot found" : `${result.lots.length} finished lot${result.lots.length === 1 ? "" : "s"} involved`}
-            </span>
-            {" "}for {start!.kind === "material" ? "supplier lot" : "lot"} <span className="font-semibold">{start!.lot}</span>{start!.name && ` (${start!.name})`}.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-[#2A1F0E]">
+              <span className="font-semibold">
+                {result.lots.length === 0 ? "No finished lot found" : `${result.lots.length} finished lot${result.lots.length === 1 ? "" : "s"} involved`}
+              </span>
+              {" "}for {start!.kind === "material" ? "supplier lot" : "lot"} <span className="font-semibold">{start!.lot}</span>{start!.name && ` (${start!.name})`}.
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={() => downloadPdf(result)} disabled={printing}>
+              {printing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}Download PDF
+            </Button>
+          </div>
 
           {result.gaps.length > 0 && (
             <div className="rounded-lg border border-amber-400 bg-amber-50 p-3 space-y-1">
@@ -322,7 +363,7 @@ export function LotTracePanel({ data, loading, error, onReload, initialStart, mo
             </div>
           )}
 
-          {result.lots.length > 0 && <TraceContacts result={result} mock={mock} />}
+          {result.lots.length > 0 && <TraceContacts result={result} mock={mock} emailDraft={emailDraft} />}
           {actions?.(result)}
         </div>
       )}

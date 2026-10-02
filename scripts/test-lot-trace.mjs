@@ -176,6 +176,15 @@ check("real progress", ids({ record_type: "Recall", decision: "Recall", notifica
   closed_by: { name: "A" }, reconciliation: [{ packed: "10", unaccounted: "" }] }, s => s.done), ["decide", "notify", "recover", "capa", "close"]);
 check("a row holding only _src is not a started row", ids({ trace_back: [{ _src: "a/b" }], completed: "2026-10-01T10:00" }, s => s.done), []);
 
+// ---- emailing a contact ----
+const draftMail = T.recallEmailDraft({ record_type: "Recall", product: "Rum Cake", lot_codes: "6273, 6274", reason: "Supplier recalled the oil.\nHold all stock & call us." });
+check("email subject", draftMail.subject, "Product recall: Rum Cake - lot 6273, 6274");
+check("withdrawal subject", T.recallEmailDraft({ record_type: "Withdrawal" }).subject, "Product withdrawal");
+check("mailto encodes the reason", T.mailtoHref(" a@b.com ", draftMail),
+  "mailto:a@b.com?subject=Product%20recall%3A%20Rum%20Cake%20-%20lot%206273%2C%206274&body=Supplier%20recalled%20the%20oil.%0AHold%20all%20stock%20%26%20call%20us.");
+check("mailto without a draft", T.mailtoHref("a@b.com"), "mailto:a@b.com");
+check("mailto with a blank reason has no body", T.mailtoHref("a@b.com", { subject: "S", body: "" }), "mailto:a@b.com?subject=S");
+
 // ---- clocks ----
 const at = (h, mi = 0) => new Date(2026, 9, 1, h, mi);
 const c1 = T.clockState("2026-10-01T08:00", T.TRACE_TARGET_MS, at(10, 14));
