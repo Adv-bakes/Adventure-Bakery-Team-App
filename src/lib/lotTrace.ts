@@ -581,6 +581,28 @@ export function deriveRecallSteps(values: Record<string, any>): RecallStep[] {
   ];
 }
 
+// ---------- Emailing a contact ----------
+
+export interface EmailDraft { subject: string; body: string }
+
+/**
+ * The email offered when a contact is mailed from a recall record: the record's Reason as the
+ * text, so the person does not retype it under pressure. It is only a starting point - the mail
+ * app opens with it and nothing is sent until they press Send there.
+ */
+export function recallEmailDraft(values: Record<string, any>): EmailDraft {
+  const what = [str(values.product), str(values.lot_codes) && `lot ${str(values.lot_codes)}`].filter(Boolean).join(" - ");
+  const type = str(values.record_type) === RECALL_TYPES.withdrawal ? "Product withdrawal" : "Product recall";
+  return { subject: [type, what].filter(Boolean).join(": "), body: str(values.reason) };
+}
+
+/** A mailto: link for one address; the draft, when given, becomes the subject and body. */
+export function mailtoHref(email: string, draft?: EmailDraft | null): string {
+  const to = email.trim();
+  const q = draft ? [["subject", draft.subject], ["body", draft.body]].filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&") : "";
+  return `mailto:${to}${q ? `?${q}` : ""}`;
+}
+
 // ---------- Clocks ----------
 
 export const TRACE_TARGET_MS = 4 * 60 * 60 * 1000;

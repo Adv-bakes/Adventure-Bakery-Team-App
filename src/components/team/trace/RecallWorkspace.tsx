@@ -1,4 +1,4 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useWatch, type Control, type UseFormReturn } from "react-hook-form";
 import { format } from "date-fns";
 import { CheckCircle2, ChevronDown, ChevronRight, Circle, ExternalLink, MinusCircle, Undo2 } from "lucide-react";
@@ -6,9 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fetchDocIdsByNumber } from "@/lib/formResponses";
+import type { FormSchema } from "@/lib/formSchema";
 import {
-  NOTICE_LIMIT_MS, RECALL_TRIGGERS, TRACE_TARGET_MS, clockState, deriveRecallSteps, formatDuration, isMockRecall,
-  toRecordFill, type TraceResult, type TraceStart,
+  NOTICE_LIMIT_MS, RECALL_FORM, RECALL_TRIGGERS, TRACE_TARGET_MS, clockState, deriveRecallSteps, formatDuration, isMockRecall,
+  recallEmailDraft, toRecordFill, type TraceResult, type TraceStart,
 } from "@/lib/lotTrace";
 import { LotTracePanel, useTraceData } from "./LotTracePanel";
 
@@ -87,7 +88,7 @@ function RecallClock({ control, ticking }: { control: Control<Values>; ticking: 
   );
 }
 
-function RecallSteps({ control, links }: { control: Control<Values>; links: Record<string, string> }) {
+function RecallSteps({ control, links, sectionNo }: { control: Control<Values>; links: Record<string, string>; sectionNo: Record<string, string> }) {
   const watched = useWatch({ control, name: STEP_FIELDS as unknown as string[] });
   const values = Object.fromEntries(STEP_FIELDS.map((k, i) => [k, watched[i]]));
   const steps = deriveRecallSteps(values);
@@ -117,7 +118,9 @@ function RecallSteps({ control, links }: { control: Control<Values>; links: Reco
             </div>
             {s.applies && (
               <div className="flex shrink-0 flex-col items-end gap-0.5">
-                <button type="button" onClick={() => jump(s.section)} className="text-xs font-medium text-[#9A6F1E] hover:underline">Go to section</button>
+                <button type="button" onClick={() => jump(s.section)} className="text-xs font-medium text-[#9A6F1E] hover:underline whitespace-nowrap">
+                  Go to section{sectionNo[s.section] ? ` ${sectionNo[s.section]}` : ""}
+                </button>
                 {link && (
                   <a href={`/team/compliance/sops?doc=${link[1]}`} target="_blank" rel="noopener noreferrer"
                      className="inline-flex items-center gap-1 text-xs font-medium text-[#9A6F1E] hover:underline">
@@ -172,6 +175,11 @@ function WorkspaceTrace({ form, canEdit }: { form: UseFormReturn<Values>; canEdi
       onReload={reload}
       initialStart={initial}
       mock={isMockRecall({ record_type: type })}
+      emailDraft={() => recallEmailDraft(form.getValues())}
+      pdfTitle={() => {
+        const v = form.getValues();
+        return [RECALL_FORM, v.record_type, v.lot_codes && `lot ${v.lot_codes}`].filter(Boolean).join(" - ");
+      }}
       actions={result => canEdit && (
         <div className="rounded-lg border bg-white p-3 space-y-2" style={{ borderColor: HAIR }}>
           {data && data.recallProblems.length > 0 ? (
@@ -203,7 +211,11 @@ function WorkspaceTrace({ form, canEdit }: { form: UseFormReturn<Values>; canEdi
  * Memoised with stable props, and every changing value is read in a leaf with its own narrow
  * useWatch - FormEntry re-renders on each keystroke and none of that may re-run the trace.
  */
-export const RecallWorkspace = memo(function RecallWorkspace({ form, canEdit }: { form: UseFormReturn<Values>; canEdit: boolean }) {
+export const RecallWorkspace = memo(function RecallWorkspace({ form, canEdit, schema }: { form: UseFormReturn<Values>; canEdit: boolean; schema: FormSchema }) {
+  // The steps and the form's sections are two separate numberings ("step 7" is written down in
+  // "section 4"), so the link names the section it goes to - the number printed in its title.
+  const sectionNo = useMemo(() => Object.fromEntries(schema.sections.map((s, i) =>
+    [s.id, /^\s*(\d+)/.exec(s.title ?? "")?.[1] ?? String(i + 1)])), [schema]);
   const [links, setLinks] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(canEdit);
   useEffect(() => {
@@ -218,8 +230,9 @@ export const RecallWorkspace = memo(function RecallWorkspace({ form, canEdit }: 
       <ModeBanner control={form.control} />
       <RecallClock control={form.control} ticking={canEdit} />
       <div>
-        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#9A6F1E]">Steps (FSQM-023) - ticked from this record</p>
-        <RecallSteps control={form.control} links={links} />
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#9A6F1E]">Steps (FSQM-023) - ticked from this record</p>
+        <p className="mb-1 text-xs text-muted-foreground">The steps are in the order you do them. Each link says which section of the form below it is written in.</p>
+        <RecallSteps control={form.control} links={links} sectionNo={sectionNo} />
       </div>
       <div className="rounded-md border" style={{ borderColor: HAIR }}>
         <button type="button" onClick={() => setOpen(o => !o)} className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-[#C89B3C]/5">

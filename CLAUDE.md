@@ -1064,8 +1064,16 @@ codes; nothing joined them. The trace pulls the records so nobody hunts for them
 - **Clocks** (`clockState`): 4-hour trace target from `started`, stopped by `completed`; the 24-hour
   written notice (SQFI, certification body, FDA) from `decided_at` else `started`, real events only.
   `started` is a datetime-local string and is parsed as LOCAL time.
-- **Mock recalls show a "do not notify" banner**; contacts are plain text everywhere. Deliberately not
-  built (owner, 2026-10-01): a one-tap notification log, pre-written notices, launch-prefilled Hold/CAPA.
+- **Mock recalls show a "do not notify" banner** and no email links. Elsewhere a contact with an address
+  gets an envelope (`mailtoHref`): a plain `mailto:`, which opens whatever mail app the DEVICE has set as
+  default - nothing is stored per user. Inside a recall record the link carries `recallEmailDraft` (the
+  record's **Reason** as the body, read at click time), which the person can change before sending.
+  Deliberately not built (owner, 2026-10-01): a one-tap notification log, pre-written notices,
+  launch-prefilled Hold/CAPA.
+- **Download PDF** (`lib/tracePdf.ts`, `buildTraceDoc` + `generateTracePdf`): the trace as run, every
+  record a live link, gaps and contacts included. A snapshot, and says so.
+- **Steps vs sections are two numberings** (step 7 is written in section 4), so each step's link reads
+  "Go to section N", N taken from the section title.
 - **Performance:** `FormEntry` re-renders on every keystroke, so `RecallWorkspace` is `memo` with stable
   props and each changing value is read in a leaf with a narrow `useWatch`. The records load once
   (`useTraceData`); the loader selects only mapped JSON paths (entry data can hold signature images) and
