@@ -1096,6 +1096,11 @@ codes; nothing joined them. The trace pulls the records so nobody hunts for them
   (`useTraceData`); the loader selects only mapped JSON paths (entry data can hold signature images) and
   pages each form.
 - Tested by `scripts/test-lot-trace.mjs`. `lotTrace.ts` has no imports so the script can bundle it.
+- **Practising it: `MOCK_RECALL_PRACTICE.md`** - a walk-through for technical and non-technical staff using
+  made-up records (`scripts/recall-test-data/insert.sql` / `delete.sql`, run by hand in the SQL editor,
+  **not migrations**; every row tagged `data._test_batch = 'RECALL-TEST'`). The guide lists the exact
+  expected trace, so it doubles as an on-screen acceptance test after a change. It is practice only - the
+  annual mock recall (SQF 2.6.3.2) must be on real lots.
 
 ## Team Coach chat — `components/team/coach/`
 
