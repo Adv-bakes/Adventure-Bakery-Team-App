@@ -451,6 +451,12 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   dates use); while the date is blank it offers today's value as a link. `julianLotCode` = year digit +
   three-digit day of year (2026-09-30 → `6273`), UTC arithmetic so DST never shifts it. Filled rather than
   suggested because it is notation, not a measurement — contrast `suggestFrom` for weights. FRM-520 lot code.
+- **Link to another form under a field (`FieldBase.linkTo`):** `{ form, latestEntry? }` renders a link
+  under the field (`FormLink` in `FormFieldInput.tsx`, target from `fetchFormLinkTarget`): with
+  `latestEntry`, the form's newest submitted entry - else its newest draft, flagged - otherwise the form in
+  the library. New tab, so the entry being filled stays open; renders nothing if the form is missing.
+  Not rendered for `checkbox`/`signature` fields (they return early). First use: FRM-012's
+  "Contact list (FRM-011)" check links to the current contact list.
 - **Internal-audit guide (`SelectField.auditGuide`):** `{ findingsGrid, clauseColumn }` on a multi-select
   whose options are SQF sections ("11.5 Water, ice and air"). Each ticked section gets a collapsible panel
   (`SqfSectionGuide.tsx`, rendered by `FormRenderer` under the field): the Code's sub-sections from

@@ -39,6 +39,20 @@ export interface FieldBase {
   // have no way to reach the scan at all. Declarations (DECLARATION_FACTS) are
   // only ever filled when PINNED here, and only by a "specification" scan.
   scanFact?: ScanFact | "notes" | "none";
+  /** A link under the field to another form the answer is about (see FieldLink). */
+  linkTo?: FieldLink;
+}
+
+/**
+ * "Contact list (FRM-011): checked - current" asks about a record without offering it. `linkTo`
+ * puts a link under the field: to the form's newest entry when `latestEntry` is set (newest
+ * submitted, else newest draft, flagged), else to the form in the library. Opens in a new tab,
+ * so the entry being filled stays open. First use: FRM-012's contact-list check.
+ */
+export interface FieldLink {
+  /** sop_number of the form to link to, e.g. "FRM-011". */
+  form: string;
+  latestEntry?: boolean;
 }
 
 export interface TextField     extends FieldBase {
