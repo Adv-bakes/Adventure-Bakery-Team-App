@@ -18,6 +18,7 @@ import { clearCoachConversation } from "@/components/team/coach/coachConversatio
 import type { VoiceLang } from "@/lib/voiceLexicon";
 import { useUserRole } from "@/hooks/useUserRole";
 import { countOpenNotifications } from "@/lib/notifications";
+import { countUnreadNotices } from "@/lib/staffNotices";
 
 interface TeamLayoutProps { children: ReactNode; }
 interface NavItem {
@@ -146,7 +147,8 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
     let cancelled = false;
     const refresh = async () => {
       try {
-        const n = await countOpenNotifications();
+        // Notices the person has not read yet count too; that count never throws.
+        const n = await countOpenNotifications() + await countUnreadNotices();
         if (!cancelled) setNotifCount(n);
       } catch {
         // A failed count must not blank a pill that was right a moment ago, and must never
