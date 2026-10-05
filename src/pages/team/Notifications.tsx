@@ -28,6 +28,7 @@ import {
   fetchOpenNotifications, isDismissable,
 } from "@/lib/notifications";
 import { fetchProfileNames } from "@/lib/formResponses";
+import StaffNotices from "@/components/team/StaffNotices";
 
 function ResponsiblePill({ position }: { position: string }) {
   // 2.5.2.2 requires the schedule to name who is responsible for each activity. That label travels
@@ -175,8 +176,11 @@ export default function Notifications() {
           Verification activities that have fallen due, and open alerts — visible to the whole team
           and labelled with the position responsible for each.
           {" A signature someone has asked you for is addressed to you alone; everything else is the team's."}
+          {" Notices from management stay at the top until you have read them."}
         </p>
       </div>
+
+      <StaffNotices />
 
       {loading ? (
         <div className="flex items-center gap-2 tp-on-bg-dim">

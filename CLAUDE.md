@@ -985,6 +985,27 @@ withdraw instead. The request lands in that person's feed with the note and a de
 
 ---
 
+### Staff notices (D-03)
+
+A posting area at the top of the Notifications page (`components/team/StaffNotices.tsx`,
+`lib/staffNotices.ts`): admin/owner posts a notice (English, optional Spanish), every team member sees
+it until they tap **"I have read this"**, and the post keeps who read it and when. It exists because
+SQF 2.1.1.2 asks for objectives to be communicated to staff, and before it that was word of mouth;
+FSQM-006 names the read list as the record.
+
+- **Tables `staff_notices` / `staff_notice_reads`** (migration `20261005000008`; not in generated
+  types). **No write policies at all** - `post_staff_notice`, `acknowledge_staff_notice` and
+  `withdraw_staff_notice` (`SECURITY DEFINER`) stamp person and time on the server. Reads RLS: a
+  person sees only their own acknowledgements; `staff_notice_readers()` (admin/owner/auditor) returns
+  notice x team member with `read_at` null where unread. "Team" = `access_granted` profiles with a
+  staff/admin/owner role.
+- **A notice is never edited** - people put their name to that wording. A wrong one is withdrawn and
+  posted again; withdrawn notices and their read lists are kept.
+- The poster is recorded as having read it. Unread notices add to the sidebar Notifications pill
+  (`countUnreadNotices`, which never throws so it cannot blank the notification count).
+- The section renders nothing if the tables are missing, so the page is safe to deploy before the
+  migration is pushed.
+
 ## Visitor Sign-In — `pages/team/compliance/VisitorSignIn.tsx` + `lib/visitors.ts`
 
 One short screen the visitor completes **alone**; nobody from the site takes part. It replaces
