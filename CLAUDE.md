@@ -264,6 +264,17 @@ Unmapped numbers fall back to plain text. Both generators key physical==printed 
 - **`src/lib/docNumber.ts`** is the single source of truth: `DOC_STAGES` (the block→stage map), `parseDocNumber` (tolerant; strips a legacy `-N` suffix and returns it), `stageForNumber`/`stageForSopNumber`, `formatDocNumber` (canonical `FRM-301`), `docNumberIssue`/`isValidDocNumber` (advisory, non-blocking).
 - **`DocNumberHint`** (`components/team/DocNumberHint.tsx`) renders the derived stage + a non-blocking warning under the `sop_number` inputs in `SopImportDialog` and the SOPs Library drawer.
 - **Document Register** (`pages/team/compliance/DocumentRegister.tsx`, `/team/compliance/register`, Compliance nav): read-only, groups every doc by stage block; unparseable/legacy numbers fall into an **"Unassigned"** worklist; rows deep-link into the SOPs Library drawer via `?doc=<id>`.
+- **FSMS Index** (`pages/team/compliance/FsmsIndex.tsx`, `/team/compliance/fsms-index`, Compliance nav,
+  auditor can open it; D-08, FSQM-010): every four-level clause of the Food Manufacturing Code against
+  the documents whose `sqf_reference` cites it - the clause-to-document matrix SQF 2.2.1.1 implies,
+  **read live and never typed**, because a typed matrix is stale after the next issue. Pure half
+  `src/lib/fsmsIndex.ts` (`buildFsmsIndex`, tested by `scripts/test-fsms-index.mjs`). A reference covers
+  the clause itself and everything under it ("11.3" covers 11.3.1.1), never upwards. Each clause gets a
+  state: **Issued** (an active program/procedure/policy cites it), **Draft only**, **No program** (only
+  forms, reports or training cite it), **Nothing cites it**. `parseSqfReferences` expands the shorthand
+  `2.4.8.1, .2, .3`; anything else that is not a clause of the Code is listed under "References that
+  match no clause" rather than dropped. It shows what a document CLAIMS to cover - the internal audit
+  tests the claim. Filter chips, search, CSV download.
 - **Legacy IDs:** `sop_documents.legacy_sop_number` (migration `20260708000001…`) preserves the pre-convention number when a row is renumbered. Renumbering existing live rows is a reviewed data migration (crosswalk → id-keyed UPDATEs). Full runbook + stage table in **`DOCUMENT_REGISTER.md`**.
 
 ---

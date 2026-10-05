@@ -89,6 +89,7 @@ import {
 import HrDirectory from "./pages/team/hr/HrDirectory";
 import SopsLibrary from "./pages/team/compliance/SopsLibrary";
 import DocumentRegister from "./pages/team/compliance/DocumentRegister";
+import FsmsIndex from "./pages/team/compliance/FsmsIndex";
 import TemperatureReport from "./pages/team/compliance/TemperatureReport";
 import FormEntry from "./pages/team/compliance/FormEntry";
 import FormRecords from "./pages/team/compliance/Records";
@@ -441,6 +442,11 @@ const App = () => (
           <Route path="/team/compliance/register" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
               <TeamLayout><DocumentRegister /></TeamLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/team/compliance/fsms-index" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner", "auditor"]}>
+              <TeamLayout><FsmsIndex /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/compliance/temperature" element={
