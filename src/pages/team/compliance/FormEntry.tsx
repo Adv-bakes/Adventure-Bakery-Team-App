@@ -21,15 +21,14 @@ import {
 } from "@/lib/formSchema";
 import { clauseRequirements } from "@/lib/auditGuide";
 import {
-  StaleResponseError, deleteResponse, draftAuditEvidence, extractFormAnswers, extractPackageLabel, fetchDocIdsByNumber, fetchProfileNames,
+  StaleResponseError, deleteResponse, draftAuditEvidence, extractFormAnswers, extractPackageLabel, fetchProfileNames,
   fetchResponse, getResponseAttachmentUrl, removeResponseAttachment, reopenResponse,
   resolveSchemaForResponse, saveResponseAttachments, saveResponseData, shortUserId, submitResponse,
   uploadResponseAttachment,
   type FormResponse, type ResolvedSchema, type ResponseAttachment,
 } from "@/lib/formResponses";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
-import { DocLinksContext } from "@/components/team/forms/DocRefText";
-import { collectDocRefs } from "@/lib/docRefs";
+import { DocSelfContext } from "@/components/team/forms/DocRefText";
 import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
@@ -113,24 +112,6 @@ export default function FormEntry() {
   const [copied, setCopied] = useState<{ title: string; count: number; prev: Record<string, any> } | null>(null);
 
   const schema: FormSchema | null = resolved?.schema ?? null;
-
-  // Document numbers written in the form's own text ("Chemicals locked away (FSQM-032)") become
-  // links. Looked up once per schema; the form's own number is left as text. A failed lookup
-  // only means plain text.
-  const [docLinks, setDocLinks] = useState<Record<string, string>>({});
-  useEffect(() => {
-    if (!schema) return;
-    const refs = collectDocRefs(schema);
-    if (refs.length === 0) { setDocLinks({}); return; }
-    let live = true;
-    fetchDocIdsByNumber(refs).then(found => {
-      if (!live) return;
-      const links: Record<string, string> = {};
-      for (const [number, id] of Object.entries(found)) if (id !== docId) links[number] = id;
-      setDocLinks(links);
-    }).catch(() => { /* links are a convenience */ });
-    return () => { live = false; };
-  }, [schema, docId]);
 
   const form = useForm<Record<string, any>>({
     resolver: schema ? zodResolver(buildZodSchema(schema)) : undefined,
@@ -807,7 +788,7 @@ export default function FormEntry() {
       )}
 
       {/* The form itself */}
-      <DocLinksContext.Provider value={docLinks}>
+      <DocSelfContext.Provider value={docId ?? null}>
         <FormRenderer
           schema={schema}
           form={form}
@@ -818,7 +799,7 @@ export default function FormEntry() {
           onDraftCell={canEdit ? draftCellFromRecords : undefined}
           fillContext={fillContext}
         />
-      </DocLinksContext.Provider>
+      </DocSelfContext.Provider>
 
       {/* File/photo attachments — always shown if any exist, even if the admin
           has since disabled the feature; add-controls only when editable and

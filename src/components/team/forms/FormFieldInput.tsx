@@ -233,7 +233,7 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
       render={({ field: rhf, fieldState }) => {
         const labelEl = (
           <Label className="text-xs text-[#2A1F0E]/90">
-            {field.label}
+            <DocRefText text={field.label} />
             {field.required && <span className="text-red-600 ml-0.5">*</span>}
             {field.type === "number" && (field as NumberField).unit && (
               <span className="text-[#2A1F0E]/55 ml-1">({(field as NumberField).unit})</span>
@@ -360,7 +360,7 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
                     onCheckedChange={c => rhf.onChange(!!c)}
                   />
                   <Label htmlFor={`fld-${field.id}`} className={cn("font-normal", !disabled && "cursor-pointer")}>
-                    {field.label}
+                    <DocRefText text={field.label} />
                     {field.required && <span className="text-red-600 ml-0.5">*</span>}
                   </Label>
                 </div>

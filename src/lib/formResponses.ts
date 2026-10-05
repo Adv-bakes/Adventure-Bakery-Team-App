@@ -566,6 +566,17 @@ export async function fetchFormLinkTarget(form: string, latestEntry?: boolean): 
   return target;
 }
 
+/** Number, title and status of every active or draft document - what DocRefText links from. */
+export async function fetchDocIndexRows(): Promise<{ id: string; sop_number: string | null; title: string | null; status: string }[]> {
+  const { data, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, sop_number, title, status")
+    .not("sop_number", "is", null)
+    .in("status", ["active", "draft"]);
+  if (error) throw error;
+  return data ?? [];
+}
+
 /** The id of each active or draft form among `numbers`, for links into the library. */
 export async function fetchDocIdsByNumber(numbers: string[]): Promise<Record<string, string>> {
   const { data, error } = await (supabase as any)

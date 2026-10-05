@@ -1,3 +1,4 @@
+import { DocRefText } from "./DocRefText";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { PenLine } from "lucide-react";
@@ -62,9 +63,9 @@ function DrawnSignature({ field, value, onChange, disabled, signer, defaultName 
     <div className="rounded-md border p-3 space-y-2" style={boxStyle}>
       <div className="flex items-center gap-2 text-xs font-medium text-[#9A6F1E]">
         <PenLine className="w-3.5 h-3.5" />
-        {field.label}
+        <DocRefText text={field.label} />
       </div>
-      {field.statement && <p className="text-xs text-[#2A1F0E]/85">{field.statement}</p>}
+      {field.statement && <p className="text-xs text-[#2A1F0E]/85"><DocRefText text={field.statement} /></p>}
       {disabled ? (
         <>
           {image
@@ -113,10 +114,10 @@ function StampSignature({ field, value, onChange, disabled, isAdmin, signer }: S
     >
       <div className="flex items-center gap-2 text-xs font-medium text-[#9A6F1E]">
         <PenLine className="w-3.5 h-3.5" />
-        {field.label}
+        <DocRefText text={field.label} />
         {isVerifier && <span className="font-normal text-[#2A1F0E]/65">(verified by — admin only)</span>}
       </div>
-      {field.statement && <p className="text-xs text-[#2A1F0E]/85">{field.statement}</p>}
+      {field.statement && <p className="text-xs text-[#2A1F0E]/85"><DocRefText text={field.statement} /></p>}
       <div className="flex items-center gap-2">
         <Checkbox
           id={`sig-${field.id}`}

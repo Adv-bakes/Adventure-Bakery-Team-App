@@ -38,12 +38,25 @@ check("empty", T.splitDocRefs(""), []);
 check("lower case and bare words are left alone", refs("the frm-301 form, FRM 301, FRM-, REFRM-301"), []);
 check("text is preserved exactly", T.splitDocRefs("a FRM-301 b").map(p => typeof p === "string" ? p : p.ref).join(""), "a FRM-301 b");
 
-check("collect from a schema, once each, sorted",
-  T.collectDocRefs({ sections: [{ description: "FSQM-025", fields: [
-    { label: "x (FRM-007)", help: "FRM-007 again", rows: { labels: ["Deliveries checked on FRM-301", "TRN-011 done"] } },
-    { n: 3, b: true, z: null }] }] }),
-  ["FRM-007", "FRM-301", "FSQM-025", "TRN-011"]);
-check("collect from nothing", T.collectDocRefs(null), []);
+check("refs in text, once each, in order", T.docRefsIn("FRM-909, FRM-910 then FRM-909 and SOP-2.3.4."), ["FRM-909", "FRM-910", "SOP-2.3.4"]);
+check("refs in nothing", T.docRefsIn(""), []);
+
+const idx = T.buildDocIndex([
+  { id: "a", sop_number: "FRM-909", title: "Mixer Cleaning & Pre-Use Check Log", status: "active" },
+  { id: "b", sop_number: "FSQM-027", title: "Allergen Management Program", status: "draft" },
+  { id: "c", sop_number: "FSQM-027", title: "Old one", status: "archived" },
+  { id: "d", sop_number: "TRN-003", title: "Allergens Part 1 (ES)", status: "active" },
+  { id: "e", sop_number: "TRN-003", title: "Allergens Part 1", status: "active" },
+  { id: "f", sop_number: "FRM-012", title: "Draft copy", status: "draft" },
+  { id: "g", sop_number: "FRM-012", title: "Recall Record", status: "active" },
+  { id: "h", sop_number: null, title: "No number", status: "active" },
+  { id: "i", sop_number: "FRM-001", title: null, status: "active" },
+]);
+check("index: title and id", idx["FRM-909"], { id: "a", title: "Mixer Cleaning & Pre-Use Check Log", draft: false });
+check("index: a draft is flagged, an archived row ignored", idx["FSQM-027"], { id: "b", title: "Allergen Management Program", draft: true });
+check("index: English module wins over its Spanish variant", idx["TRN-003"].id, "e");
+check("index: issued wins over a draft with the same number", idx["FRM-012"].id, "g");
+check("index: no number, no entry; no title falls back to the number", [Object.keys(idx).length, idx["FRM-001"].title], [5, "FRM-001"]);
 
 rmSync(out, { recursive: true, force: true });
 console.log(failures ? `${failures} of ${cases} failed` : `all ${cases} passed`);

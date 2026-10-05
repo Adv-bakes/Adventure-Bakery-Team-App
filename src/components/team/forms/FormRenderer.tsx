@@ -54,7 +54,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
       case "heading":
         el = (
           <h3 className="text-sm font-semibold text-[#2A1F0E] border-b pb-1" style={{ borderColor: "rgba(200,155,60,0.3)" }}>
-            {field.label}
+            <DocRefText text={field.label} />
           </h3>
         );
         break;
@@ -81,7 +81,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
         const t = field as ReferenceTableField;
         el = (
           <div className="space-y-1.5">
-            {field.label && <p className="text-xs font-semibold text-[#2A1F0E]">{field.label}</p>}
+            {field.label && <p className="text-xs font-semibold text-[#2A1F0E]"><DocRefText text={field.label} /></p>}
             <div className="rounded-md border overflow-x-auto" style={{ borderColor: "rgba(200,155,60,0.3)" }}>
               <table className="w-full text-xs">
                 <thead>
@@ -145,7 +145,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
           {(section.title || section.description || section.scanLabel) && (
             <div className="flex items-start justify-between gap-3">
               <div>
-                {section.title && <h2 className="font-semibold text-[#2A1F0E]">{section.title}</h2>}
+                {section.title && <h2 className="font-semibold text-[#2A1F0E]"><DocRefText text={section.title} /></h2>}
                 {section.description && <p className="text-xs text-[#2A1F0E]/80 mt-0.5"><DocRefText text={section.description} /></p>}
               </div>
               {section.scanLabel && !readOnly && onScanLabel && (

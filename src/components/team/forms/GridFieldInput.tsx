@@ -414,7 +414,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                         </button>
                       ) : (
                         <>
-                          {col.label}
+                          <DocRefText text={col.label} />
                           {col.unit && <span className="font-normal text-[#2A1F0E]/55 ml-1">({col.unit})</span>}
                         </>
                       )}
