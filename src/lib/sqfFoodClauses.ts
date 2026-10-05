@@ -43,7 +43,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.1.2.5": {
     "page": 56,
-    "text": "Ducting, conduit, and pipes that convey ingredients, products, or services, such as steam or water, shall be designed and constructed to prevent the contamination of food, ingredients, and food contact surfaces and allow ease of cleaning. A risk analysis shall be conducted to ensure food contamination risks are mitigated. 56"
+    "text": "Ducting, conduit, and pipes that convey ingredients, products, or services, such as steam or water, shall be designed and constructed to prevent the contamination of food, ingredients, and food contact surfaces and allow ease of cleaning. A risk analysis shall be conducted to ensure food contamination risks are mitigated."
   },
   "11.1.2.6": {
     "page": 57,
@@ -83,7 +83,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.1.4.1": {
     "page": 57,
-    "text": "If online inspection is required, a suitable area close to the processing line shall be provided for the inspection of product (refer to 2.4.4). The inspection/quality control area shall be provided with facilities that are suitable for examination and testing of the type of product being handled/processed. The inspection area shall: i. Have easy access to handwashing facilities; ii. Have appropriate waste handling and removal; and iii. Be kept clean to prevent product contamination. 57"
+    "text": "If online inspection is required, a suitable area close to the processing line shall be provided for the inspection of product (refer to 2.4.4). The inspection/quality control area shall be provided with facilities that are suitable for examination and testing of the type of product being handled/processed. The inspection area shall: i. Have easy access to handwashing facilities; ii. Have appropriate waste handling and removal; and iii. Be kept clean to prevent product contamination."
   },
   "11.1.5": {
     "page": 58,
@@ -131,7 +131,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.1.7.2": {
     "page": 58,
-    "text": "Equipment and utensils shall be designed, constructed, installed, operated, and maintained to meet any applicable regulatory requirements and to not pose a contamination threat to products. 58"
+    "text": "Equipment and utensils shall be designed, constructed, installed, operated, and maintained to meet any applicable regulatory requirements and to not pose a contamination threat to products."
   },
   "11.1.7.3": {
     "page": 59,
@@ -175,7 +175,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.1.8.3": {
     "page": 59,
-    "text": "Paths from amenities leading to site entrances shall be effectively sealed. 59 11.2 Site Operation"
+    "text": "Paths from amenities leading to site entrances shall be effectively sealed. 11.2 Site Operation"
   },
   "11.2.1": {
     "page": 60,
@@ -227,7 +227,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.2.2.3": {
     "page": 60,
-    "text": "Maintenance staff and contractors shall remove all tools and debris from any maintenance activity once it has been completed, and inform the area supervisor and maintenance supervisor, so appropriate hygiene and sanitation can be conducted and a pre-operational inspection completed prior to the restarting of site operations. 60"
+    "text": "Maintenance staff and contractors shall remove all tools and debris from any maintenance activity once it has been completed, and inform the area supervisor and maintenance supervisor, so appropriate hygiene and sanitation can be conducted and a pre-operational inspection completed prior to the restarting of site operations."
   },
   "11.2.3": {
     "page": 61,
@@ -263,7 +263,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.2.4.1": {
     "page": 61,
-    "text": "A documented pest prevention program shall be effectively implemented. It shall: i. Describe the methods and responsibility for the development, implementation, and maintenance of the pest prevention program; ii. Record pest sightings and trend the frequency of pest activity to target pesticide applications; iii. Outline the methods used to prevent pest problems; iv. Outline the pest elimination methods and the appropriate documentation for each inspection; v. Outline the frequency with which pest status is to be checked; vi. Include the identification, location, number, and type of applied pest control/monitoring devices on a site map; vii. List the chemicals used. The chemicals are required to be approved by the relevant authority and their Safety Data Sheets (SDS) made available; viii. Outline the methods used to make staff aware of the bait control program and the measures to take when they come into contact with a bait station; ix. Outline the requirements for staff awareness and training in the use of pest and vermin control chemicals and baits; and x. Measure the effectiveness of the program to verify the elimination of applicable pests and to identify trends. 61"
+    "text": "A documented pest prevention program shall be effectively implemented. It shall: i. Describe the methods and responsibility for the development, implementation, and maintenance of the pest prevention program; ii. Record pest sightings and trend the frequency of pest activity to target pesticide applications; iii. Outline the methods used to prevent pest problems; iv. Outline the pest elimination methods and the appropriate documentation for each inspection; v. Outline the frequency with which pest status is to be checked; vi. Include the identification, location, number, and type of applied pest control/monitoring devices on a site map; vii. List the chemicals used. The chemicals are required to be approved by the relevant authority and their Safety Data Sheets (SDS) made available; viii. Outline the methods used to make staff aware of the bait control program and the measures to take when they come into contact with a bait station; ix. Outline the requirements for staff awareness and training in the use of pest and vermin control chemicals and baits; and x. Measure the effectiveness of the program to verify the elimination of applicable pests and to identify trends."
   },
   "11.2.4.2": {
     "page": 62,
@@ -291,7 +291,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.2.5.1": {
     "page": 62,
-    "text": "The methods and responsibility for the effective cleaning of the food handling and processing equipment and environment and storage areas shall be documented and implemented. Consideration shall be given to: i. What is to be cleaned; ii. How it is to be cleaned; iii. When it is to be cleaned; iv. Who is responsible for the cleaning; v. Validation of the cleaning procedures for food contact surfaces (including CIP); vi. Methods used to confirm the correct concentrations of detergents and sanitizers; and vii. The responsibility and methods used to verify the effectiveness of the cleaning and sanitation program. 62"
+    "text": "The methods and responsibility for the effective cleaning of the food handling and processing equipment and environment and storage areas shall be documented and implemented. Consideration shall be given to: i. What is to be cleaned; ii. How it is to be cleaned; iii. When it is to be cleaned; iv. Who is responsible for the cleaning; v. Validation of the cleaning procedures for food contact surfaces (including CIP); vi. Methods used to confirm the correct concentrations of detergents and sanitizers; and vii. The responsibility and methods used to verify the effectiveness of the cleaning and sanitation program."
   },
   "11.2.5.2": {
     "page": 63,
@@ -323,7 +323,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.2.5.9": {
     "page": 63,
-    "text": "T he responsibility and methods used to verify the effectiveness of the cleaning procedures shall be documented and implemented. A verification schedule shall be prepared. A record of pre-operational hygiene inspections, cleaning and sanitation activities, and verification activities shall be maintained. 63 11.3 Personnel Hygiene and Welfare"
+    "text": "T he responsibility and methods used to verify the effectiveness of the cleaning procedures shall be documented and implemented. A verification schedule shall be prepared. A record of pre-operational hygiene inspections, cleaning and sanitation activities, and verification activities shall be maintained. 11.3 Personnel Hygiene and Welfare"
   },
   "11.3.1": {
     "page": 64,
@@ -351,7 +351,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.3.2.3": {
     "page": 64,
-    "text": "Handwashing stations shall be constructed of stainless steel or similar non-corrosive material and at a minimum supplied with: i. A potable water supply at an appropriate temperature; ii. Liquid soap contained within a fixed dispenser; iii. Paper towels in a hands-free cleanable dispenser; and iv. A means of containing used paper towels. 64"
+    "text": "Handwashing stations shall be constructed of stainless steel or similar non-corrosive material and at a minimum supplied with: i. A potable water supply at an appropriate temperature; ii. Liquid soap contained within a fixed dispenser; iii. Paper towels in a hands-free cleanable dispenser; and iv. A means of containing used paper towels."
   },
   "11.3.2.4": {
     "page": 65,
@@ -399,7 +399,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.3.3.8": {
     "page": 65,
-    "text": "J ewelry and other loose objects shall not be worn or taken into a food handling or processing operation or into any area where food is exposed. Wearing plain bands with no stones, prescribed medical alert bracelets, or jewelry accepted for religious or cultural reasons can be permitted, provided these items are properly covered and do not pose a food safety risk. 65 All exceptions shall meet regulatory and customer requirements and shall be subject to a risk assessment and evidence of ongoing risk management."
+    "text": "J ewelry and other loose objects shall not be worn or taken into a food handling or processing operation or into any area where food is exposed. Wearing plain bands with no stones, prescribed medical alert bracelets, or jewelry accepted for religious or cultural reasons can be permitted, provided these items are properly covered and do not pose a food safety risk. All exceptions shall meet regulatory and customer requirements and shall be subject to a risk assessment and evidence of ongoing risk management."
   },
   "11.3.4": {
     "page": 66,
@@ -451,7 +451,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.3.5.6": {
     "page": 66,
-    "text": "T oilet rooms shall be: i. Designed and constructed so that they are accessible to staff and separate from any processing and food handling operations; ii. Accessed from the processing area via an airlock vented to the exterior or through an adjoining room; iii. Sufficient in number for the maximum number of staff; iv. Constructed so that they can be easily cleaned and maintained; v. Located inside or nearby areas for storing protective clothing, outer garments, and other items while using the facilities; and vi. Kept clean and tidy. 66 Tools/equipment used for cleaning toilet rooms shall not be used to clean processing areas."
+    "text": "T oilet rooms shall be: i. Designed and constructed so that they are accessible to staff and separate from any processing and food handling operations; ii. Accessed from the processing area via an airlock vented to the exterior or through an adjoining room; iii. Sufficient in number for the maximum number of staff; iv. Constructed so that they can be easily cleaned and maintained; v. Located inside or nearby areas for storing protective clothing, outer garments, and other items while using the facilities; and vi. Kept clean and tidy. Tools/equipment used for cleaning toilet rooms shall not be used to clean processing areas."
   },
   "11.3.5.7": {
     "page": 67,
@@ -475,7 +475,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.4.1.2": {
     "page": 67,
-    "text": "Personnel working in or visiting food handling or processing operations shall ensure that: i. Staff shall not eat or taste any product being processed in the food handling/contact zones, except as noted in element 11.4.1.4; 67 ii. The wearing of false fingernails, false eyelashes, eyelash extensions, long nails, or fingernail polish is not permitted when handling exposed food; iii. Hair restraints and beard covers, where applicable, shall be used in areas where product is exposed. iv. Smoking, chewing, eating, or spitting is not permitted in areas where product is produced, stored, or otherwise exposed. v. Drinking water is permissible only under conditions that prevent contamination or other food safety risks from occurring. Drinking water containers in production and storage areas shall be stored in clear, covered containers, and in designated areas away from raw materials, packaging, tools, or equipment storage."
+    "text": "Personnel working in or visiting food handling or processing operations shall ensure that: i. Staff shall not eat or taste any product being processed in the food handling/contact zones, except as noted in element 11.4.1.4; ii. The wearing of false fingernails, false eyelashes, eyelash extensions, long nails, or fingernail polish is not permitted when handling exposed food; iii. Hair restraints and beard covers, where applicable, shall be used in areas where product is exposed. iv. Smoking, chewing, eating, or spitting is not permitted in areas where product is produced, stored, or otherwise exposed. v. Drinking water is permissible only under conditions that prevent contamination or other food safety risks from occurring. Drinking water containers in production and storage areas shall be stored in clear, covered containers, and in designated areas away from raw materials, packaging, tools, or equipment storage."
   },
   "11.4.1.3": {
     "page": 68,
@@ -507,7 +507,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.5.1.5": {
     "page": 68,
-    "text": "The use of non-potable water shall be controlled such that: i. There is no cross-contamination between potable and non-potable water lines; ii. Non-potable water piping and outlets are clearly identified; and 68 iii. Hoses, taps, and other similar sources of possible contamination are designed to prevent backflow or back-siphonage."
+    "text": "The use of non-potable water shall be controlled such that: i. There is no cross-contamination between potable and non-potable water lines; ii. Non-potable water piping and outlets are clearly identified; and iii. Hoses, taps, and other similar sources of possible contamination are designed to prevent backflow or back-siphonage."
   },
   "11.5.1.6": {
     "page": 69,
@@ -551,7 +551,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.5.4.1": {
     "page": 69,
-    "text": "Ice provided for use during processing operations, as a processing aid, or an ingredient shall comply with 11.5.3.1. 69"
+    "text": "Ice provided for use during processing operations, as a processing aid, or an ingredient shall comply with 11.5.3.1."
   },
   "11.5.4.2": {
     "page": 70,
@@ -599,7 +599,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.6.1.6": {
     "page": 70,
-    "text": "Records shall be available to verify the effectiveness of alternate or temporary control measures for the storage of raw materials, ingredients, packaging, equipment, chemicals, or finished products. 70"
+    "text": "Records shall be available to verify the effectiveness of alternate or temporary control measures for the storage of raw materials, ingredients, packaging, equipment, chemicals, or finished products."
   },
   "11.6.2": {
     "page": 71,
@@ -643,7 +643,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.6.4.2": {
     "page": 71,
-    "text": "S torage of hazardous chemicals and toxic substances shall be: i. Located in an area with appropriate signage indicating that the area is for hazardous storage; ii. Controlled, lockable, and accessible only by personnel trained in the storage and use of chemicals; iii. Adequately ventilated; iv. Stored where intended and not comingled (e.g., food versus non-food grade); 71 v. Designed such that pesticides, rodenticides, fumigants, and insecticides are stored separately from sanitizers and detergents; and vi. Stored in a manner that prevents a hazard to finished product or product contact surfaces. Processing utensils and packaging shall not be stored in areas used to store hazardous chemicals and toxic substances."
+    "text": "S torage of hazardous chemicals and toxic substances shall be: i. Located in an area with appropriate signage indicating that the area is for hazardous storage; ii. Controlled, lockable, and accessible only by personnel trained in the storage and use of chemicals; iii. Adequately ventilated; iv. Stored where intended and not comingled (e.g., food versus non-food grade); v. Designed such that pesticides, rodenticides, fumigants, and insecticides are stored separately from sanitizers and detergents; and vi. Stored in a manner that prevents a hazard to finished product or product contact surfaces. Processing utensils and packaging shall not be stored in areas used to store hazardous chemicals and toxic substances."
   },
   "11.6.4.3": {
     "page": 72,
@@ -663,7 +663,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.6.4.7": {
     "page": 72,
-    "text": "In the event of a hazardous spill, the site shall: i. Have spillage clean-up instructions to ensure that the spill is properly contained; and ii. Be equipped with PPE, spillage kits, and cleaning equipment 72"
+    "text": "In the event of a hazardous spill, the site shall: i. Have spillage clean-up instructions to ensure that the spill is properly contained; and ii. Be equipped with PPE, spillage kits, and cleaning equipment"
   },
   "11.6.5": {
     "page": 73,
@@ -711,7 +711,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.7.1.2": {
     "page": 73,
-    "text": "Ambient air in high-risk areas shall be tested at least annually to confirm that it does not pose a risk to food safety. 73"
+    "text": "Ambient air in high-risk areas shall be tested at least annually to confirm that it does not pose a risk to food safety."
   },
   "11.7.1.3": {
     "page": 74,
@@ -759,7 +759,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.7.3.4": {
     "page": 74,
-    "text": "Glass instrument dial covers on processing equipment and MIG thermometers shall be inspected at the start of each shift to confirm they have not been damaged. 74"
+    "text": "Glass instrument dial covers on processing equipment and MIG thermometers shall be inspected at the start of each shift to confirm they have not been damaged."
   },
   "11.7.3.5": {
     "page": 75,
@@ -811,11 +811,11 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "11.8.1.10": {
     "page": 76,
-    "text": "R eviews of the effectiveness of waste management shall form part of regular site inspections (refer to 2.5.4.3), and the results of these inspections shall be included in the relevant inspection reports. 76"
+    "text": "R eviews of the effectiveness of waste management shall form part of regular site inspections (refer to 2.5.4.3), and the results of these inspections shall be included in the relevant inspection reports."
   },
   "11.8.1.2": {
     "page": 75,
-    "text": "Waste shall be removed on a regular basis and not allowed to build up in food handling or processing areas. Designated waste accumulation areas shall be maintained in a clean and tidy condition until external waste collection is undertaken. 75"
+    "text": "Waste shall be removed on a regular basis and not allowed to build up in food handling or processing areas. Designated waste accumulation areas shall be maintained in a clean and tidy condition until external waste collection is undertaken."
   },
   "11.8.1.3": {
     "page": 76,
@@ -859,7 +859,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.1.1.3": {
     "page": 37,
-    "text": "The reporting structure shall identify and describe site personnel with specific responsibilities for tasks within the food safety management system and identify a backup for the absence of key personnel. Job descriptions for the key personnel shall be documented. Site management shall ensure departments and operations are appropriately staffed and organizationally aligned to meet food safety objectives. 37"
+    "text": "The reporting structure shall identify and describe site personnel with specific responsibilities for tasks within the food safety management system and identify a backup for the absence of key personnel. Job descriptions for the key personnel shall be documented. Site management shall ensure departments and operations are appropriately staffed and organizationally aligned to meet food safety objectives."
   },
   "2.1.1.4": {
     "page": 38,
@@ -887,7 +887,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.1.2.1": {
     "page": 38,
-    "text": "The SQF System shall be reviewed by senior site management at least annually and include: i. Changes to food safety management system documentation (policies, procedures, specifications, food safety plan); ii. Food safety culture performance; iii. Food safety objectives and performance measures; iv. Corrective and preventative actions and trends in findings from internal and external audits, customer complaints, and verification and validation activities; v. Hazard and risk management system; and vi. Follow-up action items from previous management reviews. 38 Records of all management reviews and updates shall be maintained."
+    "text": "The SQF System shall be reviewed by senior site management at least annually and include: i. Changes to food safety management system documentation (policies, procedures, specifications, food safety plan); ii. Food safety culture performance; iii. Food safety objectives and performance measures; iv. Corrective and preventative actions and trends in findings from internal and external audits, customer complaints, and verification and validation activities; v. Hazard and risk management system; and vi. Follow-up action items from previous management reviews. Records of all management reviews and updates shall be maintained."
   },
   "2.1.2.2": {
     "page": 39,
@@ -919,7 +919,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.2.1.2": {
     "page": 39,
-    "text": "Food safety plans, Good Manufacturing Practices, and all relevant aspects of the SQF System shall be reviewed, updated, and communicated as needed when any changes implemented have an impact on the site's ability to deliver safe food. All changes to food safety plans, Good Manufacturing Practices, and other aspects of the SQF System shall be validated or justified prior to their implementation. The reasons for the change shall be documented. 39"
+    "text": "Food safety plans, Good Manufacturing Practices, and all relevant aspects of the SQF System shall be reviewed, updated, and communicated as needed when any changes implemented have an impact on the site's ability to deliver safe food. All changes to food safety plans, Good Manufacturing Practices, and other aspects of the SQF System shall be validated or justified prior to their implementation. The reasons for the change shall be documented."
   },
   "2.2.2": {
     "page": 40,
@@ -959,7 +959,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.3.1.3": {
     "page": 40,
-    "text": "A food safety plan shall be validated and verified by the site food safety team for each new product and its associated process through conversion to commercial production and distribution or where a change to ingredients, process, or packaging occurs that may impact food safety. 40"
+    "text": "A food safety plan shall be validated and verified by the site food safety team for each new product and its associated process through conversion to commercial production and distribution or where a change to ingredients, process, or packaging occurs that may impact food safety."
   },
   "2.3.1.4": {
     "page": 41,
@@ -1011,7 +1011,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.3.2.8": {
     "page": 41,
-    "text": "Description of services for contract service providers that have an impact on product safety shall be documented, current, include a full description of the services to be provided, and detail relevant training requirements of all contract personnel. 41"
+    "text": "Description of services for contract service providers that have an impact on product safety shall be documented, current, include a full description of the services to be provided, and detail relevant training requirements of all contract personnel."
   },
   "2.3.2.9": {
     "page": 42,
@@ -1043,7 +1043,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.3.4.1": {
     "page": 42,
-    "text": "The responsibility and procedure for selecting, evaluating, approving, and monitoring an approved supplier shall be documented and implemented. A current record of approved suppliers, receiving inspections, and supplier audits shall be maintained. 42"
+    "text": "The responsibility and procedure for selecting, evaluating, approving, and monitoring an approved supplier shall be documented and implemented. A current record of approved suppliers, receiving inspections, and supplier audits shall be maintained."
   },
   "2.3.4.2": {
     "page": 43,
@@ -1079,7 +1079,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.1.3": {
     "page": 43,
-    "text": "SQFI and the certification body shall be notified in writing within twenty-four (24) hours as a result of a regulatory warning or event. Notification to SQFI shall be by email to foodsafetycrisis@sqfi.com. 43"
+    "text": "SQFI and the certification body shall be notified in writing within twenty-four (24) hours as a result of a regulatory warning or event. Notification to SQFI shall be by email to foodsafetycrisis@sqfi.com."
   },
   "2.4.2": {
     "page": 44,
@@ -1127,7 +1127,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.3.16": {
     "page": 45,
-    "text": "C ritical control point monitoring, corrective action, and verification records shall be maintained and appropriately used. 45"
+    "text": "C ritical control point monitoring, corrective action, and verification records shall be maintained and appropriately used."
   },
   "2.4.3.17": {
     "page": 46,
@@ -1151,7 +1151,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.3.6": {
     "page": 44,
-    "text": "The food safety team shall develop and document a flow diagram covering the scope of each food safety plan The flow diagram shall include every step in the process, all raw materials, packaging, service inputs (e.g., water, steam, gasses as applicable), scheduled process delays, and all process outputs including waste and rework. Each flow diagram shall be confirmed by the food safety team to cover all stages and hours of operation. 44"
+    "text": "The food safety team shall develop and document a flow diagram covering the scope of each food safety plan The flow diagram shall include every step in the process, all raw materials, packaging, service inputs (e.g., water, steam, gasses as applicable), scheduled process delays, and all process outputs including waste and rework. Each flow diagram shall be confirmed by the food safety team to cover all stages and hours of operation."
   },
   "2.4.3.7": {
     "page": 45,
@@ -1191,7 +1191,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.4.6": {
     "page": 46,
-    "text": "Records of all inspections and analyses shall be maintained. 46"
+    "text": "Records of all inspections and analyses shall be maintained."
   },
   "2.4.5": {
     "page": 47,
@@ -1223,7 +1223,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.7.2": {
     "page": 47,
-    "text": "Product release shall include a procedure to confirm that product labels comply with the food legislation that applies in the country of manufacture and the country(ies) of use or sale if known (refer to 2.4.1.1). If product is packaged and distributed in bulk or unlabeled, product information shall be made available to inform customers and/or consumers of the requirements for its safe use. 47"
+    "text": "Product release shall include a procedure to confirm that product labels comply with the food legislation that applies in the country of manufacture and the country(ies) of use or sale if known (refer to 2.4.1.1). If product is packaged and distributed in bulk or unlabeled, product information shall be made available to inform customers and/or consumers of the requirements for its safe use."
   },
   "2.4.7.3": {
     "page": 48,
@@ -1259,7 +1259,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.5.2.1": {
     "page": 48,
-    "text": "The methods, responsibility, and criteria for verifying monitoring of Good Manufacturing Practices, critical control points, and other food safety controls, and the legality of certified products shall be documented and implemented. The methods applied shall ensure that personnel with responsibility for verifying monitoring activities authorize each verified record. 48"
+    "text": "The methods, responsibility, and criteria for verifying monitoring of Good Manufacturing Practices, critical control points, and other food safety controls, and the legality of certified products shall be documented and implemented. The methods applied shall ensure that personnel with responsibility for verifying monitoring activities authorize each verified record."
   },
   "2.5.2.2": {
     "page": 49,
@@ -1295,7 +1295,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.5.4.4": {
     "page": 49,
-    "text": "Records of internal audits and inspections and any corrective and preventative actions taken as a result of internal audits shall be recorded as per 2.5.3. 49 Changes implemented from internal audits that have an impact on the site's ability to deliver safe food shall require a review of applicable aspects of the SQF System (refer to 2.3.1.3). 2.6 Product Traceability and Crisis Management"
+    "text": "Records of internal audits and inspections and any corrective and preventative actions taken as a result of internal audits shall be recorded as per 2.5.3. Changes implemented from internal audits that have an impact on the site's ability to deliver safe food shall require a review of applicable aspects of the SQF System (refer to 2.3.1.3). 2.6 Product Traceability and Crisis Management"
   },
   "2.6.1": {
     "page": 50,
@@ -1323,7 +1323,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.6.3.1": {
     "page": 50,
-    "text": "The responsibility and methods used to withdraw or recall product shall be documented and implemented. The procedure shall: i. Identify those responsible for initiating, managing, and investigating a product withdrawal or recall; ii. Describe the management procedures to be implemented, including sources of legal, regulatory, and expert advice, and essential traceability information; 50 iii. Outline a communication plan to inform site personnel, customers, consumers, authorities, and other essential bodies in a timely manner appropriate about the nature of the incident; and iv. Ensure that SQFI, the certification body, and the appropriate regulatory authority are listed as essential organizations and notified in instances of a food safety incident of a public nature or product recall for any reason."
+    "text": "The responsibility and methods used to withdraw or recall product shall be documented and implemented. The procedure shall: i. Identify those responsible for initiating, managing, and investigating a product withdrawal or recall; ii. Describe the management procedures to be implemented, including sources of legal, regulatory, and expert advice, and essential traceability information; iii. Outline a communication plan to inform site personnel, customers, consumers, authorities, and other essential bodies in a timely manner appropriate about the nature of the incident; and iv. Ensure that SQFI, the certification body, and the appropriate regulatory authority are listed as essential organizations and notified in instances of a food safety incident of a public nature or product recall for any reason."
   },
   "2.6.3.2": {
     "page": 51,
@@ -1347,7 +1347,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.6.4.2": {
     "page": 51,
-    "text": "The crisis management plan shall be reviewed, tested, and verified at least annually with gaps and appropriate corrective actions documented. Records of reviews of the crisis management plan shall be maintained. 51 2.7 Food Defense and Food Fraud"
+    "text": "The crisis management plan shall be reviewed, tested, and verified at least annually with gaps and appropriate corrective actions documented. Records of reviews of the crisis management plan shall be maintained. 2.7 Food Defense and Food Fraud"
   },
   "2.7.1": {
     "page": 52,
@@ -1383,7 +1383,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.7.2.3": {
     "page": 52,
-    "text": "Instruction shall be provided to all relevant staff on the effective implementation of the food fraud mitigation plan (refer to 2.9.2.1). 52"
+    "text": "Instruction shall be provided to all relevant staff on the effective implementation of the food fraud mitigation plan (refer to 2.9.2.1)."
   },
   "2.7.2.4": {
     "page": 53,
@@ -1423,7 +1423,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.8.1.6": {
     "page": 53,
-    "text": "Where allergenic material may be present, product changeover procedures shall be documented and implemented to eliminate the risk of cross-contact. 53"
+    "text": "Where allergenic material may be present, product changeover procedures shall be documented and implemented to eliminate the risk of cross-contact."
   },
   "2.8.1.7": {
     "page": 54,
@@ -1455,7 +1455,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.9.2.1": {
     "page": 54,
-    "text": "A training program shall be documented and implemented that at a minimum outlines the necessary competencies for specific duties and the training methods to be applied to personnel carrying out tasks associated with: i. Implementing HACCP for staff involved in developing and maintaining food safety plans; ii. Monitoring and corrective action procedures for all staff engaged in monitoring critical control points (CCPs); iii. Personal hygiene for all staff involved in the handling of food products and food contact surfaces; 54 iv. Good Manufacturing Practices and work instructions for all staff engaged in food handling, food processing, and equipment; v. Sampling and test methods for all staff involved in sampling and testing of raw materials, packaging, work-in-progress, and finished products; vi. Environmental monitoring for relevant staff; vii. Allergen management, food defense, and food fraud for all relevant staff; and viii. Tasks identified as critical to meeting the effective implementation and maintenance of the SQF code. The training program shall include provisions for identifying and implementing the refresher training needs of the organization."
+    "text": "A training program shall be documented and implemented that at a minimum outlines the necessary competencies for specific duties and the training methods to be applied to personnel carrying out tasks associated with: i. Implementing HACCP for staff involved in developing and maintaining food safety plans; ii. Monitoring and corrective action procedures for all staff engaged in monitoring critical control points (CCPs); iii. Personal hygiene for all staff involved in the handling of food products and food contact surfaces; iv. Good Manufacturing Practices and work instructions for all staff engaged in food handling, food processing, and equipment; v. Sampling and test methods for all staff involved in sampling and testing of raw materials, packaging, work-in-progress, and finished products; vi. Environmental monitoring for relevant staff; vii. Allergen management, food defense, and food fraud for all relevant staff; and viii. Tasks identified as critical to meeting the effective implementation and maintenance of the SQF code. The training program shall include provisions for identifying and implementing the refresher training needs of the organization."
   },
   "2.9.2.2": {
     "page": 55,
@@ -1463,7 +1463,7 @@ export const SQF_FOOD_CLAUSES: Record<string, SqfClause> = {
   },
   "2.9.2.3": {
     "page": 55,
-    "text": "Training records shall be maintained and include: i. Participant name; ii. Skills description; iii. Description of the training provided; iv. Date training completed; v. Trainer or training provider; and vi. Verification that the trainee is competent to complete the required tasks. 55 Module 11: Good Manufacturing Practices for Processing of Food Products 11.1 Site Location and Premises"
+    "text": "Training records shall be maintained and include: i. Participant name; ii. Skills description; iii. Description of the training provided; iv. Date training completed; v. Trainer or training provider; and vi. Verification that the trainee is competent to complete the required tasks. Module 11: Good Manufacturing Practices for Processing of Food Products 11.1 Site Location and Premises"
   }
 };
 
