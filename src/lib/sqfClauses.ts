@@ -44,7 +44,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.1.1.6": {
     "page": 30,
-    "text": "Senior site management shall designate an SQF quality practitioner for each site with responsibility and authority to: i. Oversee the development, implementation, review, and maintenance of the SQF Quality System, including quality fundamentals outlined in 2.4.2 and the quality plan outlined in 2.4.3; ii. Take appropriate action to ensure the integrity of the quality system; and iii. Communicate to relevant personnel all information essential to ensure the effective implementation and maintenance of the quality system. 30"
+    "text": "Senior site management shall designate an SQF quality practitioner for each site with responsibility and authority to: i. Oversee the development, implementation, review, and maintenance of the SQF Quality System, including quality fundamentals outlined in 2.4.2 and the quality plan outlined in 2.4.3; ii. Take appropriate action to ensure the integrity of the quality system; and iii. Communicate to relevant personnel all information essential to ensure the effective implementation and maintenance of the quality system."
   },
   "2.1.1.7": {
     "page": 31,
@@ -72,7 +72,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.1.2.3": {
     "page": 31,
-    "text": "The quality system, including food quality plans, shall be reviewed when any changes are implemented that have an impact on the site's ability to meet customer requirements and/or corporate quality requirements where applicable. 31"
+    "text": "The quality system, including food quality plans, shall be reviewed when any changes are implemented that have an impact on the site's ability to meet customer requirements and/or corporate quality requirements where applicable."
   },
   "2.1.2.4": {
     "page": 32,
@@ -112,7 +112,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.2.1.1": {
     "page": 32,
-    "text": "Electronic and/or hard copy documentation that outlines the methods and ii. The policy statement and site organization chart; iii. A list of the products covered under the scope of certification; iv. Finished product specifications that agree with customers' requirements and/or meet the site's corporate quality requirements, where applicable; and v. A description of the applications of process control methods and other quality tools that are used to control and reduce process variation and meet customer specifications. 32 The quality system manual may be incorporated into or be independent of the food safety system manual."
+    "text": "Electronic and/or hard copy documentation that outlines the methods and ii. The policy statement and site organization chart; iii. A list of the products covered under the scope of certification; iv. Finished product specifications that agree with customers' requirements and/or meet the site's corporate quality requirements, where applicable; and v. A description of the applications of process control methods and other quality tools that are used to control and reduce process variation and meet customer specifications. The quality system manual may be incorporated into or be independent of the food safety system manual."
   },
   "2.2.2": {
     "page": 33,
@@ -164,7 +164,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.3.2.1": {
     "page": 33,
-    "text": "Specifications for all raw materials and packaging, including but not limited to ingredients, additives, agricultural inputs (where applicable), hazardous chemicals, and processing aids that impact finished product quality shall be documented and kept current. 33"
+    "text": "Specifications for all raw materials and packaging, including but not limited to ingredients, additives, agricultural inputs (where applicable), hazardous chemicals, and processing aids that impact finished product quality shall be documented and kept current."
   },
   "2.3.2.2": {
     "page": 34,
@@ -212,7 +212,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.3.4.1": {
     "page": 34,
-    "text": "Raw materials, ingredients, packaging materials, processing aids, and services, including co-manufactured products, that impact finished product quality shall be supplied by an approved supplier. 34"
+    "text": "Raw materials, ingredients, packaging materials, processing aids, and services, including co-manufactured products, that impact finished product quality shall be supplied by an approved supplier."
   },
   "2.3.4.2": {
     "page": 35,
@@ -248,7 +248,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.2.1": {
     "page": 35,
-    "text": "The buildings and equipment shall be constructed, designed, and maintained to facilitate the manufacture, handling, storage, and/or delivery of food that meets customer specifications, regulatory requirements, and/or company quality requirements. 35"
+    "text": "The buildings and equipment shall be constructed, designed, and maintained to facilitate the manufacture, handling, storage, and/or delivery of food that meets customer specifications, regulatory requirements, and/or company quality requirements."
   },
   "2.4.2.2": {
     "page": 36,
@@ -320,7 +320,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.3.8": {
     "page": 36,
-    "text": "The food quality team shall identify and document all quality threats that can reasonably be expected to occur at each step in the processes, including raw materials and other inputs. 36"
+    "text": "The food quality team shall identify and document all quality threats that can reasonably be expected to occur at each step in the processes, including raw materials and other inputs."
   },
   "2.4.3.9": {
     "page": 37,
@@ -332,7 +332,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.4.1": {
     "page": 37,
-    "text": "Processing parameters or in-process measurements shall be established, validated, and verified at a determined frequency to meet all customer, regulatory, and/or company requirements. 37"
+    "text": "Processing parameters or in-process measurements shall be established, validated, and verified at a determined frequency to meet all customer, regulatory, and/or company requirements."
   },
   "2.4.4.2": {
     "page": 38,
@@ -384,7 +384,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.4.7.2": {
     "page": 38,
-    "text": "Records of all product release or disposition shall be maintained. 38 2.5 Quality System Verification"
+    "text": "Records of all product release or disposition shall be maintained. 2.5 Quality System Verification"
   },
   "2.5.1": {
     "page": 39,
@@ -448,7 +448,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.6.1.2": {
     "page": 39,
-    "text": "Product changeover procedures shall include verification of quality attributes required to meet finished product specifications and customer requirements. 39"
+    "text": "Product changeover procedures shall include verification of quality attributes required to meet finished product specifications and customer requirements."
   },
   "2.6.1.3": {
     "page": 40,
@@ -504,7 +504,7 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.8.1.3": {
     "page": 40,
-    "text": "Raw material and ingredient specifications for identity preserved foods shall include requirements for their handling, transport, storage, and delivery prior to use. 40"
+    "text": "Raw material and ingredient specifications for identity preserved foods shall include requirements for their handling, transport, storage, and delivery prior to use."
   },
   "2.8.1.4": {
     "page": 41,
@@ -548,11 +548,11 @@ export const SQF_CLAUSES: Record<string, SqfClause> = {
   },
   "2.9.2.2": {
     "page": 41,
-    "text": "The employee training program shall include: i. Applicable process control and quality tools training for those responsible for operating, inspecting, and overseeing key manufacturing processes; ii. Training, calibration, and proficiency testing of internal laboratory personnel; 41 iii. Training of personnel responsible for sensory evaluations; iv. Training in the application of risk-based principles, such as HACCP, used for the identification and control of quality threats for staff involved in developing and maintaining the food quality plan; and v. Provision for identifying and implementing the refresher training needs of site personnel."
+    "text": "The employee training program shall include: i. Applicable process control and quality tools training for those responsible for operating, inspecting, and overseeing key manufacturing processes; ii. Training, calibration, and proficiency testing of internal laboratory personnel; iii. Training of personnel responsible for sensory evaluations; iv. Training in the application of risk-based principles, such as HACCP, used for the identification and control of quality threats for staff involved in developing and maintaining the food quality plan; and v. Provision for identifying and implementing the refresher training needs of site personnel."
   },
   "2.9.2.3": {
     "page": 42,
-    "text": "Training records shall be maintained and include: i. Participant name; ii. Skills description; iii. Description of the training provided; iv. Date training completed; v. Trainer or training provider; and vi. Verification that the trainee is competent to complete the required tasks. 42"
+    "text": "Training records shall be maintained and include: i. Participant name; ii. Skills description; iii. Description of the training provided; iv. Date training completed; v. Trainer or training provider; and vi. Verification that the trainee is competent to complete the required tasks."
   }
 };
 

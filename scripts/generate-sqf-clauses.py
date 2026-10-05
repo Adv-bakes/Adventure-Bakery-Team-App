@@ -77,7 +77,11 @@ def parse(text, noise=NOISE, require_marker=None):
         if require_marker and require_marker not in ptext:
             continue
         lines = [s.strip() for s in ptext.split("\n")]
-        lines = [s for s in lines if s and not any(n in s for n in noise)]
+        # A line that is only this page's own number is the printed page footer. Left in, it ends
+        # up at the end of the last clause on the page ("...food safety objectives. 37") or in the
+        # middle of a clause that runs over the page. Physical page == printed page here, so only
+        # that exact number is dropped; any other number on a line of its own is kept.
+        lines = [s for s in lines if s and s != str(pidx) and not any(n in s for n in noise)]
         joined = re.sub(r"\s+", " ", " ".join(lines)).strip()
         if not joined:
             continue
