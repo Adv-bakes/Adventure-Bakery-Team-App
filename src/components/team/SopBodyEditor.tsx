@@ -1,3 +1,5 @@
+import { DocRefText, DocSelfContext } from "@/components/team/forms/DocRefText";
+import { docRefsIn } from "@/lib/docRefs";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,9 +14,9 @@ function Inline({ text }: { text: string }) {
   return (
     <>
       {parseInlineMarks(text).map((s, i) =>
-        s.bold ? <strong key={i}>{s.text}</strong>
-        : s.italic ? <em key={i}>{s.text}</em>
-        : <span key={i}>{s.text}</span>,
+        s.bold ? <strong key={i}><DocRefText text={s.text} /></strong>
+        : s.italic ? <em key={i}><DocRefText text={s.text} /></em>
+        : <span key={i}><DocRefText text={s.text} /></span>,
       )}
     </>
   );
@@ -116,11 +118,12 @@ export function SopBodyEditor({ sopId, content, docType, onChange }: Props) {
       return (
         <div className="space-y-1">
           <p className="text-xs font-semibold text-[#9A6F1E] uppercase tracking-wide">Policy Statement</p>
-          <p className="whitespace-pre-wrap text-sm text-[#2A1F0E]/80 leading-relaxed">{statement || "—"}</p>
+          <p className="whitespace-pre-wrap text-sm text-[#2A1F0E]/80 leading-relaxed"><DocRefText text={statement || "—"} /></p>
         </div>
       );
     }
     return (
+      <DocSelfContext.Provider value={sopId}>
       <div className="space-y-4">
         {BODY_SECTIONS.map(({ key, display }) => {
           const val = fields[key];
@@ -176,18 +179,30 @@ export function SopBodyEditor({ sopId, content, docType, onChange }: Props) {
                   </div>
                 );
               })() : (
-                <p className="whitespace-pre-wrap text-sm text-[#2A1F0E]/80 leading-relaxed">{val}</p>
+                <p className="whitespace-pre-wrap text-sm text-[#2A1F0E]/80 leading-relaxed"><DocRefText text={val} /></p>
               )}
             </div>
           );
         })}
       </div>
+      </DocSelfContext.Provider>
     );
   }
 
   // ----- Editable (admin) -----
+  // A number cannot be a link inside an edit box, so the documents this one mentions are listed
+  // above the boxes, each a link.
+  const mentioned = docRefsIn(isPolicy ? statement : BODY_SECTIONS.map(s => fields[s.key] ?? "").join("\n"));
   return (
     <div className="space-y-3">
+      {mentioned.length > 0 && (
+        <DocSelfContext.Provider value={sopId}>
+          <p className="rounded-md bg-[#C89B3C]/5 px-2.5 py-2 text-xs leading-relaxed text-[#2A1F0E]/80">
+            <span className="font-semibold text-[#9A6F1E]">Documents mentioned: </span>
+            <DocRefText text={mentioned.join(" · ")} />
+          </p>
+        </DocSelfContext.Provider>
+      )}
       {isPolicy ? (
         <div>
           <Label>Policy Statement</Label>

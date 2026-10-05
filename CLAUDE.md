@@ -457,14 +457,20 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   the library. New tab, so the entry being filled stays open; renders nothing if the form is missing.
   Not rendered for `checkbox`/`signature` fields (they return early). First use: FRM-012's
   "Contact list (FRM-011)" check links to the current contact list.
-- **Document numbers in a form's text are links (`DocRefText`):** a number written in a fixed row label,
-  a help line, an info block, a section description or a grid's label ("Chemicals locked away
-  (FSQM-032)") opens that document in the SOPs Library in a new tab. Nothing is authored: `FormEntry`
-  collects the numbers from the resolved schema (`collectDocRefs` in `src/lib/docRefs.ts`, pure, tested by
-  `scripts/test-doc-refs.mjs`), looks the ids up once (`fetchDocIdsByNumber`) and provides them through
-  `DocLinksContext`. The form's own number and a number with no active or draft document stay plain text;
-  with no provider (the builder's preview) the text renders as before. Scalar field labels are not
-  linked - use `linkTo` there.
+- **Document numbers in text are links (`DocRefText`):** any FRM-, FSQM-, SOP-, REP- or TRN- number written
+  in text ("Chemicals locked away (FSQM-032)") opens that document in the SOPs Library in a new tab, and
+  hovering shows the document's title. Nothing is authored. `DocRefText` (`components/team/forms/`) is
+  self-contained: the first one on screen whose text carries a number loads every active or draft
+  document's number and title once per page load (`fetchDocIndexRows` + `buildDocIndex`), shared through a
+  module cache - so it works with no provider, including the form builder's Preview. Where it is used:
+  every label, help line, info block, section title and description, fixed row label, column header and
+  signature statement of a form; and the read-only document body in `SopBodyEditor`. An admin sees the
+  body as edit boxes, where a number cannot be a link, so the documents mentioned are listed as links
+  above the boxes (`docRefsIn`). `DocSelfContext` (optional) carries the id of the document on screen so
+  its own number stays plain text; a number with no active or draft document also stays plain. One number,
+  one document: issued beats draft, and an English training module beats its "(ES)" variant. Pure half in
+  `src/lib/docRefs.ts`, tested by `scripts/test-doc-refs.mjs`. Not linked: a sortable column header (it
+  is a button), select options, and PDFs.
 - **Internal-audit guide (`SelectField.auditGuide`):** `{ findingsGrid, clauseColumn }` on a multi-select
   whose options are SQF sections ("11.5 Water, ice and air"). Each ticked section gets a collapsible panel
   (`SqfSectionGuide.tsx`, rendered by `FormRenderer` under the field): the Code's sub-sections from

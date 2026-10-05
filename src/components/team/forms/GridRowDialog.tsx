@@ -69,7 +69,7 @@ export function GridRowDialog({
       <DialogContent className="max-w-lg max-h-[90vh] flex flex-col gap-0 p-0">
         <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
           <DialogTitle className="text-[#2A1F0E]">
-            {field.label}
+            <DocRefText text={field.label} />
             {rowIndex != null && <span className="text-muted-foreground font-normal"> · Row {rowIndex + 1}</span>}
           </DialogTitle>
           <DialogDescription>
@@ -126,7 +126,7 @@ export function GridRowDialog({
           {rowIndex != null && field.columns.map((column: GridColumn) => (
             <div key={column.id} className="space-y-1.5">
               <Label className="text-xs font-medium text-[#2A1F0E]">
-                {column.label}
+                <DocRefText text={column.label} />
                 {column.unit && <span className="text-muted-foreground font-normal"> ({column.unit})</span>}
                 {column.required && <span className="text-red-600"> *</span>}
               </Label>
@@ -193,10 +193,10 @@ function RowGuidance({ text }: { text: string }) {
       <p className="text-[11px] font-semibold uppercase tracking-wide text-[#9A6F1E]">What to look at</p>
       {blocks.map((b, i) =>
         b.kind === "p" ? (
-          <p key={i} className="text-sm text-[#2A1F0E]">{b.text}</p>
+          <p key={i} className="text-sm text-[#2A1F0E]"><DocRefText text={b.text} /></p>
         ) : (
           <ul key={i} className="list-disc pl-5 space-y-1 text-sm text-[#2A1F0E]">
-            {b.items.map((item, j) => <li key={j}>{item}</li>)}
+            {b.items.map((item, j) => <li key={j}><DocRefText text={item} /></li>)}
           </ul>
         ),
       )}
