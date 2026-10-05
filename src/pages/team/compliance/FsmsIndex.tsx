@@ -15,7 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  ClauseState, IndexClause, IndexDoc, IndexedDoc, STATE_LABEL, buildFsmsIndex, fsmsIndexRows,
+  ClauseState, IndexClause, IndexDoc, IndexedDoc, STATE_LABEL, buildFsmsIndex, clauseLines, fsmsIndexRows,
 } from "@/lib/fsmsIndex";
 
 const STATES: ClauseState[] = ["issued", "draft", "no_program", "none"];
@@ -71,15 +71,25 @@ function ClauseRow({ c }: { c: IndexClause }) {
         {c.id}
       </a>
       <div className="min-w-0 space-y-1">
-        <p className="text-sm text-[#2A1F0E]">
-          {open || !long ? c.text : c.text.slice(0, 180).trimEnd() + "… "}
+        <div className="text-sm text-[#2A1F0E]">
+          {open || !long ? (
+            // The Code prints its numbered items down the page; so does this.
+            clauseLines(c.text).map((line, i) => line.marker ? (
+              <p key={i} className="flex gap-2 pl-3">
+                <span className="shrink-0 w-6 text-right text-muted-foreground">{line.marker}.</span>
+                <span>{line.text}</span>
+              </p>
+            ) : <p key={i}>{line.text}</p>)
+          ) : (
+            <p>{c.text.slice(0, 180).trimEnd() + "…"}</p>
+          )}
           {long && (
-            <button type="button" className="text-xs text-[#9A6F1E] hover:underline ml-1"
+            <button type="button" className="text-xs text-[#9A6F1E] hover:underline"
               onClick={() => setOpen((v) => !v)}>
               {open ? "less" : "more"}
             </button>
           )}
-        </p>
+        </div>
         <DocGroup label="Programs" docs={c.docs.filter((d) => d.role === "program")} />
         <DocGroup label="Records" docs={c.docs.filter((d) => d.role === "record")} />
         <DocGroup label="Training" docs={c.docs.filter((d) => d.role === "training")} />

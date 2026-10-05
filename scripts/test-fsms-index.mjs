@@ -82,6 +82,23 @@ const rows = T.fsmsIndexRows(index);
 check("csv has a header and one row per clause", rows.length, index.total + 1);
 check("csv marks drafts", rows.find((r) => r[0] === "2.1.1.2")[4], "FSQM-006 (draft)");
 
+// ---- clause text as lines
+check("items on their own lines", T.clauseLines("Management shall: i. Oversee the system; ii. Take action; and iii. Communicate."),
+  [{ marker: null, text: "Management shall:" }, { marker: "i", text: "Oversee the system;" },
+   { marker: "ii", text: "Take action; and" }, { marker: "iii", text: "Communicate." }]);
+check("a sentence introducing the next group is its own line",
+  T.clauseLines("Commit to: i. Supply safe food; and ii. Comply. The policy shall be: iii. Signed; and iv. Communicated."),
+  [{ marker: null, text: "Commit to:" }, { marker: "i", text: "Supply safe food; and" }, { marker: "ii", text: "Comply." },
+   { marker: null, text: "The policy shall be:" }, { marker: "iii", text: "Signed; and" }, { marker: "iv", text: "Communicated." }]);
+check("i.e. is not an item", T.clauseLines("Limits are set, i.e., their elimination or reduction."),
+  [{ marker: null, text: "Limits are set, i.e., their elimination or reduction." }]);
+check("no list, one line", T.clauseLines("Drains shall be easily cleaned."), [{ marker: null, text: "Drains shall be easily cleaned." }]);
+const allClauses = T.buildFsmsIndex([]).sections.flatMap((s) => s.subSections).flatMap((s) => s.clauses);
+check("no words are lost from any clause of the Code",
+  allClauses.filter((c) => T.clauseLines(c.text).map((l) => (l.marker ? l.marker + ". " : "") + l.text).join(" ").replace(/\s+/g, " ")
+    !== c.text.replace(/\s+/g, " ").trim()).map((c) => c.id), []);
+check("the Code's lists are found", allClauses.filter((c) => T.clauseLines(c.text).length > 1).length, 46);
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} failed`); process.exit(1); }
 console.log(`${cases} cases passed`);
