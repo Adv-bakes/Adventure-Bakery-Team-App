@@ -112,6 +112,40 @@ function Choice({ value, onChange, options }: {
 }
 
 /**
+ * Today's date and the time, large, beside the welcome on the kiosk's home screen. A visitor
+ * signing out is asked nothing, so this is where they see the time that will be recorded; it also
+ * shows at a glance that the tablet is awake and current.
+ *
+ * It is in the header, not at the foot of the screen: the list of people on site grows downwards,
+ * and with two visitors signed in a clock at the bottom was already below the fold.
+ *
+ * Its own component so the tick re-renders these two lines and not the page. It ticks every
+ * second but the text only changes with the minute, and React skips a state set to the same text.
+ */
+function KioskClock() {
+  const read = () => {
+    const now = new Date();
+    return {
+      time: now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
+      // Short names on purpose: "Wednesday, September 30" is wide enough to push the welcome onto two lines.
+      date: now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" }),
+    };
+  };
+  const [time, setTime] = useState(() => read().time);
+  const [date, setDate] = useState(() => read().date);
+  useEffect(() => {
+    const timer = setInterval(() => { const now = read(); setTime(now.time); setDate(now.date); }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return (
+    <div className="ml-auto shrink-0 whitespace-nowrap text-right">
+      <p className="text-4xl font-semibold tabular-nums tp-on-bg">{time}</p>
+      <p className="text-lg tp-on-bg-dim mt-1">{date}</p>
+    </div>
+  );
+}
+
+/**
  * The way out of the kiosk, for staff. The kiosk screen has no portal around it and so no account
  * menu; without this the only way to sign the tablet out was to clear the browser's site data.
  *
@@ -368,22 +402,25 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
   // so the questions - and the on-screen keyboard - have the room.
   const welcome = kiosk && (step === "home" || step === "done");
   const header = (
-    <div>
-      <h1 className={cn("font-semibold flex items-center tp-on-bg", welcome ? "text-4xl gap-3" : "text-2xl gap-2")}>
-        <DoorOpen className={cn("text-[hsl(var(--tp-gold))]", welcome ? "w-8 h-8" : "w-5 h-5")} />
-        {kiosk ? "Welcome to Adventure Bakery" : "Visitor Sign-In"}
-      </h1>
-      {(!kiosk || welcome) && (
-        <p className={cn("tp-on-bg-dim mt-1", welcome ? "text-lg" : "text-sm")}>
-          {kiosk
-            ? "Every visitor signs in here before entering, and signs out on leaving."
-            : "Every visitor signs in at every visit (FRM-905). The food safety rules are read and signed on the first visit, and again after twelve months (FRM-906)."}
-        </p>
-      )}
+    <div className="flex flex-wrap items-start gap-x-8 gap-y-2">
+      <div className="flex-1 min-w-[18rem]">
+        <h1 className={cn("font-semibold flex items-center tp-on-bg", welcome ? "text-4xl gap-3" : "text-2xl gap-2")}>
+          <DoorOpen className={cn("text-[hsl(var(--tp-gold))]", welcome ? "w-8 h-8" : "w-5 h-5")} />
+          {kiosk ? "Welcome to Adventure Bakery" : "Visitor Sign-In"}
+        </h1>
+        {(!kiosk || welcome) && (
+          <p className={cn("tp-on-bg-dim mt-1", welcome ? "text-lg" : "text-sm")}>
+            {kiosk
+              ? "Every visitor signs in here before entering, and signs out on leaving."
+              : "Every visitor signs in at every visit (FRM-905). The food safety rules are read and signed on the first visit, and again after twelve months (FRM-906)."}
+          </p>
+        )}
+      </div>
+      {welcome && <KioskClock />}
     </div>
   );
   // The kiosk has the whole screen to itself; inside the portal the page keeps its column.
-  const column = cn("mx-auto p-6 space-y-4 tp-fade-up", kiosk ? "max-w-[50rem]" : "max-w-2xl");
+  const column = cn("mx-auto p-6 space-y-4 tp-fade-up", kiosk ? "max-w-[54rem]" : "max-w-2xl");
 
   if (!forms) {
     return shell(
