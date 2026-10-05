@@ -222,3 +222,44 @@ export function fsmsIndexRows(index: FsmsIndex): string[][] {
   }
   return rows;
 }
+
+const ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv"];
+
+export interface ClauseLine { marker: string | null; text: string }
+
+/**
+ * A clause's text as lines: the opening sentence, then one line per numbered item (i., ii., iii.).
+ *
+ * The Code prints its lists down the page; the generated clause map holds each clause as one run
+ * of text. Items are found strictly in order - i, then ii, then iii - and only where a capital
+ * letter follows, so "i.e." is never taken for an item. A sentence that introduces the next group
+ * ("The policy statement shall be:") comes back as its own unnumbered line.
+ */
+export function clauseLines(text: string): ClauseLine[] {
+  const starts: { marker: string; at: number; bodyAt: number }[] = [];
+  let from = 0;
+  for (const marker of ROMAN) {
+    const m = new RegExp(`(^|\\s)${marker}\\.\\s+(?=[A-Z])`, "g");
+    m.lastIndex = from;
+    const hit = m.exec(text);
+    if (!hit) break;
+    starts.push({ marker, at: hit.index + hit[1].length, bodyAt: hit.index + hit[0].length });
+    from = hit.index + hit[0].length;
+  }
+  if (starts.length < 2) return [{ marker: null, text: text.trim() }];
+
+  const lines: ClauseLine[] = [];
+  const lead = text.slice(0, starts[0].at).trim();
+  if (lead) lines.push({ marker: null, text: lead });
+  starts.forEach((s, i) => {
+    const body = text.slice(s.bodyAt, i + 1 < starts.length ? starts[i + 1].at : text.length).trim();
+    const cut = body.endsWith(":") ? body.lastIndexOf(". ") : -1;
+    if (cut > 0) {
+      lines.push({ marker: s.marker, text: body.slice(0, cut + 1) });
+      lines.push({ marker: null, text: body.slice(cut + 2).trim() });
+    } else {
+      lines.push({ marker: s.marker, text: body });
+    }
+  });
+  return lines;
+}
