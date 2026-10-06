@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TeamPage } from "@/components/team/TeamPage";
 import { PssPreviewDrawer } from "@/components/sales/PssPreviewDrawer";
 import { toast } from "sonner";
+import { BATCH_SIZE_UNITS } from "@/lib/batchSheetFill";
 import { ArrowLeft, Download, Save, CheckCircle2, History, RefreshCw, Plus, Trash2, FileText, GripVertical, Lock } from "lucide-react";
 
 // Recompute Formula % from grams. Used both inside the editor closure and on load.
@@ -68,6 +69,10 @@ const BatchSheetEditor = () => {
   const [editablePkg, setEditablePkg] = useState<any>({});
   const [unitWeight, setUnitWeight] = useState<string>("");
   const [unitWeightUnit, setUnitWeightUnit] = useState<string>("g");
+  // The standard batch the floor mixes. The production lot record (FRM-520) turns each
+  // ingredient's percentage of this into its expected quantity per batch - see batchSheetFill.ts.
+  const [batchSize, setBatchSize] = useState<string>("");
+  const [batchSizeUnit, setBatchSizeUnit] = useState<string>("lb");
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -112,6 +117,8 @@ const BatchSheetEditor = () => {
     setBakeInternalUnit(d.process?.bake?.internal_temp_unit || "°F");
     setUnitWeight(d.product?.target_unit_weight_raw != null ? String(d.product.target_unit_weight_raw) : "");
     setUnitWeightUnit(d.product?.weight_unit || "g");
+    setBatchSize(d.product?.batch_size != null ? String(d.product.batch_size) : "");
+    setBatchSizeUnit(d.product?.batch_size_unit || "lb");
     // Strip the product-name-as-vessel bug
     const productName = (d.header?.product_name || "").toString().trim().toLowerCase();
     const rawVessel = (d.packaging?.primary?.vessel || "").toString().trim();
@@ -288,6 +295,8 @@ const BatchSheetEditor = () => {
         ...(sheet.data_json?.product || {}),
         target_unit_weight_raw: unitWeight !== "" ? Number(unitWeight) : null,
         weight_unit: unitWeightUnit,
+        batch_size: batchSize !== "" ? Number(batchSize) : null,
+        batch_size_unit: batchSizeUnit,
       },
     };
 
@@ -525,7 +534,7 @@ const BatchSheetEditor = () => {
       )}
 
       {/* Summary — no meaningless "Total batch weight" */}
-      <section className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="tp-surface border border-[hsl(var(--tp-hairline))] rounded-lg p-3">
           <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1">Unit weight (raw)</p>
           <div className="flex items-center gap-2">
@@ -547,6 +556,33 @@ const BatchSheetEditor = () => {
               <option value="g">g</option>
               <option value="oz">oz</option>
               <option value="lbs">lbs</option>
+            </select>
+          </div>
+        </div>
+        <div className="tp-surface border border-[hsl(var(--tp-hairline))] rounded-lg p-3">
+          <p
+            className="text-[10px] uppercase tracking-wider text-[hsl(var(--tp-text-dim))] mb-1"
+            title="One batch as mixed on the floor. The production lot record works out each ingredient's expected quantity from it."
+          >
+            Standard batch size
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              className="tp-input w-24 text-right tabular-nums"
+              type="number"
+              step="0.01"
+              value={batchSize}
+              onChange={e => { setBatchSize(e.target.value); setDirty(true); }}
+              disabled={isSuperseded}
+              placeholder="0"
+            />
+            <select
+              className="tp-input"
+              value={batchSizeUnit}
+              onChange={e => { setBatchSizeUnit(e.target.value); setDirty(true); }}
+              disabled={isSuperseded}
+            >
+              {BATCH_SIZE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
           </div>
         </div>

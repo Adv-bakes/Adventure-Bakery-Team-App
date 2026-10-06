@@ -1153,6 +1153,32 @@ codes; nothing joined them. The trace pulls the records so nobody hunts for them
   expected trace, so it doubles as an on-screen acceptance test after a change. It is practice only - the
   annual mock recall (SQF 2.6.3.2) must be on real lots.
 
+## Lot record from the batch sheet (FRM-520) — `lib/batchSheetFill.ts`
+
+The batch sheet (`batch_sheets`) is the master formula; the Production Lot Record (FRM-520) is what
+went in on one bake day. Until 2026-10-06 nothing joined them, and the formula lived in whichever
+earlier lot record was copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the
+batch sheet"** card: `BatchSheetPickDialog` lists the current version of every sheet
+(`fetchCurrentBatchSheets`, drafts included and labelled) and `batchSheetFill` fills the entry.
+
+- **Only the standard comes across**: product, one line per ingredient, brand (`vendor_1`), expected
+  quantity per batch and unit. **The lot on the container and the weighed quantities are never
+  filled** - the weights rule again (`suggestFrom` still offers the expected figure in grey).
+- **Expected quantity = stored percentage x `data_json.product.batch_size`** (unit
+  `batch_size_unit`, default lb), the "Standard batch size" card in `BatchSheetEditor`. It reads the
+  stored percentages, the same ones `runMaterialCalc` reads, never the gram column (labelled per
+  unit, and on the rum cake sheet holding grams per batch). No batch size -> lines without
+  quantities and a warning; an ingredient with no percentage (pan spray) keeps its line, because
+  its lot must be recorded.
+- **The grid is replaced, not merged**, and the result is unsaved and dirty (`keepDefaultValues`)
+  with one Undo, like "Copy from a previous entry" - which stays as the fallback for a product with
+  no batch sheet.
+- `settings.batchSheet.sourceField` (FRM-520's `formula_source`, "Formula") records the sheet
+  version the entry started from ("Batch sheet v1 (draft)"), so a formula change shows in the lot
+  history. It is text, not a foreign key: the entry must stay readable after the sheet is revised.
+- Not built: picking the batch sheet from the Product field itself, and scaling for a part batch.
+- Tested by `scripts/test-batch-sheet-fill.mjs`. `batchSheetFill.ts` has no imports.
+
 ## Release helper (FRM-701) — `lib/releaseAssist.ts` + `components/team/release/`
 
 A release record repeats what the site's records already hold. With `settings.releaseAssist` set,
