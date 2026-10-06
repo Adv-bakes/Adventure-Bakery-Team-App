@@ -400,6 +400,18 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   that **pin** them, and a pinned field always receives its fact (keyword-inferred ones stay
   first-wins). `FormSection.scanScope: "form"` lets one section's camera fill pinned fields in other
   sections (`scanTargetFields`). A multi-select takes a comma list and keeps only values that are options.
+- **A pack scanned in several shots (section scan).** A round bottle cannot be read in one photo, so
+  each "Scan pack" ADDS to the entry (owner's request at the plant, 2026-10-06). Two halves:
+  `FormEntry.scanLabelIntoRow` sends the new photo **together with the section's earlier label
+  photos** (matched by their attachment note, newest four - the function's limit), so a statement
+  that wraps round the pack is read whole; and `applyLabelScanToFields(fields, values, result,
+  scanned)` fills an empty field, updates a field still holding exactly what an earlier scan wrote
+  (`scanned`, a ref in `SectionLabelScan`), and **keeps any other answer**, returning the different
+  reading in `differing` (a "Use this" chip) and the still-empty fields in `missing` ("Still blank:
+  ... scan another side"). A fact absent from a later read never empties its field; notes leftovers
+  are de-duplicated. `scanned` lives for the page visit only, so after a reload every answer counts
+  as the person's and is kept. Before this every scan overwrote every field it could read. Grid-row
+  scans are unchanged. Tested by `scripts/test-label-scan-merge.mjs`.
 - **AI extraction:** drawer Form tab "Generate with AI" (shown when a source `.docx` is attached) runs
   mammoth client-side (keeps the tables `sopDocxParser` drops), sends HTML to edge function
   **`generate-form-schema`** (Gemini via Lovable gateway; server-side whitelist/sanitize; also accepts

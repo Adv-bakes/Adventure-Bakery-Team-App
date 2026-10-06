@@ -169,11 +169,22 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
 /** What the last section scan wrote, kept so it can be undone in one tap. */
 interface SectionScan {
   prev: Record<string, any>;
+  /** What `scanned` held for the same fields before this shot, so Undo puts that back too. */
+  prevScanned: Record<string, any>;
   filled: string[];
   alternates: string[];
   unclaimed: string[];
   warnings: string[];
+  /** Read differently from an answer already on the form - kept, offered as a swap. */
+  differing: { id: string; label: string; value: any }[];
+  /** Scannable fields still empty: what another shot is for. */
+  missing: string[];
 }
+
+const showScanValue = (v: any) => {
+  const s = Array.isArray(v) ? v.join(", ") : String(v ?? "");
+  return s.length > 60 ? `${s.slice(0, 57)}…` : s;
+};
 
 /**
  * "Scan the pack" for a section of SCALAR fields — the twin of the grid's
@@ -183,6 +194,11 @@ interface SectionScan {
  * all-or-nothing per input, so a single control either always opens the camera
  * (useless on a desktop reviewing a photo already taken) or never does (useless
  * on the floor). Two inputs, two buttons, no feature detection.
+ *
+ * SEVERAL SHOTS OF ONE PACK. A round bottle cannot be read in one photo, so each scan adds to
+ * the last: it fills what is still empty and leaves every answer already there (see
+ * applyLabelScanToFields). `scanned` remembers what the scans themselves wrote, which is what
+ * lets a later, fuller reading replace an earlier partial one without ever replacing typing.
  */
 function SectionLabelScan({ section, fields, form, onScanLabel }: {
   section: FormSection;
@@ -195,13 +211,15 @@ function SectionLabelScan({ section, fields, form, onScanLabel }: {
   const pickerRef = useRef<HTMLInputElement>(null);
   const [scanning, setScanning] = useState(false);
   const [scan, setScan] = useState<SectionScan | null>(null);
+  const [shots, setShots] = useState(0);
+  const scanned = useRef<Record<string, any>>({});
 
   useEffect(() => {
     if (!scan) return;
     // A scan that raised a warning stays until it is dismissed: a warning that the ingredient
     // statement may be missing an allergen must not vanish on a timer while the filler is
-    // looking at the pack.
-    if (scan.warnings.length > 0) return;
+    // looking at the pack. So does one that left something to decide or to scan again for.
+    if (scan.warnings.length > 0 || scan.differing.length > 0 || scan.missing.length > 0) return;
     const timer = window.setTimeout(() => setScan(null), SCAN_UNDO_MS);
     return () => window.clearTimeout(timer);
   }, [scan]);
@@ -222,18 +240,26 @@ function SectionLabelScan({ section, fields, form, onScanLabel }: {
       // Snapshot only the fields the scan could touch, so Undo restores exactly
       // what it changed and nothing the filler typed elsewhere in the meantime.
       const values = form.getValues();
-      const { next, filled, unclaimed } = applyLabelScanToFields(fields, values, result);
+      const { next, filled, unclaimed, differing, missing } =
+        applyLabelScanToFields(fields, values, result, scanned.current);
       const prev: Record<string, any> = {};
+      const prevScanned: Record<string, any> = {};
       for (const id of Object.keys(next)) {
         if (next[id] !== values[id]) {
           prev[id] = values[id];
+          if (id in scanned.current) prevScanned[id] = scanned.current[id];
+          scanned.current[id] = next[id];
           form.setValue(id, next[id], { shouldDirty: true, shouldValidate: false });
         }
       }
+      setShots(n => n + 1);
       setScan({
         prev,
+        prevScanned,
         filled,
         unclaimed,
+        differing,
+        missing,
         alternates: result.alternates?.lot_code ?? [],
         warnings: result.warnings ?? [],
       });
@@ -265,7 +291,7 @@ function SectionLabelScan({ section, fields, form, onScanLabel }: {
           {scanning
             ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9A6F1E]" />
             : <Camera className="w-3.5 h-3.5 text-[#9A6F1E]" />}
-          <span className="ml-1.5 text-xs">Scan pack</span>
+          <span className="ml-1.5 text-xs">{shots > 0 ? "Scan another side" : "Scan pack"}</span>
         </Button>
         <Button
           type="button" variant="ghost" size="icon" className="h-8 w-8"
@@ -293,6 +319,8 @@ function SectionLabelScan({ section, fields, form, onScanLabel }: {
                   onClick={() => {
                     for (const [id, value] of Object.entries(scan.prev)) {
                       form.setValue(id, value, { shouldDirty: true, shouldValidate: false });
+                      if (id in scan.prevScanned) scanned.current[id] = scan.prevScanned[id];
+                      else delete scanned.current[id];
                     }
                     setScan(null);
                   }}
@@ -303,10 +331,43 @@ function SectionLabelScan({ section, fields, form, onScanLabel }: {
               </>
             ) : (
               <span className="text-[#2A1F0E]">
-                Nothing readable on that photo — nothing was changed. Try again in better light, or type it in.
+                {shots > 1
+                  ? "Nothing new on that photo — nothing was changed."
+                  : "Nothing readable on that photo — nothing was changed. Try again in better light, or type it in."}
               </span>
             )}
           </div>
+
+          {/* Read, but the form already holds a different answer. The answer stays; the new
+              reading is one tap away. */}
+          {scan.differing.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[#2A1F0E]/70">Read differently from what is already entered — kept as entered:</p>
+              {scan.differing.map(d => (
+                <div key={d.id} className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[#2A1F0E]"><strong>{d.label}:</strong> {showScanValue(d.value)}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      form.setValue(d.id, d.value, { shouldDirty: true, shouldValidate: false });
+                      scanned.current[d.id] = d.value;
+                      setScan(s => s && { ...s, differing: s.differing.filter(x => x.id !== d.id) });
+                    }}
+                    className="rounded border px-1.5 py-0.5 text-[11px] font-medium text-[#9A6F1E] hover:bg-[#C89B3C]/15"
+                    style={{ borderColor: "rgba(200,155,60,0.45)" }}
+                  >
+                    Use this
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {scan.missing.length > 0 && (
+            <p className="text-[#2A1F0E]/70">
+              Still blank: {scan.missing.join(", ")}. Turn the pack and scan another side, or type them in.
+            </p>
+          )}
 
           {/* The pack carries several numbers; if the wrong one was read as the
               lot, swapping it should not mean retyping it. */}
