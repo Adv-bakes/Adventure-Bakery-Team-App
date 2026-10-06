@@ -9,13 +9,14 @@
 // wrong one is withdrawn and posted again.
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, Check, ChevronDown, Languages, Loader2, Megaphone, Plus } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Languages, Loader2, Lock, Megaphone, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,8 +27,8 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 import { fetchProfileNames } from "@/lib/formResponses";
 import {
-  EMPTY_NOTICE_DRAFT, NoticeDraft, NoticeLang, NoticeReader, StaffNotice, acknowledgeStaffNotice,
-  fetchNoticeReaders, fetchStaffNotices, noticeDraftProblem, noticeToPost, postStaffNotice, readTally,
+  EMPTY_NOTICE_DRAFT, NoticeDraft, NoticeLang, NoticeReader, StaffNotice, TeamMember, acknowledgeStaffNotice,
+  fetchNoticeReaders, fetchNoticeTeam, fetchStaffNotices, noticeDraftProblem, noticeToPost, postStaffNotice, readTally,
   translateNotice, translationIsStale, unreadNotices, withdrawStaffNotice,
 } from "@/lib/staffNotices";
 
@@ -35,6 +36,25 @@ const LANG_NAME: Record<NoticeLang, string> = { en: "English", es: "Spanish" };
 const otherLang = (l: NoticeLang): NoticeLang => (l === "en" ? "es" : "en");
 
 const when = (iso: string) => new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+
+/** "Diana, Sam and Lee" */
+const nameList = (names: string[]) =>
+  names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names.join("");
+
+/**
+ * Marks a private note. Whoever can see the read list (admin, owner) is told who it is for; a
+ * recipient is told only that it is private, not who else received it.
+ */
+function PrivateLine({ n, readers }: { n: StaffNotice; readers: NoticeReader[] }) {
+  if (n.audience !== "people") return null;
+  const to = readers.filter((r) => r.notice_id === n.id).map((r) => r.full_name);
+  return (
+    <p className="flex items-center gap-1 text-xs tp-card-gold font-medium mb-1">
+      <Lock className="w-3 h-3" />
+      {to.length ? `Private note to ${nameList(to)}` : "Private note to you"}
+    </p>
+  );
+}
 
 function NoticeText({ n }: { n: StaffNotice }) {
   return (
@@ -91,6 +111,10 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<NoticeDraft>(EMPTY_NOTICE_DRAFT);
   const [translating, setTranslating] = useState(false);
+  // Who the notice is for. `team` is null until loaded, or when addressing is not available yet.
+  const [team, setTeam] = useState<TeamMember[] | null>(null);
+  const [toPeople, setToPeople] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -111,6 +135,11 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
     fetchNoticeReaders().then(setReaders).catch(() => setReaders([]));
   }, [roleLoading, canPost, available, notices]);
 
+  useEffect(() => {
+    if (!posting || team) return;
+    fetchNoticeTeam().then(setTeam).catch(() => setTeam(null));
+  }, [posting, team]);
+
   const acknowledge = async (n: StaffNotice) => {
     setBusyId(n.id);
     try {
@@ -127,10 +156,12 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
   const post = async () => {
     setSaving(true);
     try {
-      await postStaffNotice(noticeToPost(draft));
-      toast.success("Notice posted to the team");
+      await postStaffNotice({ ...noticeToPost(draft), recipients: toPeople ? picked : undefined });
+      toast.success(toPeople ? "Private note sent" : "Notice posted to the team");
       setPosting(false);
       setDraft(EMPTY_NOTICE_DRAFT);
+      setToPeople(false);
+      setPicked([]);
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not post the notice");
@@ -211,6 +242,7 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
       {unread.map((n) => (
         <Card key={n.id} className="border-l-4 border-l-[hsl(var(--tp-gold))]">
           <CardContent className="pt-4 pb-4">
+            <PrivateLine n={n} readers={readers} />
             <NoticeText n={n} />
             <div className="flex items-center justify-between gap-3 flex-wrap mt-3">
               <span className="text-xs tp-card-dim">{postedLine(n)}</span>
@@ -243,6 +275,7 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
               <CardContent className="pt-4 space-y-4">
                 {earlier.map((n) => (
                   <div key={n.id} className="border-b last:border-0 pb-4 last:pb-0">
+                    <PrivateLine n={n} readers={readers} />
                     <NoticeText n={n} />
                     <div className="flex items-center gap-3 flex-wrap mt-2">
                       <span className="text-xs tp-card-dim">{postedLine(n)}</span>
@@ -272,14 +305,53 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
       <Dialog open={posting} onOpenChange={(v) => { if (!saving) setPosting(v); }}>
         <DialogContent className="max-w-xl max-h-[90dvh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Post a notice to the team</DialogTitle>
+            <DialogTitle>Post a notice</DialogTitle>
             <DialogDescription>
-              Everyone sees it until they tap "I have read this". A notice cannot be edited after it
-              is posted; a wrong one is withdrawn and posted again.
+              Whoever it is for sees it until they tap "I have read this". A notice cannot be edited
+              after it is posted; a wrong one is withdrawn and posted again.
             </DialogDescription>
           </DialogHeader>
           {/* The fields scroll; the title and the buttons stay in view on a short screen. */}
           <div className="space-y-3 flex-1 min-h-0 overflow-y-auto px-1 -mx-1">
+            {team && (
+              <div className="space-y-2">
+                <Label>Who is it for</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {[false, true].map((people) => (
+                    <button
+                      key={String(people)}
+                      type="button"
+                      aria-pressed={toPeople === people}
+                      onClick={() => setToPeople(people)}
+                      className={`rounded-full border px-3 py-1 text-sm ${toPeople === people
+                        ? "border-[#C89B3C] bg-[#C89B3C]/15 text-[#2A1F0E] font-medium" : "hover:bg-muted"}`}
+                    >
+                      {people ? "Specific people" : "The whole team"}
+                    </button>
+                  ))}
+                </div>
+                {toPeople && (
+                  <>
+                    <div className="rounded-md border p-2 max-h-40 overflow-y-auto grid gap-1 sm:grid-cols-2">
+                      {team.length === 0 && <p className="text-sm text-muted-foreground p-1">No other team members.</p>}
+                      {team.map((m) => (
+                        <label key={m.user_id} className="flex items-center gap-2 rounded px-1.5 py-1 hover:bg-muted/50 cursor-pointer text-sm">
+                          <Checkbox
+                            checked={picked.includes(m.user_id)}
+                            onCheckedChange={(v) => setPicked((p) => (v ? [...p, m.user_id] : p.filter((id) => id !== m.user_id)))}
+                          />
+                          {m.full_name}
+                        </label>
+                      ))}
+                    </div>
+                    <p className="flex items-start gap-1 text-xs text-muted-foreground">
+                      <Lock className="w-3 h-3 mt-0.5 shrink-0" />
+                      Private: only the people ticked, you, and the admins and owner can see it.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               Write it in English or Spanish, then tap Translate for the other language.
             </p>
@@ -347,8 +419,12 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPosting(false)} disabled={saving}>Cancel</Button>
-            <Button onClick={() => void post()} disabled={saving || translating || !!noticeDraftProblem(draft)}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Post to the team"}
+            <Button onClick={() => void post()}
+              disabled={saving || translating || !!noticeDraftProblem(draft) || (toPeople && picked.length === 0)}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" />
+                : !toPeople ? "Post to the team"
+                : picked.length === 0 ? "Choose who it is for"
+                : `Send to ${picked.length} ${picked.length === 1 ? "person" : "people"}`}
             </Button>
           </DialogFooter>
         </DialogContent>
