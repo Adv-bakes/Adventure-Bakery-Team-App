@@ -1029,6 +1029,16 @@ FSQM-006 names the read list as the record.
   posted again; withdrawn notices and their read lists are kept.
 - The poster is recorded as having read it. Unread notices add to the sidebar Notifications pill
   (`countUnreadNotices`, which never throws so it cannot blank the notification count).
+- **Private notes (2026-10-06, migration `20261006000006`):** the dialog's "Who is it for" is **The whole
+  team** (default) or **Specific people** (a tick list from `staff_notice_team()`). `staff_notices.audience`
+  is `team` or `people`; `staff_notice_recipients` holds who a `people` notice is for, written by
+  `post_staff_notice(..., _recipients uuid[])` in the same transaction. A private note is seen only by its
+  recipients, its poster, and admin/owner - **not the auditor**, not the rest of the team (RLS on
+  `staff_notices`). Only a recipient is asked to read it (`StaffNotice.for_me`; `unreadNotices` skips a
+  private note an admin can see but is not named on) and the read list shows only recipients. The audience
+  is a column, not "has recipient rows", and an empty recipient list is refused, so a private note can
+  never become a notice to everyone. The client sends `_recipients` only for a private note and reads
+  `staff_notices` with `*`, so it works before the migration is pushed (the choice is then hidden).
 - **Translate (2026-10-06):** the Post a notice dialog takes the notice in English OR Spanish; the
   **Translate** button (edge fn `translate-notice`) fills the other language and sets "Written in".
   The poster often cannot read the other language, so the translation stays editable and the dialog
