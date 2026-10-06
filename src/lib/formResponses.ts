@@ -5,6 +5,7 @@
 // callers only see the typed wrappers below.
 
 import { supabase } from "@/integrations/supabase/client";
+import type { BatchSheetRow } from "@/lib/batchSheetFill";
 import {
   emptyValues, getFormSchema, initialsFromName, valueFields,
   type AiCellDraft, type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
@@ -785,4 +786,21 @@ export async function resolveSchemaForResponse(
   }
 
   return live ? { schema: live, source: "fallback", pinnedRevision: pinned } : null;
+}
+
+// ---------- Batch sheets (settings.batchSheet - see batchSheetFill.ts) ----------
+
+/**
+ * The batch sheets a lot record can be started from: the current version of each product's sheet.
+ * Drafts are included and labelled - a product whose sheet is not approved yet is still baked.
+ */
+export async function fetchCurrentBatchSheets(): Promise<BatchSheetRow[]> {
+  const { data, error } = await (supabase as any)
+    .from("batch_sheets")
+    .select("id, version, status, data_json")
+    .is("superseded_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  return (data ?? []) as BatchSheetRow[];
 }

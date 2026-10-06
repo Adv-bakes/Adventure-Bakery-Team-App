@@ -427,6 +427,12 @@ export interface FormSettings {
    * releaseAssist.ts) - not a general feature.
    */
   releaseAssist?: boolean;
+  /**
+   * "Start from the batch sheet" (batchSheetFill.ts): the product, the ingredient lines and the
+   * expected quantity per batch come from the product's batch sheet; the lots and the weighed
+   * quantities stay blank. Names the fields it fills, so it is tied to this form's field ids.
+   */
+  batchSheet?: import("./batchSheetFill").BatchSheetSettings;
 }
 
 /**

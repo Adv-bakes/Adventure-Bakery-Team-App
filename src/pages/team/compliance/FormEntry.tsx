@@ -11,7 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, ArrowLeft, Camera, Copy, Download, ImagePlus, Loader2, LockOpen, Mic, PenLine, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, ClipboardList, Copy, Download, ImagePlus, Loader2, LockOpen, Mic, PenLine, RotateCcw, ScanLine, Save, Send, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -32,6 +32,8 @@ import { DocSelfContext } from "@/components/team/forms/DocRefText";
 import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
+import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
+import { batchSheetFill, batchSheetLabel, batchSheetProduct, type BatchSheetRow } from "@/lib/batchSheetFill";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
 import { useReleaseAssist } from "@/components/team/release/useReleaseAssist";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
@@ -111,6 +113,9 @@ export default function FormEntry() {
   const [missing, setMissing] = useState<string[] | null>(null);
   // The last copy applied, kept so one Undo restores the entry exactly as it was before it.
   const [copied, setCopied] = useState<{ title: string; count: number; prev: Record<string, any> } | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // The last batch sheet applied, kept for the same one-step Undo.
+  const [fromSheet, setFromSheet] = useState<{ title: string; lines: number; warnings: string[]; prev: Record<string, any> } | null>(null);
 
   const schema: FormSchema | null = resolved?.schema ?? null;
 
@@ -337,6 +342,7 @@ export default function FormEntry() {
       return;
     }
     form.reset(values, { keepDefaultValues: true });
+    setFromSheet(null);
     setCopied({ title, count, prev });
   };
 
@@ -344,6 +350,28 @@ export default function FormEntry() {
     if (!copied) return;
     form.reset(copied.prev, { keepDefaultValues: true });
     setCopied(null);
+  };
+
+  // Start the entry from the product's batch sheet (settings.batchSheet). Same contract as the
+  // copy above: unsaved and dirty until Save Draft, one Undo. Only the standard comes across -
+  // the lots and the weighed quantities are today's and stay blank.
+  const applyBatchSheet = (sheet: BatchSheetRow) => {
+    const cfg = schema?.settings?.batchSheet;
+    if (!schema || !cfg) return;
+    const grid = valueFields(schema).find(f => f.id === cfg.grid);
+    const columns: string[] = grid?.type === "grid" ? (grid as any).columns.map((c: GridColumn) => c.id) : [];
+    const prev = { ...emptyValues(schema), ...form.getValues() };
+    const { values, lines, warnings } = batchSheetFill(cfg, columns, prev, sheet);
+    setSheetOpen(false);
+    form.reset(values, { keepDefaultValues: true });
+    setCopied(null);
+    setFromSheet({ title: `${batchSheetProduct(sheet) || "(untitled)"} - ${batchSheetLabel(sheet)}`, lines, warnings, prev });
+  };
+
+  const undoBatchSheet = () => {
+    if (!fromSheet) return;
+    form.reset(fromSheet.prev, { keepDefaultValues: true });
+    setFromSheet(null);
   };
 
   // Photograph the completed paper copy → AI reads it → pre-fill the fields for
@@ -706,13 +734,49 @@ export default function FormEntry() {
 
       {releaseAssist.card}
 
+      {/* Start from the batch sheet (forms that opt in via settings.batchSheet) */}
+      {canEdit && schema.settings?.batchSheet && (
+        <Card className="p-3 space-y-2 border" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.4)" }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-[#9A6F1E]" />
+            <p className="text-sm font-medium text-[#2A1F0E]">Start from the batch sheet</p>
+            <p className="text-xs text-[#2A1F0E]/60">
+              Pick the product — its ingredients and the expected quantity per batch come from its batch sheet. The lots and the weights stay blank.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}>
+            <ClipboardList className="w-3.5 h-3.5 mr-1.5" />Choose a product…
+          </Button>
+          {fromSheet && (
+            <div className="space-y-1 text-xs rounded border p-2" style={{ borderColor: "rgba(200,155,60,0.4)", background: "rgba(200,155,60,0.08)" }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[#2A1F0E]">
+                  Filled {fromSheet.lines} ingredient line{fromSheet.lines === 1 ? "" : "s"} from <strong>{fromSheet.title}</strong> — not saved yet. Fill in today's lots, then Save Draft.
+                </p>
+                <Button type="button" size="sm" variant="outline" onClick={undoBatchSheet}>
+                  <Undo2 className="w-3.5 h-3.5 mr-1.5" />Undo
+                </Button>
+              </div>
+              {fromSheet.warnings.map(w => (
+                <p key={w} className="flex items-start gap-1.5 text-amber-800">
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />{w}
+                </p>
+              ))}
+            </div>
+          )}
+          <BatchSheetPickDialog open={sheetOpen} onOpenChange={setSheetOpen} onPick={applyBatchSheet} />
+        </Card>
+      )}
+
       {canEdit && schema.settings?.copyFrom && (
         <Card className="p-3 space-y-2 border" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.4)" }}>
           <div className="flex flex-wrap items-center gap-2">
             <Copy className="w-4 h-4 text-[#9A6F1E]" />
             <p className="text-sm font-medium text-[#2A1F0E]">Copy from a previous entry</p>
             <p className="text-xs text-[#2A1F0E]/60">
-              Start from an earlier sheet for the same product — its ingredient lines come across, the lots stay blank.
+              {schema.settings?.batchSheet
+                ? "For a product with no batch sheet yet: start from an earlier entry — its ingredient lines come across, the lots stay blank."
+                : "Start from an earlier sheet for the same product — its ingredient lines come across, the lots stay blank."}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setCopyOpen(true)}>
