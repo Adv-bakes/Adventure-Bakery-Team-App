@@ -9,7 +9,7 @@
 // wrong one is withdrawn and posted again.
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, ChevronDown, Loader2, Megaphone, Plus } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Languages, Loader2, Megaphone, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,9 +26,13 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 import { fetchProfileNames } from "@/lib/formResponses";
 import {
-  NoticeReader, StaffNotice, acknowledgeStaffNotice, fetchNoticeReaders, fetchStaffNotices,
-  postStaffNotice, readTally, unreadNotices, withdrawStaffNotice,
+  EMPTY_NOTICE_DRAFT, NoticeDraft, NoticeLang, NoticeReader, StaffNotice, acknowledgeStaffNotice,
+  fetchNoticeReaders, fetchStaffNotices, noticeDraftProblem, noticeToPost, postStaffNotice, readTally,
+  translateNotice, translationIsStale, unreadNotices, withdrawStaffNotice,
 } from "@/lib/staffNotices";
+
+const LANG_NAME: Record<NoticeLang, string> = { en: "English", es: "Spanish" };
+const otherLang = (l: NoticeLang): NoticeLang => (l === "en" ? "es" : "en");
 
 const when = (iso: string) => new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 
@@ -85,7 +89,8 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
 
   const [posting, setPosting] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [draft, setDraft] = useState({ title: "", body: "", titleEs: "", bodyEs: "" });
+  const [draft, setDraft] = useState<NoticeDraft>(EMPTY_NOTICE_DRAFT);
+  const [translating, setTranslating] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -122,15 +127,31 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
   const post = async () => {
     setSaving(true);
     try {
-      await postStaffNotice(draft);
+      await postStaffNotice(noticeToPost(draft));
       toast.success("Notice posted to the team");
       setPosting(false);
-      setDraft({ title: "", body: "", titleEs: "", bodyEs: "" });
+      setDraft(EMPTY_NOTICE_DRAFT);
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not post the notice");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const translate = async () => {
+    const title = draft.title.trim(), body = draft.body.trim();
+    setTranslating(true);
+    try {
+      const t = await translateNotice(title, body);
+      // Only if the notice is still what was sent: a translation of older wording is worse than none.
+      setDraft((d) => (d.title.trim() === title && d.body.trim() === body
+        ? { ...d, lang: t.source, otherTitle: t.title, otherBody: t.body, translatedFrom: { title, body } }
+        : d));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "The translation could not be made");
+    } finally {
+      setTranslating(false);
     }
   };
 
@@ -258,6 +279,9 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Write it in English or Spanish, then tap Translate for the other language.
+            </p>
             <div className="space-y-1">
               <Label htmlFor="notice-title">Title</Label>
               <Input id="notice-title" maxLength={200} value={draft.title}
@@ -268,22 +292,61 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
               <Textarea id="notice-body" rows={5} maxLength={10000} value={draft.body}
                 onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="notice-title-es">Title in Spanish (optional)</Label>
-              <Input id="notice-title-es" maxLength={200} value={draft.titleEs}
-                onChange={(e) => setDraft({ ...draft, titleEs: e.target.value })} />
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Written in</span>
+                {(["en", "es"] as NoticeLang[]).map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    aria-pressed={draft.lang === l}
+                    onClick={() => setDraft({ ...draft, lang: l })}
+                    className={`rounded-full border px-2.5 py-0.5 ${draft.lang === l
+                      ? "border-[#C89B3C] bg-[#C89B3C]/15 text-[#2A1F0E] font-medium" : "hover:bg-muted"}`}
+                  >
+                    {LANG_NAME[l]}
+                  </button>
+                ))}
+              </div>
+              <Button type="button" size="sm" variant="outline" onClick={() => void translate()}
+                disabled={translating || saving || !draft.body.trim()}>
+                {translating
+                  ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Translating</>
+                  : <><Languages className="w-4 h-4 mr-1" /> {draft.otherBody.trim() ? "Translate again" : "Translate"}</>}
+              </Button>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="notice-body-es">Notice in Spanish (optional)</Label>
-              <Textarea id="notice-body-es" rows={5} maxLength={10000} value={draft.bodyEs}
-                onChange={(e) => setDraft({ ...draft, bodyEs: e.target.value })} />
+              <Label htmlFor="notice-title-other">Title in {LANG_NAME[otherLang(draft.lang)]} (optional)</Label>
+              <Input id="notice-title-other" maxLength={200} value={draft.otherTitle} lang={otherLang(draft.lang)}
+                onChange={(e) => setDraft({ ...draft, otherTitle: e.target.value })} />
             </div>
+            <div className="space-y-1">
+              <Label htmlFor="notice-body-other">Notice in {LANG_NAME[otherLang(draft.lang)]} (optional)</Label>
+              <Textarea id="notice-body-other" rows={5} maxLength={10000} value={draft.otherBody} lang={otherLang(draft.lang)}
+                onChange={(e) => setDraft({ ...draft, otherBody: e.target.value })} />
+            </div>
+            {draft.translatedFrom && draft.otherBody.trim() && !translationIsStale(draft) && (
+              <p className="text-xs text-muted-foreground">
+                Translated by AI. If you can, have someone who reads {LANG_NAME[otherLang(draft.lang)]} check it
+                before you post: a notice cannot be changed afterwards.
+              </p>
+            )}
+            {translationIsStale(draft) && (
+              <div className="flex items-start gap-2 text-xs rounded border border-amber-400 bg-amber-50 text-amber-900 p-2">
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <p className="flex-1">
+                  The notice changed after it was translated. Translate it again, or{" "}
+                  <button type="button" className="underline"
+                    onClick={() => setDraft({ ...draft, otherTitle: "", otherBody: "", translatedFrom: null })}>
+                    remove the translation
+                  </button>.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPosting(false)} disabled={saving}>Cancel</Button>
-            <Button onClick={() => void post()}
-              disabled={saving || !draft.title.trim() || !draft.body.trim()
-                || (!!draft.titleEs.trim() && !draft.bodyEs.trim())}>
+            <Button onClick={() => void post()} disabled={saving || translating || !!noticeDraftProblem(draft)}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Post to the team"}
             </Button>
           </DialogFooter>

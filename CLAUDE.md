@@ -846,6 +846,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `accept-invitation` | Accepts `{token, password, preferSpanish}`; provisions the invited auth user server-side via `auth.admin.createUser({email_confirm:true})`, then calls the accept RPC. `verify_jwt=false` — the caller has no account yet; the invite token is the credential. See "Invitations" below. |
 | `team-coach` | Accepts `{messages:[{role,content}]}`; returns `{reply, sources:[{id,number,title}]}`. The Team Portal Coach chat (see "Team Coach chat" below). Caller must pass `is_staff_or_admin`; reads active `sop_documents` with the caller's JWT (RLS). Two passes: Gemini picks up to 8 documents from a one-line catalog, merged with any document number typed and the top 3 keyword hits (a failed selection degrades to keywords), then answers from those bodies with `[FRM-509]`-style citations. |
 | `draft-audit-evidence` | Accepts `{clause, requirements[], asOf}`; returns `{evidence, window, sources[]}`. FRM-010's "Draft from records" (see "AI evidence draft"). Caller must pass `is_staff_or_admin`; reads with the caller's JWT. Facts computed in `_shared/auditEvidence.ts`, prose by `aiJSON`. `verify_jwt = true`. |
+| `translate-notice` | Accepts `{title, body}` written in English or Spanish; returns `{source: "en"\|"es", title, body}` in the OTHER language. For the Post a notice dialog (see "Staff notices"). Caller must pass `is_staff_or_admin`; writes nothing. `verify_jwt = true`. |
 | `tts-elevenlabs` | Accepts `{text, voiceId?, lang?}`; calls ElevenLabs (`eleven_multilingual_v2`) and returns the MP3 bytes. **Returns `Content-Type: application/octet-stream`** (not `audio/mpeg`) so `supabase.functions.invoke` hands back a real `Blob` — any other type makes invoke run `response.text()` and corrupt the binary. Multilingual model auto-detects language, so one voice covers EN + ES. |
 
 **Required secrets (set via Supabase dashboard → Settings → Edge Functions):**
@@ -1028,6 +1029,13 @@ FSQM-006 names the read list as the record.
   posted again; withdrawn notices and their read lists are kept.
 - The poster is recorded as having read it. Unread notices add to the sidebar Notifications pill
   (`countUnreadNotices`, which never throws so it cannot blank the notification count).
+- **Translate (2026-10-06):** the Post a notice dialog takes the notice in English OR Spanish; the
+  **Translate** button (edge fn `translate-notice`) fills the other language and sets "Written in".
+  The poster often cannot read the other language, so the translation stays editable and the dialog
+  says to have it checked. `noticeToPost` always stores English in `title`/`body` and Spanish in
+  `title_es`/`body_es`, whichever was written first. A notice edited after it was translated cannot
+  be posted until it is translated again or the translation removed (`translationIsStale`), because
+  a notice is never edited afterwards.
 - The section renders nothing if the tables are missing, so the page is safe to deploy before the
   migration is pushed.
 
