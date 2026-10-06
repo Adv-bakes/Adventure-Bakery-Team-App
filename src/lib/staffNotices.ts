@@ -63,6 +63,71 @@ export async function countUnreadNotices(): Promise<number> {
   }
 }
 
+export type NoticeLang = "en" | "es";
+
+/** What the Post a notice dialog holds: the notice as written, and the same notice in the other language. */
+export type NoticeDraft = {
+  title: string;
+  body: string;
+  /** The language the top two fields are written in. */
+  lang: NoticeLang;
+  otherTitle: string;
+  otherBody: string;
+  /** The title and notice the translation was made from; null when it was typed or there is none. */
+  translatedFrom: { title: string; body: string } | null;
+};
+
+export const EMPTY_NOTICE_DRAFT: NoticeDraft = {
+  title: "", body: "", lang: "en", otherTitle: "", otherBody: "", translatedFrom: null,
+};
+
+/** Pure: the notice was changed after it was translated, so the translation no longer says the same thing. */
+export function translationIsStale(d: NoticeDraft): boolean {
+  if (!d.translatedFrom || !(d.otherTitle.trim() || d.otherBody.trim())) return false;
+  return d.translatedFrom.title !== d.title.trim() || d.translatedFrom.body !== d.body.trim();
+}
+
+/** Pure: why the draft cannot be posted yet, or null when it can. */
+export function noticeDraftProblem(d: NoticeDraft): string | null {
+  if (!d.title.trim() || !d.body.trim()) return "A notice needs a title and the notice itself.";
+  const hasTitle = !!d.otherTitle.trim(), hasBody = !!d.otherBody.trim();
+  if (hasTitle !== hasBody) return "The translation needs both a title and the notice, or neither.";
+  if (translationIsStale(d)) return "The notice changed after it was translated. Translate it again, or remove the translation.";
+  return null;
+}
+
+/**
+ * Pure: the draft as post_staff_notice stores it. English always goes in title / body and Spanish in
+ * title_es / body_es, whichever one was written first - so a notice written in Spanish and
+ * translated is stored the same way as one written in English. A notice with no translation is
+ * stored as written.
+ */
+export function noticeToPost(d: NoticeDraft): { title: string; body: string; titleEs?: string; bodyEs?: string } {
+  const translated = !!d.otherBody.trim();
+  if (!translated) return { title: d.title, body: d.body };
+  return d.lang === "en"
+    ? { title: d.title, body: d.body, titleEs: d.otherTitle, bodyEs: d.otherBody }
+    : { title: d.otherTitle, body: d.otherBody, titleEs: d.title, bodyEs: d.body };
+}
+
+/** The same notice in the other language, and which language it was written in. Writes nothing. */
+export async function translateNotice(title: string, body: string): Promise<{ source: NoticeLang; title: string; body: string }> {
+  const { data, error } = await supabase.functions.invoke("translate-notice", { body: { title, body } });
+  if (error) {
+    // The function's own message is in the response body, not in error.message.
+    let message = "The translation could not be made. Try again, or type it in.";
+    try {
+      const detail = await (error as { context?: Response }).context?.json();
+      if (typeof detail?.error === "string") message = detail.error;
+    } catch { /* keep the general message */ }
+    throw new Error(message);
+  }
+  if (!data || (data.source !== "en" && data.source !== "es") || typeof data.body !== "string") {
+    throw new Error("The translation came back incomplete. Try again.");
+  }
+  return { source: data.source, title: String(data.title ?? ""), body: data.body };
+}
+
 export async function postStaffNotice(input: {
   title: string; body: string; titleEs?: string; bodyEs?: string;
 }): Promise<void> {

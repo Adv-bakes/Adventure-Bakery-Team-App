@@ -41,3 +41,8 @@ verify_jwt = true
 # entries with the caller's JWT and checks is_staff_or_admin, so it must never be anonymous.
 [functions.draft-audit-evidence]
 verify_jwt = true
+
+# Translates a staff notice between English and Spanish for the Post a notice dialog. Checks
+# is_staff_or_admin with the caller's JWT, so it must never be callable anonymously.
+[functions.translate-notice]
+verify_jwt = true
