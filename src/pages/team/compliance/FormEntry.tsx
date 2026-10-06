@@ -434,13 +434,18 @@ export default function FormEntry() {
       const uploaded = await uploadResponseAttachment(response.id, file);
       transientPath = uploaded.path;
 
+      // A section scan is of ONE pack, which may take several shots (a round bottle): the earlier
+      // label photos of the same section are read together with the new one, so a statement that
+      // wraps round the pack is read whole. The function takes four; the newest are kept.
+      const note = ctx.rowIndex == null
+        ? `Label photo — ${ctx.label}`
+        : `Label photo — ${ctx.label} row ${ctx.rowIndex + 1}`;
+      const earlier = ctx.keepPhoto && ctx.rowIndex == null
+        ? (response.attachments ?? []).filter(a => a.note === note).slice(-3)
+        : [];
+
       if (ctx.keepPhoto) {
-        const photo: ResponseAttachment = {
-          ...uploaded,
-          note: ctx.rowIndex == null
-            ? `Label photo — ${ctx.label}`
-            : `Label photo — ${ctx.label} row ${ctx.rowIndex + 1}`,
-        };
+        const photo: ResponseAttachment = { ...uploaded, note };
         // Adopt the returned row (fresh updated_at) exactly as scanAndFill does,
         // or the next Save Draft trips the optimistic-concurrency guard.
         const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), photo]);
@@ -448,9 +453,9 @@ export default function FormEntry() {
         transientPath = null; // now part of the record — must survive the finally
       }
 
-      const url = await getResponseAttachmentUrl(uploaded.path);
-      const result = await extractPackageLabel([url], ctx.wanted, ctx.mode);
-      if (Object.keys(result.facts).length === 0) {
+      const urls = await Promise.all([...earlier.map(a => a.path), uploaded.path].map(getResponseAttachmentUrl));
+      const result = await extractPackageLabel(urls, ctx.wanted, ctx.mode);
+      if (Object.keys(result.facts).length === 0 && earlier.length === 0) {
         toast.warning("Nothing readable on that label photo — the row was left as it was.");
       }
       return result;

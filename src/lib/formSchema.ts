@@ -1118,15 +1118,34 @@ function coerceToField(field: FormField, raw: string | undefined): any {
  * `unclaimed` is what was read but had nowhere to go, and is returned rather
  * than dropped: without a notes field the alternative is silently discarding
  * something the model actually saw on the pack, which the filler may want.
+ *
+ * A PACK IS OFTEN SCANNED IN SEVERAL SHOTS - a round bottle shows its name on one side and its
+ * ingredient statement on another - so a scan ADDS to the entry and never takes an answer away:
+ *   - an empty field is filled;
+ *   - a field still holding exactly what an earlier scan wrote (`scanned`) is updated, because the
+ *     later read has more photos behind it (a statement that wraps round the bottle gets longer);
+ *   - any other answer - typed, or edited after a scan - is KEPT, and the different reading comes
+ *     back in `differing` for the filler to take or leave.
+ * `missing` lists the scannable fields still empty afterwards: what the next shot is for.
  */
 export function applyLabelScanToFields(
   fields: FormField[],
   values: Record<string, any>,
   result: LabelScanResult,
-): { next: Record<string, any>; filled: string[]; unclaimed: string[] } {
+  scanned: Record<string, any> = {},
+): {
+  next: Record<string, any>;
+  filled: string[];
+  unclaimed: string[];
+  differing: { id: string; label: string; value: any }[];
+  missing: string[];
+} {
   const next = { ...values };
   const filled: string[] = [];
+  const differing: { id: string; label: string; value: any }[] = [];
+  const missing: string[] = [];
   const used = new Set<ScanFact>();
+  const same = (a: any, b: any) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
   for (const field of scannableFields(fields)) {
     const fact = resolveScanFactForField(field);
@@ -1138,10 +1157,19 @@ export function applyLabelScanToFields(
     if (used.has(fact) && !pinned) continue;
     if (isDeclarationFact(fact) && !pinned) continue;
     const value = coerceToField(field, result.facts?.[fact]);
-    if (value === undefined) continue;
-    next[field.id] = value;
-    filled.push(field.label);
-    used.add(fact);
+    if (value === undefined) {
+      if (isBlank(values[field.id])) missing.push(field.label);
+      continue;
+    }
+    used.add(fact); // read and placed (or already there) - never also a leftover
+    const current = values[field.id];
+    if (same(current, value)) continue;
+    if (isBlank(current) || (field.id in scanned && same(current, scanned[field.id]))) {
+      next[field.id] = value;
+      filled.push(field.label);
+    } else {
+      differing.push({ id: field.id, label: field.label, value });
+    }
   }
 
   // Withdraw any confirmation covering a field this scan just wrote: the new text has not been
@@ -1170,11 +1198,17 @@ export function applyLabelScanToFields(
   const notes = notesField(fields);
   if (notes && leftovers.length) {
     const prior = typeof next[notes.id] === "string" ? next[notes.id].trim() : "";
-    next[notes.id] = [prior, ...leftovers].filter(Boolean).join("\n");
-    filled.push(notes.label);
-    return { next, filled, unclaimed: [] };
+    // A later shot is read together with the earlier ones, so it reports the same details again:
+    // only lines the notes do not already hold are added.
+    const held = new Set(prior.split("\n").map(l => l.trim()));
+    const fresh = leftovers.filter(l => !held.has(l.trim()));
+    if (fresh.length) {
+      next[notes.id] = [prior, ...fresh].filter(Boolean).join("\n");
+      filled.push(notes.label);
+    }
+    return { next, filled, unclaimed: [], differing, missing };
   }
-  return { next, filled, unclaimed: leftovers };
+  return { next, filled, unclaimed: leftovers, differing, missing };
 }
 
 // ---------- Printed dates (month-precision packs) ----------
