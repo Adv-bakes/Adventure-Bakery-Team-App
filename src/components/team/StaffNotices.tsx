@@ -270,7 +270,7 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
       )}
 
       <Dialog open={posting} onOpenChange={(v) => { if (!saving) setPosting(v); }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl max-h-[90dvh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Post a notice to the team</DialogTitle>
             <DialogDescription>
@@ -278,7 +278,8 @@ export default function StaffNotices({ onChanged }: { onChanged?: () => void }) 
               is posted; a wrong one is withdrawn and posted again.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          {/* The fields scroll; the title and the buttons stay in view on a short screen. */}
+          <div className="space-y-3 flex-1 min-h-0 overflow-y-auto px-1 -mx-1">
             <p className="text-xs text-muted-foreground">
               Write it in English or Spanish, then tap Translate for the other language.
             </p>
