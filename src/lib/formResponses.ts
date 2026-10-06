@@ -5,7 +5,7 @@
 // callers only see the typed wrappers below.
 
 import { supabase } from "@/integrations/supabase/client";
-import type { BatchSheetRow } from "@/lib/batchSheetFill";
+import { FORMULA_FORM, checkFormulaMapping, type BatchSheetRow, type FormulaEntry } from "@/lib/batchSheetFill";
 import {
   emptyValues, getFormSchema, initialsFromName, valueFields,
   type AiCellDraft, type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
@@ -803,4 +803,26 @@ export async function fetchCurrentBatchSheets(): Promise<BatchSheetRow[]> {
     .limit(500);
   if (error) throw error;
   return (data ?? []) as BatchSheetRow[];
+}
+
+/**
+ * The entries of the formula form (FRM-501) a lot record can be started from, newest first, drafts
+ * included. `missing` lists the field ids batchSheetFill.ts reads that the live form no longer
+ * has, so a renamed field shows on the page instead of as a quietly empty list. Practice records
+ * (data._test_batch) are left out.
+ */
+export async function fetchFormulaEntries(formNumber: string): Promise<{ entries: FormulaEntry[]; missing: string[] }> {
+  const { data: doc, error: docError } = await (supabase as any)
+    .from("sop_documents").select("id, content").eq("sop_number", formNumber).neq("status", "archived").maybeSingle();
+  if (docError) throw docError;
+  if (!doc) throw new Error(`${formNumber} was not found.`);
+  const missing = formNumber === FORMULA_FORM.number ? checkFormulaMapping(doc.content?.form_schema) : [];
+  const { data, error } = await table()
+    .select("id, status, created_at, data")
+    .eq("document_id", doc.id)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  const entries = ((data ?? []) as FormulaEntry[]).filter(r => !(r.data && "_test_batch" in r.data));
+  return { entries, missing };
 }

@@ -33,7 +33,7 @@ import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
 import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
-import { batchSheetFill, batchSheetLabel, batchSheetProduct, type BatchSheetRow } from "@/lib/batchSheetFill";
+import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
 import { useReleaseAssist } from "@/components/team/release/useReleaseAssist";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
@@ -352,10 +352,11 @@ export default function FormEntry() {
     setCopied(null);
   };
 
-  // Start the entry from the product's batch sheet (settings.batchSheet). Same contract as the
-  // copy above: unsaved and dirty until Save Draft, one Undo. Only the standard comes across -
-  // the lots and the weighed quantities are today's and stay blank.
-  const applyBatchSheet = (sheet: BatchSheetRow) => {
+  // Start the entry from the product's formula (settings.batchSheet): an FRM-501 entry, or a batch
+  // sheet where the form names no source. Same contract as the copy above: unsaved and dirty until
+  // Save Draft, one Undo. Only the standard comes across - the lots and the weighed quantities are
+  // today's and stay blank.
+  const applyBatchSheet = (sheet: FormulaSource) => {
     const cfg = schema?.settings?.batchSheet;
     if (!schema || !cfg) return;
     const grid = valueFields(schema).find(f => f.id === cfg.grid);
@@ -365,7 +366,7 @@ export default function FormEntry() {
     setSheetOpen(false);
     form.reset(values, { keepDefaultValues: true });
     setCopied(null);
-    setFromSheet({ title: `${batchSheetProduct(sheet) || "(untitled)"} - ${batchSheetLabel(sheet)}`, lines, warnings, prev });
+    setFromSheet({ title: `${sheet.product || "(untitled)"} - ${sheet.label}`, lines, warnings, prev });
   };
 
   const undoBatchSheet = () => {
@@ -739,9 +740,11 @@ export default function FormEntry() {
         <Card className="p-3 space-y-2 border" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.4)" }}>
           <div className="flex flex-wrap items-center gap-2">
             <ClipboardList className="w-4 h-4 text-[#9A6F1E]" />
-            <p className="text-sm font-medium text-[#2A1F0E]">Start from the batch sheet</p>
+            <p className="text-sm font-medium text-[#2A1F0E]">
+              Start from the {schema.settings.batchSheet.source ? `formula sheet (${schema.settings.batchSheet.source})` : "batch sheet"}
+            </p>
             <p className="text-xs text-[#2A1F0E]/60">
-              Pick the product — its ingredients and the expected quantity per batch come from its batch sheet. The lots and the weights stay blank.
+              Pick the product — its ingredients and the expected quantity per batch come from its {schema.settings.batchSheet.source ? "formula sheet" : "batch sheet"}. The lots and the weights stay blank.
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setSheetOpen(true)}>
@@ -764,7 +767,12 @@ export default function FormEntry() {
               ))}
             </div>
           )}
-          <BatchSheetPickDialog open={sheetOpen} onOpenChange={setSheetOpen} onPick={applyBatchSheet} />
+          <BatchSheetPickDialog
+            open={sheetOpen}
+            onOpenChange={setSheetOpen}
+            formNumber={schema.settings.batchSheet.source}
+            onPick={applyBatchSheet}
+          />
         </Card>
       )}
 
@@ -775,7 +783,7 @@ export default function FormEntry() {
             <p className="text-sm font-medium text-[#2A1F0E]">Copy from a previous entry</p>
             <p className="text-xs text-[#2A1F0E]/60">
               {schema.settings?.batchSheet
-                ? "For a product with no batch sheet yet: start from an earlier entry — its ingredient lines come across, the lots stay blank."
+                ? "For a product with no formula sheet yet: start from an earlier entry — its ingredient lines come across, the lots stay blank."
                 : "Start from an earlier sheet for the same product — its ingredient lines come across, the lots stay blank."}
             </p>
           </div>

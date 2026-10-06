@@ -428,9 +428,10 @@ export interface FormSettings {
    */
   releaseAssist?: boolean;
   /**
-   * "Start from the batch sheet" (batchSheetFill.ts): the product, the ingredient lines and the
-   * expected quantity per batch come from the product's batch sheet; the lots and the weighed
-   * quantities stay blank. Names the fields it fills, so it is tied to this form's field ids.
+   * "Start from the formula sheet" (batchSheetFill.ts): the product, the ingredient lines and the
+   * expected quantity per batch come from the product's formula - an FRM-501 entry when `source`
+   * names that form, else a batch sheet; the lots and the weighed quantities stay blank. Names the
+   * fields it fills, so it is tied to this form's field ids.
    */
   batchSheet?: import("./batchSheetFill").BatchSheetSettings;
 }
