@@ -33,6 +33,7 @@ import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
+import { useReleaseAssist } from "@/components/team/release/useReleaseAssist";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
 import { applyVoiceFill, type VoiceWarning } from "@/lib/voiceCommands";
@@ -227,6 +228,10 @@ export default function FormEntry() {
   );
   const canEdit = !isSubmitted && (isMine || isAdmin);
   const readOnly = !canEdit;
+  // Keyed on the entry's own (resolved) schema: the helper is tied to that revision's field ids.
+  const releaseAssist = useReleaseAssist({
+    enabled: canEdit && !!schema?.settings?.releaseAssist, form, schema, responseId: response?.id ?? null,
+  });
   // Field STRUCTURE is pinned to the revision the entry was filled under, so an old entry renders
   // as it was filled — that is what `resolved.schema` is for. POLICY is not: `deletable` and
   // `attachmentsEnabled` are decisions about what may be done to records *now*, so they are read
@@ -699,6 +704,8 @@ export default function FormEntry() {
           the field ids of the revision the entry was filled under. */}
       {schema.settings?.recallWorkspace && <RecallWorkspace form={form} canEdit={canEdit} schema={schema} />}
 
+      {releaseAssist.card}
+
       {canEdit && schema.settings?.copyFrom && (
         <Card className="p-3 space-y-2 border" style={{ background: "#FFF", borderColor: "rgba(200,155,60,0.4)" }}>
           <div className="flex flex-wrap items-center gap-2">
@@ -798,6 +805,7 @@ export default function FormEntry() {
           onScanLabel={canEdit ? scanLabelIntoRow : undefined}
           onDraftCell={canEdit ? draftCellFromRecords : undefined}
           fillContext={fillContext}
+          suggest={releaseAssist.suggest}
         />
       </DocSelfContext.Provider>
 

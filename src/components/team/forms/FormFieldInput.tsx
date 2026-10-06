@@ -17,6 +17,7 @@ import type {
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
+import { SuggestInput, type FieldSuggest } from "./SuggestInput";
 
 const PASS_FAIL_STYLE: Record<string, string> = {
   pass: "data-[on=true]:bg-green-500/20 data-[on=true]:text-green-700 data-[on=true]:border-green-600/40",
@@ -168,6 +169,8 @@ interface FormFieldInputProps {
   disabled?: boolean;
   isAdmin?: boolean;
   signer?: Signer;
+  /** Pick-lists the caller supplies for text fields (see SuggestInput). */
+  suggest?: FieldSuggest;
 }
 
 /**
@@ -223,7 +226,7 @@ function useLinkedOptions(spec: SelectOptionsFrom | undefined) {
  * handled by GridFieldInput; heading/info by FormRenderer directly. Unknown
  * types render a placeholder box (forward-compat: never crash, never drop data).
  */
-export function FormFieldInput({ field, control, disabled, isAdmin, signer }: FormFieldInputProps) {
+export function FormFieldInput({ field, control, disabled, isAdmin, signer, suggest }: FormFieldInputProps) {
   const linkedSpec = field.type === "select" ? (field as SelectField).optionsFrom : undefined;
   const linked = useLinkedOptions(linkedSpec);
   return (
@@ -245,6 +248,21 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer }: Fo
         let input: JSX.Element;
         switch (field.type) {
           case "text":
+            if (suggest?.options[field.id] && !disabled) {
+              input = (
+                <SuggestInput
+                  value={rhf.value ?? ""}
+                  onChange={rhf.onChange}
+                  onBlur={rhf.onBlur}
+                  onPick={(v, set) => suggest.onPick(field.id, v, set)}
+                  options={suggest.options[field.id]}
+                  emptyText={suggest.emptyText?.[field.id]}
+                  maxLength={(field as TextField).maxLength}
+                  placeholder={(field as TextField).placeholder}
+                />
+              );
+              break;
+            }
             input = (
               <div className="flex items-center gap-1.5">
                 <Input

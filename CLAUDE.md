@@ -1153,6 +1153,37 @@ codes; nothing joined them. The trace pulls the records so nobody hunts for them
   expected trace, so it doubles as an on-screen acceptance test after a change. It is practice only - the
   annual mock recall (SQF 2.6.3.2) must be on real lots.
 
+## Release helper (FRM-701) — `lib/releaseAssist.ts` + `components/team/release/`
+
+A release record repeats what the site's records already hold. With `settings.releaseAssist` set,
+the entry starts from the **lot code** (what is printed on the pack) and looks the rest up.
+
+- **Lot, then Product, are pick-lists** (`SuggestInput`, fed through `FormRenderer`'s `suggest` prop
+  from `useReleaseAssist`): focusing lists everything, typing narrows, anything can still be typed.
+  The Lot list is `unreleasedLots` - every FRM-520 lot with no release record yet, one line per
+  product + code, and a line also sets the Product (`SuggestOption.set`). A typed code sets the
+  product only when exactly one product carries it; with several, the Product list narrows to them
+  (`productOptionsForLot`) and a warning asks. **A typed product is never replaced.**
+- **`releaseFill(records, product, lot, selfId)`**: batch reference and date from the lot's FRM-520;
+  customer, label reference and version, net weight on the label, empty packaging weight and unit
+  from the product's last release, else its FRM-704 specification. So the figures are right per
+  product with no fixed defaults on the form (a fixed-default version was written and dropped).
+- **Evidence, never a Result.** For six of the nine checks the Note is filled with what the records
+  show - FRM-520 submitted or draft, FRM-507 / FRM-606 rows for the lot, FRM-903 for the bake and
+  pack dates, FRM-702 holds on the lot or any supplier / film lot in it, FRM-601 approval, units
+  packed. Gaps are stated ("FRM-903: none found for 2026-10-01"), never left blank. **It never answers
+  a check and never fills a pack weight**: FSQM-020 has the SQF Practitioner confirm each check, and
+  the owner chose evidence-plus-tap over auto-Pass (2026-10-06). The same reasoning as `aiDraft`.
+- **`applyReleaseFill` writes a cell only if it is empty or still holds what the helper last wrote**,
+  so changing the lot updates looked-up cells, clears ones with nothing behind them, and leaves
+  typing alone. On a reopened entry `autoFromFill` recognises the helper's earlier cells by value.
+  The result is unsaved and dirty (`keepDefaultValues`) with one Undo, like "Copy from a previous entry".
+- A lot is **product + code** throughout (two products baked the same day share a code), including
+  the CCP rows counted. Drafts are read and flagged. `RELEASE_SOURCES` is the single map of form
+  numbers to field ids; `checkReleaseMapping` reports a renamed field on the page instead of a
+  quietly missing lookup. Loader `loadReleaseRecords` (mapped keys only, paged, skips
+  `_test_batch` practice rows). Tested by `scripts/test-release-assist.mjs`.
+
 ## Team Coach chat — `components/team/coach/`
 
 The Manufacturing Coach orb in `TeamLayout` opens `TeamCoachPanel` for staff/admin/owner. It has two tabs: **Ask the Coach** (`TeamCoachChat` → edge fn `team-coach`) and **Record CCP** (the unchanged `VoiceCommandPanel`). The last tab used is remembered in `localStorage`. Before this change the orb had **never** been a working chat: `CoachChat` only ever showed placeholder cards, and the brand-oriented `manufacturing-coach` function (OpenAI, concept context) has no caller. The brand portal still gets the placeholder cards.
