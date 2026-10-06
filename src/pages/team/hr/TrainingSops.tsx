@@ -16,11 +16,12 @@ import { RefreshCw, CheckCircle2, Clock, AlertTriangle, ArrowUp, ArrowDown, Chev
 import { toast } from "sonner";
 import {
   TRAINING_CATEGORIES, TRAINING_CATEGORY_LABELS,
-  TrainingModule, TrainingAssignment,
+  TrainingModule, TrainingAssignment, ModuleVariant,
   AssignmentStatus, getAssignmentStatus,
-  fetchTrainingModules, fetchTrainingAssignments, fetchReferenceDocuments,
+  fetchTrainingModules, fetchTrainingAssignments, fetchTrainingVariants, fetchReferenceDocuments,
   hasSopBody,
 } from "@/lib/training";
+import { buildGoverningMap } from "@/lib/trainingMatrix";
 import { generateSopPdf } from "@/lib/sopPdf";
 
 const TYPE_LABELS: Record<string, string> = { sop: "SOP", form: "Form", policy: "Policy", training: "Training", fsqm: "FSQM" };
@@ -47,6 +48,7 @@ export default function TrainingSops() {
 
   const [modules, setModules] = useState<TrainingModule[]>([]);
   const [myAssignments, setMyAssignments] = useState<TrainingAssignment[]>([]);
+  const [variants, setVariants] = useState<ModuleVariant[]>([]);
   const [loading, setLoading] = useState(true);
   const [refDocs, setRefDocs] = useState<any[]>([]);
   const [selectedRef, setSelectedRef] = useState<any | null>(null);
@@ -57,13 +59,15 @@ export default function TrainingSops() {
       const { data: { user } } = await supabase.auth.getUser();
       const uid = user?.id ?? null;
 
-      const [mods, assigns, refs] = await Promise.all([
+      const [mods, assigns, vars, refs] = await Promise.all([
         fetchTrainingModules(),
         uid ? fetchTrainingAssignments(uid) : Promise.resolve([]),
+        fetchTrainingVariants(),
         fetchReferenceDocuments(isAdmin),
       ]);
       setModules(mods);
       setMyAssignments(assigns);
+      setVariants(vars);
       setRefDocs(refs);
     } catch (e: any) {
       toast.error(e.message ?? "Failed to load training data");
@@ -76,9 +80,18 @@ export default function TrainingSops() {
 
   const assignmentByModule = useMemo(() => {
     const map = new Map<string, TrainingAssignment>();
-    for (const a of myAssignments) map.set(a.sop_id, a);
+    // Somebody trained in Spanish is assigned the Spanish variant, whose id is in no module
+    // list here. Resolve it to the English module that governs it, or the row reads
+    // "Not Assigned" and opens the English module in preview, where nothing is recorded.
+    const governing = buildGoverningMap(modules, variants);
+    for (const a of myAssignments) {
+      const moduleId = governing.get(a.sop_id) ?? a.sop_id;
+      const prev = map.get(moduleId);
+      // If somebody holds both languages, the completed record is the evidence.
+      if (!prev || (!prev.completed_at && a.completed_at)) map.set(moduleId, a);
+    }
     return map;
-  }, [myAssignments]);
+  }, [myAssignments, modules, variants]);
 
   const spanishByEnTitle = useMemo(() => {
     const map = new Map<string, TrainingModule>();
@@ -213,7 +226,8 @@ export default function TrainingSops() {
                         <TableRow
                           key={m.id}
                           className="cursor-pointer hover:bg-[#C89B3C]/5 text-[#2A1F0E]"
-                          onClick={() => navigate(`/team/hr/trainings/${m.id}`)}
+                          // Open the module the person is assigned - the Spanish one if that is theirs.
+                          onClick={() => navigate(`/team/hr/trainings/${assignment?.sop_id ?? m.id}`)}
                         >
                           <TableCell className="font-mono text-xs">{m.sop_number ?? "—"}</TableCell>
                           <TableCell className="font-medium">{m.title}</TableCell>
