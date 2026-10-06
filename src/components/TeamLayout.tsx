@@ -8,6 +8,7 @@ import {
   ClipboardCheck, ClipboardList, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
   ListTodo, Inbox, DollarSign, Database, ListTree, Settings, User as UserIcon,
   LogOut, PanelLeftClose, PanelLeft, Thermometer, Bell, CalendarCheck, DoorOpen,
+  FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
@@ -50,6 +51,7 @@ const navSections: NavSection[] = [
   { title: "Operations", items: [
     { path: "/team/ops/orders", icon: Kanban, label: "Order Board" },
     { path: "/team/ops/inventory", icon: Boxes, label: "Inventory & Sourcing" },
+    { path: "/team/operations/batch-sheets", icon: FileSpreadsheet, label: "Batch Sheets" },
     { path: "/team/ops/floor", icon: Factory, label: "Floor Execution" },
     { path: "/team/ops/insights", icon: TrendingUp, label: "Insights" },
   ]},

@@ -133,7 +133,7 @@ which live counter feeds an item's gold pill; `TeamLayout` owns both counts (pla
 `setInterval` at 30s keyed on `location.pathname` — the sidebar deliberately uses no TanStack
 Query, and `refetchInterval` appears nowhere in `src/`). The pill still renders when the sidebar
 is collapsed. Before D-18 this was `item.path === "/team/sales/dashboard"` inline in the render.
-| Operations | `/team/ops/orders`, `/team/ops/inventory`, `/team/ops/floor`, `/team/ops/insights` | floor & insights are Phase 0 |
+| Operations | `/team/ops/orders`, `/team/ops/inventory`, `/team/operations/batch-sheets`, `/team/ops/floor`, `/team/ops/insights` | floor & insights are Phase 0; Batch Sheets lists every current sheet, including ones with no client folder |
 | Compliance | `/team/compliance/sops`, `/team/compliance/verification`, `/team/compliance/traceability`, `/team/compliance/temperature`, `/team/compliance/certifications` | certifications Phase 0 |
 | HR | `/team/hr/directory`, `/team/hr/trainings`, `/team/hr/traceability` | traceability is Phase 0 |
 | Internal | `/team/internal/email`, `/team/internal/finance` (owner only), `/team/sourcing`, `/team/account`, `/team/settings` | email/finance Phase 0 |
