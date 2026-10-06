@@ -114,6 +114,28 @@ check("a fact missing from a later read does not empty its field", s3.next.mater
     T.applyLabelScanToFields(withNotes, b.next, { facts: { net_weight: "16 fl oz", barcode: "023535123456" } }, sc).filled, []);
 }
 
+// ---------- a "could not read it" warning is shown only while the field is still empty ----------
+{
+  const NO_CONTAINS = 'No "Contains" statement was readable, so no allergens were filled. Photograph the allergen panel, or take them from the specification sheet.';
+  const W = (values, ...w) => T.relevantScanWarnings(FIELDS, values, w);
+  check("shown while allergens are blank", W(s2.next, NO_CONTAINS), [NO_CONTAINS]);
+  check("dropped once an earlier shot answered it", W(s3.next, NO_CONTAINS), []);
+  check("still shown if only one of the two fields is answered", W({ ...s2.next, contains: "Contains: Milk" }, NO_CONTAINS), [NO_CONTAINS]);
+  check("dropped when the filler typed it", W({ ...s2.next, contains: "None", allergens: ["Milk"] }, NO_CONTAINS), []);
+  check("ingredient statement not visible: shown while blank", W(s1.next, "The ingredient statement is not visible in this photo.").length, 1);
+  check("ingredient statement not visible: dropped once filled", W(s2.next, "The ingredient statement is not visible in this photo."), []);
+  check("a fact this form has no field for is not worth a warning", W(empty, "No lot code could be found on the pack."), []);
+  const MISMATCH = "The Contains statement declares Milk, but the transcribed ingredient statement does not name it. Check the ingredient statement against the pack - part of it may have been missed or misread.";
+  check("a check-this warning always stays", W(s3.next, MISMATCH), [MISMATCH]);
+  const COCONUT = "The statement names coconut. Whether coconut counts as a tree nut has changed in FDA guidance - decide it deliberately rather than from this scan.";
+  check("coconut always stays", W(s3.next, COCONUT), [COCONUT]);
+  const UNRECOGNISED = 'A "Contains" statement was read but no major allergen was recognised in it. Check it by eye.';
+  check("unrecognised statement always stays", W(s3.next, UNRECOGNISED), [UNRECOGNISED]);
+  check("a warning tied to no field stays", W(s3.next, "The photo does not show a packaged food product."), ["The photo does not show a packaged food product."]);
+  check("a warning that is not about something missing stays", W(s3.next, "The brand is printed twice with different spellings."), ["The brand is printed twice with different spellings."]);
+  check("mixed: only the answered one goes", W(s3.next, NO_CONTAINS, MISMATCH), [MISMATCH]);
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} checks failed`); process.exit(1); }
 console.log(`label scan merge: ${cases} checks passed`);

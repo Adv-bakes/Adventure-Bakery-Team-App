@@ -4,7 +4,7 @@ import { Camera, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  applyLabelScanToFields, resolveScanFactForField, scanTargetFields, scanWantedFactsForFields,
+  applyLabelScanToFields, relevantScanWarnings, resolveScanFactForField, scanTargetFields, scanWantedFactsForFields,
   type FormSchema, type FormSection, type FormField as SchemaField, type InfoField,
   type ReferenceTableField, type SelectField,
 } from "@/lib/formSchema";
@@ -261,7 +261,8 @@ function SectionLabelScan({ section, fields, form, onScanLabel }: {
         differing,
         missing,
         alternates: result.alternates?.lot_code ?? [],
-        warnings: result.warnings ?? [],
+        // Only what still applies: "could not read X" is noise once X is on the form.
+        warnings: relevantScanWarnings(fields, next, result.warnings ?? []),
       });
     } catch {
       /* the caller owns error messaging; just drop the spinner */

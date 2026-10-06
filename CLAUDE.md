@@ -410,7 +410,9 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   reading in `differing` (a "Use this" chip) and the still-empty fields in `missing` ("Still blank:
   ... scan another side"). A fact absent from a later read never empties its field; notes leftovers
   are de-duplicated. `scanned` lives for the page visit only, so after a reload every answer counts
-  as the person's and is kept. Before this every scan overwrote every field it could read. Grid-row
+  as the person's and is kept. **Warnings are filtered by `relevantScanWarnings`**: a "could not read X"
+  warning is shown only while X's field is still empty (every shot of the front says there is no
+  Contains statement); a "check this" warning always stays. Before this every scan overwrote every field it could read. Grid-row
   scans are unchanged. Tested by `scripts/test-label-scan-merge.mjs`.
 - **AI extraction:** drawer Form tab "Generate with AI" (shown when a source `.docx` is attached) runs
   mammoth client-side (keeps the tables `sopDocxParser` drops), sends HTML to edge function

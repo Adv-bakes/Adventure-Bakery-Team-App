@@ -1211,6 +1211,64 @@ export function applyLabelScanToFields(
   return { next, filled, unclaimed: leftovers, differing, missing };
 }
 
+// ---------- Which scan warnings still apply ----------
+
+// A warning that says something was NOT found, as opposed to one that says "check this".
+const NOT_FOUND = /\b(no|not|none|cannot|can't|couldn't|unable|missing|omitted|illegible|unreadable|obscured|unclear|blurr\w*|cut off|out of frame)\b/i;
+
+// Warnings that ask for a check of what WAS read. Never dropped, whatever the form holds.
+const ALWAYS_SHOWN = [
+  /^The Contains statement declares/i,
+  /^The statement names coconut/i,
+  /statement was read but no major allergen/i,
+];
+
+// The facts a warning is talking about, by the words it uses.
+const WARNING_FACTS: ReadonlyArray<[RegExp, ScanFact[]]> = [
+  [/may contain/i, ["may_contain"]],
+  [/\bcontains\b|allergen/i, ["contains_statement", "allergens"]],
+  [/ingredient (statement|list|panel)|\bingredients\b/i, ["ingredients"]],
+  [/\b(lot|batch)\b|date code/i, ["lot_code"]],
+  [/best.?by|best before|expir|use.?by/i, ["best_by"]],
+  [/\bstor(age|e|ing)\b/i, ["storage"]],
+  [/barcode|\bupc\b|\bgtin\b/i, ["barcode"]],
+  [/net (weight|wt|contents)/i, ["net_weight"]],
+  [/pack size/i, ["pack_size"]],
+  [/plant code|establishment/i, ["plant_code"]],
+  [/item (code|number|no)|\bsku\b/i, ["item_code"]],
+  [/\bbrand\b|manufacturer/i, ["brand"]],
+  [/product name/i, ["product_name"]],
+];
+
+/**
+ * The warnings of one scan that still apply once its values are on the form. A pack is scanned
+ * in several shots, and every shot of the front says "no Contains statement was readable" - true
+ * of that photo, and noise once an earlier shot (or the filler) has answered it. So a warning
+ * that something was NOT FOUND is dropped when every field it is about already holds an answer,
+ * or when the form has no field for it at all. A warning that asks for a CHECK of what was read
+ * ("the Contains statement declares milk but the ingredients do not name it") always stays, and
+ * so does anything this cannot tie to a field.
+ */
+export function relevantScanWarnings(
+  fields: FormField[],
+  values: Record<string, any>,
+  warnings: string[],
+): string[] {
+  const byFact = new Map<ScanFact, FormField[]>();
+  for (const f of scannableFields(fields)) {
+    const fact = resolveScanFactForField(f);
+    if (!fact || fact === "notes") continue;
+    byFact.set(fact, [...(byFact.get(fact) ?? []), f]);
+  }
+  return warnings.filter(w => {
+    if (ALWAYS_SHOWN.some(re => re.test(w)) || !NOT_FOUND.test(w)) return true;
+    const facts = WARNING_FACTS.filter(([re]) => re.test(w)).flatMap(([, f]) => f);
+    if (facts.length === 0) return true;
+    const answered = facts.every(fact => (byFact.get(fact) ?? []).every(f => !isBlank(values[f.id])));
+    return !answered;
+  });
+}
+
 // ---------- Printed dates (month-precision packs) ----------
 
 export interface PrintedDate { year: number; month: number; day?: number }
