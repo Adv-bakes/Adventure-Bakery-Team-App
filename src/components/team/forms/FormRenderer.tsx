@@ -9,6 +9,7 @@ import {
   type ReferenceTableField, type SelectField,
 } from "@/lib/formSchema";
 import { FormFieldInput } from "./FormFieldInput";
+import type { FieldSuggest } from "./SuggestInput";
 import { SqfSectionGuide } from "./SqfSectionGuide";
 import { DocRefText } from "./DocRefText";
 import { GridFieldInput, type GridFieldInputProps } from "./GridFieldInput";
@@ -35,6 +36,8 @@ interface FormRendererProps {
   fillContext?: GridFieldInputProps["fillContext"];
   /** "Draft from records" for grid columns with `aiDraft`; omitted in the builder Preview. */
   onDraftCell?: GridFieldInputProps["onDraftCell"];
+  /** Pick-lists for some text fields, keyed by field id (the release helper's Product and Lot). */
+  suggest?: FieldSuggest;
 }
 
 /**
@@ -42,7 +45,7 @@ interface FormRendererProps {
  * instance (the caller decides defaultValues, resolver, and what save/submit
  * mean — the entry editor and the builder Preview both reuse this).
  */
-export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLabel, fillContext, onDraftCell }: FormRendererProps) {
+export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLabel, fillContext, onDraftCell, suggest }: FormRendererProps) {
   const renderField = (field: SchemaField) => {
     // Grids and reference tables always take the full row regardless of width hint
     const widthClass = field.type === "grid" || field.type === "reference_table"
@@ -114,6 +117,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
             disabled={readOnly}
             isAdmin={isAdmin}
             signer={signer}
+            suggest={suggest}
           />
         );
         if (field.type === "select" && (field as SelectField).auditGuide) {

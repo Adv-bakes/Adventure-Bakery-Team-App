@@ -6,7 +6,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import {
-  emptyValues, getFormSchema, initialsFromName,
+  emptyValues, getFormSchema, initialsFromName, valueFields,
   type AiCellDraft, type FieldManifest, type FormSchema, type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
 import type { GuideDoc } from "@/lib/auditGuide";
@@ -15,6 +15,10 @@ import {
   type TraceEntry, type TraceKind, type TraceRecords,
 } from "@/lib/lotTrace";
 import { VISITOR_FORMS, isVisitorKioskSchema, type AckRecord } from "@/lib/visitors";
+import {
+  RELEASE_SOURCES, checkReleaseMapping, emptyReleaseRecords,
+  type ReleaseKind, type ReleaseRecords, type ReleaseSourceSpec,
+} from "@/lib/releaseAssist";
 
 export type ResponseStatus = "draft" | "submitted";
 
@@ -648,6 +652,54 @@ export async function loadTraceRecords(): Promise<TraceData> {
     }
   }));
   return { records, docs, sourceProblems, recallProblems };
+}
+
+/**
+ * Everything the release helper reads (releaseAssist.ts): the entries, submitted AND draft, of the
+ * forms a release draws on. Same shape of loader as the lot trace, for the same reasons - only the
+ * mapped answer keys are selected (entry data can hold signature images), each form is paged, and
+ * practice records made for the mock-recall walk-through are left out.
+ */
+export async function loadReleaseRecords(): Promise<{ records: ReleaseRecords; problems: string[] }> {
+  const specs = Object.values(RELEASE_SOURCES) as ReleaseSourceSpec[];
+  const { data: docRows, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, sop_number, status, content")
+    .in("sop_number", specs.map(s => s.form))
+    .eq("type", "form")
+    .in("status", ["active", "draft"]);
+  if (error) throw error;
+  const docs: Record<string, { id: string; status: string; content: any }> = {};
+  for (const d of (docRows ?? []) as any[]) {
+    if (!docs[d.sop_number] || d.status === "active") docs[d.sop_number] = d;
+  }
+  const problems = checkReleaseMapping(Object.fromEntries(Object.entries(docs).map(([n, d]) => {
+    const schema = getFormSchema(d.content);
+    return [n, schema ? valueFields(schema).map(f => f.id) : undefined];
+  })));
+
+  const records = emptyReleaseRecords();
+  const PAGE = 1000;
+  await Promise.all((Object.keys(RELEASE_SOURCES) as ReleaseKind[]).map(async kind => {
+    const spec = RELEASE_SOURCES[kind] as ReleaseSourceSpec;
+    const doc = docs[spec.form];
+    if (!doc) return;
+    const keys = [...spec.fields, ...Object.keys(spec.grids)];
+    const select = ["id", "status", "submitted_at", "created_at", "v__test:data->_test_batch", ...keys.map(k => `v_${k}:data->${k}`)].join(", ");
+    for (let from = 0; ; from += PAGE) {
+      const { data, error: err } = await table().select(select).eq("document_id", doc.id).order("id").range(from, from + PAGE - 1);
+      if (err) throw err;
+      for (const r of (data ?? []) as any[]) {
+        if (r.v__test) continue;
+        records[kind].push({
+          id: r.id, status: r.status, date: r.submitted_at ?? r.created_at,
+          data: Object.fromEntries(keys.map(k => [k, r[`v_${k}`]])),
+        });
+      }
+      if (!data || data.length < PAGE) break;
+    }
+  }));
+  return { records, problems };
 }
 
 export async function loadAuditGuideData(): Promise<{ docs: GuideDoc[]; counts: Map<string, number> }> {

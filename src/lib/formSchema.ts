@@ -420,6 +420,13 @@ export interface FormSettings {
   recallWorkspace?: boolean;
   /** "Copy from a previous entry" — see copyFromEntry. Absent = the picker is not offered. */
   copyFrom?: CopyFromSettings;
+  /**
+   * The release helper (useReleaseAssist): Product and Lot become pick-lists fed by the site's
+   * records, and what those records say about the lot is filled in as facts and evidence - never a
+   * Result, never a pack weight. Coupled to FRM-701's field ids (see RELEASE_TARGET in
+   * releaseAssist.ts) - not a general feature.
+   */
+  releaseAssist?: boolean;
 }
 
 /**
