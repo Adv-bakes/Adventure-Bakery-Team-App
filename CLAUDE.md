@@ -1153,31 +1153,49 @@ codes; nothing joined them. The trace pulls the records so nobody hunts for them
   expected trace, so it doubles as an on-screen acceptance test after a change. It is practice only - the
   annual mock recall (SQF 2.6.3.2) must be on real lots.
 
-## Lot record from the batch sheet (FRM-520) — `lib/batchSheetFill.ts`
+## Lot record from the formula (FRM-520 <- FRM-501) — `lib/batchSheetFill.ts`
 
-The batch sheet (`batch_sheets`) is the master formula; the Production Lot Record (FRM-520) is what
-went in on one bake day. Until 2026-10-06 nothing joined them, and the formula lived in whichever
-earlier lot record was copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the
-batch sheet"** card: `BatchSheetPickDialog` lists the current version of every sheet
-(`fetchCurrentBatchSheets`, drafts included and labelled) and `batchSheetFill` fills the entry.
+The formula is the master; the Production Lot Record (FRM-520) is what went in on one bake day.
+Until 2026-10-06 nothing joined them, and the formula lived in whichever earlier lot record was
+copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the formula sheet"** card:
+`BatchSheetPickDialog` lists the formulas and `batchSheetFill` fills the entry.
 
-- **Only the standard comes across**: product, one line per ingredient, brand (`vendor_1`), expected
-  quantity per batch and unit. **The lot on the container and the weighed quantities are never
-  filled** - the weights rule again (`suggestFrom` still offers the expected figure in grey).
-- **Expected quantity = stored percentage x `data_json.product.batch_size`** (unit
-  `batch_size_unit`, default lb), the "Standard batch size" card in `BatchSheetEditor`. It reads the
-  stored percentages, the same ones `runMaterialCalc` reads, never the gram column (labelled per
-  unit, and on the rum cake sheet holding grams per batch). No batch size -> lines without
-  quantities and a warning; an ingredient with no percentage (pan spray) keeps its line, because
-  its lot must be recorded.
+- **The formula has two possible homes; `settings.batchSheet.source` says which.**
+  `"FRM-501"` = the entries of **FRM-501 Formula Sheet & Batch Data** - the owner's choice "for right
+  now" (2026-10-06), and what FRM-520 is set to. Absent = the sales-side `batch_sheets` table, built
+  first the same day and kept because the owner wants to look at the sales side later. Both are
+  turned into one `FormulaSource` (`formulaEntrySource` / `batchSheetSource`), so the fill does not
+  know which it came from. **The owner had assumed batch sheets used FRM-501; they never did** -
+  `batch_sheets` comes from the PSS flow and has no form number.
+- **Only the standard comes across**: product, one line per ingredient, brand, expected quantity
+  per batch and unit. **The lot on the container and the weighed quantities are never filled** - the
+  weights rule again (`suggestFrom` still offers the expected figure in grey). The formula's own
+  notes and allergens are not copied into the lot record.
+- **FRM-501 quantity = Production Qty as written** (`"17.49 lb"`, read by `parseQty`), else the
+  line's % of Formula x "Scaled / Production Batch Size". `parseQty` returns null for a range, two
+  quantities or a unit it does not know - **a quantity is never guessed out of text**; the line then
+  comes across without one and the banner says which. `FORMULA_FORM` is the single map of FRM-501
+  field ids; `checkFormulaMapping` reports a renamed field in the dialog instead of an empty list.
+- **Batch sheet quantity = stored percentage x `data_json.product.batch_size`** (the "Standard batch
+  size" card in `BatchSheetEditor`), the same percentages `runMaterialCalc` reads, never the gram
+  column.
+- **Drafts are listed and labelled**; an entry with no product name (one somebody opened and left)
+  is not listed, and practice rows (`_test_batch`) are skipped. Every FRM-501 entry of a product is
+  listed, not just the newest - the version is in the label.
 - **The grid is replaced, not merged**, and the result is unsaved and dirty (`keepDefaultValues`)
   with one Undo, like "Copy from a previous entry" - which stays as the fallback for a product with
-  no batch sheet.
-- `settings.batchSheet.sourceField` (FRM-520's `formula_source`, "Formula") records the sheet
-  version the entry started from ("Batch sheet v1 (draft)"), so a formula change shows in the lot
-  history. It is text, not a foreign key: the entry must stay readable after the sheet is revised.
-- Not built: picking the batch sheet from the Product field itself, and scaling for a part batch.
-- Tested by `scripts/test-batch-sheet-fill.mjs`. `batchSheetFill.ts` has no imports.
+  no formula sheet.
+- `sourceField` (FRM-520's `formula_source`, "Formula") records what the entry started from
+  ("FRM-501 v1 (draft)"), so a formula change shows in the lot history. It is text, not a foreign
+  key: the entry must stay readable after the formula is revised.
+- The same product name must be used on FRM-501, FRM-520 and the release record: the lot trace and
+  the release helper match by product name ("Rum Cake - Original").
+- Not built: picking the formula from the Product field itself, scaling for a part batch, and
+  creating a batch sheet from an FRM-501 entry.
+- The batch sheet list page (`/team/operations/batch-sheets`) had a route but no sidebar link until
+  2026-10-06; a sheet with no client folder could not be reached.
+- Tested by `scripts/test-batch-sheet-fill.mjs`, which reads the rum cake FRM-501 entry out of its
+  migration. `batchSheetFill.ts` has no imports.
 
 ## Release helper (FRM-701) — `lib/releaseAssist.ts` + `components/team/release/`
 
