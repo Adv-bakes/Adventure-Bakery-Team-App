@@ -363,3 +363,67 @@ export function nextReminderAt(startedAt: number, lastRowAt: number | null, last
 export function reminderDue(now: number, startedAt: number, lastRowAt: number | null, lastRemindedAt: number | null): boolean {
   return now >= nextReminderAt(startedAt, lastRowAt, lastRemindedAt);
 }
+
+// ─── Waiting quietly for a voice ─────────────────────────────────────────────
+
+/**
+ * Decides, from the microphone level alone, when somebody has started to speak.
+ *
+ * WHY. Android plays its own tone every time speech recognition starts or stops, and a page cannot
+ * silence it. Kept running through silence, recognition gives up every few seconds and has to be
+ * restarted, so the tone repeats all shift. Watching the level makes no sound; recognition is then
+ * started only when there is a voice, and the tones come once around each thing that is said.
+ *
+ * The level is the RMS of the signal, 0 to 1. The threshold rides on the room: `floor` follows the
+ * quiet frames, so a sealer running in the background raises it and a voice still stands out above
+ * it. A burst has to last `needFrames` frames to count, which a click or a dropped pan does not.
+ * `missed()` is called when a start turned out to be noise (recognition heard no words): the floor
+ * is lifted to that level, so the same noise does not start it again.
+ */
+export interface VoiceGate {
+  /** Feed one level reading. True on the frame speech is judged to have started. */
+  push(level: number): boolean;
+  /** The last start was not speech. */
+  missed(): void;
+  reset(): void;
+  readonly floor: number;
+}
+
+export const VOICE_GATE = { frameMs: 50, needFrames: 3, ratio: 3, minLevel: 0.012, maxFloor: 0.25 } as const;
+
+export function createVoiceGate(): VoiceGate {
+  let floor = 0.004;
+  let run = 0;
+  let peak = 0;
+  let lastStartLevel = 0;
+  return {
+    push(level) {
+      const threshold = Math.max(floor * VOICE_GATE.ratio, VOICE_GATE.minLevel);
+      if (level > threshold) {
+        // A sound that simply goes on (a machine switched on) is the room, not a voice: the floor
+        // creeps up to it over a few seconds. Speech comes in bursts and barely moves it.
+        floor = Math.min(floor * 0.995 + level * 0.005, VOICE_GATE.maxFloor);
+        run += 1;
+        peak = Math.max(peak, level);
+        if (run >= VOICE_GATE.needFrames) {
+          lastStartLevel = peak;
+          run = 0;
+          peak = 0;
+          return true;
+        }
+        return false;
+      }
+      run = 0;
+      peak = 0;
+      floor = Math.min(floor * 0.95 + level * 0.05, VOICE_GATE.maxFloor);
+      return false;
+    },
+    missed() {
+      // Just under the level that fooled it, so only something louder starts it next time.
+      if (lastStartLevel > 0) floor = Math.min(Math.max(floor, lastStartLevel / VOICE_GATE.ratio), VOICE_GATE.maxFloor);
+    },
+    reset() { run = 0; peak = 0; },
+    get floor() { return floor; },
+  };
+}
+

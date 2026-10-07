@@ -163,6 +163,30 @@ check(!H.reminderDue(T0 + 40 * MIN, T0, T0 + 20 * MIN, null) && H.reminderDue(T0
 check(!H.reminderDue(T0 + 59 * MIN, T0, null, T0 + 30 * MIN) && H.reminderDue(T0 + 60 * MIN, T0, null, T0 + 30 * MIN), "one reminder per interval");
 check(H.nextReminderAt(T0, T0 + 5 * MIN, T0 + 2 * MIN) === T0 + 35 * MIN, "counts from the latest of the three");
 
+// ── 8. Waiting quietly for a voice ────────────────────────────────────────────
+{
+  const feed = (gate, levels) => levels.map(l => gate.push(l));
+  const quiet = n => Array(n).fill(0.003);
+  let g = H.createVoiceGate();
+  check(!feed(g, quiet(200)).some(Boolean), "silence never starts recognition");
+  check(feed(g, [0.08, 0.09, 0.1]).filter(Boolean).length === 1, "a voice starts it, once");
+  g = H.createVoiceGate(); feed(g, quiet(50));
+  check(!feed(g, [0.3, 0.003, 0.003, 0.25, 0.003]).some(Boolean), "a click or a dropped pan does not");
+  // A sealer running: the floor rises to it, and a voice above it still starts recognition.
+  g = H.createVoiceGate();
+  const sealer = Array(400).fill(0).map((_, i) => 0.04 + (i % 5) * 0.002);
+  const during = feed(g, sealer);
+  check(during.slice(200).filter(Boolean).length === 0, "steady machine noise stops starting it once the floor has risen", during.filter(Boolean).length);
+  check(feed(g, [0.2, 0.22, 0.21]).some(Boolean), "a voice over the machine still starts it");
+  // Noise that fooled it once is not allowed to again.
+  g = H.createVoiceGate(); feed(g, quiet(50));
+  check(feed(g, [0.03, 0.03, 0.03]).some(Boolean), "a moderate noise starts it the first time");
+  g.missed();
+  check(!feed(g, [0.03, 0.03, 0.03, 0.03, 0.03, 0.03]).some(Boolean), "after it was told that was not speech, the same noise does not");
+  check(feed(g, [0.15, 0.15, 0.15]).some(Boolean), "something clearly louder still does");
+  check(g.floor <= H.VOICE_GATE.maxFloor, "the floor is capped");
+}
+
 rmSync(out, { recursive: true, force: true });
 console.log(failed ? `\n${failed} FAILED, ${passed} passed` : `\nALL ${passed} PASS`);
 process.exit(failed ? 1 : 0);
