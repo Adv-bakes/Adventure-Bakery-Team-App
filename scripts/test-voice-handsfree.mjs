@@ -103,6 +103,17 @@ check(cut("Form 606", "undo")?.kind === "undo", "undo after a pause");
 check(H.parseHandsFree(H.withPending(null, ["air check passed"]), "en") === null, "with nothing waiting, a check with no trigger is still ignored");
 check(H.HANDS_FREE_WAIT_MS >= 4000, "it waits long enough for the rest of a sentence");
 
+// ── 5a-2. How the tablet actually wrote it (2026-10-07) ────────────────────────
+rowIs(en("Form 606 aircheck passed"), { check: "In process", visual: "pass" }, "'aircheck' as one word");
+rowIs(en("form 606 air-check failed"), { check: "In process", visual: "fail" }, "'air-check' hyphenated");
+rowIs(en("Form 606 air checked passed"), { check: "In process", visual: "pass" }, "'air checked'");
+rowIs(en("Form 606 hair check passed"), { check: "In process", visual: "pass" }, "'hair check'");
+rowIs(en("Form 606 pulltest passed"), { check: "At boxing", pull_test: "pass" }, "'pulltest' as one word");
+rowIs(en("Form 606 boxingcheck passed"), { check: "At boxing", visual: "pass" }, "'boxingcheck' as one word");
+rowIs(en("Form 606 set-up aircheck passed vacuum 27"), { check: "Set-up", visual: "pass", vacuum_reading: "27" }, "'set-up' and 'aircheck' together");
+rowIs(cut("Form 606", "aircheck passed"), { check: "In process", visual: "pass" }, "'aircheck' after a pause");
+check(en("aircheck passed") === null, "'aircheck' with no trigger is still ignored");
+
 // ── 5b. Every line printed on the wall card parses, and the two languages agree ──
 for (const lang of ["en", "es"]) {
   for (const line of H.HANDS_FREE_CARD[lang].lines) {
