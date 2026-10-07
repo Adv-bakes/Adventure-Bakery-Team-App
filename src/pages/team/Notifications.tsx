@@ -45,7 +45,7 @@ function NotificationCard({
   n, onDismiss,
 }: { n: AppNotification; onDismiss: (n: AppNotification) => void }) {
   const isTemp = n.notification_type === "temperature_alert";
-  const isSignature = n.notification_type === "signature_requested";
+  const isSignature = n.notification_type === "signature_requested" || n.notification_type === "signature_signed";
   const overdue = n.severity === "overdue";
   const accent = overdue ? "border-l-destructive"
     : isTemp ? "border-l-destructive/70"
@@ -152,6 +152,7 @@ export default function Notifications() {
   };
 
   const signatures = open.filter((n) => n.notification_type === "signature_requested");
+  const signed = open.filter((n) => n.notification_type === "signature_signed");
   const overdue = open.filter((n) => n.severity === "overdue"
     && n.notification_type !== "signature_requested");
   const due = open.filter((n) => n.notification_type === "verification_due" && n.severity !== "overdue");
@@ -199,6 +200,7 @@ export default function Notifications() {
       ) : (
         <div className="space-y-6">
           {group("Asked of you", signatures)}
+          {group("Signed", signed)}
           {group("Overdue", overdue)}
           {group("Due", due)}
           {group("Alerts", alerts)}

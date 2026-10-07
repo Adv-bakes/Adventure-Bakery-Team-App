@@ -49,8 +49,10 @@ import {
 } from "@/components/ui/select";
 import {
   fetchSignatories, openSignatureRequest, requestSignature, resolveSignatureRequest,
+  withdrawFieldSignatureRequests,
   type AppNotification, type Signatory,
 } from "@/lib/notifications";
+import { RequestedSignatures } from "@/components/team/forms/RequestedSignatures";
 import { unsignedVerifierFields } from "@/lib/formSchema";
 import { useBottomBarClearance } from "@/hooks/useBottomBarClearance";
 import { WarningList } from "@/components/team/voice/VoiceCommandPanel";
@@ -309,6 +311,7 @@ export default function FormEntry() {
         // A submitted entry can no longer be signed, so an outstanding request is finished either
         // way — satisfied if the lines were signed, moot if they were not.
         try { await resolveSignatureRequest(response.id, "Entry submitted"); } catch { /* prompt only */ }
+        try { await withdrawFieldSignatureRequests(response.id, null, "Entry submitted"); } catch { /* prompt only */ }
         setRequest(null);
         toast.success("Entry submitted");
       } catch (e: any) {
@@ -885,6 +888,19 @@ export default function FormEntry() {
           suggest={releaseAssist.suggest}
         />
       </DocSelfContext.Provider>
+
+      {/* Lines signed by a person named on the record, from their own log-in (FRM-952). */}
+      {!isSubmitted && (
+        <RequestedSignatures
+          schema={schema}
+          responseId={response.id}
+          data={(response.data ?? {}) as Record<string, unknown>}
+          me={signer}
+          canEdit={canEdit}
+          dirty={isDirty}
+          onSigned={load}
+        />
+      )}
 
       {/* File/photo attachments — always shown if any exist, even if the admin
           has since disabled the feature; add-controls only when editable and
