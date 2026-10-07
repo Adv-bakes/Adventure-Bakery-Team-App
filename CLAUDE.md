@@ -1023,8 +1023,10 @@ withdraw instead. The request lands in that person's feed with the note and a de
   "Employee acknowledgment" belongs to the person trained, not to the assessor filling the record in -
   and before this it could only be ticked by whoever had the entry open. A field with
   `signedBy: { nameField?, dateField? }` is **never ticked on the filler's screen**. Under the form,
-  `RequestedSignatures` (`components/team/forms/`) lets the filler (or an admin) choose **any team member
-  with portal access** - suggested from `nameField` - and send the request; the person asked opens the
+  `RequestedSignatures` (`components/team/forms/`) lets the filler (or an admin) choose **any team member**
+  (a staff, admin or owner role; ⚠️ NOT `profiles.access_granted`, which is the client portal's switch and is
+  off for an admin who signs in daily - testing it hid that admin from the list) - suggested from
+  `nameField` - and send the request; the person asked opens the
   entry from their notifications and signs from their own log-in. Three `SECURITY DEFINER` functions
   (migration `20261007000006`): `request_signature_on`, `sign_response_field`,
   `withdraw_signature_request_on`. **`sign_response_field` is the `sign_response()` this section
@@ -1034,7 +1036,9 @@ withdraw instead. The request lands in that person's feed with the note and a de
   request; submitting the entry closes them. **Whoever asked is told when it is signed**: the request
   row records `requested_by`, and `sign_response_field` writes a `signature_signed` notification
   addressed to them (in `FEED_TYPES`, shown under "Signed", and - being news - clearable, unlike the
-  request). After the person signs, the filler's open page is stale and
+  request). `signedBy.note` is the message the request starts with (`signatureRequestNote` fills
+  `{fieldId}` from the saved entry; the person asking can change it) - FRM-952 names the training.
+  After the person signs, the filler's open page is stale and
   its next save raises `StaleResponseError` - which is what stops it overwriting the signature. Set by
   migration; the builder has no control for it. Wrappers in `notifications.ts`
   (`requestFieldSignature`, `signRequestedField`, `withdrawFieldSignatureRequests`,
@@ -1058,8 +1062,10 @@ FSQM-006 names the read list as the record.
   types). **No write policies at all** - `post_staff_notice`, `acknowledge_staff_notice` and
   `withdraw_staff_notice` (`SECURITY DEFINER`) stamp person and time on the server. Reads RLS: a
   person sees only their own acknowledgements; `staff_notice_readers()` (admin/owner/auditor) returns
-  notice x team member with `read_at` null where unread. "Team" = `access_granted` profiles with a
-  staff/admin/owner role.
+  notice x team member with `read_at` null where unread. "Team" = profiles with a
+  staff/admin/owner role. ⚠️ It used to also require `access_granted`; that flag is the CLIENT portal's
+  switch and is off for an admin who signs in daily (corrected 2026-10-07, migration `20261007000009`).
+  Never use `access_granted` to mean "can use the Team Portal".
 - **A notice is never edited** - people put their name to that wording. A wrong one is withdrawn and
   posted again; withdrawn notices and their read lists are kept.
 - The poster is recorded as having read it. Unread notices add to the sidebar Notifications pill
