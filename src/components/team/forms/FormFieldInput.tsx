@@ -12,6 +12,7 @@ import { fetchFormLinkTarget, type FormLinkTarget } from "@/lib/formResponses";
 import { ExternalLink } from "lucide-react";
 import { DocRefText, loadDocIndex } from "./DocRefText";
 import { docPickOptions } from "@/lib/docRefs";
+import { TeamNameInput } from "./TeamNameInput";
 import type {
   FieldLink, CheckboxField, DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
   PassFailField, SelectOptionsFrom, SignatureField, TextDerivation, TextField, TextareaField,
@@ -278,6 +279,17 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer, sugg
                   emptyText={suggest.emptyText?.[field.id]}
                   maxLength={(field as TextField).maxLength}
                   placeholder={(field as TextField).placeholder}
+                />
+              );
+              break;
+            }
+            if ((field as TextField).teamPick && !disabled) {
+              input = (
+                <TeamNameInput
+                  value={rhf.value ?? ""}
+                  onChange={rhf.onChange}
+                  control={control}
+                  titlePath={(field as TextField).teamPick!.titleField}
                 />
               );
               break;
