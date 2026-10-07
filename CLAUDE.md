@@ -1390,6 +1390,9 @@ With the day's FRM-606 open, a **Hands-free recording** bar sits under the produ
   "air check passed". An `unclear` result therefore says nothing and waits `HANDS_FREE_WAIT_MS` (6 s);
   the next sentence is parsed joined onto it (`withPending`), and only if nothing usable arrives does the
   tablet say it did not hear the check. The same row from the same words within 4 seconds is recorded once.
+- **The recogniser's spellings are put back to the card's before parsing** (`SPELLINGS`): on the tablet
+  Chrome wrote "air check" as one word, "aircheck", so the trigger was heard and the check was not. Add a
+  spelling there, with a test, when the tablet shows a new one in the "Heard:" line.
 - **These rows ARE saved automatically** - the one exception to "never auto-saves" above, because the
   operator's hands are on the sealer. It is safe because the record already exists and is open (nothing
   is created) and the last row can be taken back. `FormEntry.recordHandsFree` applies the row and saves

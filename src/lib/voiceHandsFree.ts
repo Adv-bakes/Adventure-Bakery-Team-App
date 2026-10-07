@@ -71,6 +71,26 @@ const WORDS: Record<VoiceLang, HandsFreeWords> = {
   },
 };
 
+/**
+ * What the recogniser writes for the words on the card, put back to the card's spelling before parsing.
+ * Found on the tablet, 2026-10-07: Chrome writes "air check" as ONE word, "aircheck", so the trigger was
+ * heard and the check was not. The same is allowed for the other two-word checks, and for the near
+ * misses a recogniser makes of "air" ("hair check", "heir check", "error check").
+ */
+const SPELLINGS: Record<VoiceLang, [RegExp, string][]> = {
+  en: [
+    [/\b(?:air|hair|heir|error|ear|are)[\s-]*(?:check(?:s|ed)?|czech|chick|jack)\b/gi, "air check"],
+    [/\bair[\s-]*tests?\b/gi, "air test"],
+    [/\b(?:pull|pool|poll|full|bull)[\s-]*tests?\b/gi, "pull test"],
+    [/\bbox(?:ing)?[\s-]*check(?:s|ed)?\b/gi, "boxing check"],
+    [/\bset[\s-]*up\b/gi, "setup"],
+  ],
+  es: [
+    [/\b(?:revisi[oó]n|chequeo|prueba)[\s-]*(?:de|del)[\s-]*aire\b/gi, "revisión de aire"],
+    [/\bprueba[\s-]*(?:de|del)[\s-]*jal[oó]n\b/gi, "prueba de jalón"],
+  ],
+};
+
 /** What "606" can come out as once its words are joined: "606", "6"+"0"+"6", "60"+"6", "600"+"6". */
 const NUMBER_SPELLINGS = new Set(["606", "6006"]);
 const VACUUM_RANGE: [number, number] = [0, 40];
@@ -124,7 +144,9 @@ export function triggerEnd(n: string[], lang: VoiceLang): number {
 function parseOne(transcript: string, lang: VoiceLang): HandsFreeHeard | null {
   const lex = LEXICONS[lang];
   const w = WORDS[lang];
-  const all = normalizeTranscript(transcript, lang).map(t => t.n);
+  let spelled = transcript;
+  for (const [re, to] of SPELLINGS[lang]) spelled = spelled.replace(re, to);
+  const all = normalizeTranscript(spelled, lang).map(t => t.n);
   const from = triggerEnd(all, lang);
   if (from < 0) return null;
   const n = all.slice(from);
