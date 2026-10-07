@@ -67,7 +67,7 @@ export interface VoiceMessages {
     title: string; switchLabel: string; listening: string; notListening: string; paused: string;
     needHeader(names: string[]): string;
     fieldNames: { production_date: string; product: string; lot_code: string };
-    sayThis: string; heard(t: string): string; unclear: string;
+    sayThis: string; heard(t: string): string; unclear: string; goOn: string;
     /** What a row says, for the screen and for the spoken confirmation: "Set-up: air check passed, vacuum 27". */
     describe(row: { check: string; visual?: string; pull_test?: string; vacuum_reading?: string }): string;
     recorded(what: string, time: string): string;
@@ -189,6 +189,7 @@ const EN: VoiceMessages = {
     sayThis: "Say \"Form 606, air check passed\" - or failed. At boxing: \"Form 606, pull test passed\". \"Form 606, undo\" removes the last one.",
     heard: t => `Heard: "${t}"`,
     unclear: "I heard Form 606 but not what was checked. Say it again.",
+    goOn: "Form 606 - go on…",
     describe: row => {
       const say = (v?: string) => (v === "fail" ? "FAILED" : "passed");
       const parts: string[] = [];
@@ -341,6 +342,7 @@ const ES: VoiceMessages = {
     sayThis: "Diga \"Formulario 606, revisión de aire aprobada\" - o rechazada. Al empacar: \"Formulario 606, prueba de jalón aprobada\". \"Formulario 606, deshacer\" quita la última.",
     heard: t => `Escuchado: "${t}"`,
     unclear: "Escuché Formulario 606, pero no qué se revisó. Dígalo otra vez.",
+    goOn: "Formulario 606 - continúe…",
     describe: row => {
       const say = (v?: string) => (v === "fail" ? "RECHAZADA" : "aprobada");
       const parts: string[] = [];

@@ -1385,6 +1385,11 @@ With the day's FRM-606 open, a **Hands-free recording** bar sits under the produ
   "Formulario 606, revisión de aire aprobada". `parseHandsFree` acts **only when the trigger is in the
   same sentence**, never guesses a result it did not hear (`unclear`), and gives the same row in both
   languages. `HANDS_FREE_CARD` is the wall card, and the test parses every printed line.
+- **A sentence cut in two is put back together** (found on the tablet, 2026-10-07): Android Chrome ends
+  a sentence at the first short pause, so "Form 606, air check passed" arrives as "form 606" and then
+  "air check passed". An `unclear` result therefore says nothing and waits `HANDS_FREE_WAIT_MS` (6 s);
+  the next sentence is parsed joined onto it (`withPending`), and only if nothing usable arrives does the
+  tablet say it did not hear the check. The same row from the same words within 4 seconds is recorded once.
 - **These rows ARE saved automatically** - the one exception to "never auto-saves" above, because the
   operator's hands are on the sealer. It is safe because the record already exists and is open (nothing
   is created) and the last row can be taken back. `FormEntry.recordHandsFree` applies the row and saves
