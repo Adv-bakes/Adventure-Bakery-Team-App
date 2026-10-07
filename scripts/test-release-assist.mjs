@@ -103,6 +103,20 @@ has("code evidence asks for the look", f.notes.code, "Matches the lot code above
 check("quantity evidence", f.notes.quantity, "FRM-520: 480 packed.");
 check("no warnings on a clean lot", f.warnings, []);
 
+{
+  // FRM-606 v2: the lot once at the top, one check to a row.
+  const r2 = records();
+  r2.sealing = [entry({ production_date: "2026-10-01", product: "Rum Cake - Original", lot_code: "6273",
+    seal_checks: [{ check: "Set-up", visual: "pass" }, { check: "End of run", visual: "pass" }, { check: "At boxing", pull_test: "pass" }] })];
+  has("FRM-606 with the lot at the top: every row of the entry counts", T.releaseFill(r2, "Rum Cake - Original", "6273", "self").notes.batch,
+    "FRM-606: 3 sealing checks for this lot, all passed.");
+  has("FRM-606 with the lot at the top: another lot's entry is not counted", T.releaseFill(r2, "Rum Cake - Original", "7777", "self").notes.batch,
+    "FRM-606: no sealing check recorded for this lot.");
+  r2.sealing[0].data.seal_checks.push({ check: "At boxing", pull_test: "fail" }, { check: "In process" });
+  has("FRM-606: a failed pull test and an empty row are both said", T.releaseFill(r2, "Rum Cake - Original", "6273", "self").notes.batch,
+    "FRM-606: 5 sealing checks for this lot, 1 FAILED");
+}
+
 has("a code shared by two products: the other product's oven loads are not counted",
   T.releaseFill(R, "Coconut Rum Cake", "6273", "self").notes.batch, "FRM-507: no oven load recorded for this lot. FRM-606: no sealing check recorded for this lot.");
 

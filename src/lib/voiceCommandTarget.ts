@@ -71,7 +71,12 @@ export async function findTodaysDrafts(formId: string, productionDate: string): 
 
 /** A new entry for the day, with the product already filled. Only ever called after the operator taps. */
 export function createVoiceEntry(form: VoiceForm, fill: VoiceFill): Promise<FormResponse> {
-  return createResponse(form, { production_date: fill.productionDate, product: fill.entryFields.product });
+  const prefill: Record<string, unknown> = { production_date: fill.productionDate, product: fill.entryFields.product };
+  // Only where this revision of the form asks for the lot once at the top; an answer key the form
+  // does not have would show up as an unmapped answer.
+  const hasLotField = (getFormSchema(form.content)?.sections ?? []).some(s => (s.fields ?? []).some(f => f.id === "lot_code"));
+  if (fill.entryFields.lot && hasLotField) prefill.lot_code = fill.entryFields.lot;
+  return createResponse(form, prefill);
 }
 
 export function newVoiceState(responseId: string, fill: VoiceFill, transcript: string, uiLang: VoiceLang = "en"): VoiceCommandState {

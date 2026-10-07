@@ -1365,3 +1365,42 @@ check that did not happen.
     *No aprobado*. Accents are folded for matching (ñ kept) but product names keep what was said.
   - The print page takes `?lang=en|es|both` (default both), one language per card. The Spanish card wording
     is a draft for a Spanish-speaking team member to check before it goes on the wall.
+- **FRM-606 from v2 (2026-10-07): the lot is entered once, and a row carries one check.** `lot_code` is a
+  field at the top; `fill.entryFields.lot` carries it and `applyVoiceFill` fills it when empty (or writes
+  the row's `lot_code` on an entry filled under the earlier revision). Check types are `Set-up`,
+  `In process`, `After a change or adjustment`, `End of run`, `At boxing`; the gauge reading, the visual and
+  the pull test are each optional on a row, and a line needs the visual OR the pull test. **The pull test
+  is done at boxing on a cooled pouch, never on a warm seal** (it can open a good one), so a line with
+  only a pull test is an `At boxing` row. `releaseAssist` reads the lot from the entry or from the row.
+
+### Hands-free rows on an open FRM-606 entry - `lib/voiceHandsFree.ts`
+
+With the day's FRM-606 open, a **Hands-free recording** bar sits under the production header
+(`HandsFreeBar`, placed through `FormRenderer`'s `afterSection` slot; shown only when
+`handsFreeReady(schema)`, i.e. the entry's revision has the `In process` option).
+
+- **Listening mode** is a switch, **off every time the entry is opened**, and unavailable until the date,
+  product and lot code are filled. With it on: "Form 606, air check passed" / "... pull test passed" /
+  "... boxing check passed" / "... set up, air check passed, vacuum 27" / "Form 606, undo". Spanish:
+  "Formulario 606, revisión de aire aprobada". `parseHandsFree` acts **only when the trigger is in the
+  same sentence**, never guesses a result it did not hear (`unclear`), and gives the same row in both
+  languages. `HANDS_FREE_CARD` is the wall card, and the test parses every printed line.
+- **These rows ARE saved automatically** - the one exception to "never auto-saves" above, because the
+  operator's hands are on the sealer. It is safe because the record already exists and is open (nothing
+  is created) and the last row can be taken back. `FormEntry.recordHandsFree` applies the row and saves
+  through a one-at-a-time queue that reads the record from a ref; on `StaleResponseError` it re-applies
+  the row to the fresh copy once. The tablet says back what it recorded (`sayAloud`), with recognition
+  paused so it does not hear itself.
+- **Six one-tap buttons** (air check, pull test, boxing check; passed / FAILED) do the same without the
+  microphone. They are the fallback, not a convenience: see the next point.
+- **`useHandsFreeSpeech` is not continuous listening the browser promises.** Android Chrome ends
+  recognition at every pause, so `onend` restarts it (and Chrome may beep each time); it needs the
+  network, sends the audio to Google's speech service, pauses while the page is hidden, and holds a
+  screen wake lock. The first `start()` must run synchronously in the tap on the switch. **Untested at
+  the sealer as of 2026-10-07** - try it on the tablet before relying on it.
+- **Remind me** (tick box, remembered in `localStorage`, never in the record): a tone (`playTone`, Web
+  Audio) and a spoken prompt 30 minutes after the last row - spoken, tapped or typed (`reminderDue`).
+  A prompt only: the documents state no 30-minute check, so a missed reminder is not a missed control.
+- The controlled documents do not mention hands-free; it is only a way of entering rows.
+- Tested by `scripts/test-voice-handsfree.mjs`. `voiceHandsFree.ts` has relative imports only.
+

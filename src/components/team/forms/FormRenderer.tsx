@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Camera, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,8 @@ interface FormRendererProps {
   onDraftCell?: GridFieldInputProps["onDraftCell"];
   /** Pick-lists for some text fields, keyed by field id (the release helper's Product and Lot). */
   suggest?: FieldSuggest;
+  /** Something the entry page puts directly under one section (FRM-606's hands-free bar, under the production header). */
+  afterSection?: { sectionId: string; node: ReactNode };
 }
 
 /**
@@ -45,7 +47,7 @@ interface FormRendererProps {
  * instance (the caller decides defaultValues, resolver, and what save/submit
  * mean — the entry editor and the builder Preview both reuse this).
  */
-export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLabel, fillContext, onDraftCell, suggest }: FormRendererProps) {
+export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLabel, fillContext, onDraftCell, suggest, afterSection }: FormRendererProps) {
   const renderField = (field: SchemaField) => {
     // Grids and reference tables always take the full row regardless of width hint
     const widthClass = field.type === "grid" || field.type === "reference_table"
@@ -139,8 +141,8 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
   return (
     <div className="space-y-4">
       {schema.sections.map(section => (
+        <Fragment key={section.id}>
         <div
-          key={section.id}
           // Anchor for "Go to Section 3" when a voice-recorded CCP reading misses a limit.
           id={`form-section-${section.id}`}
           className="rounded-lg border p-4 space-y-3 scroll-mt-4"
@@ -161,6 +163,8 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
             {section.fields.map(renderField)}
           </div>
         </div>
+        {afterSection?.sectionId === section.id && afterSection.node}
+        </Fragment>
       ))}
     </div>
   );

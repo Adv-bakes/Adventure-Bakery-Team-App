@@ -685,7 +685,7 @@ export async function loadReleaseRecords(): Promise<{ records: ReleaseRecords; p
     const spec = RELEASE_SOURCES[kind] as ReleaseSourceSpec;
     const doc = docs[spec.form];
     if (!doc) return;
-    const keys = [...spec.fields, ...Object.keys(spec.grids)];
+    const keys = [...spec.fields, ...(spec.optional ?? []), ...Object.keys(spec.grids)];
     const select = ["id", "status", "submitted_at", "created_at", "v__test:data->_test_batch", ...keys.map(k => `v_${k}:data->${k}`)].join(", ");
     for (let from = 0; ; from += PAGE) {
       const { data, error: err } = await table().select(select).eq("document_id", doc.id).order("id").range(from, from + PAGE - 1);

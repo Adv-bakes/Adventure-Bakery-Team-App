@@ -1,12 +1,4 @@
 {
-  "schemaVersion": 1,
-  "settings": {
-    "deletable": false,
-    "attachmentsEnabled": true,
-    "allowMultipleDrafts": true,
-    "requireVerification": true,
-    "instanceTitleTemplate": "{production_date} — CCP 2 Vacuum Sealing"
-  },
   "sections": [
     {
       "id": "day",
@@ -14,9 +6,9 @@
       "fields": [
         {
           "id": "how_this_works",
+          "text": "ONE RECORD PER PRODUCTION DAY, for the product covered by the site's HACCP plan. Fill in the date, the product and the lot code first. Add a row at the first sealing of the run (Set-up), after any change or adjustment to the sealer, and at the end of the run. In process rows may be added at any time. The record stays a draft until the lot has been boxed, when the At boxing rows are added.\n\nCCP 2 PROTECTS THE PRODUCT AFTER THE BAKE. A failed seal lets in air and microbial contamination and ends the product's shelf stability. The critical limits below are the HACCP plan's.\n\nAT SEALING, LOOK AT EVERY POUCH AS IT COMES OFF THE SEALER: the seal sound, and no air in the pouch. That check is the control; the rows record it and do not replace it. Do NOT pull test a pouch that has just been sealed - the film is still warm and a good seal can be pulled open.\n\nAT BOXING, LOOK AT EVERY POUCH AGAIN before it goes in its box. A pouch that has lost its vacuum is rejected. Pull test one cooled pouch from the lot before boxing starts.\n\nA pouch or a pull test that fails stops the work - Section 3 says what happens next.\n\nWHEN BOXING IS DONE, sign Section 4 and leave the entry as a draft. It is reviewed, the verification is signed, and the reviewer submits it.",
           "type": "info",
-          "label": "Before you start",
-          "text": "ONE RECORD PER PRODUCTION DAY, for the product covered by the site's HACCP plan. Add a row at set-up, at least every hour through the run, after any change or adjustment to the sealer, and at the end of the run. Write each row when the check is done.\n\nCCP 2 PROTECTS THE PRODUCT AFTER THE BAKE. A failed seal lets in air and microbial contamination and ends the product's shelf stability. The critical limits below are the HACCP plan's.\n\nWATCH THE GAUGE ON EVERY CYCLE AND LOOK AT EVERY POUCH. The rows record the checks; they do not replace watching. Any cycle or pouch that fails stops the run - Section 3 says what happens next.\n\nWHEN THE DAY IS DONE, sign Section 4 and leave the entry as a draft. It is reviewed, the verification is signed, and the reviewer submits it."
+          "label": "Before you start"
         },
         {
           "id": "production_date",
@@ -29,15 +21,50 @@
         },
         {
           "id": "product",
+          "help": "The product covered by the HACCP plan.",
           "type": "text",
           "label": "Product",
           "width": "half",
           "required": true,
+          "showInList": true
+        },
+        {
+          "id": "lot_code",
+          "type": "text",
+          "label": "Lot / batch code",
+          "width": "half",
+          "required": true,
           "showInList": true,
-          "help": "The product covered by the HACCP plan."
+          "help": "Once for the day. It is not entered on each row."
         },
         {
           "id": "limits",
+          "rows": [
+            [
+              "Vacuum level",
+              "To the sealer's specification - NOT YET CONFIRMED for this machine (typical 27 in. Hg)",
+              "The sealer's vacuum gauge",
+              "At set-up"
+            ],
+            [
+              "Seal integrity",
+              "No visible leak, channel, wrinkle across the seal, or partial seal, and no air in the pouch",
+              "Visual check",
+              "Every pouch as it comes off the sealer, and again at boxing"
+            ],
+            [
+              "Seal width",
+              "To the sealer's specification - NOT YET CONFIRMED for this machine (typical 5 mm)",
+              "Inspection of the seal",
+              "With the pull test"
+            ],
+            [
+              "Seal strength",
+              "The seal holds under a pull test",
+              "Pull test on one cooled pouch",
+              "One pouch per lot, at the start of boxing. Never on a warm seal."
+            ]
+          ],
           "type": "reference_table",
           "label": "CCP 2 critical limits (HACCP plan)",
           "columns": [
@@ -45,32 +72,6 @@
             "Limit",
             "How it is checked",
             "How often"
-          ],
-          "rows": [
-            [
-              "Vacuum level",
-              "To the sealer's specification - NOT YET CONFIRMED for this machine (typical 27 in. Hg)",
-              "The sealer's vacuum gauge",
-              "Every cycle"
-            ],
-            [
-              "Seal integrity",
-              "No visible leak, channel, wrinkle across the seal, or partial seal",
-              "Visual check",
-              "Every pouch"
-            ],
-            [
-              "Seal width",
-              "To the sealer's specification - NOT YET CONFIRMED for this machine (typical 5 mm)",
-              "Inspection of the seal",
-              "With each pull test"
-            ],
-            [
-              "Seal strength",
-              "The seal holds under a pull test",
-              "Pull test on one pouch",
-              "At set-up, after any change, and at least hourly"
-            ]
           ]
         }
       ]
@@ -81,15 +82,14 @@
       "fields": [
         {
           "id": "seal_checks",
-          "type": "grid",
-          "label": "Sealing checks",
-          "required": true,
-          "help": "A row at set-up, at least hourly, after any change or adjustment, and at the end of the run.",
+          "help": "A row at Set-up, after any change or adjustment, and at the end of the run; In process rows may be added at any time. At boxing: a row for the pull test, and a row when every pouch has been looked at again.",
           "rows": {
-            "mode": "dynamic",
             "min": 1,
+            "mode": "dynamic",
             "addLabel": "Add a check"
           },
+          "type": "grid",
+          "label": "Sealing checks",
           "columns": [
             {
               "id": "time",
@@ -104,48 +104,45 @@
               "type": "select",
               "label": "Check",
               "width": 2,
-              "required": true,
               "options": [
                 "Set-up",
-                "Hourly",
+                "In process",
                 "After a change or adjustment",
-                "End of run"
-              ]
-            },
-            {
-              "id": "lot_code",
-              "type": "text",
-              "label": "Lot / batch code",
-              "width": 2,
+                "End of run",
+                "At boxing"
+              ],
               "required": true
             },
             {
               "id": "vacuum_reading",
               "type": "number",
-              "label": "Vacuum gauge reading",
               "unit": "in. Hg",
-              "width": 1,
-              "required": true
+              "label": "Vacuum gauge reading",
+              "width": 1
             },
             {
               "id": "visual",
               "type": "pass_fail",
-              "label": "Every pouch since the last check free of seal defects",
-              "width": 2,
-              "required": true
+              "label": "Every pouch since the last row: seal sound, no air in the pouch",
+              "width": 2
             },
             {
               "id": "pull_test",
               "type": "pass_fail",
-              "label": "Pull test held",
-              "width": 1,
-              "required": true
+              "label": "Pull test held (cooled pouch, at boxing)",
+              "width": 1
+            },
+            {
+              "id": "rejected",
+              "type": "number",
+              "label": "Pouches rejected since the last row",
+              "width": 1
             },
             {
               "id": "seal_width",
               "type": "number",
-              "label": "Seal width, if measured",
               "unit": "mm",
+              "label": "Seal width, if measured",
               "width": 1
             },
             {
@@ -162,13 +159,14 @@
               "label": "Note",
               "width": 2
             }
-          ]
+          ],
+          "required": true
         },
         {
           "id": "spec_info",
+          "text": "The HACCP plan sets the vacuum level and the seal width to the sealer's specification, and gives only typical values (27 in. Hg and 5 mm). Neither has been confirmed for this site's machine. Until it is, write the gauge reading exactly as it shows - this record captures it but cannot show it as within a limit nobody has confirmed. A reading clearly out of line with earlier runs is treated as a failed check.\n\nThe visual check and the pull test ARE judged here, against the limits above.",
           "type": "info",
-          "label": "Two limits are not yet confirmed",
-          "text": "The HACCP plan sets the vacuum level and the seal width to the sealer's specification, and gives only typical values (27 in. Hg and 5 mm). Neither has been confirmed for this site's machine. Until it is, write the gauge reading exactly as it shows - this record captures it but cannot show it as within a limit nobody has confirmed. A reading clearly out of line with the rest of the run is treated as a failed cycle.\n\nThe visual check and the pull test ARE judged here, against the limits above."
+          "label": "Two limits are not yet confirmed"
         }
       ]
     },
@@ -178,44 +176,37 @@
       "fields": [
         {
           "id": "deviation_info",
+          "text": "A POUCH WITH A SEAL DEFECT OR AIR IN IT, A POUCH THAT HAS LOST ITS VACUUM AT BOXING, OR A FAILED PULL TEST:\n1. Stop sealing or boxing.\n2. Set the failed pouch aside. The pouches before it were each looked at; if there is any doubt about them, put them on Hold and tag them on FRM-702 under FSQM-018. A failed pull test puts the lot on Hold until the SQF Practitioner decides what is done with it.\n3. Re-pouch and reseal what can be resealed, and destroy what cannot.\n4. If the sealer is at fault, inspect or adjust it, then seal a pouch and look at it. Record that as an \"After a change or adjustment\" row before sealing restarts.\n5. Notify the SQF Practitioner, and record the cause and the action on FRM-007 under FSQM-009.\n\nHeld product is not released on FRM-701 until its disposition is recorded.",
           "type": "info",
-          "label": "What to do",
-          "text": "A FAILED CYCLE, A POUCH WITH A SEAL DEFECT, OR A FAILED PULL TEST:\n1. Stop sealing.\n2. Put on Hold, and tag on FRM-702 under FSQM-018, everything sealed since the last check that passed.\n3. Inspect the held pouches: reseal those that can be resealed, and destroy those that cannot.\n4. Inspect or adjust the sealer, then seal a pouch and pull-test it. Record that as an \"After a change or adjustment\" row before production restarts.\n5. Notify the SQF Practitioner, and record the cause and the action on FRM-007 under FSQM-009.\n\nHeld product is not released on FRM-701 until its disposition is recorded."
+          "label": "What to do"
         },
         {
           "id": "deviations_today",
           "type": "select",
           "label": "Deviations on this day",
           "width": "half",
-          "required": true,
           "options": [
             "None - every check passed",
             "Yes - each one is recorded below"
-          ]
+          ],
+          "required": true
         },
         {
           "id": "deviation_log",
-          "type": "grid",
-          "label": "Deviations",
           "help": "Required for every deviation. Leave empty only where the answer above is None.",
           "rows": {
-            "mode": "dynamic",
             "min": 0,
+            "mode": "dynamic",
             "addLabel": "Add a deviation"
           },
+          "type": "grid",
+          "label": "Deviations",
           "columns": [
             {
               "id": "time",
               "type": "time",
               "label": "Time",
               "width": 1,
-              "required": true
-            },
-            {
-              "id": "lot_code",
-              "type": "text",
-              "label": "Lot / batch code",
-              "width": 2,
               "required": true
             },
             {
@@ -236,12 +227,12 @@
               "type": "select",
               "label": "Action taken",
               "width": 2,
-              "required": true,
               "options": [
                 "Resealed",
                 "Held on FRM-702",
                 "Destroyed"
-              ]
+              ],
+              "required": true
             },
             {
               "id": "reference",
@@ -259,35 +250,43 @@
       "fields": [
         {
           "id": "monitored_by",
-          "type": "signature",
           "role": "filler",
+          "type": "signature",
+          "label": "Monitored by (production operator)",
           "width": "half",
           "required": true,
-          "label": "Monitored by (production operator)",
-          "statement": "I performed the checks recorded above at the times shown, and recorded them as found."
+          "statement": "I looked at every pouch as it came off the sealer and again at boxing, and recorded the checks above as found."
         },
         {
           "id": "verification_independence",
-          "type": "select",
-          "width": "half",
-          "required": true,
-          "label": "Who verified this record",
           "help": "FSQM-017 Part 5: a person does not verify their own monitoring where a second qualified person is available. Where one is not, say so here.",
+          "type": "select",
+          "label": "Who verified this record",
+          "width": "half",
           "options": [
             "Someone other than the operator who took the readings",
             "No second qualified person available - verified by the operator"
-          ]
+          ],
+          "required": true
         },
         {
           "id": "verified_by",
-          "type": "signature",
           "role": "verifier",
+          "type": "signature",
+          "label": "Verified by",
           "width": "half",
           "required": true,
-          "label": "Verified by",
           "statement": "I have reviewed this record against the CCP 2 critical limits, and every deviation on it has a recorded action."
         }
       ]
     }
-  ]
+  ],
+  "settings": {
+    "deletable": false,
+    "attachmentsEnabled": true,
+    "allowMultipleDrafts": true,
+    "requireVerification": true,
+    "instanceTitleTemplate": "{production_date} — CCP 2 Vacuum Sealing"
+  },
+  "schemaVersion": 1
 }
