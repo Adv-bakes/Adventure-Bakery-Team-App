@@ -67,6 +67,12 @@ export interface TextField     extends FieldBase {
    * list: a topic with no document behind it is typed in. See docPickOptions in docRefs.ts.
    */
   docPick?: { prefixes: string[] };
+  /**
+   * Offer the names in the team directory (FRM-952's employee name) - the scalar twin of
+   * GridColumn.teamPick. `titleField` names another top-level text field that is filled with
+   * the person's job title (else department) when a listed name is entered and it is empty.
+   */
+  teamPick?: { titleField?: string };
 }
 
 /**

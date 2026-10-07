@@ -472,6 +472,8 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   fills `titleColumn` with the person's job title, else department, **only if that cell is empty**. Names
   load once per page load; if they cannot be read the cell is a plain text box. Builder: "Offer team
   names" on a text column (`titleColumn` is set by migration). First use: FRM-953's Employee Name.
+  A top-level text field takes the same option as `TextField.teamPick` (`{ titleField? }`, set by
+  migration): FRM-952's Employee Name, which fills Job Title / Dept.
 - **Topics from the document list (`TextField.docPick`):** `{ prefixes }` on a text field offers each
   ISSUED document whose number starts with one of the prefixes, as "TRN-003 Allergens Part 1"
   (`docPickOptions` in `docRefs.ts`, tested in `scripts/test-doc-refs.mjs`). Drafts are not offered; a
