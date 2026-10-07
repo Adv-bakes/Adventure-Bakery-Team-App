@@ -1401,7 +1401,20 @@ With the day's FRM-606 open, a **Hands-free recording** bar sits under the produ
   paused so it does not hear itself.
 - **Six one-tap buttons** (air check, pull test, boxing check; passed / FAILED) do the same without the
   microphone. They are the fallback, not a convenience: see the next point.
-- **Quiet mode is a TRIAL, off unless ticked on the bar** (`frm606.quietMode` in `localStorage`). Made the only way at first, it broke listening on the tablet the same day (PR #306): with no words heard the detector treated the operator's voice as noise and raised its threshold to it. The default is restarting recognition through silence, which is known to work and plays Android's tone every few seconds. The bar shows a trace line in quiet mode (way of sharing, starts, starts that heard words) so a trial can be reported exactly.
+- **How it listens is chosen on the bar** (`ListenMode`, `frm606.listenMode` in `localStorage`, read when
+  listening is switched on): **All the time** (default; restarts through silence, Android's tone repeats),
+  **When I press a button**, or **When it hears a voice (trial)**.
+- **Button mode** (owner's idea, 2026-10-07: the operator wears a Bluetooth headset). A press starts ONE
+  spell of listening (`listenOnce`); between presses the state is `ready` and the microphone is closed, so
+  there is no tone and no false start. **The press stands for the trigger**: the bar parses the sentence as
+  if it followed `HANDS_FREE_IMPLIED` ("form 606"), so "air check passed" is enough. Three sources, one
+  path: (1) the headset's button, which reaches a page only as a Media Session action and only while the
+  page is "now playing" - so a 10-second silent WAV is looped (Chrome ignores media under five seconds; a
+  muted element does not count) and every media action means "listen"; (2) a key from a Bluetooth pedal or
+  clicker (`isListenKey`: never while typing in a field, never Enter/space on a focused button; volume keys
+  never reach a page); (3) **Press to speak** on the bar. The bar counts presses received, so a headset
+  whose button does not arrive shows it. **Whether a given headset's button arrives is untested.**
+- **Quiet mode is a TRIAL, one of the three choices** (`frm606.quietMode` in `localStorage`). Made the only way at first, it broke listening on the tablet the same day (PR #306): with no words heard the detector treated the operator's voice as noise and raised its threshold to it. The default is restarting recognition through silence, which is known to work and plays Android's tone every few seconds. The bar shows a trace line in quiet mode (way of sharing, starts, starts that heard words) so a trial can be reported exactly.
 - **`useHandsFreeSpeech`, in quiet mode, waits quietly between sentences** (2026-10-07, after the first day on the
   tablet). Android plays its own tone whenever speech recognition starts or stops and a page cannot
   silence it; restarted through silence, that was a tone every five seconds in the operator's headset.

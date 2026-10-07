@@ -76,7 +76,9 @@ export interface VoiceMessages {
     airPass: string; airFail: string; boxPass: string; boxFail: string; pullPass: string; pullFail: string;
     atSealing: string; atBoxing: string;
     remind: string; remindNote: string; reminder: string;
-    quiet: string; quietNote: string; trace(sharing: string, starts: number, heard: number): string;
+    trace(sharing: string, starts: number, heard: number): string;
+    modeLabel: string; modes: { always: string; button: string; voice: string }; modeNotes: { always: string; button: string; voice: string };
+    ready: string; sayThisButton: string; talk: string; presses(n: number): string;
     limits: string; unsupported: string;
     error(code: string): string;
   };
@@ -214,9 +216,18 @@ const EN: VoiceMessages = {
     remind: "Remind me every 30 minutes",
     remindNote: "A tone and a spoken reminder, 30 minutes after the last row. Only while this record is open and the tablet is awake.",
     reminder: "Form 606. Time for an air check.",
-    quiet: "Quiet mode (trial)",
-    quietNote: "Stops the tone repeating while nobody is speaking: the tablet listens only once it hears a voice. Speak, wait for the tone, then say the line. Untick it if checks are not being heard.",
-    trace: (sharing, starts, heard) => `Quiet mode: ${sharing} · started ${starts} · heard words ${heard}`,
+    trace: (sharing, starts, heard) => `Voice start: ${sharing} · started ${starts} · heard words ${heard}`,
+    modeLabel: "It listens",
+    modes: { always: "All the time", button: "When I press a button", voice: "When it hears a voice (trial)" },
+    modeNotes: {
+      always: "Always listening for \"Form 606\". The tablet's tone repeats every few seconds while nobody is speaking.",
+      button: "Press the headset button, a Bluetooth pedal or clicker, or Press to speak below. Wait for the tone, then say the check - \"Form 606\" is not needed. No tone in between.",
+      voice: "Listens only once it hears a voice. Speak, wait for the tone, then say the line. Choose another way if checks are not being heard.",
+    },
+    ready: "Ready - press the button",
+    sayThisButton: "Press the button, wait for the tone, then say \"air check passed\" - or failed. At boxing: \"pull test passed\". \"Undo\" removes the last one.",
+    talk: "Press to speak",
+    presses: n => `Button presses received: ${n}`,
     limits: "Listening needs the Wi-Fi, and the microphone audio goes to Google's speech service while it is on. If it is not hearing you, use the buttons.",
     unsupported: "This browser cannot listen. Use Chrome on the tablet, or the buttons below.",
     error: c => (c === "not-allowed" || c === "service-not-allowed"
@@ -371,9 +382,18 @@ const ES: VoiceMessages = {
     remind: "Recordarme cada 30 minutos",
     remindNote: "Un tono y un recordatorio hablado, 30 minutos después de la última fila. Solo con este registro abierto y la tableta encendida.",
     reminder: "Formulario 606. Es hora de una revisión de aire.",
-    quiet: "Modo silencioso (prueba)",
-    quietNote: "Evita que el tono se repita cuando nadie habla: la tableta escucha solo al oír una voz. Hable, espere el tono y luego diga la línea. Desmárquelo si no se escuchan las revisiones.",
-    trace: (sharing, starts, heard) => `Modo silencioso: ${sharing} · iniciado ${starts} · con palabras ${heard}`,
+    trace: (sharing, starts, heard) => `Inicio por voz: ${sharing} · iniciado ${starts} · con palabras ${heard}`,
+    modeLabel: "Escucha",
+    modes: { always: "Todo el tiempo", button: "Cuando presiono un botón", voice: "Cuando oye una voz (prueba)" },
+    modeNotes: {
+      always: "Siempre atenta a \"Formulario 606\". El tono de la tableta se repite cada pocos segundos cuando nadie habla.",
+      button: "Presione el botón del auricular, un pedal o control Bluetooth, o Presione para hablar abajo. Espere el tono y diga la revisión; no hace falta \"Formulario 606\". Sin tono entre una y otra.",
+      voice: "Escucha solo al oír una voz. Hable, espere el tono y luego diga la línea. Elija otra forma si no se escuchan las revisiones.",
+    },
+    ready: "Lista - presione el botón",
+    sayThisButton: "Presione el botón, espere el tono y diga \"revisión de aire aprobada\" - o rechazada. Al empacar: \"prueba de jalón aprobada\". \"Deshacer\" quita la última.",
+    talk: "Presione para hablar",
+    presses: n => `Pulsaciones recibidas: ${n}`,
     limits: "La escucha necesita Wi-Fi, y el audio del micrófono va al servicio de voz de Google mientras está activada. Si no le escucha, use los botones.",
     unsupported: "Este navegador no puede escuchar. Use Chrome en la tableta, o los botones de abajo.",
     error: c => (c === "not-allowed" || c === "service-not-allowed"

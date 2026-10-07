@@ -8,8 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
-  HANDS_FREE_WAIT_MS, handsFreeFailed, handsFreeMissingHeader, parseHandsFree, reminderDue, withPending,
-  type HandsFreeRow,
+  HANDS_FREE_IMPLIED, HANDS_FREE_WAIT_MS, LISTEN_MODES, handsFreeFailed, handsFreeMissingHeader, parseHandsFree,
+  reminderDue, withPending,
+  type HandsFreeRow, type ListenMode,
 } from "@/lib/voiceHandsFree";
 import { VOICE_LANGS, type VoiceLang } from "@/lib/voiceLexicon";
 import { VOICE_MSG } from "@/lib/voiceMessages";
@@ -29,12 +30,14 @@ import { playTone, sayAloud, unlockSound, useHandsFreeSpeech } from "@/hooks/use
 // FormEntry applies and saves. Every row is said back, because the operator is not looking.
 
 const REMIND_KEY = "frm606.remindMe";
-const QUIET_KEY = "frm606.quietMode";
-function readFlag(key: string): boolean {
-  try { return window.localStorage.getItem(key) === "1"; } catch { return false; }
-}
-function writeFlag(key: string, on: boolean): void {
-  try { window.localStorage.setItem(key, on ? "1" : "0"); } catch { /* private window: not remembered */ }
+const QUIET_KEY = "frm606.quietMode";   // the earlier tick box; read once so a tablet that had it keeps its choice
+const MODE_KEY = "frm606.listenMode";
+function readMode(): ListenMode {
+  try {
+    const saved = window.localStorage.getItem(MODE_KEY) as ListenMode | null;
+    if (saved && LISTEN_MODES.includes(saved)) return saved;
+    return window.localStorage.getItem(QUIET_KEY) === "1" ? "voice" : "always";
+  } catch { return "always"; }
 }
 const LANG_LABEL: Record<VoiceLang, string> = { en: "English", es: "Español" };
 
@@ -131,8 +134,10 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
   // Some Android builds deliver one sentence twice; the same row from the same words within a few seconds is one check.
   const lastRecorded = useRef<{ key: string; at: number } | null>(null);
 
-  const onHeard = useCallback((alternatives: string[]) => {
-    const heard = parseHandsFree(withPending(pending.current?.text ?? null, alternatives), langRef.current);
+  const onHeard = useCallback((alternatives: string[], byButton: boolean) => {
+    // After a button press the trigger is taken as said: the press was the intent.
+    const waiting = pending.current?.text ?? (byButton ? HANDS_FREE_IMPLIED : null);
+    const heard = parseHandsFree(withPending(waiting, alternatives), langRef.current);
     if (!heard) return;                                   // no trigger, and nothing waiting: not for the form
     if (heard.kind === "undo") { clearPending(); void undo(); return; }
     if (heard.kind === "unclear" || !heard.row) {
@@ -157,12 +162,16 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
     void record(heard.row);
   }, [record, undo, say, clearPending]);
 
-  // Quiet mode is a trial and a setting of this tablet; it is read when listening is switched on.
-  const [quiet, setQuiet] = useState(false);
-  useEffect(() => { setQuiet(readFlag(QUIET_KEY)); }, []);
-  const speech = useHandsFreeSpeech(onHeard, { lang, quiet });
+  // How it listens is a setting of this tablet; it is read when listening is switched on.
+  const [mode, setMode] = useState<ListenMode>("always");
+  useEffect(() => { setMode(readMode()); }, []);
+  const chooseMode = (next: ListenMode) => {
+    try { window.localStorage.setItem(MODE_KEY, next); } catch { /* private window: not remembered */ }
+    setMode(next);
+  };
+  const speech = useHandsFreeSpeech(onHeard, { lang, mode });
   speechRef.current = speech;
-  const listening = speech.state === "listening" || speech.state === "paused";
+  const listening = speech.state === "listening" || speech.state === "paused" || speech.state === "ready";
 
   const toggleListening = (on: boolean) => {
     if (on) {
@@ -225,7 +234,8 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
     return () => { cancelled = true; document.removeEventListener("visibilitychange", onVisible); try { lock?.release?.(); } catch { /* released */ } };
   }, [remind]);
 
-  const status = speech.state === "listening" ? M.listening : speech.state === "paused" ? M.paused : M.notListening;
+  const status = speech.state === "listening" ? M.listening : speech.state === "ready" ? M.ready
+    : speech.state === "paused" ? M.paused : M.notListening;
   const tap = (row: HandsFreeRow) => { unlockSound(); void record(row); };
 
   return (
@@ -270,9 +280,22 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
       {speech.errorCode && speech.errorCode !== "unsupported" && <p className="text-sm text-[#B42318]">{M.error(speech.errorCode)}</p>}
       {listening && (
         <p className="text-sm text-[#2A1F0E]/80">
-          {M.sayThis}
+          {mode === "button" ? M.sayThisButton : M.sayThis}
           {speech.interim && <span className="block mt-1 italic text-[#2A1F0E]/60">{M.heard(speech.interim)}</span>}
         </p>
+      )}
+      {listening && mode === "button" && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            onClick={() => { unlockSound(); speech.listenOnce(); }}
+            disabled={speech.state === "listening"}
+            className="h-14 px-6 text-base font-semibold bg-[#1F7A3F] hover:bg-[#17612F] text-white"
+          >
+            <Mic className="w-5 h-5 mr-2" />{M.talk}
+          </Button>
+          <span className="text-xs font-mono text-[#2A1F0E]/60">{M.presses(speech.presses)}</span>
+        </div>
       )}
 
       {note && (
@@ -324,16 +347,26 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
         </p>
       </div>
       <div className="flex flex-wrap items-start gap-x-6 gap-y-1">
-        <label className="flex items-center gap-2 text-sm font-medium text-[#2A1F0E] pt-1">
-          <Checkbox
-            checked={quiet}
-            disabled={listening}
-            onCheckedChange={v => { writeFlag(QUIET_KEY, v === true); setQuiet(v === true); }}
-          />
-          {M.quiet}
-        </label>
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-sm font-medium text-[#2A1F0E]">{M.modeLabel}</span>
+          <div role="radiogroup" aria-label={M.modeLabel} className="inline-flex rounded-md border overflow-hidden text-sm" style={{ borderColor: "rgba(200,155,60,0.6)" }}>
+            {LISTEN_MODES.map(m => (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={mode === m}
+                disabled={listening}
+                onClick={() => chooseMode(m)}
+                className={cn("px-3 py-1.5 disabled:opacity-60", mode === m ? "bg-[#C89B3C] text-white font-semibold" : "bg-white text-[#2A1F0E] hover:bg-[#C89B3C]/10")}
+              >
+                {M.modes[m]}
+              </button>
+            ))}
+          </div>
+        </div>
         <p className="flex-1 min-w-[14rem] text-xs text-[#2A1F0E]/60 pt-1">
-          {M.quietNote}
+          {M.modeNotes[mode]}
           {speech.trace && <span className="block mt-0.5 font-mono">{M.trace(speech.trace.sharing, speech.trace.starts, speech.trace.heard)}</span>}
         </p>
       </div>
