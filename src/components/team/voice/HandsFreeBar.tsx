@@ -29,6 +29,13 @@ import { playTone, sayAloud, unlockSound, useHandsFreeSpeech } from "@/hooks/use
 // FormEntry applies and saves. Every row is said back, because the operator is not looking.
 
 const REMIND_KEY = "frm606.remindMe";
+const QUIET_KEY = "frm606.quietMode";
+function readFlag(key: string): boolean {
+  try { return window.localStorage.getItem(key) === "1"; } catch { return false; }
+}
+function writeFlag(key: string, on: boolean): void {
+  try { window.localStorage.setItem(key, on ? "1" : "0"); } catch { /* private window: not remembered */ }
+}
 const LANG_LABEL: Record<VoiceLang, string> = { en: "English", es: "Español" };
 
 function readRemind(): boolean {
@@ -150,7 +157,10 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
     void record(heard.row);
   }, [record, undo, say, clearPending]);
 
-  const speech = useHandsFreeSpeech(onHeard, { lang });
+  // Quiet mode is a trial and a setting of this tablet; it is read when listening is switched on.
+  const [quiet, setQuiet] = useState(false);
+  useEffect(() => { setQuiet(readFlag(QUIET_KEY)); }, []);
+  const speech = useHandsFreeSpeech(onHeard, { lang, quiet });
   speechRef.current = speech;
   const listening = speech.state === "listening" || speech.state === "paused";
 
@@ -311,6 +321,20 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
         </label>
         <p className="flex-1 min-w-[14rem] text-xs text-[#2A1F0E]/60 pt-2">
           {remind ? M.remindNote : M.limits}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-start gap-x-6 gap-y-1">
+        <label className="flex items-center gap-2 text-sm font-medium text-[#2A1F0E] pt-1">
+          <Checkbox
+            checked={quiet}
+            disabled={listening}
+            onCheckedChange={v => { writeFlag(QUIET_KEY, v === true); setQuiet(v === true); }}
+          />
+          {M.quiet}
+        </label>
+        <p className="flex-1 min-w-[14rem] text-xs text-[#2A1F0E]/60 pt-1">
+          {M.quietNote}
+          {speech.trace && <span className="block mt-0.5 font-mono">{M.trace(speech.trace.sharing, speech.trace.starts, speech.trace.heard)}</span>}
         </p>
       </div>
     </div>

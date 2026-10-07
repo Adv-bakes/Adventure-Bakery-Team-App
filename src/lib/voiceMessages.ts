@@ -76,6 +76,7 @@ export interface VoiceMessages {
     airPass: string; airFail: string; boxPass: string; boxFail: string; pullPass: string; pullFail: string;
     atSealing: string; atBoxing: string;
     remind: string; remindNote: string; reminder: string;
+    quiet: string; quietNote: string; trace(sharing: string, starts: number, heard: number): string;
     limits: string; unsupported: string;
     error(code: string): string;
   };
@@ -213,6 +214,9 @@ const EN: VoiceMessages = {
     remind: "Remind me every 30 minutes",
     remindNote: "A tone and a spoken reminder, 30 minutes after the last row. Only while this record is open and the tablet is awake.",
     reminder: "Form 606. Time for an air check.",
+    quiet: "Quiet mode (trial)",
+    quietNote: "Stops the tone repeating while nobody is speaking: the tablet listens only once it hears a voice. Speak, wait for the tone, then say the line. Untick it if checks are not being heard.",
+    trace: (sharing, starts, heard) => `Quiet mode: ${sharing} · started ${starts} · heard words ${heard}`,
     limits: "Listening needs the Wi-Fi, and the microphone audio goes to Google's speech service while it is on. If it is not hearing you, use the buttons.",
     unsupported: "This browser cannot listen. Use Chrome on the tablet, or the buttons below.",
     error: c => (c === "not-allowed" || c === "service-not-allowed"
@@ -367,6 +371,9 @@ const ES: VoiceMessages = {
     remind: "Recordarme cada 30 minutos",
     remindNote: "Un tono y un recordatorio hablado, 30 minutos después de la última fila. Solo con este registro abierto y la tableta encendida.",
     reminder: "Formulario 606. Es hora de una revisión de aire.",
+    quiet: "Modo silencioso (prueba)",
+    quietNote: "Evita que el tono se repita cuando nadie habla: la tableta escucha solo al oír una voz. Hable, espere el tono y luego diga la línea. Desmárquelo si no se escuchan las revisiones.",
+    trace: (sharing, starts, heard) => `Modo silencioso: ${sharing} · iniciado ${starts} · con palabras ${heard}`,
     limits: "La escucha necesita Wi-Fi, y el audio del micrófono va al servicio de voz de Google mientras está activada. Si no le escucha, use los botones.",
     unsupported: "Este navegador no puede escuchar. Use Chrome en la tableta, o los botones de abajo.",
     error: c => (c === "not-allowed" || c === "service-not-allowed"
