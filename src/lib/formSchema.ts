@@ -199,6 +199,15 @@ export interface SignatureField extends FieldBase {
    * whichever member of staff held the tablet, which is a record of the wrong person.
    */
   capture?: "drawn";
+  /**
+   * This line belongs to a person NAMED ON THE RECORD - the employee on FRM-952 - not to whoever
+   * is filling it in. It is never ticked on the filler's screen: the filler asks a team member
+   * for it (request_signature_on), and that person signs from their own log-in
+   * (sign_response_field), which writes this one answer and nothing else. `nameField` is the
+   * text field holding the person's name, used to suggest who to ask; `dateField` is a date
+   * field stamped with the day they signed.
+   */
+  signedBy?: { nameField?: string; dateField?: string };
 }
 /**
  * A stamp carries the signer's `user_id`. A drawn signature carries `user_id: null`, the drawing
@@ -548,6 +557,13 @@ export function unsignedVerifierFields(
     const v = answers[f.id] as SignatureValue | null | undefined;
     return !v?.name;
   });
+}
+
+/** Signature lines that are asked for from a person named on the record (SignatureField.signedBy). */
+export function requestedSignatureFields(schema: FormSchema): SignatureField[] {
+  return schema.sections
+    .flatMap(s => s.fields)
+    .filter((f): f is SignatureField => f.type === "signature" && !!f.signedBy && f.capture !== "drawn");
 }
 
 // ---------- Ids ----------

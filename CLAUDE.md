@@ -1019,6 +1019,26 @@ withdraw instead. The request lands in that person's feed with the note and a de
   only admin/owner update another person's draft. For staff→staff signing, add a `sign_response()`
   RPC that writes *only* the signature key; **do not widen the RLS update policy**, because RLS
   cannot see the old row and the signer could alter the answers they are attesting to.
+- **A signature from a person named on the record (`SignatureField.signedBy`, 2026-10-07).** FRM-952's
+  "Employee acknowledgment" belongs to the person trained, not to the assessor filling the record in -
+  and before this it could only be ticked by whoever had the entry open. A field with
+  `signedBy: { nameField?, dateField? }` is **never ticked on the filler's screen**. Under the form,
+  `RequestedSignatures` (`components/team/forms/`) lets the filler (or an admin) choose **any team member
+  with portal access** - suggested from `nameField` - and send the request; the person asked opens the
+  entry from their notifications and signs from their own log-in. Three `SECURITY DEFINER` functions
+  (migration `20261007000006`): `request_signature_on`, `sign_response_field`,
+  `withdraw_signature_request_on`. **`sign_response_field` is the `sign_response()` this section
+  called for**: it writes that one answer (plus `dateField`, the day they signed) and nothing else,
+  and only for the person an OPEN request is addressed to. RLS is not widened. Requests are
+  `signature_requested` rows keyed `signature:<entry>:<field>`, so they never collide with the verifier
+  request; submitting the entry closes them. **Whoever asked is told when it is signed**: the request
+  row records `requested_by`, and `sign_response_field` writes a `signature_signed` notification
+  addressed to them (in `FEED_TYPES`, shown under "Signed", and - being news - clearable, unlike the
+  request). After the person signs, the filler's open page is stale and
+  its next save raises `StaleResponseError` - which is what stops it overwriting the signature. Set by
+  migration; the builder has no control for it. Wrappers in `notifications.ts`
+  (`requestFieldSignature`, `signRequestedField`, `withdrawFieldSignatureRequests`,
+  `openFieldSignatureRequests`, `fetchTeamSigners`).
 - ⚠️ Every `SECURITY DEFINER` function in `public` is executable by `anon` — a Supabase
   default-privileges effect, not specific to these two, and `revoke ... from public` does **not**
   undo it. Not a live hole (each gates on `is_staff_or_admin(auth.uid())`), and some genuinely need

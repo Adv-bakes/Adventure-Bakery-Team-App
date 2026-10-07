@@ -90,7 +90,10 @@ function DrawnSignature({ field, value, onChange, disabled, signer, defaultName 
 
 function StampSignature({ field, value, onChange, disabled, isAdmin, signer }: SignatureFieldInputProps) {
   const isVerifier = field.role === "verifier";
-  const canSign = !disabled && !!signer && (!isVerifier || isAdmin);
+  // A line that belongs to a person named on the record is signed from THEIR log-in, on request
+  // (RequestedSignatures on the entry page) - never ticked here by whoever is filling the form in.
+  const onRequest = !!field.signedBy;
+  const canSign = !disabled && !!signer && !onRequest && (!isVerifier || isAdmin);
   const signed = !!value?.name;
 
   const toggle = (checked: boolean) => {
@@ -128,6 +131,8 @@ function StampSignature({ field, value, onChange, disabled, isAdmin, signer }: S
         <label htmlFor={`sig-${field.id}`} className={`text-sm ${canSign ? "cursor-pointer" : "opacity-60"}`}>
           {signed
             ? <span className="font-medium" style={{ fontFamily: "cursive" }}>{signedLine}</span>
+            : onRequest
+              ? "Not signed yet - signed by the person themselves, on request (see below the form)"
             : isVerifier && !isAdmin
               ? "Awaiting verification"
               : `Sign as ${signer?.name ?? "…"}`}

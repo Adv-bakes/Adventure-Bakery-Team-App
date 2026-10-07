@@ -20,7 +20,9 @@ import { supabase } from "@/integrations/supabase/client";
  * shows up only when somebody decides it should. If you add a writer and it does not appear on the
  * page, this is the line to change.
  */
-export const FEED_TYPES = ["verification_due", "temperature_alert", "signature_requested"] as const;
+// "signature_signed" is news for the person who asked (sign_response_field writes it): nothing waits
+// on it, so unlike the request it CAN be cleared.
+export const FEED_TYPES = ["verification_due", "temperature_alert", "signature_requested", "signature_signed"] as const;
 
 export type NotificationLink = { label: string; href: string };
 
@@ -215,4 +217,69 @@ export async function openSignatureRequest(responseId: string): Promise<AppNotif
     .maybeSingle();
   if (error) throw error;
   return data ? normalize(data) : null;
+}
+
+// ---------------------------------------------------------------- a signature from a named person
+// A line with `signedBy` (FRM-952's employee acknowledgment) is asked for from one team member and
+// signed from their own log-in. One request per entry AND field, so it never collides with the
+// verifier request above (`signature:<entry>`): the key is `signature:<entry>:<field>`.
+
+/** Team members who can be asked: staff, admin or owner, with portal access (they must log in to sign). */
+export async function fetchTeamSigners(): Promise<Signatory[]> {
+  const { data: roles, error } = await supabase
+    .from("user_roles").select("user_id, role").in("role", ["staff", "admin", "owner"]);
+  if (error) throw error;
+  const ids = [...new Set((roles ?? []).map((r: any) => r.user_id as string))];
+  if (!ids.length) return [];
+  const { data: people, error: pErr } = await supabase
+    .from("profiles").select("id, full_name").in("id", ids).eq("access_granted", true);
+  if (pErr) throw pErr;
+  return (people ?? [])
+    .map((p: any) => ({ id: p.id as string, name: String(p.full_name ?? "").trim() }))
+    .filter(p => p.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function requestFieldSignature(
+  responseId: string, fieldId: string, assignedTo: string, note?: string,
+): Promise<void> {
+  const { error } = await (supabase as any).rpc("request_signature_on", {
+    _response_id: responseId, _field_id: fieldId, _assigned_to: assignedTo, _note: note ?? null,
+  });
+  if (error) throw error;
+}
+
+/** Close the open request for one line, or (no field) for every such line of the entry. */
+export async function withdrawFieldSignatureRequests(
+  responseId: string, fieldId: string | null, reason: string,
+): Promise<void> {
+  const { error } = await (supabase as any).rpc("withdraw_signature_request_on", {
+    _response_id: responseId, _field_id: fieldId, _reason: reason,
+  });
+  if (error) throw error;
+}
+
+/** Sign the line you were asked for. The server writes that one answer; nothing else can change. */
+export async function signRequestedField(responseId: string, fieldId: string): Promise<void> {
+  const { error } = await (supabase as any).rpc("sign_response_field", {
+    _response_id: responseId, _field_id: fieldId,
+  });
+  if (error) throw error;
+}
+
+/** Open requests for this entry's named-person lines, keyed by field id. */
+export async function openFieldSignatureRequests(responseId: string): Promise<Record<string, AppNotification>> {
+  const prefix = `signature:${responseId}:`;
+  const { data, error } = await table()
+    .select(COLUMNS)
+    .eq("notification_type", "signature_requested")
+    .like("dedupe_key", `${prefix}%`)
+    .is("resolved_at", null);
+  if (error) throw error;
+  const out: Record<string, AppNotification> = {};
+  for (const row of data ?? []) {
+    const n = normalize(row);
+    if (n.dedupe_key) out[n.dedupe_key.slice(prefix.length)] = n;
+  }
+  return out;
 }
