@@ -205,6 +205,26 @@ export function parseHandsFree(alternatives: string[], preferred: VoiceLang = "e
   return unclear;
 }
 
+/**
+ * How long to wait for the rest of a sentence after the trigger was heard on its own.
+ *
+ * Android Chrome ends a sentence at the first short pause, so "Form 606, air check passed" often
+ * arrives as two: "form 606", then "air check passed". Answering the first at once ("I did not hear
+ * what was checked") talks over the operator, and the second, having no trigger, is then ignored.
+ */
+export const HANDS_FREE_WAIT_MS = 6000;
+
+/**
+ * The alternatives to parse when an earlier sentence is still waiting for its other half: each new
+ * alternative joined onto what was heard before, then the new ones alone. Some Android builds repeat
+ * the whole sentence so far in each result ("form 606", then "form 606 air check passed"); joined,
+ * that reads "form 606 form 606 air check passed", which parses the same.
+ */
+export function withPending(pending: string | null, alternatives: string[]): string[] {
+  const fresh = alternatives.filter(a => a && a.trim());
+  return pending ? [...fresh.map(a => `${pending} ${a}`), ...fresh] : fresh;
+}
+
 /** True when this revision of the form can take a hands-free row: it has the grid and the "In process" option. */
 export function handsFreeReady(schema: FormSchema | null | undefined): boolean {
   if (!schema) return false;

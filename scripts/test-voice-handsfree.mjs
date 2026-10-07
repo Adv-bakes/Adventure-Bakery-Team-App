@@ -87,6 +87,22 @@ check(H.parseHandsFree(["Formulario 606, prueba de jalón aprobada"], "en")?.row
 // The recogniser's second guess is used when its first has no trigger.
 rowIs(H.parseHandsFree(["for 606 air check passed", "form 606 air check passed"], "en"), { check: "In process", visual: "pass" }, "a later alternative is used");
 
+// ── 5a. A sentence the tablet cut in two ──────────────────────────────────────
+const cut = (first, ...rest) => {
+  let heard = H.parseHandsFree(H.withPending(null, [first]), "en");
+  for (const part of rest) heard = H.parseHandsFree(H.withPending(heard?.kind === "unclear" ? heard.transcript : null, [part]), "en");
+  return heard;
+};
+check(en("Form 606")?.kind === "unclear", "the trigger alone is not an answer yet");
+rowIs(cut("Form 606", "air check passed"), { check: "In process", visual: "pass" }, "trigger, pause, then the check");
+rowIs(cut("Form 606", "air check", "passed"), { check: "In process", visual: "pass" }, "cut in three");
+rowIs(cut("Form 606", "form 606 air check passed"), { check: "In process", visual: "pass" }, "the tablet repeats the sentence so far");
+rowIs(cut("Form 606 set up", "air check passed vacuum 27"), { check: "Set-up", visual: "pass", vacuum_reading: "27" }, "the check type before the pause is kept");
+rowIs(cut("Form 606", "pull test failed"), { check: "At boxing", pull_test: "fail" }, "a failed pull test after a pause");
+check(cut("Form 606", "undo")?.kind === "undo", "undo after a pause");
+check(H.parseHandsFree(H.withPending(null, ["air check passed"]), "en") === null, "with nothing waiting, a check with no trigger is still ignored");
+check(H.HANDS_FREE_WAIT_MS >= 4000, "it waits long enough for the rest of a sentence");
+
 // ── 5b. Every line printed on the wall card parses, and the two languages agree ──
 for (const lang of ["en", "es"]) {
   for (const line of H.HANDS_FREE_CARD[lang].lines) {

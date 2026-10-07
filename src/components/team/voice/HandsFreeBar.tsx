@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
-  handsFreeFailed, handsFreeMissingHeader, parseHandsFree, reminderDue,
+  HANDS_FREE_WAIT_MS, handsFreeFailed, handsFreeMissingHeader, parseHandsFree, reminderDue, withPending,
   type HandsFreeRow,
 } from "@/lib/voiceHandsFree";
 import { VOICE_LANGS, type VoiceLang } from "@/lib/voiceLexicon";
@@ -114,18 +114,41 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
     }
   }, [onUndo, say]);
 
+  // "Form 606" heard on its own waits here for its other half (see HANDS_FREE_WAIT_MS).
+  const pending = useRef<{ text: string; timer: number } | null>(null);
+  const clearPending = useCallback(() => {
+    if (pending.current) window.clearTimeout(pending.current.timer);
+    pending.current = null;
+  }, []);
+  useEffect(() => clearPending, [clearPending]);
+  // Some Android builds deliver one sentence twice; the same row from the same words within a few seconds is one check.
+  const lastRecorded = useRef<{ key: string; at: number } | null>(null);
+
   const onHeard = useCallback((alternatives: string[]) => {
-    const heard = parseHandsFree(alternatives, langRef.current);
-    if (!heard) return;                                   // no trigger: not for the form
-    if (heard.kind === "undo") { void undo(); return; }
+    const heard = parseHandsFree(withPending(pending.current?.text ?? null, alternatives), langRef.current);
+    if (!heard) return;                                   // no trigger, and nothing waiting: not for the form
+    if (heard.kind === "undo") { clearPending(); void undo(); return; }
     if (heard.kind === "unclear" || !heard.row) {
-      const H = VOICE_MSG[langRef.current].handsFree;
-      setNote({ tone: "warn", text: H.unclear });
-      void say(H.unclear);
+      // Not an answer yet: the rest of the sentence is probably on its way. Say nothing until it
+      // has had time to arrive, so the tablet never talks over the person speaking.
+      clearPending();
+      const timer = window.setTimeout(() => {
+        pending.current = null;
+        const H = VOICE_MSG[langRef.current].handsFree;
+        setNote({ tone: "warn", text: H.unclear });
+        void say(H.unclear);
+      }, HANDS_FREE_WAIT_MS);
+      pending.current = { text: heard.transcript, timer };
+      setNote({ tone: "warn", text: VOICE_MSG[langRef.current].handsFree.goOn });
       return;
     }
+    clearPending();
+    const key = JSON.stringify(heard.row);
+    const now = Date.now();
+    if (lastRecorded.current && lastRecorded.current.key === key && now - lastRecorded.current.at < 4000) return;
+    lastRecorded.current = { key, at: now };
     void record(heard.row);
-  }, [record, undo, say]);
+  }, [record, undo, say, clearPending]);
 
   const speech = useHandsFreeSpeech(onHeard, { lang });
   speechRef.current = speech;
@@ -139,6 +162,7 @@ export function HandsFreeBar({ form, defaultLang = "en", onListenStart, onRow, o
       speech.start();
       onListenStart();
     } else {
+      clearPending();
       speech.stop();
     }
   };
