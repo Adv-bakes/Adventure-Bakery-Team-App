@@ -2,7 +2,7 @@
    webkitAudioContext have no TypeScript lib types here; useSpeechCommand types them the same way. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RECOGNIZER_LANG, type VoiceLang } from "@/lib/voiceLexicon";
-import { VOICE_GATE, createVoiceGate } from "@/lib/voiceHandsFree";
+import { VOICE_GATE, createVoiceGate, isListenKey, type ListenMode } from "@/lib/voiceHandsFree";
 
 // Listening that stays on while a record is open, for "Form 606, air check passed".
 //
@@ -41,19 +41,47 @@ const Recognition: any =
 
 export const handsFreeSupported = !!Recognition;
 
-export type HandsFreeState = "off" | "listening" | "paused" | "error";
+/** "ready" is button mode between presses: switched on, microphone closed, waiting for the button. */
+export type HandsFreeState = "off" | "listening" | "ready" | "paused" | "error";
 
 /** Errors after which trying again cannot help: the person has to do something first. */
 const FATAL = new Set(["not-allowed", "service-not-allowed", "audio-capture", "language-not-supported"]);
 
-/** How the level monitor and recognition share the microphone; "restart" is the fallback with no monitor. */
-type Sharing = "hold" | "release" | "restart";
+/**
+ * What happens between sentences. "restart": recognition is started again through silence (the way
+ * that works everywhere, with Android's tone each time). "button": nothing, until a button is
+ * pressed. "hold" / "release": the quiet-mode trial, the level monitor sharing the microphone two ways.
+ */
+type Sharing = "hold" | "release" | "restart" | "button";
 /**
  * Voice-started recognitions in a row that heard no words before the next way of sharing is tried.
  * One is enough to leave "hold": if recognition gets nothing while the monitor has the microphone,
  * it will get nothing the next time too, and each try costs the operator a check that was not heard.
  */
-const EMPTY_RUNS_BEFORE_NEXT: Record<Sharing, number> = { hold: 1, release: 2, restart: Infinity };
+const EMPTY_RUNS_BEFORE_NEXT: Record<Sharing, number> = { hold: 1, release: 2, restart: Infinity, button: Infinity };
+
+// BUTTON MODE (2026-10-07). The operator wears a Bluetooth headset; a press of its button, or of a
+// Bluetooth pedal or clicker, starts ONE spell of listening. No tone through silence, no false
+// starts from the sealer, and no trigger phrase - the press is the intent.
+//  - A headset button reaches a web page only as a media key (play / pause / next / previous), and
+//    only while the page is the device's "now playing" app. So a silent sound is looped to hold
+//    that place (Chrome ignores anything under five seconds), and every media action is taken to
+//    mean "listen". Which button a given headset sends, and whether Android passes it on while the
+//    headset is in use, cannot be known from here: it is tried on the headset.
+//  - A pedal or clicker pairs as a keyboard and sends an ordinary key, which always arrives.
+function silentLoopUrl(): string {
+  const seconds = 10, rate = 8000, n = seconds * rate;
+  const bytes = new Uint8Array(44 + n);
+  const view = new DataView(bytes.buffer);
+  const ascii = (at: number, text: string) => { for (let i = 0; i < text.length; i++) bytes[at + i] = text.charCodeAt(i); };
+  ascii(0, "RIFF"); view.setUint32(4, 36 + n, true); ascii(8, "WAVE"); ascii(12, "fmt ");
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true); view.setUint32(28, rate, true); view.setUint16(32, 1, true); view.setUint16(34, 8, true);
+  ascii(36, "data"); view.setUint32(40, n, true);
+  bytes.fill(128, 44);                                   // 8-bit silence
+  return URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+}
+const MEDIA_ACTIONS = ["play", "pause", "stop", "nexttrack", "previoustrack"] as const;
 
 /** What the quiet wait is doing, shown on the bar so a trial on the tablet can be reported exactly. */
 export interface HandsFreeTrace { sharing: Sharing; starts: number; heard: number }
@@ -61,15 +89,18 @@ export interface HandsFreeTrace { sharing: Sharing; starts: number; heard: numbe
 let audioContext: any = null;
 
 export function useHandsFreeSpeech(
-  onHeard: (alternatives: string[]) => void,
-  options: { lang?: VoiceLang; quiet?: boolean } = {},
+  onHeard: (alternatives: string[], byButton: boolean) => void,
+  options: { lang?: VoiceLang; mode?: ListenMode } = {},
 ) {
   const [state, setState] = useState<HandsFreeState>("off");
   const [trace, setTrace] = useState<HandsFreeTrace | null>(null);
   // QUIET IS A TRIAL, OFF UNLESS ASKED FOR. The first version made it the only way and it broke
   // listening on the tablet the same day; restarting through silence is the way that is known to work.
-  const quietRef = useRef(!!options.quiet);
-  quietRef.current = !!options.quiet;
+  const modeRef = useRef<ListenMode>(options.mode ?? "always");
+  modeRef.current = options.mode ?? "always";
+  const silentAudio = useRef<HTMLAudioElement | null>(null);
+  const silentUrl = useRef<string | null>(null);
+  const [presses, setPresses] = useState(0);
   /** A voice-started recognition has heard words under the current way of sharing, so an empty one after it is noise. */
   const proven = useRef(false);
   const [interim, setInterim] = useState("");
@@ -94,7 +125,7 @@ export function useHandsFreeSpeech(
   const analyser = useRef<any>(null);
   const source = useRef<any>(null);
   const levelTimer = useRef<number | null>(null);
-  const beginRef = useRef<(byVoice?: boolean) => void>(() => undefined);
+  const beginRef = useRef<(byVoice?: boolean, byButton?: boolean) => void>(() => undefined);
   const waitRef = useRef<() => void>(() => undefined);
 
   const holdAwake = useCallback(async () => {
@@ -174,7 +205,15 @@ export function useHandsFreeSpeech(
   }, [openMicrophone, releaseMicrophone, stopWatching]);
   waitRef.current = () => { void waitQuietly(); };
 
-  const begin = useCallback((byVoice = false) => {
+  /** Keep the silent loop playing: recognition and the spoken confirmation each take the sound away for a moment. */
+  const keepNowPlaying = useCallback(() => {
+    const audio = silentAudio.current;
+    if (!audio || sharing.current !== "button" || !wanted.current) return;
+    void audio.play().catch(() => undefined);
+    try { (navigator as any).mediaSession.playbackState = "playing"; } catch { /* not supported */ }
+  }, []);
+
+  const begin = useCallback((byVoice = false, byButton = false) => {
     if (!Recognition || !wanted.current || speaking.current || recRef.current) return;
     if (typeof document !== "undefined" && document.hidden) { setState("paused"); return; }
     const rec = new Recognition();
@@ -194,7 +233,7 @@ export function useHandsFreeSpeech(
           failures.current = 0;
           if ((alternatives[0] ?? "").trim()) heardWords = true;
           setInterim(alternatives[0] ?? "");
-          onHeardRef.current(alternatives);
+          onHeardRef.current(alternatives, byButton);
         } else {
           text += result[0].transcript;
         }
@@ -242,6 +281,7 @@ export function useHandsFreeSpeech(
         }
       }
       if (speaking.current || (typeof document !== "undefined" && document.hidden)) { setState("paused"); return; }
+      if (sharing.current === "button") { setState("ready"); keepNowPlaying(); return; }
       if (sharing.current !== "restart") { waitRef.current(); return; }
       // The fallback: straight back on after a pause in speech; slower when it keeps failing, so a
       // dead network does not spin the recogniser.
@@ -256,9 +296,9 @@ export function useHandsFreeSpeech(
     } catch {
       recRef.current = null;
       failures.current += 1;
-      retry.current = window.setTimeout(() => { retry.current = null; beginRef.current(byVoice); }, 1500);
+      retry.current = window.setTimeout(() => { retry.current = null; beginRef.current(byVoice, byButton); }, 1500);
     }
-  }, [letSleep, releaseMicrophone, stopWatching]);
+  }, [letSleep, releaseMicrophone, stopWatching, keepNowPlaying]);
   beginRef.current = begin;
 
   const halt = useCallback(() => {
@@ -269,6 +309,51 @@ export function useHandsFreeSpeech(
     try { rec?.abort(); } catch { /* not running */ }
   }, [stopWatching]);
 
+  /** One spell of listening, from a press of the headset button, a pedal, a key, or the button on the bar. */
+  const listenOnce = useCallback(() => {
+    if (!wanted.current || sharing.current !== "button") return;
+    setPresses(n => n + 1);
+    if (recRef.current || speaking.current) return;       // already listening, or the tablet is talking
+    begin(false, true);
+  }, [begin]);
+  const listenOnceRef = useRef(listenOnce);
+  listenOnceRef.current = listenOnce;
+
+  const armButton = useCallback(() => {
+    try {
+      if (!silentUrl.current) silentUrl.current = silentLoopUrl();
+      const audio = silentAudio.current ?? new Audio(silentUrl.current);
+      audio.loop = true;
+      audio.volume = 1;                                    // the file is silence; a muted element is not "now playing"
+      silentAudio.current = audio;
+      void audio.play().catch(() => undefined);
+      const session = (navigator as any).mediaSession;
+      if (session) {
+        try { session.metadata = new (window as any).MediaMetadata({ title: "FRM-606 hands-free", artist: "Press to record a check" }); } catch { /* optional */ }
+        for (const action of MEDIA_ACTIONS) {
+          try { session.setActionHandler(action, () => { keepNowPlaying(); listenOnceRef.current(); }); } catch { /* this action is not offered here */ }
+        }
+        try { session.playbackState = "playing"; } catch { /* not supported */ }
+      }
+    } catch { /* no audio on this device: a pedal, a key or the button on the bar still work */ }
+  }, [keepNowPlaying]);
+  const disarmButton = useCallback(() => {
+    try { silentAudio.current?.pause(); } catch { /* not playing */ }
+    const session = (navigator as any).mediaSession;
+    if (session) for (const action of MEDIA_ACTIONS) { try { session.setActionHandler(action, null); } catch { /* not set */ } }
+  }, []);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!wanted.current || sharing.current !== "button") return;
+      const el = event.target as HTMLElement | null;
+      if (!isListenKey(event.key, el ? { tag: el.tagName, editable: el.isContentEditable } : null, event.repeat)) return;
+      event.preventDefault();                              // a pedal's Page Down must not scroll the form away
+      listenOnceRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   /** Call from the tap that switches listening on - nothing may be awaited before it. */
   const start = useCallback(() => {
     if (!Recognition) { setErrorCode("unsupported"); setState("error"); return; }
@@ -277,8 +362,10 @@ export function useHandsFreeSpeech(
     failures.current = 0;
     emptyRuns.current = 0;
     proven.current = false;
-    sharing.current = quietRef.current ? "hold" : "restart";
-    setTrace(quietRef.current ? { sharing: "hold", starts: 0, heard: 0 } : null);
+    sharing.current = modeRef.current === "voice" ? "hold" : modeRef.current === "button" ? "button" : "restart";
+    setTrace(modeRef.current === "voice" ? { sharing: "hold", starts: 0, heard: 0 } : null);
+    setPresses(0);
+    if (sharing.current === "button") armButton();      // inside the tap: the silent loop may not start otherwise
     gate.current = createVoiceGate();
     setErrorCode(null);
     setInterim("");
@@ -286,17 +373,18 @@ export function useHandsFreeSpeech(
     // (the first silence) the quiet wait takes over.
     begin();
     void holdAwake();
-  }, [begin, holdAwake]);
+  }, [begin, holdAwake, armButton]);
 
   const stop = useCallback(() => {
     wanted.current = false;
     halt();
     releaseMicrophone();
+    disarmButton();
     letSleep();
     setInterim("");
     setTrace(null);
     setState("off");
-  }, [halt, releaseMicrophone, letSleep]);
+  }, [halt, releaseMicrophone, disarmButton, letSleep]);
 
   /** Around a spoken confirmation, so the tablet does not hear itself. */
   const pauseForSpeech = useCallback(() => {
@@ -307,9 +395,10 @@ export function useHandsFreeSpeech(
   const resumeAfterSpeech = useCallback(() => {
     speaking.current = false;
     if (!wanted.current) return;
-    if (sharing.current === "restart") begin();
+    if (sharing.current === "button") { setState("ready"); keepNowPlaying(); }
+    else if (sharing.current === "restart") begin();
     else waitRef.current();
-  }, [begin]);
+  }, [begin, keepNowPlaying]);
 
   useEffect(() => {
     const onVisibility = () => {
@@ -317,13 +406,14 @@ export function useHandsFreeSpeech(
       if (document.hidden) { halt(); releaseMicrophone(); setState("paused"); }
       else {
         void holdAwake();
-        if (sharing.current === "restart") begin();
+        if (sharing.current === "button") { setState("ready"); keepNowPlaying(); }
+        else if (sharing.current === "restart") begin();
         else waitRef.current();
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [begin, halt, holdAwake, releaseMicrophone]);
+  }, [begin, halt, holdAwake, releaseMicrophone, keepNowPlaying]);
 
   useEffect(() => () => {
     wanted.current = false;
@@ -332,9 +422,13 @@ export function useHandsFreeSpeech(
     try { recRef.current?.abort(); } catch { /* not running */ }
     try { stream.current?.getTracks().forEach(t => t.stop()); } catch { /* already stopped */ }
     try { wakeLock.current?.release?.(); } catch { /* already released */ }
+    try { silentAudio.current?.pause(); } catch { /* not playing */ }
+    const session = (navigator as any).mediaSession;
+    if (session) for (const action of MEDIA_ACTIONS) { try { session.setActionHandler(action, null); } catch { /* not set */ } }
+    if (silentUrl.current) { try { URL.revokeObjectURL(silentUrl.current); } catch { /* gone */ } }
   }, []);
 
-  return { supported: handsFreeSupported, state, interim, errorCode, trace, start, stop, pauseForSpeech, resumeAfterSpeech };
+  return { supported: handsFreeSupported, state, interim, errorCode, trace, presses, start, stop, listenOnce, pauseForSpeech, resumeAfterSpeech };
 }
 
 // ─── Sound ───────────────────────────────────────────────────────────────────

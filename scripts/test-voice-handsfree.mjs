@@ -163,6 +163,25 @@ check(!H.reminderDue(T0 + 40 * MIN, T0, T0 + 20 * MIN, null) && H.reminderDue(T0
 check(!H.reminderDue(T0 + 59 * MIN, T0, null, T0 + 30 * MIN) && H.reminderDue(T0 + 60 * MIN, T0, null, T0 + 30 * MIN), "one reminder per interval");
 check(H.nextReminderAt(T0, T0 + 5 * MIN, T0 + 2 * MIN) === T0 + 35 * MIN, "counts from the latest of the three");
 
+// ── 7b. A button press stands for the trigger ─────────────────────────────────
+{
+  const pressed = (line, lang = "en") => H.parseHandsFree(H.withPending(H.HANDS_FREE_IMPLIED, [line]), lang);
+  rowIs(pressed("air check passed"), { check: "In process", visual: "pass" }, "button: 'air check passed' needs no trigger");
+  rowIs(pressed("aircheck failed"), { check: "In process", visual: "fail" }, "button: 'aircheck failed'");
+  rowIs(pressed("pull test passed"), { check: "At boxing", pull_test: "pass" }, "button: pull test");
+  rowIs(pressed("set up air check passed vacuum 27"), { check: "Set-up", visual: "pass", vacuum_reading: "27" }, "button: set-up with the gauge");
+  rowIs(pressed("form 606 air check passed"), { check: "In process", visual: "pass" }, "button: saying the trigger anyway is fine");
+  rowIs(pressed("revisión de aire aprobada", "es"), { check: "In process", visual: "pass" }, "button: Spanish");
+  check(pressed("undo")?.kind === "undo", "button: undo");
+  check(pressed("passed")?.kind === "unclear" && pressed("what time is lunch")?.kind === "unclear", "button: words that are not a check are not guessed at");
+  const key = (k, tag, extra = {}) => H.isListenKey(k, { tag, ...extra }, false);
+  check(key("PageDown", "BODY") && key("MediaPlayPause", "DIV") && key("ArrowRight", "BODY") && key("Enter", "BODY"), "a pedal or media key starts listening");
+  check(!key("Enter", "INPUT") && !key(" ", "TEXTAREA") && !key("ArrowDown", "SELECT") && !key("PageDown", "DIV", { editable: true }), "never while typing in the form");
+  check(!key("Enter", "BUTTON") && !key(" ", "A") && key("PageDown", "BUTTON"), "Enter on a focused button still presses that button");
+  check(!key("a", "BODY") && !key("AudioVolumeUp", "BODY") && !H.isListenKey("PageDown", { tag: "BODY" }, true), "other keys, volume keys and auto-repeat do nothing");
+  check(H.LISTEN_MODES.join() === "always,button,voice", "the three ways of listening");
+}
+
 // ── 8. Waiting quietly for a voice ────────────────────────────────────────────
 {
   const feed = (gate, levels) => levels.map(l => gate.push(l));

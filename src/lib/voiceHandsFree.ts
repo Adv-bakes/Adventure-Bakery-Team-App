@@ -250,6 +250,40 @@ export function withPending(pending: string | null, alternatives: string[]): str
   return pending ? [...fresh.map(a => `${pending} ${a}`), ...fresh] : fresh;
 }
 
+/**
+ * What a button press stands for. Pressing the button already says "this is for the form", so the
+ * sentence that follows needs no trigger: it is parsed as if it had been said after this one
+ * (withPending). "form" and "606" are in both languages' word lists.
+ */
+export const HANDS_FREE_IMPLIED = "form 606";
+
+/** The ways listening can work, chosen on the bar and remembered on the tablet. */
+export type ListenMode = "always" | "button" | "voice";
+export const LISTEN_MODES: ListenMode[] = ["always", "button", "voice"];
+
+/**
+ * Keys that start listening in button mode: what Bluetooth page-turner pedals and presenter
+ * clickers send (they pair as a keyboard), and the media keys some headsets send as keys.
+ * Volume keys are not here because a web page is never given them.
+ */
+export const LISTEN_KEYS = new Set([
+  "PageDown", "PageUp", "ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", " ",
+  "MediaPlayPause", "MediaPlay", "MediaPause", "MediaTrackNext", "MediaTrackPrevious", "HeadsetHook",
+]);
+
+/**
+ * Whether a key press should start listening. Never while the person is typing in the form or
+ * tabbing through its buttons - the same keys mean something there - and never on auto-repeat.
+ */
+export function isListenKey(key: string, target: { tag?: string; editable?: boolean } | null, repeat = false): boolean {
+  if (repeat || !LISTEN_KEYS.has(key)) return false;
+  const tag = (target?.tag ?? "").toUpperCase();
+  if (target?.editable || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return false;
+  // Enter and space press a focused button or link; the media keys and the pedal's page keys do not.
+  if ((key === "Enter" || key === " ") && (tag === "BUTTON" || tag === "A")) return false;
+  return true;
+}
+
 /** True when this revision of the form can take a hands-free row: it has the grid and the "In process" option. */
 export function handsFreeReady(schema: FormSchema | null | undefined): boolean {
   if (!schema) return false;
