@@ -58,6 +58,19 @@ check("index: English module wins over its Spanish variant", idx["TRN-003"].id, 
 check("index: issued wins over a draft with the same number", idx["FRM-012"].id, "g");
 check("index: no number, no entry; no title falls back to the number", [Object.keys(idx).length, idx["FRM-001"].title], [5, "FRM-001"]);
 
+check("pick: issued TRN and SOP only, in number order, one per number",
+  T.docPickOptions(T.buildDocIndex([
+    { id: "1", sop_number: "TRN-010", title: "Food Defense", status: "active" },
+    { id: "2", sop_number: "TRN-003", title: "Allergens Part 1 (ES)", status: "active" },
+    { id: "3", sop_number: "TRN-003", title: "Allergens Part 1", status: "active" },
+    { id: "4", sop_number: "SOP-2.9", title: "Training & Recordkeeping", status: "active" },
+    { id: "5", sop_number: "SOP-204", title: "Unissued", status: "draft" },
+    { id: "6", sop_number: "FRM-953", title: "Training Sign-In Sheet", status: "active" },
+    { id: "7", sop_number: "SOP-11.7.3", title: null, status: "active" },
+  ]), ["trn", "SOP"]),
+  ["SOP-2.9 Training & Recordkeeping", "SOP-11.7.3", "TRN-003 Allergens Part 1", "TRN-010 Food Defense"]);
+check("pick: no prefixes, nothing offered", T.docPickOptions(idx, []), []);
+
 rmSync(out, { recursive: true, force: true });
 console.log(failures ? `${failures} of ${cases} failed` : `all ${cases} passed`);
 process.exit(failures ? 1 : 0);

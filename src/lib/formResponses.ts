@@ -826,3 +826,30 @@ export async function fetchFormulaEntries(formNumber: string): Promise<{ entries
   const entries = ((data ?? []) as FormulaEntry[]).filter(r => !(r.data && "_test_batch" in r.data));
   return { entries, missing };
 }
+
+/** One person in the team directory, for a `teamPick` grid column. */
+export interface TeamDirectoryName { name: string; title: string }
+
+/**
+ * The names a `teamPick` column offers: everyone holding a staff, admin or owner role who has a
+ * name on their profile - the people on the Team Directory page, without the auditor and kiosk
+ * accounts, which are not people who attend training. Portal access is not required: someone
+ * with no log-in still attends a session.
+ */
+export async function loadTeamDirectoryNames(): Promise<TeamDirectoryName[]> {
+  const { data: roles, error } = await supabase
+    .from("user_roles").select("user_id, role").in("role", ["staff", "admin", "owner"]);
+  if (error) throw error;
+  const ids = [...new Set((roles ?? []).map((r: any) => r.user_id as string))];
+  if (!ids.length) return [];
+  const { data: people, error: pErr } = await supabase
+    .from("profiles").select("id, full_name, job_title, department").in("id", ids);
+  if (pErr) throw pErr;
+  return (people ?? [])
+    .map((p: any) => ({
+      name: String(p.full_name ?? "").trim(),
+      title: String(p.job_title ?? "").trim() || String(p.department ?? "").trim(),
+    }))
+    .filter(p => p.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
