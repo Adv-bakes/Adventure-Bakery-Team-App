@@ -48,16 +48,30 @@ const FATAL = new Set(["not-allowed", "service-not-allowed", "audio-capture", "l
 
 /** How the level monitor and recognition share the microphone; "restart" is the fallback with no monitor. */
 type Sharing = "hold" | "release" | "restart";
-/** Voice-started recognitions in a row that heard no words before the next way of sharing is tried. */
-const EMPTY_RUNS_BEFORE_NEXT = 3;
+/**
+ * Voice-started recognitions in a row that heard no words before the next way of sharing is tried.
+ * One is enough to leave "hold": if recognition gets nothing while the monitor has the microphone,
+ * it will get nothing the next time too, and each try costs the operator a check that was not heard.
+ */
+const EMPTY_RUNS_BEFORE_NEXT: Record<Sharing, number> = { hold: 1, release: 2, restart: Infinity };
+
+/** What the quiet wait is doing, shown on the bar so a trial on the tablet can be reported exactly. */
+export interface HandsFreeTrace { sharing: Sharing; starts: number; heard: number }
 
 let audioContext: any = null;
 
 export function useHandsFreeSpeech(
   onHeard: (alternatives: string[]) => void,
-  options: { lang?: VoiceLang } = {},
+  options: { lang?: VoiceLang; quiet?: boolean } = {},
 ) {
   const [state, setState] = useState<HandsFreeState>("off");
+  const [trace, setTrace] = useState<HandsFreeTrace | null>(null);
+  // QUIET IS A TRIAL, OFF UNLESS ASKED FOR. The first version made it the only way and it broke
+  // listening on the tablet the same day; restarting through silence is the way that is known to work.
+  const quietRef = useRef(!!options.quiet);
+  quietRef.current = !!options.quiet;
+  /** A voice-started recognition has heard words under the current way of sharing, so an empty one after it is noise. */
+  const proven = useRef(false);
   const [interim, setInterim] = useState("");
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
@@ -153,6 +167,7 @@ export function useHandsFreeSpeech(
       for (let i = 0; i < samples.length; i++) sum += samples[i] * samples[i];
       if (!gate.current.push(Math.sqrt(sum / samples.length))) return;
       stopWatching();
+      setTrace(t => (t ? { ...t, starts: t.starts + 1 } : t));
       if (sharing.current === "release") releaseMicrophone();
       beginRef.current(true);
     }, VOICE_GATE.frameMs);
@@ -205,15 +220,24 @@ export function useHandsFreeSpeech(
       if (recRef.current === rec) recRef.current = null;
       if (!wanted.current) return;
       if (byVoice) {
-        if (heardWords) emptyRuns.current = 0;
-        else {
-          // A voice started it and no words came back: noise, or the microphone was not shared.
+        if (heardWords) {
+          emptyRuns.current = 0;
+          proven.current = true;
+          setTrace(t => (t ? { ...t, heard: t.heard + 1 } : t));
+        } else if (proven.current) {
+          // This way of sharing works, so a start that heard no words was a noise: do not start on it again.
           gate.current.missed();
+        } else {
+          // Nothing has been heard this way yet. That is the microphone not being shared, NOT noise -
+          // raising the threshold here made the first version deaf to the operator's own voice.
           emptyRuns.current += 1;
-          if (emptyRuns.current >= EMPTY_RUNS_BEFORE_NEXT) {
+          if (emptyRuns.current >= EMPTY_RUNS_BEFORE_NEXT[sharing.current]) {
             emptyRuns.current = 0;
             sharing.current = sharing.current === "hold" ? "release" : "restart";
+            gate.current = createVoiceGate();
             if (sharing.current === "restart") releaseMicrophone();
+            const now = sharing.current;
+            setTrace(t => (t ? { ...t, sharing: now } : t));
           }
         }
       }
@@ -252,7 +276,9 @@ export function useHandsFreeSpeech(
     wanted.current = true;
     failures.current = 0;
     emptyRuns.current = 0;
-    sharing.current = "hold";
+    proven.current = false;
+    sharing.current = quietRef.current ? "hold" : "restart";
+    setTrace(quietRef.current ? { sharing: "hold", starts: 0, heard: 0 } : null);
     gate.current = createVoiceGate();
     setErrorCode(null);
     setInterim("");
@@ -268,6 +294,7 @@ export function useHandsFreeSpeech(
     releaseMicrophone();
     letSleep();
     setInterim("");
+    setTrace(null);
     setState("off");
   }, [halt, releaseMicrophone, letSleep]);
 
@@ -307,7 +334,7 @@ export function useHandsFreeSpeech(
     try { wakeLock.current?.release?.(); } catch { /* already released */ }
   }, []);
 
-  return { supported: handsFreeSupported, state, interim, errorCode, start, stop, pauseForSpeech, resumeAfterSpeech };
+  return { supported: handsFreeSupported, state, interim, errorCode, trace, start, stop, pauseForSpeech, resumeAfterSpeech };
 }
 
 // ─── Sound ───────────────────────────────────────────────────────────────────

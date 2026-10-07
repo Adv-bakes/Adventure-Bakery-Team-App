@@ -1401,14 +1401,16 @@ With the day's FRM-606 open, a **Hands-free recording** bar sits under the produ
   paused so it does not hear itself.
 - **Six one-tap buttons** (air check, pull test, boxing check; passed / FAILED) do the same without the
   microphone. They are the fallback, not a convenience: see the next point.
-- **`useHandsFreeSpeech` waits quietly between sentences** (2026-10-07, after the first day on the
+- **Quiet mode is a TRIAL, off unless ticked on the bar** (`frm606.quietMode` in `localStorage`). Made the only way at first, it broke listening on the tablet the same day (PR #306): with no words heard the detector treated the operator's voice as noise and raised its threshold to it. The default is restarting recognition through silence, which is known to work and plays Android's tone every few seconds. The bar shows a trace line in quiet mode (way of sharing, starts, starts that heard words) so a trial can be reported exactly.
+- **`useHandsFreeSpeech`, in quiet mode, waits quietly between sentences** (2026-10-07, after the first day on the
   tablet). Android plays its own tone whenever speech recognition starts or stops and a page cannot
   silence it; restarted through silence, that was a tone every five seconds in the operator's headset.
   So between sentences recognition is OFF and the microphone LEVEL is watched (`getUserMedia` + an
   analyser, silent); `createVoiceGate` (pure, tested) decides a voice has started - its floor follows the
   room, so a running sealer raises it - and only then is recognition started. The first word can be
   clipped, which is why a sentence may open with a bare "606". **Sharing the microphone is tried three
-  ways, moving on after three voice-started recognitions that heard no words:** `hold` (monitor keeps
+  ways, moving on when voice-started recognitions hear no words (one for `hold`, two for `release`), and the
+  detector is told "that was noise" only once the current way has heard words at least once:** `hold` (monitor keeps
   the microphone; kindest to a Bluetooth headset), `release` (monitor lets go before each start), then
   `restart` (the original behaviour, tones and all). The first `start()` still runs synchronously in the
   tap on the switch. It needs the network, sends audio to Google's speech service while recognising,
