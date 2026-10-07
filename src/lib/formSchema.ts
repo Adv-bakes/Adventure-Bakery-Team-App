@@ -205,9 +205,10 @@ export interface SignatureField extends FieldBase {
    * for it (request_signature_on), and that person signs from their own log-in
    * (sign_response_field), which writes this one answer and nothing else. `nameField` is the
    * text field holding the person's name, used to suggest who to ask; `dateField` is a date
-   * field stamped with the day they signed.
+   * field stamped with the day they signed. `note` is the message the request starts with, which
+   * the person asking can change: `{fieldId}` is replaced by that answer (see signatureRequestNote).
    */
-  signedBy?: { nameField?: string; dateField?: string };
+  signedBy?: { nameField?: string; dateField?: string; note?: string };
 }
 /**
  * A stamp carries the signer's `user_id`. A drawn signature carries `user_id: null`, the drawing
@@ -564,6 +565,22 @@ export function requestedSignatureFields(schema: FormSchema): SignatureField[] {
   return schema.sections
     .flatMap(s => s.fields)
     .filter((f): f is SignatureField => f.type === "signature" && !!f.signedBy && f.capture !== "drawn");
+}
+
+/**
+ * The message a request for a `signedBy` line starts with: the schema's `note` with each
+ * `{fieldId}` replaced by that answer. An empty answer leaves no empty brackets behind.
+ */
+export function signatureRequestNote(field: SignatureField, data: Record<string, unknown> | null | undefined): string {
+  const template = field.signedBy?.note ?? "";
+  if (!template) return "";
+  return template
+    .replace(/\{([a-z0-9_]+)\}/gi, (_m, id: string) => {
+      const v = (data ?? {})[id];
+      return typeof v === "string" || typeof v === "number" ? String(v).trim() : "";
+    })
+    .replace(/ ?\(\s*\)/g, "")
+    .replace(/[ 	]+$/gm, "");
 }
 
 // ---------- Ids ----------

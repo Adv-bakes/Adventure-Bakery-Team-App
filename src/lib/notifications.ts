@@ -174,7 +174,9 @@ export async function fetchSignatories(): Promise<Signatory[]> {
   const ids = [...new Set((roles ?? []).map((r: any) => r.user_id as string))];
   if (!ids.length) return [];
   const { data: people } = await supabase
-    .from("profiles").select("id, full_name").in("id", ids).eq("access_granted", true);
+    // Not filtered on profiles.access_granted: that is the client portal's switch, and an admin
+    // who signs in daily has it off.
+    .from("profiles").select("id, full_name").in("id", ids);
   return (people ?? [])
     .map((p: any) => ({ id: p.id as string, name: (p.full_name as string) || "Unnamed" }))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -224,7 +226,11 @@ export async function openSignatureRequest(responseId: string): Promise<AppNotif
 // signed from their own log-in. One request per entry AND field, so it never collides with the
 // verifier request above (`signature:<entry>`): the key is `signature:<entry>:<field>`.
 
-/** Team members who can be asked: staff, admin or owner, with portal access (they must log in to sign). */
+/**
+ * Team members who can be asked: anyone with a staff, admin or owner role and a name. The role is
+ * what lets them sign in to the Team Portal. `profiles.access_granted` is deliberately NOT tested -
+ * it is the CLIENT portal's switch, and an admin who signs in daily has it off.
+ */
 export async function fetchTeamSigners(): Promise<Signatory[]> {
   const { data: roles, error } = await supabase
     .from("user_roles").select("user_id, role").in("role", ["staff", "admin", "owner"]);
@@ -232,7 +238,7 @@ export async function fetchTeamSigners(): Promise<Signatory[]> {
   const ids = [...new Set((roles ?? []).map((r: any) => r.user_id as string))];
   if (!ids.length) return [];
   const { data: people, error: pErr } = await supabase
-    .from("profiles").select("id, full_name").in("id", ids).eq("access_granted", true);
+    .from("profiles").select("id, full_name").in("id", ids);
   if (pErr) throw pErr;
   return (people ?? [])
     .map((p: any) => ({ id: p.id as string, name: String(p.full_name ?? "").trim() }))

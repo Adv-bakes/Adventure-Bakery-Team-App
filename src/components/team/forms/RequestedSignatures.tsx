@@ -17,7 +17,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { requestedSignatureFields, type FormSchema, type SignatureField, type SignatureValue } from "@/lib/formSchema";
+import {
+  requestedSignatureFields, signatureRequestNote,
+  type FormSchema, type SignatureField, type SignatureValue,
+} from "@/lib/formSchema";
 import {
   fetchTeamSigners, openFieldSignatureRequests, requestFieldSignature, signRequestedField,
   withdrawFieldSignatureRequests, type AppNotification, type Signatory,
@@ -68,6 +71,7 @@ export function RequestedSignatures({ schema, responseId, data, me, canEdit, dir
           request={requests[f.id] ?? null}
           people={people}
           named={f.signedBy?.nameField ? String(data[f.signedBy.nameField] ?? "") : ""}
+          defaultNote={signatureRequestNote(f, data)}
           me={me}
           canEdit={canEdit}
           dirty={dirty}
@@ -79,13 +83,15 @@ export function RequestedSignatures({ schema, responseId, data, me, canEdit, dir
   );
 }
 
-function Line({ field, responseId, request, people, named, me, canEdit, dirty, onChanged, onSigned }: {
+function Line({ field, responseId, request, people, named, defaultNote, me, canEdit, dirty, onChanged, onSigned }: {
   field: SignatureField; responseId: string; request: AppNotification | null; people: Signatory[];
-  named: string; me?: { userId: string; name: string }; canEdit: boolean; dirty: boolean;
+  named: string; defaultNote: string; me?: { userId: string; name: string }; canEdit: boolean; dirty: boolean;
   onChanged: () => Promise<void>; onSigned: () => void;
 }) {
   const [who, setWho] = useState("");
-  const [note, setNote] = useState("");
+  // Starts as the form's own wording (signedBy.note) and follows it until the person types.
+  const [typed, setTyped] = useState<string | null>(null);
+  const note = typed ?? defaultNote;
   const [busy, setBusy] = useState(false);
 
   // Suggest the person named on the record, once the team list is in. Never overrides a choice.
@@ -145,7 +151,7 @@ function Line({ field, responseId, request, people, named, me, canEdit, dirty, o
             This line is signed by the person themselves, from their own log-in. Choose who to ask;
             they get it in their notifications with a link to this record.
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={defaultNote ? "grid gap-3" : "grid gap-3 sm:grid-cols-2"}>
             <div className="space-y-1">
               <label className="text-xs font-medium">Who should sign it</label>
               <Select value={who} onValueChange={setWho}>
@@ -157,7 +163,7 @@ function Line({ field, responseId, request, people, named, me, canEdit, dirty, o
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium">Note (optional)</label>
-              <Textarea rows={1} value={note} onChange={e => setNote(e.target.value)} />
+              <Textarea rows={defaultNote ? 6 : 1} value={note} onChange={e => setTyped(e.target.value)} />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -165,7 +171,7 @@ function Line({ field, responseId, request, people, named, me, canEdit, dirty, o
               type="button" disabled={busy || !who || dirty}
               onClick={() => run(async () => {
                 await requestFieldSignature(responseId, field.id, who, note);
-                setNote("");
+                setTyped(null);
                 await onChanged();
               }, "Signature requested")}
             >
