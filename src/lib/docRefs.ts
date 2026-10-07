@@ -49,3 +49,17 @@ export function buildDocIndex(rows: DocIndexRow[]): DocIndex {
   for (const [n, r] of Object.entries(best)) out[n] = { id: r.id, title: (r.title ?? "").trim() || n, draft: r.status !== "active" };
   return out;
 }
+
+/**
+ * What a `docPick` text field offers: each ISSUED document whose number starts with one of the
+ * prefixes, as "TRN-003 Allergens Part 1", in number order. A draft is not offered - nobody is
+ * trained on a document that is not issued. One line per number, so a module and its Spanish
+ * variant are one topic.
+ */
+export function docPickOptions(index: DocIndex, prefixes: string[]): string[] {
+  const want = prefixes.map(p => p.trim().toUpperCase()).filter(Boolean);
+  return Object.entries(index)
+    .filter(([n, d]) => !d.draft && want.some(p => n.toUpperCase().startsWith(p + "-")))
+    .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+    .map(([n, d]) => (d.title && d.title !== n ? `${n} ${d.title}` : n));
+}

@@ -10,14 +10,15 @@ import { deriveDateValue, deriveTextValue, julianLotCode, nextDerivedFill } from
 import { loadSelectOptions } from "@/lib/formReport";
 import { fetchFormLinkTarget, type FormLinkTarget } from "@/lib/formResponses";
 import { ExternalLink } from "lucide-react";
-import { DocRefText } from "./DocRefText";
+import { DocRefText, loadDocIndex } from "./DocRefText";
+import { docPickOptions } from "@/lib/docRefs";
 import type {
   FieldLink, CheckboxField, DateDerivation, DateField, DerivedFillState, FormField, NumberField, SelectField,
   PassFailField, SelectOptionsFrom, SignatureField, TextDerivation, TextField, TextareaField,
 } from "@/lib/formSchema";
 import { SignatureFieldInput, type Signer } from "./SignatureFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
-import { SuggestInput, type FieldSuggest } from "./SuggestInput";
+import { SuggestInput, type FieldSuggest, type SuggestOption } from "./SuggestInput";
 
 const PASS_FAIL_STYLE: Record<string, string> = {
   pass: "data-[on=true]:bg-green-500/20 data-[on=true]:text-green-700 data-[on=true]:border-green-600/40",
@@ -206,6 +207,24 @@ function FormLink({ spec }: { spec: FieldLink }) {
   );
 }
 
+/**
+ * A text field that offers the site's issued documents (TextField.docPick). The list is the one
+ * DocRefText already loads, so it costs nothing extra; until it answers, or if it cannot be read,
+ * the field is an ordinary text box with an empty list.
+ */
+function DocPickInput({ prefixes, ...rest }: {
+  prefixes: string[]; value: string; onChange: (v: string) => void; onBlur?: () => void; maxLength?: number; placeholder?: string;
+}) {
+  const [options, setOptions] = useState<SuggestOption[]>([]);
+  const key = prefixes.join("|");
+  useEffect(() => {
+    let live = true;
+    loadDocIndex().then(index => { if (live) setOptions(docPickOptions(index, key.split("|")).map(value => ({ value }))); });
+    return () => { live = false; };
+  }, [key]);
+  return <SuggestInput {...rest} options={options} />;
+}
+
 function useLinkedOptions(spec: SelectOptionsFrom | undefined) {
   const [state, setState] = useState<{ options: string[] | null; failed: boolean }>({ options: null, failed: false });
   const key = spec ? JSON.stringify(spec) : "";
@@ -257,6 +276,19 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer, sugg
                   onPick={(v, set) => suggest.onPick(field.id, v, set)}
                   options={suggest.options[field.id]}
                   emptyText={suggest.emptyText?.[field.id]}
+                  maxLength={(field as TextField).maxLength}
+                  placeholder={(field as TextField).placeholder}
+                />
+              );
+              break;
+            }
+            if ((field as TextField).docPick && !disabled) {
+              input = (
+                <DocPickInput
+                  prefixes={(field as TextField).docPick!.prefixes}
+                  value={rhf.value ?? ""}
+                  onChange={rhf.onChange}
+                  onBlur={rhf.onBlur}
                   maxLength={(field as TextField).maxLength}
                   placeholder={(field as TextField).placeholder}
                 />

@@ -164,6 +164,22 @@ export function GridColumnsEditor({ field, onChange, savedIds }: GridColumnsEdit
                 </Select>
               </div>
             )}
+            {col.type === "text" && (
+              <div className="flex items-center gap-1.5 pb-1.5">
+                <Checkbox
+                  id={`col-team-${field.id}-${idx}`}
+                  checked={!!col.teamPick}
+                  onCheckedChange={c => updateColumn(idx, { teamPick: c ? (col.teamPick ?? {}) : undefined })}
+                />
+                <Label
+                  htmlFor={`col-team-${field.id}-${idx}`}
+                  className="text-[10px] font-normal cursor-pointer"
+                  title="Offers the names in the team directory as a pick-list. Any other name can still be typed."
+                >
+                  Offer team names
+                </Label>
+              </div>
+            )}
             <div className="flex items-center gap-1.5 pb-1.5">
               <Checkbox
                 id={`col-req-${field.id}-${idx}`}

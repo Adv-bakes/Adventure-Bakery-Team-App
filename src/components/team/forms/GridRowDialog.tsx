@@ -142,6 +142,8 @@ export function GridRowDialog({
                       disabled={disabled}
                       stacked
                       suggestion={suggestionFor?.(column, rowIndex)}
+                      control={control}
+                      rowPath={`${field.id}.${rowIndex}`}
                     />
                     {fieldState.error?.message && (
                       <p className="text-xs text-red-600">{fieldState.error.message}</p>

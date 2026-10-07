@@ -17,6 +17,7 @@ import { PassFailInput } from "./FormFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
 import { GridRowDialog } from "./GridRowDialog";
 import { DocRefText } from "./DocRefText";
+import { TeamNameInput } from "./TeamNameInput";
 
 /** How long the "label scan filled …" chip stays up before fading out. */
 const SCAN_UNDO_MS = 12000;
@@ -38,12 +39,15 @@ function compareCellValues(a: any, b: any): number {
  * GridRowDialog (`stacked`, where there is room to breathe and a free-text answer
  * should not be a 32px slot).
  */
-export function GridCell({ column, value, onChange, disabled, stacked, suggestion }: {
+export function GridCell({ column, value, onChange, disabled, stacked, suggestion, control, rowPath }: {
   column: GridColumn;
   value: any;
   onChange: (v: any) => void;
   disabled?: boolean;
   stacked?: boolean;
+  /** The form and this row's path ("attendees.3"), so a teamPick column can fill its title column. */
+  control?: Control<Record<string, any>>;
+  rowPath?: string;
   /** Grey placeholder + accept button while the cell is empty (column.suggestFrom). Never a value. */
   suggestion?: string | null;
 }) {
@@ -119,6 +123,18 @@ export function GridCell({ column, value, onChange, disabled, stacked, suggestio
         </div>
       );
     default:
+      // A name picked from the team directory. Read-only entries fall through to the plain cell.
+      if (column.teamPick && !disabled) {
+        return (
+          <TeamNameInput
+            className={inputClass}
+            value={value ?? ""}
+            onChange={onChange}
+            control={control}
+            titlePath={column.teamPick.titleColumn && rowPath ? `${rowPath}.${column.teamPick.titleColumn}` : undefined}
+          />
+        );
+      }
       return (
         <DictationTextarea
           className={stacked
@@ -505,7 +521,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                           defaultValue={col.type === "checkbox" ? false : ""}
                           render={({ field: cell, fieldState: cellState }) => (
                             <div>
-                              <GridCell column={col} value={cell.value} onChange={cell.onChange} disabled={disabled} suggestion={suggestionFor(col, rowIdx)} />
+                              <GridCell column={col} value={cell.value} onChange={cell.onChange} disabled={disabled} suggestion={suggestionFor(col, rowIdx)} control={control} rowPath={`${field.id}.${rowIdx}`} />
                               {cellState.error?.message && (
                                 <p className="text-[10px] text-red-600 mt-0.5">{cellState.error.message}</p>
                               )}

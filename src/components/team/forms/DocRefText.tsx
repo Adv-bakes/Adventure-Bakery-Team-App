@@ -13,7 +13,7 @@ export const DocSelfContext = createContext<string | null>(null);
 // by the next mount; until it answers, text renders plain.
 let cached: DocIndex | null = null;
 let pending: Promise<DocIndex> | null = null;
-function loadDocIndex(): Promise<DocIndex> {
+export function loadDocIndex(): Promise<DocIndex> {
   if (cached) return Promise.resolve(cached);
   if (!pending) {
     pending = fetchDocIndexRows()

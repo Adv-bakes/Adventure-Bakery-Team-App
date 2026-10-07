@@ -61,6 +61,12 @@ export interface TextField     extends FieldBase {
   placeholder?: string;
   /** Fill this text from another field's date (see TextDerivation). */
   derive?: TextDerivation;
+  /**
+   * Offer the site's issued documents as a pick-list (FRM-953's training topic: TRN modules and
+   * SOPs). `prefixes` are document-number prefixes ("TRN", "SOP"). An offer, never a closed
+   * list: a topic with no document behind it is typed in. See docPickOptions in docRefs.ts.
+   */
+  docPick?: { prefixes: string[] };
 }
 
 /**
@@ -250,6 +256,13 @@ export interface GridColumn {
    * in the cell, and it never proposes the result.
    */
   aiDraft?: "audit_evidence";
+  /**
+   * A text column that offers the names in the team directory as a pick-list (FRM-953's
+   * attendee name). It is an offer, never a closed list: a contractor or a temporary worker
+   * is still typed in. `titleColumn` names another column of the row that is filled with the
+   * person's job title (else their department) when a name is picked and that cell is empty.
+   */
+  teamPick?: { titleColumn?: string };
 }
 
 /** What an aiDraft column's "Draft from records" returns: the text plus the records it came from. */

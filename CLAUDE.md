@@ -464,6 +464,20 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   signature**. Like the voice fill, the result is unsaved and dirty (`keepDefaultValues`) with one Undo.
   First use: **FRM-520 Production Lot Record** copies product + the ingredient grid with `supplier_lot` and
   `notes` blanked — a lot is never inherited from another day.
+- **Names from the team directory (`GridColumn.teamPick`):** `{ titleColumn? }` on a text grid column offers
+  everyone with a staff, admin or owner role and a profile name (`loadTeamDirectoryNames` in
+  `formResponses.ts`; auditor and kiosk accounts are left out, portal access is not required). It is an
+  offer, never a closed list - a contractor is typed in. `TeamNameInput` uses the browser's own
+  `<datalist>` on purpose: the grid scrolls sideways and would clip a drawn list. Entering a listed name
+  fills `titleColumn` with the person's job title, else department, **only if that cell is empty**. Names
+  load once per page load; if they cannot be read the cell is a plain text box. Builder: "Offer team
+  names" on a text column (`titleColumn` is set by migration). First use: FRM-953's Employee Name.
+- **Topics from the document list (`TextField.docPick`):** `{ prefixes }` on a text field offers each
+  ISSUED document whose number starts with one of the prefixes, as "TRN-003 Allergens Part 1"
+  (`docPickOptions` in `docRefs.ts`, tested in `scripts/test-doc-refs.mjs`). Drafts are not offered; a
+  module and its "(ES)" variant are one line. It reuses the list `DocRefText` loads (`loadDocIndex`) and
+  renders with `SuggestInput`, so anything else can still be typed. Set by migration - the builder has
+  no control for it. First use: FRM-953's Training Title / Topic, prefixes TRN and SOP.
 - **Suggested cell values (`GridColumn.suggestFrom`):** `{ column, times? }` on a number column shows, while
   the cell is EMPTY, a grey placeholder (another column of the row, optionally × a top-level number field)
   and a check button that enters it. **It is never a default value** — the owner's rule: a prefilled weight
