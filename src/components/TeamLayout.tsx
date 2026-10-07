@@ -33,6 +33,8 @@ interface NavItem {
    * item is what made that untenable: two hardcoded paths is the point where it becomes a field.
    */
   badge?: "inbox" | "notifications";
+  /** Shown when the pointer rests on the item: what an abbreviation in the label stands for. */
+  hint?: string;
 }
 interface NavSection { title: string; items: NavItem[]; }
 
@@ -58,7 +60,7 @@ const navSections: NavSection[] = [
   { title: "Compliance", items: [
     { path: "/team/compliance/sops", icon: BookOpen, label: "SOPs Library", auditorOk: true },
     { path: "/team/compliance/register", icon: Database, label: "Document Register", auditorOk: true },
-    { path: "/team/compliance/fsms-index", icon: ListTree, label: "FSMS Index", auditorOk: true },
+    { path: "/team/compliance/fsms-index", icon: ListTree, label: "FSMS Index", auditorOk: true, hint: "Food Safety Management System Index" },
     { path: "/team/compliance/records", icon: ClipboardList, label: "Form Records", auditorOk: true },
     { path: "/team/compliance/visitors", icon: DoorOpen, label: "Visitor Sign-In" },
     { path: "/team/compliance/verification", icon: CalendarCheck, label: "Verification Schedule", auditorOk: true },
@@ -220,7 +222,7 @@ const TeamLayout = ({ children }: TeamLayoutProps) => {
                       key={item.path}
                       to={item.path}
                       className={`tp-nav-item ${active ? "active" : ""}`}
-                      title={collapsed ? item.label : undefined}
+                      title={item.hint ?? (collapsed ? item.label : undefined)}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                       {!collapsed && <span className="truncate flex-1">{item.label}</span>}
