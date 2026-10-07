@@ -22,7 +22,8 @@ export const RELEASE_TARGET = {
     "net_weight_unit", "approved_label_ref", "label_version"],
 } as const;
 
-export interface ReleaseSourceSpec { form: string; fields: readonly string[]; grids: Record<string, readonly string[]> }
+/** `optional` keys are read when present but not required of the form: FRM-606 carried the lot on each row before its v2 and once at the top since. */
+export interface ReleaseSourceSpec { form: string; fields: readonly string[]; grids: Record<string, readonly string[]>; optional?: readonly string[] }
 
 /** The single map of form numbers to the answer keys read. Rename a field on one of these forms, update this. */
 export const RELEASE_SOURCES = {
@@ -33,7 +34,7 @@ export const RELEASE_SOURCES = {
   labels:   { form: "FRM-601", fields: ["product_name", "label_artwork_version", "controlled_label_id", "customer_brand", "approval_evidence", "approval_date"], grids: {} },
   specs:    { form: "FRM-704", fields: ["product_name", "customer_brand", "net_weight"], grids: {} },
   baking:   { form: "FRM-507", fields: ["production_date", "product"], grids: { oven_loads: ["lot_code", "within_limits"] } },
-  sealing:  { form: "FRM-606", fields: ["production_date", "product"], grids: { seal_checks: ["lot_code", "visual", "pull_test"] } },
+  sealing:  { form: "FRM-606", fields: ["production_date", "product"], optional: ["lot_code"], grids: { seal_checks: ["lot_code", "visual", "pull_test"] } },
 } as const satisfies Record<string, ReleaseSourceSpec>;
 
 export type ReleaseKind = keyof typeof RELEASE_SOURCES;
@@ -185,10 +186,14 @@ function ccpLine(form: string, what: string, entries: ReleaseEntry[], grid: stri
   // names no product is kept: leaving it out would hide a load that may belong here.
   const rows = entries
     .filter(e => !normName(e.data.product) || sameProduct(e.data.product, product))
-    .flatMap(e => rowsOf(e, grid).filter(r => normLot(r.lot_code) === normLot(lot)).map(r => ({ r, draft: isDraft(e) })));
+    // The lot is on the row where the form asks for it per row, otherwise it is the entry's own.
+    .flatMap(e => rowsOf(e, grid)
+      .filter(r => normLot(str(r.lot_code) ? r.lot_code : e.data.lot_code) === normLot(lot))
+      .map(r => ({ r, draft: isDraft(e) })));
   if (rows.length === 0) return `${form}: no ${what} recorded for this lot.`;
   const failed = rows.filter(({ r }) => passKeys.some(k => str(r[k]).toLowerCase() === "fail")).length;
-  const unanswered = rows.filter(({ r }) => passKeys.some(k => !str(r[k]))).length;
+  // A row may carry one check only (a pull test at boxing, a visual at sealing): unanswered means none at all.
+  const unanswered = rows.filter(({ r }) => passKeys.every(k => !str(r[k]))).length;
   const drafts = rows.some(x => x.draft) ? " (record still a draft)" : "";
   const verdict = failed ? `${failed} FAILED` : unanswered ? `${unanswered} not yet answered` : "all passed";
   return `${form}: ${plural(rows.length, what)} for this lot, ${verdict}${drafts}.`;

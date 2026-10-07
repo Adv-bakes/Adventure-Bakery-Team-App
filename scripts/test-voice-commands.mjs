@@ -60,8 +60,9 @@ for (const def of V.VOICE_COMMANDS) {
 }
 {
   const r = V.parseCommand(V.renderExample(V.VOICE_COMMANDS[1]), AT);
-  check(r.ok && r.fill.row.check === "Hourly" && r.fill.row.vacuum_reading === "27"
-    && r.fill.row.visual === "pass" && r.fill.row.pull_test === "pass", "ccp2 example: row", r.ok && r.fill.row);
+  check(r.ok && r.fill.row.check === "Set-up" && r.fill.row.vacuum_reading === "27"
+    && r.fill.row.visual === "pass" && r.fill.row.pull_test === undefined && r.fill.row.lot_code === undefined
+    && r.fill.entryFields.lot === "L0911-1", "ccp2 example: row, with the lot at the top and no pull test", r.ok && [r.fill.row, r.fill.entryFields]);
 }
 
 // ── 2. Numbers as speech recognition writes them ───────────────────────────────
@@ -159,7 +160,13 @@ for (const [line, want] of lots) {
   const visFail = seal("Hourly, Vacuum 27 inches, Visual failed, Pull test passed");
   check(visFail.ok && visFail.fill.row.visual === "fail" && visFail.fill.warnings.some(w => w.level === "fail" && w.section === "deviation" && /^The visual check failed/.test(w.text)), "visual fail sends to Section 3", visFail.ok && visFail.fill.warnings);
   const noPull = seal("Hourly, Vacuum 27 inches, Visual passed");
-  check(!noPull.ok && noPull.missing.includes("pull") && /Pull test/.test(noPull.message), "missing pull test is named", noPull);
+  check(noPull.ok && noPull.fill.row.pull_test === undefined && noPull.fill.row.check === "In process", "a sealing line needs no pull test", noPull.ok ? noPull.fill.row : noPull.message);
+  const noVacuum = seal("Set-up, Visual passed");
+  check(noVacuum.ok && noVacuum.fill.row.vacuum_reading === undefined && noVacuum.fill.row.visual === "pass" && noVacuum.fill.entryFields.lot === "L0911-1", "the gauge reading is optional", noVacuum.ok ? [noVacuum.fill.row, noVacuum.fill.entryFields] : noVacuum.message);
+  const boxing = seal("Pull test passed");
+  check(boxing.ok && boxing.fill.row.check === "At boxing" && boxing.fill.row.pull_test === "pass" && boxing.fill.row.visual === undefined, "a pull test alone is an At boxing row", boxing.ok ? boxing.fill.row : boxing.message);
+  const nothing = seal("Vacuum 27 inches");
+  check(!nothing.ok && nothing.missing.includes("visual"), "a line with neither check is refused", nothing.ok ? nothing.fill.row : nothing.missing);
   const vacGauge = seal("Hourly, Vacuum 27 in. Hg, Visual passed, Pull test passed");
   check(vacGauge.ok && vacGauge.fill.row.vacuum_reading === "27", "'in. Hg' is inches", vacGauge.ok ? vacGauge.fill.row : vacGauge);
 }
@@ -201,7 +208,7 @@ for (const [line, want] of lots) {
   const fill2 = V.parseCommand(V.renderExample(V.VOICE_COMMANDS[1]), AT).fill;
   const fresh2 = { ...F.emptyValues(S606, { userInitials: "CR" }), production_date: "2026-09-11" };
   const c = V.applyVoiceFill(S606, fresh2, fill2, { userInitials: "TP" });
-  check(c.ok && c.rowIndex === 0 && c.values.seal_checks[0].check === "Hourly" && c.values.seal_checks[0].initials === "TP" && c.values.seal_checks[0].time === "10:40", "FRM-606 row lands in the seeded row", c.ok && c.values.seal_checks[0]);
+  check(c.ok && c.rowIndex === 0 && c.values.seal_checks[0].check === "Set-up" && c.values.lot_code === "L0911-1" && c.values.seal_checks[0].lot_code === undefined && c.values.seal_checks[0].initials === "TP" && c.values.seal_checks[0].time === "10:40", "FRM-606 row lands in the seeded row", c.ok && c.values.seal_checks[0]);
 
   // The filled entry must pass the form's own submit validation apart from what voice never fills.
   const zod = F.buildZodSchema(S507).safeParse(a.values);
@@ -321,11 +328,11 @@ for (const [line, want] of esLots) {
   const pv = esSeal("cada hora, vacío 27 pulgadas, prueba visual aprobada, prueba de jalón aprobada");
   check(pv.ok && pv.fill.row.visual === "pass" && pv.fill.row.pull_test === "pass", "'prueba visual' and 'prueba de jalón' are told apart", pv.ok ? pv.fill.row : pv);
   const borrowed = esSeal("cada hora, vacío 27 pulgadas, visual, prueba de jalón aprobada");
-  check(!borrowed.ok && borrowed.missing.includes("visual"), "visual never borrows the pull test's result", borrowed);
+  check(borrowed.ok && borrowed.fill.row.visual === undefined && borrowed.fill.row.pull_test === "pass", "visual never borrows the pull test's result", borrowed.ok ? borrowed.fill.row : borrowed.message);
 }
 {
   const checks = [
-    ["arranque", "Set-up"], ["puesta en marcha", "Set-up"], ["por hora", "Hourly"], ["después de un ajuste", "After a change or adjustment"],
+    ["arranque", "Set-up"], ["puesta en marcha", "Set-up"], ["por hora", "In process"], ["en proceso", "In process"], ["al empacar", "At boxing"], ["después de un ajuste", "After a change or adjustment"],
     ["despues del cambio", "After a change or adjustment"], ["fin de la corrida", "End of run"], ["final de producción", "End of run"],
   ];
   for (const [phrase, want] of checks) {

@@ -5,6 +5,7 @@ import { Printer } from "lucide-react";
 import {
   VOICE_COMMANDS, VOICE_REGISTRY_VERSION, renderExample, type VoiceCommandDef,
 } from "@/lib/voiceCommands";
+import { HANDS_FREE_CARD, HANDS_FREE_FORM } from "@/lib/voiceHandsFree";
 import type { VoiceLang } from "@/lib/voiceLexicon";
 import { VOICE_MSG } from "@/lib/voiceMessages";
 
@@ -69,6 +70,38 @@ function ScriptCard({ def, lang, last }: { def: VoiceCommandDef; lang: VoiceLang
   );
 }
 
+/** The short lines said with Listening mode on, on an FRM-606 entry that is already open. */
+function HandsFreeCard({ lang, last }: { lang: VoiceLang; last: boolean }) {
+  const card = HANDS_FREE_CARD[lang];
+  const printed = lang === "es"
+    ? format(new Date(), "d 'de' MMM yyyy", { locale: esLocale })
+    : format(new Date(), "d MMM yyyy");
+  return (
+    <section
+      lang={lang}
+      className="border-2 border-[#2A1F0E] rounded-lg p-6 mb-6 print:mb-0 print:border-0 print:rounded-none"
+      style={{ breakAfter: last ? "auto" : "page", pageBreakAfter: last ? "auto" : "always" }}
+    >
+      <h2 className="text-3xl font-bold">{card.heading}</h2>
+      <p className="mt-1 text-base">{card.intro}</p>
+      <table className="mt-5 w-full text-left">
+        <tbody>
+          {card.lines.map(line => (
+            <tr key={line.say} className="border-t border-[#2A1F0E]/30 align-top">
+              <td className="py-2 pr-4 text-xl font-semibold">"{line.say}"</td>
+              <td className="py-2 text-base">{line.does}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <ul className="mt-5 list-disc pl-6 space-y-1 text-base">
+        {card.notes.map((note, i) => <li key={i}>{note}</li>)}
+      </ul>
+      <p className="mt-6 text-xs">{VOICE_MSG[lang].card.footer(VOICE_REGISTRY_VERSION, HANDS_FREE_FORM, printed)}</p>
+    </section>
+  );
+}
+
 export default function VoiceCommandScripts() {
   const [params, setParams] = useSearchParams();
   const raw = params.get("lang");
@@ -105,8 +138,11 @@ export default function VoiceCommandScripts() {
             <Printer className="w-4 h-4" />Print
           </button>
         </div>
-        {cards.map(({ def, lang }, i) => (
-          <ScriptCard key={`${lang}-${def.id}`} def={def} lang={lang} last={i === cards.length - 1} />
+        {cards.map(({ def, lang }) => (
+          <ScriptCard key={`${lang}-${def.id}`} def={def} lang={lang} last={false} />
+        ))}
+        {langs.map((lang, i) => (
+          <HandsFreeCard key={`${lang}-handsfree`} lang={lang} last={i === langs.length - 1} />
         ))}
       </div>
     </div>

@@ -39,6 +39,8 @@ import { useReleaseAssist } from "@/components/team/release/useReleaseAssist";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
 import { applyVoiceFill, type VoiceWarning } from "@/lib/voiceCommands";
+import { HANDS_FREE_FORM, applyHandsFreeRow, handsFreeReady, type HandsFreeRow } from "@/lib/voiceHandsFree";
+import { HandsFreeBar, type HandsFreeOutcome } from "@/components/team/voice/HandsFreeBar";
 import type { VoiceLang } from "@/lib/voiceLexicon";
 import { VOICE_MSG } from "@/lib/voiceMessages";
 import type { VoiceCommandState } from "@/lib/voiceCommandTarget";
@@ -567,6 +569,93 @@ export default function FormEntry() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, response, schema, signer, location.state]);
 
+  // ── Hands-free rows (FRM-606) ──────────────────────────────────────────────
+  // Unlike the card command above, these are SAVED as they are spoken: the operator's hands are on
+  // the sealer, so there is no tap to wait for. That is safe here because the record already exists
+  // and is open - nothing is created - and a row can be taken back ("Form 606, undo").
+  const handsFree = canEdit && doc?.sop_number === HANDS_FREE_FORM && handsFreeReady(schema);
+  const [handsFreeLang, setHandsFreeLang] = useState<VoiceLang>("en");
+  useEffect(() => {
+    if (!handsFree || !signer?.userId) return;
+    let live = true;
+    (supabase as any).from("profiles").select("preferred_language").eq("id", signer.userId).maybeSingle()
+      .then(({ data }: any) => { if (live && data?.preferred_language === "es") setHandsFreeLang("es"); });
+    return () => { live = false; };
+  }, [handsFree, signer?.userId]);
+  // Saves run one at a time and read the record through a ref: two quick sentences must not both
+  // save against the same updated_at, and a queued save must not close over a stale one.
+  const responseRef = useRef<FormResponse | null>(null);
+  responseRef.current = response;
+  const handsFreeQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const lastHandsFree = useRef<{ index: number; row: string } | null>(null);
+  const inQueue = <T,>(job: () => Promise<T>): Promise<T> => {
+    const next = handsFreeQueue.current.then(job, job);
+    handsFreeQueue.current = next.catch(() => undefined);
+    return next;
+  };
+  /** Save what the form holds now. On a record saved elsewhere meanwhile, `redo` rebuilds the values on the fresh copy, once. */
+  const saveFromQueue = async (redo?: (fresh: Record<string, any>) => Record<string, any> | null): Promise<FormResponse | null> => {
+    const current = responseRef.current;
+    if (!current) return null;
+    try {
+      const updated = await saveResponseData(current.id, form.getValues(), current.updated_at);
+      responseRef.current = updated;
+      applyResult(updated);
+      // A card-command row that was waiting for Save Draft has just been saved along with this one.
+      setVoice(v => (v?.kind === "applied" ? null : v));
+      return updated;
+    } catch (e: any) {
+      if (!(e instanceof StaleResponseError) || !redo || !schema) return null;
+      const fresh = await fetchResponse(current.id);
+      if (!fresh || fresh.status !== "draft") return null;
+      const values = redo({ ...emptyValues(schema), ...(fresh.data ?? {}) });
+      if (!values) return null;
+      try {
+        const updated = await saveResponseData(fresh.id, values, fresh.updated_at);
+        responseRef.current = updated;
+        applyResult(updated);
+        return updated;
+      } catch { return null; }
+    }
+  };
+  const recordHandsFree = (row: HandsFreeRow, lang: VoiceLang): Promise<HandsFreeOutcome> => inQueue(async () => {
+    if (!schema || !responseRef.current) return { ok: false };
+    let placed: { index: number } | null = null;
+    const place = (base: Record<string, any>) => {
+      const res = applyHandsFreeRow(schema, base, row, fillContext, lang);
+      if (!res.ok) return null;
+      placed = { index: res.rowIndex };
+      return res.values as Record<string, any>;
+    };
+    const values = place({ ...emptyValues(schema), ...form.getValues() });
+    if (!values) return { ok: false };
+    form.reset(values, { keepDefaultValues: true });
+    const saved = await saveFromQueue(place);
+    if (!saved || !placed) return { ok: false };
+    const savedRow = (saved.data?.seal_checks ?? [])[placed.index];
+    lastHandsFree.current = savedRow ? { index: placed.index, row: JSON.stringify(savedRow) } : null;
+    return { ok: true, time: String(savedRow?.time ?? "") };
+  });
+  const undoHandsFree = (): Promise<boolean> => inQueue(async () => {
+    const last = lastHandsFree.current;
+    if (!last || !schema) return false;
+    const remove = (base: Record<string, any>) => {
+      const rows = Array.isArray(base.seal_checks) ? [...base.seal_checks] : [];
+      // Only the row that was spoken, and only if nobody has changed it since.
+      if (JSON.stringify(rows[last.index]) !== last.row) return null;
+      rows.splice(last.index, 1);
+      return { ...base, seal_checks: rows.length ? rows : emptyValues(schema, fillContext).seal_checks };
+    };
+    const values = remove({ ...emptyValues(schema), ...form.getValues() });
+    if (!values) return false;
+    form.reset(values, { keepDefaultValues: true });
+    const saved = await saveFromQueue(remove);
+    if (saved) lastHandsFree.current = null;
+    return !!saved;
+  });
+  // The header typed before listening was switched on becomes a saved draft, so spoken rows land in a record that exists as shown.
+  const saveHeaderForHandsFree = () => { if (form.formState.isDirty) void inQueue(() => saveFromQueue()); };
+
   const undoVoice = () => {
     if (voice?.kind !== "applied") return;
     form.reset(voice.prev, { keepDefaultValues: true });
@@ -886,6 +975,18 @@ export default function FormEntry() {
           onDraftCell={canEdit ? draftCellFromRecords : undefined}
           fillContext={fillContext}
           suggest={releaseAssist.suggest}
+          afterSection={handsFree ? {
+            sectionId: schema.sections[0]?.id ?? "",
+            node: (
+              <HandsFreeBar
+                form={form}
+                defaultLang={handsFreeLang}
+                onListenStart={saveHeaderForHandsFree}
+                onRow={recordHandsFree}
+                onUndo={undoHandsFree}
+              />
+            ),
+          } : undefined}
         />
       </DocSelfContext.Provider>
 

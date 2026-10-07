@@ -39,10 +39,10 @@ export { RECOGNIZER_LANG, VOICE_LANGS };
 export type { Token, VoiceLang };
 
 /** Printed on every card, so a copy from before the Spanish cards can be spotted on the wall. */
-export const VOICE_REGISTRY_VERSION = 2;
+export const VOICE_REGISTRY_VERSION = 3;
 
 /** FRM-606's check column options, exactly as the form defines them. Every language maps onto these. */
-export const CHECK_OPTIONS = ["Set-up", "Hourly", "After a change or adjustment", "End of run"] as const;
+export const CHECK_OPTIONS = ["Set-up", "In process", "After a change or adjustment", "End of run", "At boxing"] as const;
 export type CheckOption = (typeof CHECK_OPTIONS)[number];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -76,7 +76,8 @@ export interface VoiceFill {
   gridId: string;
   /** yyyy-MM-dd on the device, the same rule as a date field's defaultToday. */
   productionDate: string;
-  entryFields: { product: string };
+  /** `lot` is the day's lot code where the form asks for it once at the top (FRM-606); FRM-507 keeps it on the row. */
+  entryFields: { product: string; lot?: string };
   /** Grid cells as the form stores them: numbers as strings, pass_fail as "pass" | "fail". */
   row: Record<string, string>;
   warnings: VoiceWarning[];
@@ -477,20 +478,20 @@ const CCP2_TEXT: Record<VoiceLang, CommandText> = {
       { text: ", Lot " },
       { slot: "lot", placeholder: "Lot number", example: "L0911-1" },
       { text: ", " },
-      { slot: "check", placeholder: "Set-up / Hourly / After adjustment / End of run", example: "Hourly", optional: true },
+      { slot: "check", placeholder: "Set-up / In process / After adjustment / End of run / At boxing", example: "Set-up", optional: true },
       { text: ", Vacuum " },
-      { slot: "vacuum", placeholder: "reading", example: "27" },
+      { slot: "vacuum", placeholder: "reading", example: "27", optional: true },
       { text: " inches, Visual " },
       { slot: "visual", placeholder: "passed or failed", example: "passed" },
-      { text: ", Pull test " },
-      { slot: "pull", placeholder: "passed or failed", example: "passed" },
       { text: "." },
     ],
     tips: [
-      "Read the line at set-up, every hour, after any adjustment, and at the end of the run.",
+      "Read the line at set-up, after any adjustment, and at the end of the run. Leave out the vacuum reading when the gauge was not read.",
+      "At boxing, say \"At boxing, Pull test passed\" in place of the vacuum and visual. Never pull test a pouch that has just been sealed.",
       "Say the gauge reading as it shows: \"twenty seven\" or \"twenty seven point five\".",
       "Spell the lot code a character at a time: \"L, zero, nine, one, one, dash, one\".",
-      "Any failed check stops sealing. Check the row, then tap Save Draft.",
+      "With the record open and Listening mode on, a short line is enough: \"Form 606, air check passed\".",
+      "Any failed check stops the work. Check the row, then tap Save Draft.",
     ],
     limitsText: "The vacuum level and seal width are not yet confirmed for this machine, so the gauge reading is recorded but not judged. A failed visual check or pull test stops sealing.",
     slotNames: { product: "Product", lot: "Lot number", vacuum: "Vacuum reading", visual: "Visual check result", pull: "Pull test result" },
@@ -505,9 +506,10 @@ const CCP2_TEXT: Record<VoiceLang, CommandText> = {
     },
     checkPhrases: {
       "Set-up": [["setup"]],
-      "Hourly": [["hourly"], ["hourly", "check"]],
+      "In process": [["in", "process"], ["in", "progress"], ["hourly"]],
       "After a change or adjustment": [["after", "a", "change", "or", "adjustment"], ["after", "adjustment"], ["after", "an", "adjustment"], ["after", "a", "change"], ["after", "change"]],
       "End of run": [["end", "of", "run"], ["end", "of", "the", "run"], ["end", "run"]],
+      "At boxing": [["at", "boxing"], ["boxing"]],
     },
   },
   es: {
@@ -520,21 +522,21 @@ const CCP2_TEXT: Record<VoiceLang, CommandText> = {
       { text: ", lote " },
       { slot: "lot", placeholder: "número de lote", example: "L0911-1" },
       { text: ", " },
-      { slot: "check", placeholder: "arranque / cada hora / después de ajuste / fin de corrida", example: "cada hora", optional: true },
+      { slot: "check", placeholder: "arranque / en proceso / después de ajuste / fin de corrida / al empacar", example: "arranque", optional: true },
       { text: ", vacío " },
-      { slot: "vacuum", placeholder: "lectura", example: "27" },
+      { slot: "vacuum", placeholder: "lectura", example: "27", optional: true },
       { text: " pulgadas, visual " },
       { slot: "visual", placeholder: "aprobado o rechazado", example: "aprobado" },
-      { text: ", prueba de jalón " },
-      { slot: "pull", placeholder: "aprobada o rechazada", example: "aprobada" },
       { text: "." },
     ],
     tips: [
-      "Lea la línea al arranque, cada hora, después de cualquier ajuste y al fin de la corrida.",
+      "Lea la línea al arranque, después de cualquier ajuste y al fin de la corrida. Omita la lectura de vacío si no leyó el manómetro.",
+      "Al empacar, diga \"al empacar, prueba de jalón aprobada\" en lugar del vacío y la visual. Nunca haga la prueba de jalón en una bolsa recién sellada.",
+      "Con el registro abierto y el modo de escucha activado, basta una línea corta: \"Formulario 606, revisión de aire aprobada\".",
       "Diga la lectura del manómetro como aparece: \"veintisiete\" o \"veintisiete punto cinco\".",
       "Deletree el lote de uno en uno: \"ele, cero, nueve, uno, uno, guion, uno\".",
       "Diga el nombre del producto como aparece en la etiqueta.",
-      "Una revisión rechazada detiene el sellado. Revise la fila y toque Save Draft.",
+      "Una revisión rechazada detiene el trabajo. Revise la fila y toque Save Draft.",
     ],
     limitsText: "El nivel de vacío y el ancho del sello todavía no están confirmados para esta máquina: la lectura se registra pero no se evalúa. Una inspección visual o prueba de jalón rechazada detiene el sellado.",
     slotNames: {
@@ -558,7 +560,7 @@ const CCP2_TEXT: Record<VoiceLang, CommandText> = {
         ["arranque"], ["puesta", "en", "marcha"], ["al", "inicio"], ["inicio", "de", "corrida"], ["inicio", "de", "la", "corrida"],
         ["inicio", "de", "produccion"], ["inicio", "de", "la", "produccion"], ["setup"],
       ],
-      "Hourly": [["cada", "hora"], ["por", "hora"], ["horaria"], ["hourly"]],
+      "In process": [["en", "proceso"], ["durante", "el", "proceso"], ["cada", "hora"], ["por", "hora"], ["in", "process"]],
       "After a change or adjustment": [
         ["despues", "de", "un", "ajuste"], ["despues", "de", "ajuste"], ["despues", "del", "ajuste"], ["despues", "de", "ajustar"],
         ["despues", "de", "un", "cambio"], ["despues", "del", "cambio"], ["despues", "de", "cambio"], ["tras", "un", "ajuste"],
@@ -569,6 +571,7 @@ const CCP2_TEXT: Record<VoiceLang, CommandText> = {
         ["fin", "de", "produccion"], ["fin", "de", "la", "produccion"], ["final", "de", "produccion"],
         ["final", "de", "la", "produccion"], ["termino", "de", "la", "corrida"],
       ],
+      "At boxing": [["al", "empacar"], ["en", "el", "empaque"], ["al", "encajar"], ["empaque"], ["at", "boxing"]],
     },
   },
 };
@@ -592,11 +595,12 @@ const CCP2 = defineCommand({
       const [i] = firstOf(n, t.checkPhrases?.[option]);
       if (i >= 0 && (checkAt < 0 || i < checkAt)) { checkAt = i; check = option; }
     }
-    const lotEnd = [vacAt, checkAt].filter(i => i >= 0).reduce((a, b) => Math.min(a, b), n.length);
-    const { product, lot } = productAndLot(n, tokens, lotEnd, lex, t);
-
     const [visAt, visLen] = firstOf(n, t.anchors.visual);
     const [pullAt, pullLen] = firstOf(n, t.anchors.pull);
+    // The gauge reading and the pull test are each optional now, so the lot ends at whichever comes first.
+    const lotEnd = [vacAt, checkAt, visAt, pullAt].filter(i => i >= 0).reduce((a, b) => Math.min(a, b), n.length);
+    const { product, lot } = productAndLot(n, tokens, lotEnd, lex, t);
+
     let vacuum: number | undefined;
     let bad: Extracted["bad"];
     if (vacAt >= 0) {
@@ -617,9 +621,9 @@ const CCP2 = defineCommand({
 
     if (!product) missing.push("product");
     if (!lot) missing.push("lot");
-    if (vacuum === undefined && !bad) missing.push("vacuum");
-    if (!visual) missing.push("visual");
-    if (!pull) missing.push("pull");
+    // A row carries the checks that were done: the visual at sealing, the pull test at boxing.
+    // One of the two is the least a line can say. The gauge is read at set-up only.
+    if (!visual && !pull) missing.push("visual");
     return { slots: { product, lot, check, vacuum, visual, pull }, missing, bad };
   },
 
@@ -627,26 +631,22 @@ const CCP2 = defineCommand({
     const M = VOICE_MSG[uiLang];
     const product = slots.product as string;
     const lot = slots.lot as string;
-    const check = slots.check as CheckOption | undefined;
-    const vacuum = slots.vacuum as number;
-    const visual = slots.visual as "pass" | "fail";
-    const pull = slots.pull as "pass" | "fail";
-    const warnings: VoiceWarning[] = [
-      { level: "info", code: "lot_check", text: M.lotCheck(lot) },
-      { level: "info", code: "vacuum_unjudged", text: M.vacuumUnjudged },
-    ];
+    const vacuum = slots.vacuum as number | undefined;
+    const visual = slots.visual as "pass" | "fail" | undefined;
+    const pull = slots.pull as "pass" | "fail" | undefined;
+    // A pull test is only ever done at boxing, so a line that gives one and no check type is that.
+    const check = (slots.check as CheckOption | undefined) ?? (pull && !visual ? "At boxing" : undefined);
+    const warnings: VoiceWarning[] = [{ level: "info", code: "lot_check", text: M.lotCheck(lot) }];
+    if (vacuum !== undefined) warnings.push({ level: "info", code: "vacuum_unjudged", text: M.vacuumUnjudged });
     if (!check) warnings.push({ level: "warn", code: "pick_check", text: M.pickCheck });
-    if (vacuum > 30) warnings.push({ level: "warn", code: "vacuum_high", text: M.vacuumHigh(vacuum) });
+    if (vacuum !== undefined && vacuum > 30) warnings.push({ level: "warn", code: "vacuum_high", text: M.vacuumHigh(vacuum) });
     if (visual === "fail" || pull === "fail") {
       warnings.push({ level: "fail", section: "deviation", code: "seal_fail", text: M.sealFail(visual === "fail", pull === "fail") });
     }
-    const row: Record<string, string> = {
-      time: format(spokenAt, "HH:mm"),
-      lot_code: lot,
-      vacuum_reading: String(vacuum),
-      visual,
-      pull_test: pull,
-    };
+    const row: Record<string, string> = { time: format(spokenAt, "HH:mm") };
+    if (vacuum !== undefined) row.vacuum_reading = String(vacuum);
+    if (visual) row.visual = visual;
+    if (pull) row.pull_test = pull;
     if (check) row.check = check;
     return {
       commandId: "ccp2_seal",
@@ -654,16 +654,16 @@ const CCP2 = defineCommand({
       title: "CCP 2 Vacuum Sealing Monitoring Record",
       gridId: "seal_checks",
       productionDate: format(spokenAt, "yyyy-MM-dd"),
-      entryFields: { product },
+      entryFields: { product, lot },
       row,
       warnings,
       summary: [
         { key: "product", label: M.summary.product, value: product },
-        { key: "lot", label: M.summary.lot, value: lot, flag: "check" },
+        { key: "lot", label: M.summary.lot, value: lot, flag: "check" as const },
         { key: "check", label: M.summary.check, value: check ? M.summary.checkValue(check) : M.summary.pickInForm },
-        { key: "vacuum", label: M.summary.vacuum, value: M.summary.inches(vacuum) },
-        { key: "visual", label: M.summary.visual, value: visual === "pass" ? M.summary.pass : M.summary.fail, flag: visual },
-        { key: "pull", label: M.summary.pull, value: pull === "pass" ? M.summary.pass : M.summary.fail, flag: pull },
+        ...(vacuum !== undefined ? [{ key: "vacuum", label: M.summary.vacuum, value: M.summary.inches(vacuum) }] : []),
+        ...(visual ? [{ key: "visual", label: M.summary.visual, value: visual === "pass" ? M.summary.pass : M.summary.fail, flag: visual }] : []),
+        ...(pull ? [{ key: "pull", label: M.summary.pull, value: pull === "pass" ? M.summary.pass : M.summary.fail, flag: pull }] : []),
       ],
       lang: spokenLang,
       uiLang,
@@ -798,6 +798,10 @@ export function applyVoiceFill(
     if (columnIds.has(key)) row[key] = value;
     else warnings.push({ level: "warn", code: "no_column", text: M.noColumn(key) });
   }
+  // The day's lot: on the row where the form still asks for it per row (an entry filled on an
+  // earlier revision), otherwise in the field at the top, below.
+  const spokenLot = fill.entryFields.lot;
+  if (spokenLot && columnIds.has("lot_code") && !row.lot_code) row.lot_code = spokenLot;
 
   const def = VOICE_COMMANDS.find(d => d.id === fill.commandId);
   if (def?.limitsCheck && !def.limitsCheck.matches(schema)) {
@@ -826,8 +830,16 @@ export function applyVoiceFill(
       warnings.push({ level: "warn", code: "product_mismatch", text: M.productMismatch(current, fill.entryFields.product) });
     }
   }
+  if (spokenLot && allFields(schema).some(f => f.id === "lot_code")) {
+    const current = String(values.lot_code ?? "").trim();
+    const same = (a: string, b: string) => a.replace(/[^a-z0-9]/gi, "").toLowerCase() === b.replace(/[^a-z0-9]/gi, "").toLowerCase();
+    if (!current) next.lot_code = spokenLot;
+    else if (!same(current, spokenLot)) {
+      warnings.push({ level: "warn", code: "lot_mismatch", text: M.lotMismatch(current, spokenLot) });
+    }
+  }
   const date = String(values.production_date ?? "");
-  if (date && date !== fill.productionDate) {
+  if (date && fill.productionDate && date !== fill.productionDate) {
     warnings.push({ level: "warn", code: "date_mismatch", text: M.dateMismatch(date, fill.productionDate) });
   }
 
