@@ -168,7 +168,8 @@ export default function FsmsIndex() {
           FSMS Index
         </h1>
         <p className="text-sm mt-1" style={{ color: "rgba(245,241,230,0.75)" }}>
-          Every clause of the SQF Food Safety Code: Food Manufacturing, with the documents that cite it.
+          FSMS stands for Food Safety Management System. This page lists every clause of the SQF Food
+          Safety Code: Food Manufacturing, with the documents that cite it.
           The list is read from each document's SQF reference, so it is always current. It shows what
           a document says it covers; the internal audit checks that it does.
         </p>
