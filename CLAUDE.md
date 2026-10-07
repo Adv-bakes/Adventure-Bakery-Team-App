@@ -926,8 +926,7 @@ is **retired**, never removed. SELECT is `is_compliance_viewer`, so the auditor 
   so a correction filed to an earlier period cannot walk the due date backwards and re-raise
   something already discharged.
 - **`status='planned'`** means scheduled but *not being performed* — the governing program has not
-  been issued. Six of the twenty-two rows are planned (critical-limit re-validation, calibration,
-  backflow, water, internal audit, traceability test); compressed air is **retired** (D-32 determined
+  been issued. Three of the twenty-five rows are planned (critical-limit re-validation, backflow, water - as of 2026-10-07; calibration, the internal audit and the mock recall were activated when their programs were issued, and a crisis plan review row was added with FSQM-024); compressed air is **retired** (D-32 determined
   11.5.5 is not engaged). A CHECK forces each planned row to name its deliverable, and `assessDue()`
   refuses to raise one; the schedule page renders them muted with no due date. **Do not "fix" a
   planned row by activating it** — activate it when its program is issued.
