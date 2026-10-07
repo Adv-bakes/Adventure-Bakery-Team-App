@@ -1401,11 +1401,18 @@ With the day's FRM-606 open, a **Hands-free recording** bar sits under the produ
   paused so it does not hear itself.
 - **Six one-tap buttons** (air check, pull test, boxing check; passed / FAILED) do the same without the
   microphone. They are the fallback, not a convenience: see the next point.
-- **`useHandsFreeSpeech` is not continuous listening the browser promises.** Android Chrome ends
-  recognition at every pause, so `onend` restarts it (and Chrome may beep each time); it needs the
-  network, sends the audio to Google's speech service, pauses while the page is hidden, and holds a
-  screen wake lock. The first `start()` must run synchronously in the tap on the switch. **Untested at
-  the sealer as of 2026-10-07** - try it on the tablet before relying on it.
+- **`useHandsFreeSpeech` waits quietly between sentences** (2026-10-07, after the first day on the
+  tablet). Android plays its own tone whenever speech recognition starts or stops and a page cannot
+  silence it; restarted through silence, that was a tone every five seconds in the operator's headset.
+  So between sentences recognition is OFF and the microphone LEVEL is watched (`getUserMedia` + an
+  analyser, silent); `createVoiceGate` (pure, tested) decides a voice has started - its floor follows the
+  room, so a running sealer raises it - and only then is recognition started. The first word can be
+  clipped, which is why a sentence may open with a bare "606". **Sharing the microphone is tried three
+  ways, moving on after three voice-started recognitions that heard no words:** `hold` (monitor keeps
+  the microphone; kindest to a Bluetooth headset), `release` (monitor lets go before each start), then
+  `restart` (the original behaviour, tones and all). The first `start()` still runs synchronously in the
+  tap on the switch. It needs the network, sends audio to Google's speech service while recognising,
+  pauses while the page is hidden, and holds a screen wake lock.
 - **Remind me** (tick box, remembered in `localStorage`, never in the record): a tone (`playTone`, Web
   Audio) and a spoken prompt 30 minutes after the last row - spoken, tapped or typed (`reminderDue`).
   A prompt only: the documents state no 30-minute check, so a missed reminder is not a missed control.
