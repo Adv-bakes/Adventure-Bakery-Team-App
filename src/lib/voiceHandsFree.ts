@@ -54,7 +54,8 @@ interface HandsFreeWords {
 
 const WORDS: Record<VoiceLang, HandsFreeWords> = {
   en: {
-    form: ["form", "from", "forum", "forms", "farm"],
+    // "for" / "four" / "4": the recogniser hears "form 606" as "for 606", and writes that as "4606".
+    form: ["form", "from", "forum", "forms", "farm", "for", "four", "4"],
     digits: { six: "6", oh: "0", o: "0", zero: "0", sixty: "60", "6": "6", "0": "0", "06": "06", "60": "60", "600": "600", "606": "606" },
     air: [["air", "check"], ["air", "test"], ["seal", "check"], ["air"], ["visual"]],
     boxing: [["boxing", "check"], ["box", "check"]],
@@ -131,6 +132,8 @@ export function triggerEnd(n: string[], lang: VoiceLang): number {
     return -1;
   };
   for (let i = 0; i < n.length; i++) {
+    // "form 606" written as one number (found on the tablet, 2026-10-07).
+    if (n[i] === "4606") return i + 1;
     if (!w.form.includes(n[i])) continue;
     // "form number 606", "formulario número 606"
     const skip = n[i + 1] === "number" || n[i + 1] === "numero" ? 2 : 1;

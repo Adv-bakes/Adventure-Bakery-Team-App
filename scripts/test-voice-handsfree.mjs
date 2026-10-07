@@ -44,13 +44,15 @@ rowIs(en("Form 606, pull test failed"), { check: "At boxing", pull_test: "fail" 
 check(en("Form 606, undo")?.kind === "undo", "undo");
 
 // ── 2. What the recogniser does to "Form 606" ─────────────────────────────────
-for (const t of ["form 606", "Form six oh six", "form 6 0 6", "from 606", "form 60 6", "form six hundred six", "form number 606", "606"]) {
+for (const t of ["form 606", "Form six oh six", "form 6 0 6", "from 606", "form 60 6", "form six hundred six", "form number 606", "606",
+  "4606", "4 606", "for 606", "four 606"]) {
   rowIs(en(`${t} air check passed`), { check: "In process", visual: "pass" }, `trigger: "${t}"`);
 }
 rowIs(en("okay so form 606 air check passed"), { check: "In process", visual: "pass" }, "words before the trigger are ignored");
 
 // ── 3. No trigger, no row ─────────────────────────────────────────────────────
-for (const t of ["air check passed", "the pull test passed", "form 607 air check passed", "we made 606 units and they passed", "undo", ""]) {
+for (const t of ["air check passed", "the pull test passed", "form 607 air check passed", "we made 606 units and they passed", "undo", "",
+  "4607 air check passed", "46060 air check passed", "we sealed 4 pouches and the air check passed"]) {
   check(en(t) === null, `ignored without the trigger: "${t}"`, en(t));
 }
 
@@ -85,7 +87,10 @@ check(es("revisión de aire aprobada") === null, "Spanish: ignored without the t
 check(H.parseHandsFree(["Form 606, air check passed"], "es")?.kind === "row", "English line with Spanish preferred");
 check(H.parseHandsFree(["Formulario 606, prueba de jalón aprobada"], "en")?.row?.pull_test === "pass", "Spanish line with English preferred");
 // The recogniser's second guess is used when its first has no trigger.
-rowIs(H.parseHandsFree(["for 606 air check passed", "form 606 air check passed"], "en"), { check: "In process", visual: "pass" }, "a later alternative is used");
+rowIs(H.parseHandsFree(["farm 6 or 6 air check passed", "form 606 air check passed"], "en"), { check: "In process", visual: "pass" }, "a later alternative is used");
+rowIs(en("4606 aircheck passed"), { check: "In process", visual: "pass" }, "the tablet's '4606 aircheck passed'");
+rowIs(H.parseHandsFree(H.withPending(en("4606").transcript, ["pull test passed"]), "en"), { check: "At boxing", pull_test: "pass" }, "'4606', a pause, then the check");
+check(en("4606 undo")?.kind === "undo", "'4606 undo'");
 
 // ── 5a. A sentence the tablet cut in two ──────────────────────────────────────
 const cut = (first, ...rest) => {
