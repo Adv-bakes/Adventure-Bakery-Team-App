@@ -730,6 +730,15 @@ no DB view/RPC yet (a later phase will roll up summaries + purge old rows). Disp
   `monthRange`, `summarize`). In the entry it fills blanks only, never replaces an answer, refuses a
   month different from the entry's Month reviewed, and is unsaved and dirty with one Undo. The launcher
   on this page still saves straight away. A default month on the field was built first and dropped.
+- **Last calibration check, on the FRM-401 entry** (2026-10-08): since calibration moved to FRM-705 (FRM-401
+  v3 only confirms it), `CalibrationSummary` shows one line per unit under the "Device accuracy" section of
+  an editable FRM-401 entry: outcome, date, probe and sensor reading, and a link to that FRM-705 entry.
+  `lastSensorChecks` (`src/lib/calibrationSummary.ts`, no imports, tested by
+  `scripts/test-calibration-summary.mjs`) takes, per unit, the newest FRM-705 entry whose row is Pass or
+  Fail - a row marked not checked is passed over for an older entry, and drafts count and are flagged.
+  Rows are matched by label (`SENSOR_UNITS`: "refrigerator ... sensor", "freezer ... sensor"), so renaming
+  those FRM-705 rows means updating it. It is a reading of the records, never the answer to the
+  confirmation, and is not shown on a submitted review (it would show today's check, not that month's).
 
 ---
 
