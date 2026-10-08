@@ -714,6 +714,14 @@ no DB view/RPC yet (a later phase will roll up summaries + purge old rows). Disp
   raised" row when the month is clean. **Held limits are left blank on purpose** — the limit in force
   is the reviewer's assertion, not something to be pre-answered for them. Seeded via
   `createResponse(doc, prefill)`; an existing draft is resumed untouched rather than overwritten.
+- **The same fill from inside an FRM-401 entry** (owner's request, 2026-10-08): an entry started from the
+  SOPs Library opened empty. `TemperatureReviewFill` (`components/team/forms/`, shown by `FormEntry` on an
+  editable FRM-401 entry when `temperatureReviewReady(schema)`) says the review is best started from this
+  page and offers a month picker + **Populate from temperature logs**. Both ways in share
+  `src/lib/temperatureReview.ts` (`loadFrm401Prefill`, `deriveFrm401Prefill`, `mergeFrm401Prefill`,
+  `monthRange`, `summarize`). In the entry it fills blanks only, never replaces an answer, refuses a
+  month different from the entry's Month reviewed, and is unsaved and dirty with one Undo. The launcher
+  on this page still saves straight away. A default month on the field was built first and dropped.
 
 ---
 

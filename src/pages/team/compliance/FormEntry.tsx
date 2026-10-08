@@ -33,6 +33,8 @@ import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
 import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
+import { TemperatureReviewFill } from "@/components/team/forms/TemperatureReviewFill";
+import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatureReview";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
 import { useReleaseAssist } from "@/components/team/release/useReleaseAssist";
@@ -831,6 +833,12 @@ export default function FormEntry() {
       {schema.settings?.recallWorkspace && <RecallWorkspace form={form} canEdit={canEdit} schema={schema} />}
 
       {releaseAssist.card}
+
+      {/* FRM-401: fill the month's figures from the temperature logs. Keyed on the form number and
+          on the entry's own schema still having the fields the fill writes. */}
+      {canEdit && doc.sop_number === TEMPERATURE_REVIEW_FORM && temperatureReviewReady(schema) && (
+        <TemperatureReviewFill form={form} schema={schema} />
+      )}
 
       {/* Start from the batch sheet (forms that opt in via settings.batchSheet) */}
       {canEdit && schema.settings?.batchSheet && (
