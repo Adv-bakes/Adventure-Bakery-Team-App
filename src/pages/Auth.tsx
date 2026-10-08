@@ -41,7 +41,7 @@ const Auth = () => {
 
     const role = data?.role || "user";
     if (role === "admin") navigate("/team/admin");
-    else if (role === "staff") navigate("/team/operations-hub");
+    else if (role === "staff") navigate("/team/today");
     else navigate("/brand-portal");
   };
 

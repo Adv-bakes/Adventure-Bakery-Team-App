@@ -21,6 +21,7 @@ import {
   RELEASE_SOURCES, checkReleaseMapping, emptyReleaseRecords,
   type ReleaseKind, type ReleaseRecords, type ReleaseSourceSpec,
 } from "@/lib/releaseAssist";
+import { TODAY_FORMS, checkTodayMapping, emptyTodayRecords, type TodayKind, type TodayRecords, type TodaySourceSpec } from "@/lib/today";
 
 export type ResponseStatus = "draft" | "submitted";
 
@@ -726,6 +727,77 @@ export async function loadReleaseRecords(): Promise<{ records: ReleaseRecords; p
     }
   }));
   return { records, problems };
+}
+
+/**
+ * Everything the Today page reads (today.ts): the entries, submitted AND draft, of the forms that
+ * say what the production day needs. Same loader shape as the lot trace and the release helper -
+ * only the mapped answer keys, each form paged, practice rows skipped - plus who created and who
+ * submitted each entry, because the page says "submitted at 07:42 by Diana".
+ */
+export async function loadTodayRecords(): Promise<{ records: TodayRecords; docs: Record<string, { id: string; sop_number: string; revision: string | null; content: any }>; problems: string[] }> {
+  const specs = Object.values(TODAY_FORMS) as TodaySourceSpec[];
+  const { data: docRows, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, sop_number, revision, status, content")
+    .in("sop_number", specs.map(s => s.form))
+    .eq("type", "form")
+    .in("status", ["active", "draft"]);
+  if (error) throw error;
+  const docs: Record<string, { id: string; sop_number: string; revision: string | null; status: string; content: any }> = {};
+  for (const d of (docRows ?? []) as any[]) {
+    if (!docs[d.sop_number] || d.status === "active") docs[d.sop_number] = d;
+  }
+  const problems = checkTodayMapping(Object.fromEntries(Object.entries(docs).map(([n, d]) => {
+    const schema = getFormSchema(d.content);
+    return [n, schema ? valueFields(schema).map(f => f.id) : undefined];
+  })));
+
+  const records = emptyTodayRecords();
+  const PAGE = 1000;
+  await Promise.all((Object.keys(TODAY_FORMS) as TodayKind[]).map(async kind => {
+    const spec = TODAY_FORMS[kind] as TodaySourceSpec;
+    const doc = docs[spec.form];
+    if (!doc) return;
+    const keys = [...spec.fields, ...Object.keys(spec.grids)];
+    const select = ["id", "status", "submitted_at", "created_at", "created_by", "submitted_by", "v__test:data->_test_batch", ...keys.map(k => `v_${k}:data->${k}`)].join(", ");
+    for (let from = 0; ; from += PAGE) {
+      const { data, error: err } = await table().select(select).eq("document_id", doc.id).order("id").range(from, from + PAGE - 1);
+      if (err) throw err;
+      for (const r of (data ?? []) as any[]) {
+        if (r.v__test) continue;
+        records[kind].push({
+          id: r.id, docId: doc.id, status: r.status, createdAt: r.created_at, submittedAt: r.submitted_at,
+          createdBy: r.created_by ?? null, submittedBy: r.submitted_by ?? null,
+          data: Object.fromEntries(keys.map(k => [k, r[`v_${k}`]])),
+        });
+      }
+      if (!data || data.length < PAGE) break;
+    }
+  }));
+  return { records, docs, problems };
+}
+
+/**
+ * The caller's newest draft of a day-level form (FRM-507, FRM-606, FRM-903) for one date, by the
+ * form's own date field - "today's record", looked up rather than resumed, because resumeAnyDraft
+ * has no date filter and a CCP draft waits up to a week for its verifier.
+ */
+export async function findDraftForDay(documentId: string, dateField: string, date: string): Promise<FormResponse | null> {
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth?.user?.id;
+  if (!userId) throw new Error("Not signed in");
+  const { data, error } = await table()
+    .select("*")
+    .eq("document_id", documentId)
+    .eq("created_by", userId)
+    .eq("status", "draft")
+    .eq(`data->>${dateField}`, date)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as FormResponse) ?? null;
 }
 
 export async function loadAuditGuideData(): Promise<{ docs: GuideDoc[]; counts: Map<string, number> }> {

@@ -8,7 +8,7 @@ import {
   ClipboardCheck, ClipboardList, ShieldCheck, GraduationCap, UserSquare2, BookOpen,
   ListTodo, Inbox, DollarSign, Database, ListTree, Settings, User as UserIcon,
   LogOut, PanelLeftClose, PanelLeft, Thermometer, Bell, CalendarCheck, DoorOpen,
-  FileSpreadsheet,
+  FileSpreadsheet, Sun,
 } from "lucide-react";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
@@ -40,6 +40,7 @@ interface NavSection { title: string; items: NavItem[]; }
 
 const navSections: NavSection[] = [
   { title: "Home", items: [
+    { path: "/team/today", icon: Sun, label: "Today" },
     { path: "/team/dashboard", icon: Home, label: "Dashboard" },
     { path: "/team/notifications", icon: Bell, label: "Notifications", badge: "notifications" },
   ]},
