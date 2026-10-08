@@ -996,8 +996,9 @@ export default function FormEntry() {
               />
             ),
           } : canEdit && doc.sop_number === TEMPERATURE_REVIEW_FORM && schema.sections.some(s => s.id === "accuracy") ? {
-            // FRM-401: the last FRM-705 check of each unit's sensor, under the section that confirms it.
+            // FRM-401: the last FRM-705 check of each unit's sensor, inside the section that confirms it.
             sectionId: "accuracy",
+            inside: true,
             node: <CalibrationSummary />,
           } : undefined}
         />
