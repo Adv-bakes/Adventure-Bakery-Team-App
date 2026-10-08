@@ -492,6 +492,10 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   dates use); while the date is blank it offers today's value as a link. `julianLotCode` = year digit +
   three-digit day of year (2026-09-30 → `6273`), UTC arithmetic so DST never shifts it. Filled rather than
   suggested because it is notation, not a measurement — contrast `suggestFrom` for weights. FRM-520 lot code.
+- **A text field that starts with the current month (`TextField.defaultMonth`):** a NEW entry gets
+  "October 2026" (`MMMM yyyy`, the wording the temperature report's FRM-401 launcher writes), still
+  editable; a resumed draft is never touched. Builder: "Default to the current month" on a text field.
+  First use: FRM-401's Month reviewed (owner's request, 2026-10-08).
 - **Link to another form under a field (`FieldBase.linkTo`):** `{ form, latestEntry? }` renders a link
   under the field (`FormLink` in `FormFieldInput.tsx`, target from `fetchFormLinkTarget`): with
   `latestEntry`, the form's newest submitted entry - else its newest draft, flagged - otherwise the form in

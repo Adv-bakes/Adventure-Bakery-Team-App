@@ -62,6 +62,12 @@ export interface TextField     extends FieldBase {
   /** Fill this text from another field's date (see TextDerivation). */
   derive?: TextDerivation;
   /**
+   * A NEW entry starts with the current month written out ("October 2026"), still editable -
+   * for a monthly record's "Month reviewed". The same wording the temperature report's
+   * "Start FRM-401 Review" writes, so the two ways of starting a review agree.
+   */
+  defaultMonth?: boolean;
+  /**
    * Offer the site's issued documents as a pick-list (FRM-953's training topic: TRN modules and
    * SOPs). `prefixes` are document-number prefixes ("TRN", "SOP"). An offer, never a closed
    * list: a topic with no document behind it is typed in. See docPickOptions in docRefs.ts.
@@ -675,7 +681,9 @@ function emptyFieldValue(field: FormField, ctx?: FillContext): any {
     }
     case "date": case "time": case "datetime":
       return (field as DateField).defaultToday ? todayValue(field.type) : (dv ?? "");
-    default: return dv ?? ""; // text / textarea / number
+    case "text":
+      return (field as TextField).defaultMonth ? format(new Date(), "MMMM yyyy") : (dv ?? "");
+    default: return dv ?? ""; // textarea / number
   }
 }
 

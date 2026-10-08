@@ -490,6 +490,16 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                       <Label htmlFor={`today-${sIdx}-${fIdx}`} className="text-xs font-normal cursor-pointer">Default to now when the entry is created</Label>
                     </div>
                   )}
+                  {field.type === "text" && (
+                    <div className="flex items-center gap-1.5">
+                      <Checkbox
+                        id={`month-${sIdx}-${fIdx}`}
+                        checked={(field as any).defaultMonth ?? false}
+                        onCheckedChange={c => patchField(sIdx, fIdx, { defaultMonth: !!c || undefined } as any)}
+                      />
+                      <Label htmlFor={`month-${sIdx}-${fIdx}`} className="text-xs font-normal cursor-pointer">Default to the current month ("October 2026") when the entry is created</Label>
+                    </div>
+                  )}
                   {field.type === "select" && (
                     <div className="space-y-2">
                       {(field as SelectField).optionsFrom && (
