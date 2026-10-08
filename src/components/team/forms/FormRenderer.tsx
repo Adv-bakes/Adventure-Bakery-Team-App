@@ -88,8 +88,12 @@ interface FormRendererProps {
   onDraftCell?: GridFieldInputProps["onDraftCell"];
   /** Pick-lists for some text fields, keyed by field id (the release helper's Product and Lot). */
   suggest?: FieldSuggest;
-  /** Something the entry page puts directly under one section (FRM-606's hands-free bar, under the production header). */
-  afterSection?: { sectionId: string; node: ReactNode };
+  /**
+   * Something the entry page adds to one section: directly under it (FRM-606's hands-free bar,
+   * under the production header), or with `inside`, within the section's own box after its
+   * fields (FRM-401's last calibration check, in Device accuracy).
+   */
+  afterSection?: { sectionId: string; node: ReactNode; inside?: boolean };
 }
 
 /**
@@ -219,9 +223,10 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
           <div className="grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-3">
             {section.fields.map(renderField)}
           </div>
+          {afterSection?.inside && afterSection.sectionId === section.id && afterSection.node}
         </div>
         )}
-        {afterSection?.sectionId === section.id && afterSection.node}
+        {!afterSection?.inside && afterSection?.sectionId === section.id && afterSection.node}
         </Fragment>
       ))}
     </div>

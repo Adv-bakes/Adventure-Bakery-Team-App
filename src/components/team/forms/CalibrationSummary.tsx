@@ -12,7 +12,7 @@ const day = (iso: string) => {
 
 /**
  * One line per cold-storage unit: when its sensor was last checked on FRM-705 and what was read.
- * Shown under FRM-401's "Device accuracy" section while the review is being filled in, so the
+ * Shown inside FRM-401's "Device accuracy" section while the review is being filled in, so the
  * reviewer sees the figures they are confirming without opening the other form. It is a reading of
  * the records, never an answer: the confirmation above it stays the reviewer's.
  *
@@ -32,7 +32,7 @@ export function CalibrationSummary() {
   if (!state) return null;
 
   return (
-    <div className="rounded-lg border px-4 py-3 space-y-1" style={{ borderColor: "rgba(200,155,60,0.3)", background: "#FFFFFF" }}>
+    <div className="rounded-md px-3 py-2.5 space-y-1 bg-[#C89B3C]/5">
       <p className="text-xs font-semibold text-[#2A1F0E]">Last calibration check on FRM-705</p>
       {SENSOR_UNITS.map(({ unit }) => {
         const c = state.checks.find(x => x.unit === unit);

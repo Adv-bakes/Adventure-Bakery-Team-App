@@ -731,7 +731,7 @@ no DB view/RPC yet (a later phase will roll up summaries + purge old rows). Disp
   month different from the entry's Month reviewed, and is unsaved and dirty with one Undo. The launcher
   on this page still saves straight away. A default month on the field was built first and dropped.
 - **Last calibration check, on the FRM-401 entry** (2026-10-08): since calibration moved to FRM-705 (FRM-401
-  v3 only confirms it), `CalibrationSummary` shows one line per unit under the "Device accuracy" section of
+  v3 only confirms it), `CalibrationSummary` shows one line per unit inside the "Device accuracy" section (`afterSection` with `inside`) of
   an editable FRM-401 entry: outcome, date, probe and sensor reading, and a link to that FRM-705 entry.
   `lastSensorChecks` (`src/lib/calibrationSummary.ts`, no imports, tested by
   `scripts/test-calibration-summary.mjs`) takes, per unit, the newest FRM-705 entry whose row is Pass or
