@@ -421,7 +421,7 @@ Facts first, recommendations marked (R).
 | Material spec / supplier review dates not scheduled | Schedule | Per-entry links (section 10) |
 | Hold with no disposition is invisible | Notification | (R) `hold_open` feed type |
 | `releaseAssist` still lists `seal_checks.lot_code` (removed in FRM-606 v2); the field is optional so no error, but the mapping should be cleaned | Code | One-line fix in Phase 3 |
-| Ops Batch Tracker / Measuring / Order Board unrelated to rum cake lots | Scope | Leave as the client-order flow; do not wire into the lot (decision 8) |
+| Ops Batch Tracker / Measuring / Order Board unrelated to rum cake lots | Scope | **Decided 2026-10-08: those custom tables are not used by this implementation** (`production_orders`, `production_batches`, `batch_measuring_*`, `order_station_logs`, `finished_goods_inventory`, `production_intake`, `batch_sheets`). The workflow reads and writes the forms only. |
 | Biscotti (other customer's product) is flow-wrapped: CCP 2 vacuum does not apply, label is the film roll | Process | Stage list must be per product (decision 9) |
 | No submitted FRM-601 label approval exists | Record | A prerequisite that would block everything if hard today; warn first (decision 4) |
 | Missing data relationships the brief lists that are **not** gaps here | | Equipment (FRM-004 register + FRM-903 equipment grid suffice; no equipment table needed), operators (signatures + created_by), approvals (signatures + submitted_by) |
@@ -441,7 +441,7 @@ Facts first, recommendations marked (R).
 3. **`verification_schedule`**: new rows (section 10) and, as a recommendation, `escalate_to_position`.
 4. **`internal_notifications.notification_type`** new value `hold_open` + `FEED_TYPES` entry (recommendation).
 5. **Form revisions, under document control, if accepted:** FRM-702 v3 (product + our lot + role wording), FRM-507 v2 (lot once).
-6. **Nothing else.** No workflow-instance table, no stage table, no task table, no equipment table, no changes to `production_orders` / `production_batches`, no change to the lot-code logic. `finished_goods_inventory`, `production_intake`, `order_station_logs` stay dormant; retiring them is a separate clean-up.
+6. **Nothing else.** No workflow-instance table, no stage table, no task table, no equipment table, no change to the lot-code logic. **The custom ops tables are not used at all** (owner, 2026-10-08): no joins to, prefills from, or writes to `production_orders`, `production_batches`, `production_batch_ingredients`, `batch_measuring_*`, `order_station_logs`, `finished_goods_inventory`, `production_intake` or `batch_sheets`. Retiring their pages is a separate decision.
 
 ---
 
@@ -498,17 +498,17 @@ Order rationale: Phase 1 is pure UI over existing records and removes the dead l
 
 ## 19. Items requiring clarification or business-owner decisions
 
-1. **Readiness gate.** Should "today's FRM-903 submitted" **block** starting or continuing production records for the day, or warn? If block: can an admin override with a reason? (Proposal: block, no override.)
+1. **Readiness gate.** ANSWERED 2026-10-08: block, no override.
 2. **Unrecorded steps.** Mixing, depositing, cooling/depanning, syrup, dipping: guidance text only (proposal), or does the owner want records for any of them? A syrup record would also answer the D-14 stored-syrup lot gap.
 3. **Retention sample.** Is an FRM-703 sample taken for every lot, so the stage is required before release, or only some lots?
-4. **Label approval.** No FRM-601 approval is submitted yet. Warn at Start until the per-flavor reviews are filed, then block? Or never block?
+4. **Label approval.** ANSWERED 2026-10-08: warn now, block once the first per-flavor approvals are submitted.
 5. **How a lot ends.** Closed automatically when every packed unit is on an FRM-801? Closed by hand? Can a lot be cancelled or scrapped, and who may do it?
 6. **Hold notifications.** Raise a notification to the SQF Practitioner for an FRM-702 with no disposition, and after how many days?
 7. **FRM-702 v3.** Add product + our lot code fields and fix the "QA / Quality Leader" wording (needs GJM approval)? Without it a finished-lot hold writes our code into the supplier-lot field.
-8. **Ops Order Board, Batch Tracker, Measuring station.** Leave untouched as the client-order flow (proposal), or retire the unused Batch Tracker / Measuring / `production_intake` pages now?
-9. **Products other than rum cake.** The biscotti is flow-wrapped (no CCP 2 record, label is the film roll). Should the stage list vary by product (proposal: yes, a per-product stage profile read from FRM-704 or a small setting), and are there other products?
-10. **Live counts.** May I read production (read-only) to confirm the entry counts and the unused ops tables before Phase 1? The proposal's figures are from memory as of today.
-11. **Where the proposal lives.** Copy this document into the repo as `WORKFLOW_ARCHITECTURE.md` beside `DOCUMENT_REGISTER.md` and `FORM_REPORTS.md` so it is versioned with the code? (Proposal: yes, on Phase 1's branch.)
+8. **Ops Order Board, Batch Tracker, Measuring station.** ANSWERED 2026-10-08: their custom tables are not used by this implementation. Whether to retire the pages is not asked.
+9. **Products other than rum cake.** ANSWERED 2026-10-08: yes, a per-product stage profile, admin-editable. Whether there are products beyond rum cake and biscotti is still to confirm.
+10. **Live counts.** ANSWERED 2026-10-08: read-only reads allowed for this task; the counts in section 1.2 were confirmed against production the same day.
+11. **Where the proposal lives.** Done: this file.
 
 ---
 
