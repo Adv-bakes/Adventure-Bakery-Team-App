@@ -492,6 +492,14 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   dates use); while the date is blank it offers today's value as a link. `julianLotCode` = year digit +
   three-digit day of year (2026-09-30 → `6273`), UTC arithmetic so DST never shifts it. Filled rather than
   suggested because it is notation, not a measurement — contrast `suggestFrom` for weights. FRM-520 lot code.
+- **A section that starts collapsed (`FormSection.collapsed`):** for a part of a form only filled in an
+  exceptional case. `CollapsedSection` in `FormRenderer` shows it as one line to tap. It is open whenever
+  it holds an answer (`sectionHasAnswers` - defaults, fill-time column defaults and a fixed row's printed
+  values do not count) or one of its fields failed validation, so a recorded exception is never hidden;
+  a tap opens or closes it by hand. The fields stay mounted while closed (CSS `hidden`), so values and
+  field arrays are untouched. PDFs and the printable blank ignore it. Builder: "Start collapsed" under
+  the section description. First use: FRM-401's "Manual readings and changes of state" (owner's request,
+  2026-10-08, migration `20261008000002`).
 - **Link to another form under a field (`FieldBase.linkTo`):** `{ form, latestEntry? }` renders a link
   under the field (`FormLink` in `FormFieldInput.tsx`, target from `fetchFormLinkTarget`): with
   `latestEntry`, the form's newest submitted entry - else its newest draft, flagged - otherwise the form in

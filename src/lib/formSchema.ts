@@ -419,6 +419,13 @@ export interface FormSection {
   description?: string;
   fields: FormField[];
   /**
+   * Start this section closed, for a part of the form that is only filled in an exceptional
+   * case (FRM-401's manual readings and changes of state). It is closed only while it holds
+   * no answer: a section with something in it, or with a validation error, is shown open, so
+   * an exception that was recorded is never hidden. See sectionHasAnswers.
+   */
+  collapsed?: boolean;
+  /**
    * "Scan the pack" buttons in this section's header, filling the section's own
    * SCALAR fields from one photo (see applyLabelScanToFields). The grid
    * equivalent is GridField.scanLabel, which fills one row; this fills a section
@@ -518,6 +525,38 @@ export function hasFormSchema(doc: { type?: string; content?: any } | null | und
 /** All value-bearing fields across sections, in display order. */
 export function valueFields(schema: FormSchema): FormField[] {
   return schema.sections.flatMap(s => s.fields).filter(f => VALUE_FIELD_TYPES.has(f.type));
+}
+
+const blankCell = (v: unknown) => v == null || v === "" || v === false || (Array.isArray(v) && v.length === 0);
+
+/**
+ * Whether a section holds anything somebody entered - what decides if a `collapsed` section is
+ * shown open. A value the form itself puts there does not count: a field's default, a date that
+ * defaults to today, a grid column's fill-time default, a fixed row's printed values and its label.
+ */
+export function sectionHasAnswers(section: FormSection, values: Record<string, any> | null | undefined): boolean {
+  for (const field of section.fields) {
+    if (!VALUE_FIELD_TYPES.has(field.type)) continue;
+    const v = values?.[field.id];
+    if (field.type === "grid") {
+      const grid = field as GridField;
+      const printed = grid.rows.mode === "fixed" ? grid.rows.defaultValues : undefined;
+      const rows: GridRowValue[] = Array.isArray(v) ? v : [];
+      for (const [i, row] of rows.entries()) {
+        for (const column of grid.columns) {
+          if (column.defaultTo) continue;
+          const cell = row?.[column.id];
+          if (!blankCell(cell) && cell !== printed?.[i]?.[column.id]) return true;
+        }
+      }
+      continue;
+    }
+    if (blankCell(v)) continue;
+    if (v === field.defaultValue) continue;
+    if ((field as DateField).defaultToday) continue;
+    return true;
+  }
+  return false;
 }
 
 /**

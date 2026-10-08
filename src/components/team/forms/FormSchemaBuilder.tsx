@@ -383,6 +383,16 @@ export function FormSchemaBuilder({ sopId, content, onContentChange, onGenerateA
                     onChange={e => patchSection(sIdx, { description: e.target.value })}
                     className="text-xs h-8"
                   />
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox
+                      id={`collapsed-${sIdx}`}
+                      checked={section.collapsed ?? false}
+                      onCheckedChange={c => patchSection(sIdx, { collapsed: !!c || undefined })}
+                    />
+                    <Label htmlFor={`collapsed-${sIdx}`} className="text-xs font-normal cursor-pointer">
+                      Start collapsed - for a section only filled in an exceptional case (it opens by itself when it holds an answer)
+                    </Label>
+                  </div>
                 </div>
                 <div className="flex items-center shrink-0">
                   <Button type="button" variant="ghost" size="icon" disabled={sIdx === 0} onClick={() => moveSection(sIdx, -1)} title="Move section up">
