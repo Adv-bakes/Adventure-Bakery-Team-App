@@ -90,10 +90,11 @@ interface FormRendererProps {
   suggest?: FieldSuggest;
   /**
    * Something the entry page adds to one section: directly under it (FRM-606's hands-free bar,
-   * under the production header), or with `inside`, within the section's own box after its
-   * fields (FRM-401's last calibration check, in Device accuracy).
+   * under the production header), or with `inside`, within the section's own box - after the
+   * field named by `afterField`, else after all its fields (FRM-401's last calibration check, in
+   * Device accuracy, under the opening note).
    */
-  afterSection?: { sectionId: string; node: ReactNode; inside?: boolean };
+  afterSection?: { sectionId: string; node: ReactNode; inside?: boolean; afterField?: string };
 }
 
 /**
@@ -220,10 +221,23 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
               )}
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-3">
-            {section.fields.map(renderField)}
-          </div>
-          {afterSection?.inside && afterSection.sectionId === section.id && afterSection.node}
+          {(() => {
+            const slot = afterSection?.inside && afterSection.sectionId === section.id ? afterSection : null;
+            const within = !!slot?.afterField && section.fields.some(f => f.id === slot.afterField);
+            return (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-3">
+                  {section.fields.map(field => (
+                    <Fragment key={field.id}>
+                      {renderField(field)}
+                      {within && slot!.afterField === field.id && <div className="col-span-1 md:col-span-6">{slot!.node}</div>}
+                    </Fragment>
+                  ))}
+                </div>
+                {slot && !within && slot.node}
+              </>
+            );
+          })()}
         </div>
         )}
         {!afterSection?.inside && afterSection?.sectionId === section.id && afterSection.node}
