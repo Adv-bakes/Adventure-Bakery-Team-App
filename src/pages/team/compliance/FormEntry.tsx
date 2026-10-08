@@ -999,6 +999,7 @@ export default function FormEntry() {
             // FRM-401: the last FRM-705 check of each unit's sensor, inside the section that confirms it.
             sectionId: "accuracy",
             inside: true,
+            afterField: "accuracy_intro",
             node: <CalibrationSummary />,
           } : undefined}
         />
