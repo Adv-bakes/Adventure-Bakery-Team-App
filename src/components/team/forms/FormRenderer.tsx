@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import type { UseFormReturn } from "react-hook-form";
-import { Camera, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
+import { useFormState, useWatch, type UseFormReturn } from "react-hook-form";
+import { Camera, ChevronDown, ChevronRight, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  applyLabelScanToFields, relevantScanWarnings, resolveScanFactForField, scanTargetFields, scanWantedFactsForFields,
+  applyLabelScanToFields, relevantScanWarnings, resolveScanFactForField, scanTargetFields, scanWantedFactsForFields, sectionHasAnswers,
   type FormSchema, type FormSection, type FormField as SchemaField, type InfoField,
   type ReferenceTableField, type SelectField,
 } from "@/lib/formSchema";
@@ -14,6 +14,56 @@ import { SqfSectionGuide } from "./SqfSectionGuide";
 import { DocRefText } from "./DocRefText";
 import { GridFieldInput, type GridFieldInputProps } from "./GridFieldInput";
 import type { Signer } from "./SignatureFieldInput";
+
+/**
+ * A section that starts closed (FormSection.collapsed), for the part of a form that is only filled
+ * in an exceptional case. Closed means a one-line header to tap. It is shown open whenever it holds
+ * an answer or one of its fields failed validation, so a recorded exception is never hidden, and
+ * the person can open or close it by hand. The fields stay mounted while closed (hidden, not
+ * removed), so nothing about their values changes.
+ */
+function CollapsedSection({ section, form, children }: {
+  section: FormSection; form: UseFormReturn<Record<string, any>>; children: ReactNode;
+}) {
+  const ids = section.fields.map(f => f.id);
+  const watched = useWatch({ control: form.control, name: ids }) as unknown[];
+  const { errors } = useFormState({ control: form.control, name: ids });
+  const [manual, setManual] = useState<boolean | null>(null);
+
+  const values: Record<string, any> = {};
+  ids.forEach((id, i) => { values[id] = watched?.[i]; });
+  const hasAnswers = sectionHasAnswers(section, values);
+  const hasError = ids.some(id => errors?.[id]);
+  const open = hasError || (manual ?? hasAnswers);
+
+  return (
+    <div
+      id={`form-section-${section.id}`}
+      className="rounded-lg border p-4 space-y-3 scroll-mt-4"
+      style={{ borderColor: "rgba(200,155,60,0.3)", background: "#FFFFFF" }}
+    >
+      <button
+        type="button"
+        className="flex w-full items-start gap-2 text-left"
+        aria-expanded={open}
+        onClick={() => setManual(!open)}
+      >
+        {open
+          ? <ChevronDown className="w-4 h-4 mt-1 shrink-0 text-[#9A6F1E]" />
+          : <ChevronRight className="w-4 h-4 mt-1 shrink-0 text-[#9A6F1E]" />}
+        <span className="flex-1">
+          <span className="block font-semibold text-[#2A1F0E]">{section.title || "More"}</span>
+          {open
+            ? section.description && <span className="block text-xs text-[#2A1F0E]/80 mt-0.5">{section.description}</span>
+            : <span className="block text-xs text-[#2A1F0E]/60 mt-0.5">
+                {hasAnswers ? "Has entries - tap to show" : "Nothing entered - tap to open if you need it"}
+              </span>}
+        </span>
+      </button>
+      <div className={open ? undefined : "hidden"}>{children}</div>
+    </div>
+  );
+}
 
 /** How long the "scan filled X — Undo" strip stays up. Matches the grid's. */
 const SCAN_UNDO_MS = 12000;
@@ -142,6 +192,13 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
     <div className="space-y-4">
       {schema.sections.map(section => (
         <Fragment key={section.id}>
+        {section.collapsed ? (
+          <CollapsedSection section={section} form={form}>
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-3">
+              {section.fields.map(renderField)}
+            </div>
+          </CollapsedSection>
+        ) : (
         <div
           // Anchor for "Go to Section 3" when a voice-recorded CCP reading misses a limit.
           id={`form-section-${section.id}`}
@@ -163,6 +220,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
             {section.fields.map(renderField)}
           </div>
         </div>
+        )}
         {afterSection?.sectionId === section.id && afterSection.node}
         </Fragment>
       ))}
