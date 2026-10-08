@@ -146,6 +146,51 @@ function KioskClock() {
 }
 
 /**
+ * Keeps the entrance tablet's screen on while the sign-in page is showing, so a visitor never
+ * arrives at a dark screen. The browser lets go of the hold whenever the page is hidden (another
+ * app, the screen switched off by hand), so it is asked for again each time the page comes back,
+ * and on a touch in case the first request was refused. Reports what happened so the home screen
+ * can say it: a tablet whose browser cannot do this needs its own "Stay awake" setting instead.
+ */
+type AwakeState = "on" | "off" | "unsupported";
+type ScreenLock = { release?: () => Promise<void>; addEventListener?: (type: "release", fn: () => void) => void };
+function useScreenAwake(enabled: boolean): AwakeState {
+  const [state, setState] = useState<AwakeState>("off");
+  useEffect(() => {
+    if (!enabled) return;
+    const api = (navigator as { wakeLock?: { request: (type: "screen") => Promise<ScreenLock> } }).wakeLock;
+    if (!api) { setState("unsupported"); return; }
+    let lock: ScreenLock | null = null;
+    let asking = false;
+    let cancelled = false;
+    const hold = async () => {
+      if (lock || asking || document.hidden) return;
+      asking = true;
+      try {
+        const got = await api.request("screen");
+        if (cancelled) { void got.release?.(); return; }
+        lock = got;
+        setState("on");
+        got.addEventListener?.("release", () => { if (lock === got) lock = null; if (!cancelled) setState("off"); });
+      } catch { /* refused (battery saver, page not in front): tried again on the next touch */ }
+      finally { asking = false; }
+    };
+    const onVisible = () => { if (!document.hidden) void hold(); };
+    void hold();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pointerdown", hold);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pointerdown", hold);
+      void lock?.release?.().catch(() => undefined);
+      lock = null;
+    };
+  }, [enabled]);
+  return state;
+}
+
+/**
  * The way out of the kiosk, for staff. The kiosk screen has no portal around it and so no account
  * menu; without this the only way to sign the tablet out was to clear the browser's site data.
  *
@@ -154,7 +199,7 @@ function KioskClock() {
  * The password is checked by signing in again as the same account, which changes nothing if it
  * is right and leaves the session alone if it is wrong.
  */
-function KioskExit() {
+function KioskExit({ awake }: { awake: AwakeState }) {
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -181,6 +226,11 @@ function KioskExit() {
         <button type="button" className="text-sm tp-on-bg-dim underline underline-offset-2" onClick={() => { setPassword(""); setOpen(true); }}>
           Staff: sign this tablet out
         </button>
+        <p className="mt-1 text-xs tp-on-bg-dim opacity-70">
+          {awake === "on" ? "Screen is kept on while this page is showing"
+            : awake === "unsupported" ? "This browser cannot keep the screen on - use the tablet's Stay awake setting"
+            : "Screen is not being kept on - touch the screen to try again"}
+        </p>
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
@@ -259,6 +309,8 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
     root.style.fontSize = "clamp(16px, 1.7vw, 24px)";
     return () => { root.style.fontSize = before; };
   }, [kiosk]);
+
+  const awake = useScreenAwake(kiosk);
 
   const today = localDate(new Date());
   const set = (patch: Partial<VisitAnswers>) => setAnswers(a => ({ ...a, ...patch }));
@@ -551,7 +603,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
             </CardContent>
           </Card>
 
-          {kiosk && <KioskExit />}
+          {kiosk && <KioskExit awake={awake} />}
         </>
       )}
 
