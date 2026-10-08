@@ -1138,6 +1138,11 @@ with a CHECK, so the role was a constraint change. Adding a role touches a list 
   steps taller than the screen. The portal version keeps its `max-w-2xl` column and normal root size.
   The preview cannot sign in; to check the layout, render `<VisitorSignIn kiosk />` on a temporary
   route with `supabase.rpc` stubbed from the two schemas in `sop-drafts/`, and do not commit it.
+- **The kiosk keeps the screen on** (`useScreenAwake`, kiosk route only): a screen wake lock, asked for
+  again whenever the page comes back into view (the browser drops it when the page is hidden) and on a
+  touch in case a request was refused. A line under the tablet sign-out link says whether it is held,
+  because it cannot be checked from the preview; a browser without the feature is told to use the
+  tablet's own Stay awake setting. It does not stop the power button or a screen saver.
 - **The kiosk home screen shows the time and date** (`KioskClock`) beside the welcome heading, in the
   device's own format. It is in the header and not at the foot of the screen because the on-site
   list grows downwards: at the bottom it was below the fold with two visitors signed in. The date uses
