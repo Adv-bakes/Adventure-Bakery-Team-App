@@ -226,11 +226,12 @@ function KioskExit({ awake }: { awake: AwakeState }) {
         <button type="button" className="text-sm tp-on-bg-dim underline underline-offset-2" onClick={() => { setPassword(""); setOpen(true); }}>
           Staff: sign this tablet out
         </button>
-        <p className="mt-1 text-xs tp-on-bg-dim opacity-70">
-          {awake === "on" ? "Screen is kept on while this page is showing"
-            : awake === "unsupported" ? "This browser cannot keep the screen on - use the tablet's Stay awake setting"
-            : "Screen is not being kept on - touch the screen to try again"}
-        </p>
+        {awake !== "on" && (
+          <p className="mt-1 text-xs tp-on-bg-dim opacity-70">
+            {awake === "unsupported" ? "This browser cannot keep the screen on - use the tablet's Stay awake setting"
+              : "Screen is not being kept on - touch the screen to try again"}
+          </p>
+        )}
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
