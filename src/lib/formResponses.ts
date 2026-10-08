@@ -4,6 +4,7 @@
 // every query goes through `from("..." as any)` — confined to this module;
 // callers only see the typed wrappers below.
 
+import { CALIBRATION_FORM, type CalibrationEntry } from "./calibrationSummary";
 import { supabase } from "@/integrations/supabase/client";
 import { FORMULA_FORM, checkFormulaMapping, type BatchSheetRow, type FormulaEntry } from "@/lib/batchSheetFill";
 import {
@@ -569,6 +570,30 @@ export async function fetchFormLinkTarget(form: string, latestEntry?: boolean): 
     target.date = (entry.submitted_at ?? entry.created_at).slice(0, 10);
   }
   return target;
+}
+
+/**
+ * The FRM-705 calibration entries, newest first, as much as the calibration summary reads
+ * (lastSensorChecks in calibrationSummary.ts). Drafts are included; practice rows are not.
+ * Null when the form is not in the library.
+ */
+export async function fetchCalibrationEntries(): Promise<{ docId: string; entries: CalibrationEntry[] } | null> {
+  const { data: docs, error } = await (supabase as any)
+    .from("sop_documents")
+    .select("id, status")
+    .eq("sop_number", CALIBRATION_FORM)
+    .in("status", ["active", "draft"]);
+  if (error) throw error;
+  const doc = (docs ?? []).find((d: any) => d.status === "active") ?? (docs ?? [])[0];
+  if (!doc) return null;
+  const { data, error: err } = await table()
+    .select("id, status, created_at, check_month:data->>check_month, check_date:data->>check_date, devices:data->devices, test:data->_test_batch")
+    .eq("document_id", doc.id)
+    .order("created_at", { ascending: false })
+    .limit(24);
+  if (err) throw err;
+  const entries = ((data ?? []) as (CalibrationEntry & { test?: unknown })[]).filter(r => r.test == null);
+  return { docId: doc.id, entries };
 }
 
 /** Number, title and status of every active or draft document - what DocRefText links from. */

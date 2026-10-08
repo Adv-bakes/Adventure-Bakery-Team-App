@@ -34,6 +34,7 @@ import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
 import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
 import { TemperatureReviewFill } from "@/components/team/forms/TemperatureReviewFill";
+import { CalibrationSummary } from "@/components/team/forms/CalibrationSummary";
 import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatureReview";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
@@ -994,6 +995,10 @@ export default function FormEntry() {
                 onUndo={undoHandsFree}
               />
             ),
+          } : canEdit && doc.sop_number === TEMPERATURE_REVIEW_FORM && schema.sections.some(s => s.id === "accuracy") ? {
+            // FRM-401: the last FRM-705 check of each unit's sensor, under the section that confirms it.
+            sectionId: "accuracy",
+            node: <CalibrationSummary />,
           } : undefined}
         />
       </DocSelfContext.Provider>
