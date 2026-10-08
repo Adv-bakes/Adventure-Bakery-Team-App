@@ -143,14 +143,20 @@ export default function Today() {
     }
   };
 
-  /** Today's CCP record: the draft for today's date if there is one, else a new one dated today. */
-  const openDayRecord = async (kind: "baking" | "sealing") => {
+  /**
+   * Today's day-level record: the caller's draft for today's date if there is one, else a new one
+   * dated today. Never the generic /start route - that resumes the NEWEST draft whatever its date,
+   * which on the first tablet trial reopened the FRM-903 left from 2026-10-06, so the day's record
+   * got submitted with the wrong date and the gate stayed shut.
+   */
+  const openDayRecord = async (kind: "baking" | "sealing" | "preops") => {
     const doc = docOf(kind);
     if (!doc) return;
+    const dateField = kind === "preops" ? "inspection_date" : "production_date";
     setBusy(kind);
     try {
-      const existing = await findDraftForDay(doc.id, "production_date", today);
-      const r = existing ?? await createResponse(doc, { production_date: today });
+      const existing = await findDraftForDay(doc.id, dateField, today);
+      const r = existing ?? await createResponse(doc, { [dateField]: today });
       navigate(entryHref(doc.id, r.id));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not open the record");
@@ -229,10 +235,10 @@ export default function Today() {
                   <span>{preop.state === "draft" ? M.preopDraft : M.preopNotDone}</span>
                 </div>
                 {preopDoc && (
-                  <Button asChild size="sm" className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
-                    <Link to={preop.state === "draft" ? entryHref(preop.entry.docId, preop.entry.id) : startHref(preopDoc.id)}>
-                      {preop.state === "draft" ? M.continuePreop : M.startPreop}
-                    </Link>
+                  <Button onClick={() => openDayRecord("preops")} disabled={busy === "preops"} size="sm"
+                    className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+                    {busy === "preops" && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                    {preop.state === "draft" ? M.continuePreop : M.startPreop}
                   </Button>
                 )}
               </div>
@@ -249,10 +255,9 @@ export default function Today() {
                   </div>
                   <p>{M.blockedBody}</p>
                   {preopDoc && (
-                    <Button asChild size="sm" variant="destructive">
-                      <Link to={preop.state === "draft" ? entryHref(preop.entry.docId, preop.entry.id) : startHref(preopDoc.id)}>
-                        {preop.state === "draft" ? M.continuePreop : M.startPreop}
-                      </Link>
+                    <Button onClick={() => openDayRecord("preops")} disabled={busy === "preops"} size="sm" variant="destructive">
+                      {busy === "preops" && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                      {preop.state === "draft" ? M.continuePreop : M.startPreop}
                     </Button>
                   )}
                 </div>
