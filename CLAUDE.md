@@ -124,7 +124,7 @@ All are public (anon) Supabase credentials — safe on the client.
 
 | Section | Path | Notes |
 |---------|------|-------|
-| Home | `/team/dashboard`, `/team/notifications` | Notifications carries a count badge |
+| Home | `/team/today`, `/team/dashboard`, `/team/notifications` | Today is the floor's home page and the **staff landing** (see "Today page"); Notifications carries a count badge |
 | Relationships | `/team/sales/clients` | |
 | Sales | `/team/sales/dashboard`, `/team/sales/templates` | Dashboard has inbox badge |
 
@@ -1114,6 +1114,40 @@ FSQM-006 names the read list as the record.
   a notice is never edited afterwards.
 - The section renders nothing if the tables are missing, so the page is safe to deploy before the
   migration is pushed.
+
+## Today page — `pages/team/Today.tsx` + `lib/today.ts` (workflow layer, Phase 1)
+
+**Design: `WORKFLOW_ARCHITECTURE.md`** (the owner's brief: make the forms invisible by following the
+work, not the forms). Phase 1 is `/team/today`, the floor's home page and the **staff landing**
+(`TeamAuth` `LANDING_BY_ROLE`, `ProtectedRoute`'s fallback and `Auth.tsx` all moved from the legacy
+`/team/operations-hub`, which still exists). The day in order: Start the day (FRM-903), Production
+(lots in progress from FRM-520 + today's CCP records), Receiving (FRM-301, open FRM-702 holds),
+Finished product (awaiting release / collection; admin gets the FRM-701 button), Shipping (FRM-801),
+and an admin-only Attention card over the notification feed. EN/ES from `lib/todayMessages.ts`,
+starting from `profiles.preferred_language` and remembered in `localStorage` (`today.lang`).
+
+- **Everything on it is DERIVED from the records by `lib/today.ts`** (pure, tested by
+  `scripts/test-today.mjs`), through `TODAY_FORMS`, one map of form numbers to field ids with a
+  `checkTodayMapping` shown on the page like the trace and release helpers. Nothing is stored for a
+  stage; a lot is "awaiting release" because its FRM-520 is submitted and no submitted FRM-701
+  releases it. A lot is product + code (`normLot` + `sameProduct` from `releaseAssist.ts`), so two
+  products baked the same day are two lots. A hold is read from FRM-702's supplier-lot field OR its
+  description, because FRM-702 has no field for one of our lots.
+- **The gate (owner, 2026-10-08, no override):** `productionOpen()` is true only on a **submitted**
+  FRM-903 whose `inspection_date` is today. Until then the Production card shows a red block with the
+  button that resolves it, and Start a lot / Continue / the CCP buttons are disabled. Receiving,
+  release and shipping are not gated. The gate lives on this page only; the SOPs Library still opens
+  any form (it is the admin's surface).
+- **Start a lot creates a NEW FRM-520** through `createResponse(doc)` - deliberately not the
+  `/start` route, whose `resumeAnyDraft` would reopen the newest draft, i.e. another lot. The CCP
+  buttons use `findDraftForDay(docId, "production_date", today)` (`formResponses.ts`): today's draft
+  if there is one, else a new entry dated today - the voice panel's "today's record" rule, now shared.
+- Entries opened from here carry `?from=today`; `FormEntry` turns that into "Back to Today" (same
+  mechanism as `from=notifications`). `loadTodayRecords()` is the loader, same shape as
+  `loadReleaseRecords` (mapped keys only, paged, `_test_batch` rows skipped) plus `created_by` /
+  `submitted_by` for the "submitted at 07:42 by Diana" line.
+- Not built in Phase 1 (see the document's phases): the lot page with its stage rail, prefilled
+  per-lot records, the exception panel, per-product stage profiles, and `production_lots`.
 
 ## Visitor Sign-In — `pages/team/compliance/VisitorSignIn.tsx` + `lib/visitors.ts`
 

@@ -86,7 +86,9 @@ export default function FormEntry() {
   // rather than returning them to the list of things still outstanding.
   const [searchParams] = useSearchParams();
   const cameFromNotifications = searchParams.get("from") === "notifications";
-  const backHref = cameFromNotifications ? "/team/notifications" : `/team/compliance/sops?doc=${docId}`;
+  // The Today page opens records the same way, for the same reason: Back returns to the day.
+  const cameFromToday = searchParams.get("from") === "today";
+  const backHref = cameFromNotifications ? "/team/notifications" : cameFromToday ? "/team/today" : `/team/compliance/sops?doc=${docId}`;
   const location = useLocation();
   const { role } = useUserRole();
   const isAdmin = role === "admin" || role === "owner";
@@ -745,7 +747,7 @@ export default function FormEntry() {
           className="inline-flex items-center gap-1 text-xs text-[#C89B3C] hover:underline"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          {cameFromNotifications ? "Back to Notifications" : `Back to ${doc.sop_number ?? "form"}`}
+          {cameFromNotifications ? "Back to Notifications" : cameFromToday ? "Back to Today" : `Back to ${doc.sop_number ?? "form"}`}
         </Link>
         <div className="flex flex-wrap items-center gap-2 mt-1.5">
           <h1 className="text-2xl font-bold" style={{ color: "#F5F1E6" }}>{doc.title}</h1>
@@ -1074,7 +1076,7 @@ export default function FormEntry() {
           className="inline-flex items-center gap-1 text-xs text-[#C89B3C] hover:underline"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          {cameFromNotifications ? "Back to Notifications" : `Back to ${doc.sop_number ?? "form"}`}
+          {cameFromNotifications ? "Back to Notifications" : cameFromToday ? "Back to Today" : `Back to ${doc.sop_number ?? "form"}`}
         </Link>
         {canEdit && (
           <>

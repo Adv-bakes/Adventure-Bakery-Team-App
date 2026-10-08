@@ -70,7 +70,7 @@ const ProtectedRoute = ({ children, allowedRoles, redirectTo, requireClientAcces
     if (!roles.some((r) => allowedRoles.includes(r))) {
       const fallback = redirectTo || (
         role === "owner" || role === "admin" ? "/team/dashboard" :
-        role === "staff" ? "/team/operations-hub" :
+        role === "staff" ? "/team/today" :
         role === "auditor" ? "/team/compliance/sops" :
         role === "kiosk" ? "/team/visitor-kiosk" :
         "/brand-portal"

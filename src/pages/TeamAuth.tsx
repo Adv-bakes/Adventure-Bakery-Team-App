@@ -21,7 +21,7 @@ const TEAM_PORTAL_ROLES: AppRole[] = ["owner", "admin", "staff", "auditor", "kio
 const LANDING_BY_ROLE: Partial<Record<AppRole, string>> = {
   owner: "/team/dashboard",
   admin: "/team/dashboard",
-  staff: "/team/operations-hub",
+  staff: "/team/today",
   auditor: "/team/compliance/sops",
   kiosk: "/team/visitor-kiosk",
 };
