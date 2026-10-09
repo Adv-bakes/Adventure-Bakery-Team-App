@@ -439,7 +439,8 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   fixed-table row WITH ITS LABEL (`_row`); `placeRowsByLabel` (`_shared/gridRows.ts`, tested by
   `scripts/test-grid-rows.mjs`) puts each row on the form row of that label. A row of the document that
   is no longer on the form (FRM-903's Chopper) is skipped with a warning instead of shifting every row
-  below it. **Where the PDF has a text layer, the text decides**: `readRowFromText` reads the pass/fail
+  below it. A label the form prints on several rows (FRM-903's glass check: three rows all "Processing
+  Room") takes the document's rows in order, each to the next free row of that label. **Where the PDF has a text layer, the text decides**: `readRowFromText` reads the pass/fail
   and pick-list choices printed straight after each row's label ("Depositors Pass Pass") for the row's
   LEADING columns of those kinds, and they replace whatever the model read for those cells. Added the
   same day, after label placement was live and one cell still came back wrong on the owner's screen

@@ -30,7 +30,12 @@ export interface PlacedRows {
  * whose label begins with it or that it begins with (a label cut short by a narrow column). A
  * label that fits no row, or more than one, is reported and its row dropped - never guessed.
  * If no row carries a label at all, nothing is placed and the caller uses position as before.
- * When two document rows claim one form row, the first is kept.
+ *
+ * A form may print the SAME label on several rows - FRM-903's glass check has three rows all
+ * labelled "Processing Room", told apart by the item beside them. Those rows are filled in the
+ * order the document gives them, each taking the next free row of that label. (The first version
+ * sent all three to the first row and dropped two, which left two rows of that table unfilled on
+ * the owner's screen, 2026-10-09.) Only once every row of a label is taken is a further one dropped.
  */
 export function placeRowsByLabel(rowLabels: unknown[], incoming: unknown[]): PlacedRows {
   const labels = (Array.isArray(rowLabels) ? rowLabels : []).map(normLabel);
@@ -43,15 +48,16 @@ export function placeRowsByLabel(rowLabels: unknown[], incoming: unknown[]): Pla
   const unmatched: string[] = [];
   for (const row of labelled) {
     const want = normLabel(row._row);
-    let at = labels.indexOf(want);
-    if (at < 0) {
-      const near = labels
-        .map((l, i) => (l !== "" && (l.startsWith(want + " ") || want.startsWith(l + " ")) ? i : -1))
-        .filter(i => i >= 0);
-      at = near.length === 1 ? near[0] : -1;
+    let label = labels.includes(want) ? want : null;
+    if (label === null) {
+      // A cut-short or run-on label fits if it points at ONE label of the form (which several
+      // rows may share), never if it could be two different ones.
+      const near = new Set(labels.filter(l => l !== "" && (l.startsWith(want + " ") || want.startsWith(l + " "))));
+      label = near.size === 1 ? [...near][0] : null;
     }
-    if (at < 0) { unmatched.push(String(row._row).trim()); continue; }
-    if (rows[at] === null) rows[at] = row;
+    if (label === null) { unmatched.push(String(row._row).trim()); continue; }
+    const at = labels.findIndex((l, i) => l === label && rows[i] === null);
+    if (at >= 0) rows[at] = row;
   }
   return { byLabel: true, rows, unmatched };
 }

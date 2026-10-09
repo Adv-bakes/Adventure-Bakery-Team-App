@@ -88,8 +88,32 @@ const statuses = (p) => p.rows.map(r => r?.status ?? null);
   const p = T.placeRowsByLabel(AMBIG, [{ _row: "Depositor", status: "x" }]);
   check("a label that fits two rows is not placed", [statuses(p), p.unmatched], [[null, null], ["Depositor"]]);
   const twice = T.placeRowsByLabel(["Tables"], [{ _row: "Tables", s: 1 }, { _row: "tables", s: 2 }]);
-  check("two rows for one label: the first is kept", twice.rows[0].s, 1);
+  check("two rows for a label the form has once: the first is kept", twice.rows[0].s, 1);
   check("'Mixers' does not match 'Mix'", T.placeRowsByLabel(["Mixers"], [{ _row: "Mix", s: 1 }]).unmatched, ["Mix"]);
+}
+
+// One label printed on several rows (FRM-903's glass check): filled in document order.
+{
+  const GLASS = ["Processing Room", "Processing Room", "Processing Room"];
+  const read = [
+    { _row: "Processing Room", item: "Pan scrubber dials", undamaged: "pass" },
+    { _row: "Processing Room", item: "Oven controls and door glass", undamaged: "fail" },
+    { _row: "Processing Room", item: "MIG thermometers", undamaged: "pass" },
+  ];
+  const p = T.placeRowsByLabel(GLASS, read);
+  check("three rows sharing a label all land", p.rows.map(r => r?.undamaged ?? null), ["pass", "fail", "pass"]);
+  check("and none is reported", p.unmatched, []);
+  // The model runs the label and the item together.
+  const run = T.placeRowsByLabel(GLASS, read.map(r => ({ ...r, _row: `${r._row} ${r.item}` })));
+  check("a label run together with the item still lands", [run.rows.map(r => r?.undamaged ?? null), run.unmatched], [["pass", "fail", "pass"], []]);
+  // More rows in the document than the form has for that label: the extra is dropped, not shifted.
+  const extra = T.placeRowsByLabel(GLASS.slice(0, 2), read);
+  check("a fourth row of the label has nowhere to go", extra.rows.map(r => r?.item), ["Pan scrubber dials", "Oven controls and door glass"]);
+  // A repeated label beside distinct ones.
+  const mixed = T.placeRowsByLabel(["Office", "Processing Room", "Processing Room"], [
+    { _row: "Processing Room", v: 1 }, { _row: "Office", v: 2 }, { _row: "Processing Room", v: 3 },
+  ]);
+  check("repeated and distinct labels together", mixed.rows.map(r => r?.v), [2, 1, 3]);
 }
 
 // No labels at all: the caller falls back to position.
