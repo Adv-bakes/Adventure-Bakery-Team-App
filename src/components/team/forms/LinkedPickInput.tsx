@@ -105,6 +105,8 @@ export function LinkedPickInput({ spec, value, onChange, className, control, row
         value={value ?? ""}
         list={listId}
         autoComplete="off"
+        // The cell is one line, so a long name is cut off: hovering shows it whole.
+        title={value || undefined}
         placeholder={options.length ? `Type, or pick from ${spec.form}` : undefined}
         onChange={(e) => {
           const v = e.target.value;
