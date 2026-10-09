@@ -19,6 +19,7 @@ function bundle(src, name) {
 }
 const H = await bundle("src/lib/voiceHandsFree.ts", "handsfree.mjs");
 const F = await bundle("src/lib/formSchema.ts", "schema.mjs");
+const V = await bundle("src/lib/voiceCommands.ts", "voice.mjs");
 const S606 = JSON.parse(readFileSync("sop-drafts/FRM-606-ccp2-vacuum-sealing-monitoring-schema.json", "utf8"));
 
 let failed = 0, passed = 0;
@@ -204,6 +205,41 @@ check(H.nextReminderAt(T0, T0 + 5 * MIN, T0 + 2 * MIN) === T0 + 35 * MIN, "count
   check(!feed(g, [0.03, 0.03, 0.03, 0.03, 0.03, 0.03]).some(Boolean), "after it was told that was not speech, the same noise does not");
   check(feed(g, [0.15, 0.15, 0.15]).some(Boolean), "something clearly louder still does");
   check(g.floor <= H.VOICE_GATE.maxFloor, "the floor is capped");
+}
+
+// ── 9. A seal check from a lot's button on the Today page ─────────────────────
+{
+  const LOT = { product: "Rum Cake - Original", lot: "6279" };
+  const AT = new Date(2026, 9, 9, 14, 5);
+  for (const lang of ["en", "es"]) {
+    const card = H.SEAL_BUTTON_CARD[lang];
+    check(card.lines.length === H.HANDS_FREE_CARD[lang].lines.length - 1, `button card (${lang}): every hands-free line but undo`, card.lines.map(l => l.say));
+    card.lines.forEach((line, i) => {
+      const a = H.parseSealButton([line.say], lang), b = H.parseHandsFree([H.HANDS_FREE_CARD[lang].lines[i].say], lang);
+      check(!/606/.test(line.say) && a?.kind === "row" && same(a.row, b.row), `button card (${lang}) reads the same row without the trigger: ${line.say}`, [a, b]);
+    });
+  }
+  check(H.parseSealButton(["what time is lunch"])?.kind === "unclear" && H.parseSealButton([""]) === null, "no check heard: nothing to accept", [H.parseSealButton(["what time is lunch"]), H.parseSealButton([""])]);
+
+  const pass = H.sealButtonFill(LOT, H.parseSealButton(["set up air check passed vacuum 27"]).row, AT);
+  check(same(pass.row, { time: "14:05", check: "Set-up", vacuum_reading: "27", visual: "pass" }) && pass.warnings.length === 0
+    && same(pass.entryFields, { product: LOT.product, lot: "6279" }) && pass.productionDate === "2026-10-09", "a passed check: the row, the lot and the product from the button", pass);
+  check(pass.summary.map(l => l.key).join() === "time,product,lot,check,vacuum,visual", "its summary", pass.summary);
+  const fail = H.sealButtonFill(LOT, H.parseSealButton(["pull test failed"]).row, AT);
+  check(fail.row.pull_test === "fail" && fail.row.check === "At boxing" && fail.warnings[0]?.section === "deviation" && /pull test failed/i.test(fail.warnings[0].text), "a failed check carries the Section 3 warning", fail);
+  const es = H.sealButtonFill(LOT, H.parseSealButton(["revisión de aire aprobada"], "es").row, AT, "es");
+  const en = H.sealButtonFill(LOT, H.parseSealButton(["air check passed"]).row, AT);
+  check(same(es.row, en.row), "Spanish and English give the identical row", [es.row, en.row]);
+
+  // Into the real form: a new record for the lot, then a second check on the same record.
+  const fresh = { ...F.emptyValues(S606, { userInitials: "CR" }), production_date: "2026-10-09", product: LOT.product, lot_code: "6279" };
+  const a = V.applyVoiceFill(S606, fresh, pass, { userInitials: "TP" });
+  check(a.ok && a.rowIndex === 0 && a.values.seal_checks[0].check === "Set-up" && a.values.seal_checks[0].time === "14:05"
+    && a.values.seal_checks[0].initials === "TP" && a.values.lot_code === "6279" && a.warnings.length === 0, "applied to FRM-606 with no warnings", a.ok && [a.values.seal_checks[0], a.warnings]);
+  const b = V.applyVoiceFill(S606, a.values, en, { userInitials: "TP" });
+  check(b.ok && b.values.seal_checks.length === 2 && b.warnings.length === 0, "a second check is a second row", b.ok && b.warnings);
+  const other = V.applyVoiceFill(S606, { ...fresh, lot_code: "6280" }, pass, { userInitials: "TP" });
+  check(other.ok && other.warnings.some(w => w.code === "lot_mismatch"), "another lot's record is noticed, not written to quietly", other.ok && other.warnings);
 }
 
 rmSync(out, { recursive: true, force: true });

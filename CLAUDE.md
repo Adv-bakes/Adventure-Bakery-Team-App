@@ -1519,6 +1519,19 @@ check that did not happen.
   answer is left to the person signing. `PROBE_RANGE` starts at 100 so "one eighty" is not read as 81.
   The dialog is opened a tick after the menu item is chosen, or the two fight over focus. Checked on a
   temporary harness route with the database stubbed; the microphone itself is untested from here.
+- **Record seal check, on a lot's row of the Today page (2026-10-09, `components/team/today/SealCheckButton.tsx`).**
+  The sibling of Record bake, with the same rules (menu Speak the check / Open the record; a passed check
+  is shown and **Accept** saves it; a failed check saves nothing and opens the record with the row unsaved
+  and Section 3 flagged; nothing is created by listening). The tap stands for the trigger, as a headset
+  button does on the open form, so the sentence is a hands-free line without "Form 606": `parseSealButton`
+  = `parseHandsFree` after `HANDS_FREE_IMPLIED`; `sealButtonFill` builds the row and its summary. **The
+  record is the lot's own**: the signed-in person's FRM-606 draft dated today whose product and lot code
+  match the row (`findTodaysDrafts` + `sameProduct` + `normLot`), else a new one with date, product and lot
+  filled in. Open the record just opens it - there is no started row to hand over. `SEAL_BUTTON_CARD` (the
+  wall card) is DERIVED from `HANDS_FREE_CARD` by dropping the trigger and the undo line, so the two cards
+  cannot disagree. The dialog's common wording is `TODAY_MSG.bake`'s; the seal-specific wording is
+  `TODAY_MSG.seal`. When checking either button in the preview, a screenshot taken straight after a tap can
+  miss a menu that is still fading in - read the DOM before deciding a tap was ignored.
 - **FRM-606 from v2 (2026-10-07): the lot is entered once, and a row carries one check.** `lot_code` is a
   field at the top; `fill.entryFields.lot` carries it and `applyVoiceFill` fills it when empty (or writes
   the row's `lot_code` on an entry filled under the earlier revision). Check types are `Set-up`,

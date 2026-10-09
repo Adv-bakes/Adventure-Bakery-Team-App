@@ -5,7 +5,7 @@ import { Printer } from "lucide-react";
 import {
   BAKE_READING_TEXT, VOICE_COMMANDS, VOICE_REGISTRY_VERSION, renderExample, type VoiceCommandDef,
 } from "@/lib/voiceCommands";
-import { HANDS_FREE_CARD, HANDS_FREE_FORM } from "@/lib/voiceHandsFree";
+import { HANDS_FREE_CARD, HANDS_FREE_FORM, SEAL_BUTTON_CARD } from "@/lib/voiceHandsFree";
 import type { VoiceLang } from "@/lib/voiceLexicon";
 import { VOICE_MSG } from "@/lib/voiceMessages";
 
@@ -96,8 +96,9 @@ function BakeReadingCard({ lang }: { lang: VoiceLang }) {
 }
 
 /** The short lines said with Listening mode on, on an FRM-606 entry that is already open. */
-function HandsFreeCard({ lang, last }: { lang: VoiceLang; last: boolean }) {
-  const card = HANDS_FREE_CARD[lang];
+function HandsFreeCard({ lang, last, button }: { lang: VoiceLang; last: boolean; button?: boolean }) {
+  // The same layout serves the lines said after the Today page's seal-check button.
+  const card = (button ? SEAL_BUTTON_CARD : HANDS_FREE_CARD)[lang];
   const printed = lang === "es"
     ? format(new Date(), "d 'de' MMM yyyy", { locale: esLocale })
     : format(new Date(), "d MMM yyyy");
@@ -167,6 +168,7 @@ export default function VoiceCommandScripts() {
           <ScriptCard key={`${lang}-${def.id}`} def={def} lang={lang} last={false} />
         ))}
         {langs.map(lang => <BakeReadingCard key={`${lang}-bake-reading`} lang={lang} />)}
+        {langs.map(lang => <HandsFreeCard key={`${lang}-seal-button`} lang={lang} last={false} button />)}
         {langs.map((lang, i) => (
           <HandsFreeCard key={`${lang}-handsfree`} lang={lang} last={i === langs.length - 1} />
         ))}

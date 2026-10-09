@@ -34,6 +34,13 @@ export interface TodayMessages {
     initials: string; passLead: string; saved(lot: string, product: string): string;
     failLead: string; openFailed: string; noSpeech: string; needsRecord: string;
   };
+  /** The seal-check button on a lot's row. The dialog's common wording (Accept, Try again ...) is `bake`'s. */
+  seal: {
+    button: string; speak: string; open: string;
+    title(lot: string, product: string): string; say: string;
+    passLead: string; saved(lot: string, product: string): string;
+    failLead: string; unclear: string; openFailed: string;
+  };
   recordSealChecks: string;
   ccpTodayNone: string;
   ccpBakingToday(n: number): string;
@@ -99,7 +106,7 @@ const en: TodayMessages = {
     listening: "Listening…",
     say: (line, withProbe) => `Say: "${line}". If the load was probed: "${withProbe}".`,
     heard: t => `Heard: "${t}"`,
-    typeHere: "Or type the reading",
+    typeHere: "Or type it here",
     use: "Use",
     again: "Try again",
     accept: "Accept",
@@ -110,8 +117,20 @@ const en: TodayMessages = {
     saved: (lot, product) => `Oven load recorded for Lot ${lot} · ${product}.`,
     failLead: "A limit was not met. Opening the record…",
     openFailed: "Could not open the baking record",
-    noSpeech: "This browser has no speech recognition. Type the reading below, or open the record.",
+    noSpeech: "This browser has no speech recognition. Type it below, or open the record.",
     needsRecord: "This row needs to be checked in the record. Opening it…",
+  },
+  seal: {
+    button: "Record seal check",
+    speak: "Speak the check",
+    open: "Open the record",
+    title: (lot, product) => `Seal check · Lot ${lot} · ${product}`,
+    say: 'Say: "Air check passed". At boxing: "Pull test passed" or "Boxing check passed". Start with "Set up", "After adjustment" or "End of run" when it is one of those.',
+    passLead: "Check passed. Look at the row, then accept it.",
+    saved: (lot, product) => `Seal check recorded for Lot ${lot} · ${product}.`,
+    failLead: "A check failed. Opening the record…",
+    unclear: 'I did not hear which check, or its result. Say it again, for example "Air check passed".',
+    openFailed: "Could not open the sealing record",
   },
   recordSealChecks: "Record seal checks (FRM-606)",
   ccpTodayNone: "No CCP record started today.",
@@ -178,7 +197,7 @@ const es: TodayMessages = {
     listening: "Escuchando…",
     say: (line, withProbe) => `Diga: "${line}". Si se midió con la sonda: "${withProbe}".`,
     heard: t => `Escuchado: "${t}"`,
-    typeHere: "O escriba la lectura",
+    typeHere: "O escríbalo aquí",
     use: "Usar",
     again: "Intentar otra vez",
     accept: "Aceptar",
@@ -189,8 +208,20 @@ const es: TodayMessages = {
     saved: (lot, product) => `Hornada registrada para el Lote ${lot} · ${product}.`,
     failLead: "No se cumplió un límite. Abriendo el registro…",
     openFailed: "No se pudo abrir el registro de horneado",
-    noSpeech: "Este navegador no tiene reconocimiento de voz. Escriba la lectura abajo o abra el registro.",
+    noSpeech: "Este navegador no tiene reconocimiento de voz. Escríbalo abajo o abra el registro.",
     needsRecord: "Esta fila debe revisarse en el registro. Abriéndolo…",
+  },
+  seal: {
+    button: "Registrar sellado",
+    speak: "Decir la revisión",
+    open: "Abrir el registro",
+    title: (lot, product) => `Revisión de sellado · Lote ${lot} · ${product}`,
+    say: 'Diga: "Revisión de aire aprobada". Al empacar: "Prueba de jalón aprobada" o "Revisión de empaque aprobada". Empiece con "Arranque", "Después de un ajuste" o "Fin de corrida" cuando sea una de esas.',
+    passLead: "Revisión aprobada. Revise la fila y acéptela.",
+    saved: (lot, product) => `Revisión de sellado registrada para el Lote ${lot} · ${product}.`,
+    failLead: "Una revisión falló. Abriendo el registro…",
+    unclear: 'No escuché qué revisión, o su resultado. Dígalo otra vez, por ejemplo "Revisión de aire aprobada".',
+    openFailed: "No se pudo abrir el registro de sellado",
   },
   recordSealChecks: "Registrar las revisiones de sellado (FRM-606)",
   ccpTodayNone: "Hoy no se ha empezado ningún registro de PCC.",

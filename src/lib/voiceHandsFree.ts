@@ -14,12 +14,14 @@
 //
 // Pure: no Supabase, no browser APIs, relative imports only, so the node test can bundle it.
 
+import { format } from "date-fns";
 import {
   CHECK_OPTIONS, VOICE_COMMANDS, applyVoiceFill, normalizeTranscript, parseNumber,
-  type ApplyResult, type CheckOption, type VoiceFill,
+  type ApplyResult, type CheckOption, type VoiceFill, type VoiceSummaryLine, type VoiceWarning,
 } from "./voiceCommands";
 import type { FillContext, FormSchema } from "./formSchema";
 import { LEXICONS, type VoiceLang } from "./voiceLexicon";
+import { VOICE_MSG } from "./voiceMessages";
 
 /** The form this listens for. One form for now; the pieces below are keyed on it. */
 export const HANDS_FREE_FORM = "FRM-606";
@@ -380,6 +382,81 @@ export const HANDS_FREE_CARD: Record<VoiceLang, { heading: string; intro: string
     ],
   },
 };
+
+// ─── A seal check from a lot's button on the Today page ──────────────────────
+//
+// The Today page lists each lot + product in progress, and its "Record seal check" button stands
+// for the trigger exactly as a headset button does: the sentence that follows is parsed as if it
+// came after "Form 606". So the lines are the hands-free ones without the trigger - "air check
+// passed", "pull test passed" - and the record they go to is that lot's FRM-606 for the day.
+
+/** The sentence said after the button was tapped. Null or "unclear" means no check was heard. */
+export function parseSealButton(alternatives: string[], lang: VoiceLang = "en"): HandsFreeHeard | null {
+  return parseHandsFree(withPending(HANDS_FREE_IMPLIED, alternatives), lang);
+}
+
+/** The seal-check row for a lot, as the entry page and the Today page both apply it. */
+export function sealButtonFill(lot: { product: string; lot: string }, row: HandsFreeRow, at: Date, uiLang: VoiceLang = "en"): VoiceFill {
+  const M = VOICE_MSG[uiLang];
+  const time = format(at, "HH:mm");
+  const cells: Record<string, string> = { time, check: row.check };
+  if (row.vacuum_reading !== undefined) cells.vacuum_reading = row.vacuum_reading;
+  if (row.visual) cells.visual = row.visual;
+  if (row.pull_test) cells.pull_test = row.pull_test;
+  const warnings: VoiceWarning[] = [];
+  if (handsFreeFailed(row)) {
+    warnings.push({ level: "fail", section: "deviation", code: "seal_fail", text: M.sealFail(row.visual === "fail", row.pull_test === "fail") });
+  }
+  const verdict = (v: "pass" | "fail") => (v === "pass" ? M.summary.pass : M.summary.fail);
+  const summary: VoiceSummaryLine[] = [
+    { key: "time", label: M.summary.time, value: time },
+    { key: "product", label: M.summary.product, value: lot.product },
+    { key: "lot", label: M.summary.lot, value: lot.lot },
+    { key: "check", label: M.summary.check, value: M.summary.checkValue(row.check) },
+  ];
+  if (row.vacuum_reading !== undefined) summary.push({ key: "vacuum", label: M.summary.vacuum, value: M.summary.inches(Number(row.vacuum_reading)) });
+  if (row.visual) summary.push({ key: "visual", label: M.summary.visual, value: verdict(row.visual), flag: row.visual });
+  if (row.pull_test) summary.push({ key: "pull", label: M.summary.pull, value: verdict(row.pull_test), flag: row.pull_test });
+  return {
+    commandId: HANDS_FREE_COMMAND, formNumber: HANDS_FREE_FORM, title: "CCP 2 Vacuum Sealing Monitoring Record", gridId: HANDS_FREE_GRID,
+    productionDate: format(at, "yyyy-MM-dd"), entryFields: { product: lot.product, lot: lot.lot },
+    row: cells, warnings, summary, uiLang,
+  };
+}
+
+/**
+ * The wall card for the button: the hands-free lines without their trigger (and without undo,
+ * which the button has no use for - a row is accepted before it is saved). Derived, so the two
+ * cards cannot say different things.
+ */
+export const SEAL_BUTTON_CARD: Record<VoiceLang, { heading: string; intro: string; lines: { say: string; does: string }[]; notes: string[] }> = {
+  en: {
+    heading: "Seal check from the Today page",
+    intro: "On the Today page, tap Record seal check on the lot's row, then Speak the check. The product and the lot come from the row - say only the check.",
+    lines: [],
+    notes: [
+      "Say \"failed\" in place of \"passed\" when a check fails. The record then opens: stop, and follow Section 3.",
+      "When a check passes, look at the row on the screen and tap Accept.",
+      "Never pull test a pouch that has just been sealed: the film is still warm.",
+    ],
+  },
+  es: {
+    heading: "Revisión de sellado desde la página Hoy",
+    intro: "En la página Hoy, toque Registrar sellado en la fila del lote y luego Decir la revisión. El producto y el lote salen de la fila: diga solo la revisión.",
+    lines: [],
+    notes: [
+      "Diga \"rechazada\" en lugar de \"aprobada\" cuando una revisión falle. Entonces se abre el registro: deténgase y siga la Sección 3.",
+      "Cuando una revisión se aprueba, revise la fila en la pantalla y toque Aceptar.",
+      "Nunca haga la prueba de jalón en una bolsa recién sellada: la película sigue caliente.",
+    ],
+  },
+};
+for (const lang of ["en", "es"] as VoiceLang[]) {
+  SEAL_BUTTON_CARD[lang].lines = HANDS_FREE_CARD[lang].lines
+    .map(line => ({ say: line.say.replace(/^[^,]*,\s*/, ""), does: line.does }))
+    .filter(line => parseSealButton([line.say], lang)?.kind === "row")
+    .map(line => ({ say: line.say.charAt(0).toUpperCase() + line.say.slice(1), does: line.does }));
+}
 
 // ─── The reminder ────────────────────────────────────────────────────────────
 
