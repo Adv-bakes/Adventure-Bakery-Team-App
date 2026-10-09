@@ -32,6 +32,7 @@ import {
 } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 import { BakeLoadButton } from "@/components/team/today/BakeLoadButton";
+import { SealCheckButton } from "@/components/team/today/SealCheckButton";
 
 const LANG_KEY = "today.lang";
 type Doc = { id: string; sop_number: string; revision: string | null; content: any };
@@ -289,6 +290,12 @@ export default function Today() {
                           {canVoice && docOf("baking") && l.lotCode && l.product && (
                             <BakeLoadButton
                               doc={docOf("baking")!} lot={l.lotCode} product={l.product} today={today}
+                              lang={lang} disabled={!open} onSaved={load}
+                            />
+                          )}
+                          {canVoice && docOf("sealing") && l.lotCode && l.product && (
+                            <SealCheckButton
+                              doc={docOf("sealing")!} lot={l.lotCode} product={l.product} today={today}
                               lang={lang} disabled={!open} onSaved={load}
                             />
                           )}
