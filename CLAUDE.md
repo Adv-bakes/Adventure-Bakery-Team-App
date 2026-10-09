@@ -433,6 +433,15 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   cut uploaded each page picture and sent its signed link, as photos do: on the owner's first real PDF
   that stalled for over a minute and filled nothing (cause not found - the function logs could not be
   read), while the same pictures sent directly were read in three seconds. Do not go back to links.
+  **Document mode** (same day, after the first real PDF put a wrong status on one machine): a read made
+  only of PDF pages sends `source: "pdf"` and each page's text layer (`PdfPage.text`). The function then
+  appends `DOCUMENT_ADDENDUM` to its prompt, runs at temperature 0, and has the model return every
+  fixed-table row WITH ITS LABEL (`_row`); `placeRowsByLabel` (`_shared/gridRows.ts`, tested by
+  `scripts/test-grid-rows.mjs`) puts each row on the form row of that label. A row of the document that
+  is no longer on the form (FRM-903's Chopper) is skipped with a warning instead of shifting every row
+  below it. **A request without `source` is read exactly as before** - photographs are untouched, which
+  is why this could ship without being tried on a photo. The owner deploys the function
+  (`npx supabase functions deploy extract-form-answers`); the client is safe before and after.
   **A PDF never fills FRM-903's "Day / Shift" section** (`PDF_FILL_SKIPS` / `pdfFillSkippedFields` in
   `formSchema.ts`): those fields are left out of the manifest and dropped from the answers, so the date,
   area, shift and product run stay as they are on the entry. A photograph still fills them. If photos and
@@ -918,6 +927,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `generate-narration` | Accepts `{imageUrl}`; sends signed PNG URL to Gemini 2.5 Flash vision; returns `{text}` — 2–4 sentence trainer narration |
 | `generate-quiz` | Accepts `{title, narrations[], count}`; returns `{questions[]}` — MCQ with 4 options, hint, rationale |
 | `cleanup-narration` | Accepts `{text}`; returns `{text}` — grammar/style cleanup via Gemini |
+| `extract-form-answers` | Accepts `{manifest, imageUrls[], source?, pageTexts?}`; reads a photographed (or, with `source: "pdf"`, a PDF) completed form and returns `{answers, warnings[]}` for the entry's "Fill from a photo". Whitelists and coerces every answer against the manifest. Document mode places fixed-table rows by label (`_shared/gridRows.ts`). See "Fill from a photo also takes a PDF" |
 | `extract-package-label` | Accepts `{imageUrls[], wanted[], mode?}` (`ingredient` / `finished_goods` / `specification` — the last also transcribes declarations, see "Specification scan"); reads a photographed **ingredient package** and returns `{facts, alternates:{lot_code[]}, extras[], warnings[]}` for filling one grid row. Closed fact whitelist server-side (no allergen key); prompted to distinguish a variable-applied lot code from pre-printed item/barcode numbers. See "Package-label scan" above |
 | `verification-notifications` | Invoked by pg_cron twice daily (`0 11,19 * * *` UTC). Reads `verification_schedule`, derives each activity's last-completed from the evidence records, and raises one `internal_notifications` row per activity due or overdue — plus, for the retention review, a deep link per FRM-703 sample past its discard date. Dedupes on a unique index over `dedupe_key`; treats `23505` as "already raised" and refreshes instead. Closes what is no longer due with `resolved_at` (never `dismissed_at`). Decision half is `_shared/verificationSchedule.ts`, tested by `scripts/test-verification-schedule.mjs`. See "Verification Schedule & Notifications" below. |
 | `cleanup-form-text` | Accepts `{text}`; returns `{text}` — same shape as `cleanup-narration` but prompted for compliance-form free-text answers (incident reports, root-cause notes): fixes grammar/punctuation/capitalization/filler words into one clear statement, preserves every fact/name/quantity exactly. Powers the AI-cleanup Sparkles button in `DictationTextarea.tsx`. |

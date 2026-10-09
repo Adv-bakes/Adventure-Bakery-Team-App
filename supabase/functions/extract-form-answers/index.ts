@@ -11,8 +11,20 @@
 // Expects: {
 //   manifest: FieldManifest[],   // the value-bearing fields to fill (no signatures)
 //   imageUrls: string[]          // signed URLs of the photographed page(s)
+//   source?: "pdf"               // DOCUMENT MODE - the pages are a PDF, not a photograph
+//   pageTexts?: string[]         // document mode: each page's text layer, same order as imageUrls
 // }
+//
+// DOCUMENT MODE exists because a PDF given to "Fill from a photo" is usually an earlier record of
+// the same form. It differs from a photograph in three ways, and each was a wrong answer before
+// it was handled: the form may have changed since (a row removed), a table can continue over a
+// page break, and the wording is printed, so it can be read exactly instead of by eye. In this
+// mode the model is given the text layer, runs at temperature 0, and returns each fixed-table row
+// WITH ITS LABEL so the row is placed by label (_shared/gridRows.ts) and not by position. A
+// request without `source` is read exactly as it always was.
 // Returns: { answers: { [fieldId]: value }, warnings: string[] }
+
+import { placeRowsByLabel } from "../_shared/gridRows.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -56,6 +68,15 @@ CRITICAL RULES:
 
 Respond with ONLY this JSON object (no markdown):
 {"answers": { "field_id": <value>, ... }, "warnings": ["..."]}`;
+
+const DOCUMENT_ADDENDUM = `
+
+THIS REQUEST IS A PRINTED DOCUMENT (a PDF), NOT A PHOTOGRAPH. These rules replace the ones above where they differ:
+- The pages are given as images AND as their exact text ("PAGE TEXT"). The text is exact: take every word, number and option from it. Use the images only to see which value sits beside which label.
+- The document may be an EARLIER version of the form: a table may hold rows that are not in "rowLabels", or lack some that are.
+- A table may continue on the next page. Its rows continue; read them all.
+- For a FIXED-row grid, return one row object for EACH ROW PRINTED IN THE DOCUMENT, in document order, and add to every row object the key "_row" holding that row's label exactly as it is printed in the document. Do not pad to the length of "rowLabels" and do not return empty objects. The app places each row by its "_row" label.
+- Read each row's cells from that row only. Never carry a value down from the row above.`;
 
 /** Parse a value against a manifest field's type; return undefined to omit. */
 function coerceScalar(type: string, value: unknown, options?: string[]): any {
@@ -104,7 +125,7 @@ function coerceScalar(type: string, value: unknown, options?: string[]): any {
 }
 
 /** Whitelist/coerce the model's answers against the manifest; collect warnings. */
-function sanitizeAnswers(rawAnswers: any, manifest: any[], warnings: string[]) {
+function sanitizeAnswers(rawAnswers: any, manifest: any[], warnings: string[], documentMode = false) {
   const byId = new Map<string, any>();
   for (const item of Array.isArray(manifest) ? manifest : []) {
     if (item && typeof item.id === "string") byId.set(item.id, item);
@@ -142,7 +163,18 @@ function sanitizeAnswers(rawAnswers: any, manifest: any[], warnings: string[]) {
         // Blank rows stay as {} placeholders; length is clamped to the schema's
         // row count. Only emit the field if at least one row was actually read.
         const nLabels = Array.isArray(field.rowLabels) ? field.rowLabels.length : incoming.length;
-        const rows = Array.from({ length: nLabels }, (_, i) => clean(incoming[i]));
+        // Document mode: place each row by the label printed beside it. A label that is not a row
+        // of this form is said out loud and its answers dropped; if the model sent no labels at
+        // all, position is used as for a photograph.
+        const placed = documentMode && Array.isArray(field.rowLabels)
+          ? placeRowsByLabel(field.rowLabels, incoming)
+          : null;
+        if (placed?.byLabel) {
+          for (const label of placed.unmatched.slice(0, 10)) {
+            warnings.push(`"${String(label).slice(0, 80)}" is in the document's "${String(field.label ?? id).slice(0, 60)}" table but is not a row of this form, so it was skipped.`);
+          }
+        }
+        const rows = Array.from({ length: nLabels }, (_, i) => clean(placed?.byLabel ? placed.rows[i] : incoming[i]));
         if (rows.some(r => Object.keys(r).length > 0)) out[id] = rows;
       } else {
         const rows = incoming.map(clean).filter(r => Object.keys(r).length > 0);
@@ -164,7 +196,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { manifest, imageUrls } = await req.json();
+    const { manifest, imageUrls, source, pageTexts } = await req.json();
+    const documentMode = source === "pdf";
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) return json({ error: "LOVABLE_API_KEY not configured" }, 500);
 
@@ -185,6 +218,12 @@ Deno.serve(async (req) => {
       },
       ...imageUrls.slice(0, 10).map((url: string) => ({ type: "image_url", image_url: { url } })),
     ];
+    if (documentMode && Array.isArray(pageTexts)) {
+      const text = pageTexts.slice(0, 10)
+        .map((t: unknown, i: number) => `PAGE TEXT ${i + 1}:\n${String(t ?? "").slice(0, 12000)}`)
+        .join("\n\n");
+      if (text.trim()) userContent.push({ type: "text", text });
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -192,10 +231,11 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: documentMode ? SYSTEM_PROMPT + DOCUMENT_ADDENDUM : SYSTEM_PROMPT },
           { role: "user", content: userContent },
         ],
         response_format: { type: "json_object" },
+        ...(documentMode ? { temperature: 0 } : {}),
       }),
     });
 
@@ -218,7 +258,7 @@ Deno.serve(async (req) => {
     const warnings: string[] = Array.isArray(parsed?.warnings)
       ? parsed.warnings.map((w: any) => String(w).slice(0, 300)).slice(0, 25)
       : [];
-    const answers = sanitizeAnswers(parsed?.answers ?? parsed, manifest, warnings);
+    const answers = sanitizeAnswers(parsed?.answers ?? parsed, manifest, warnings, documentMode);
     return json({ answers, warnings });
   } catch (e) {
     console.error("extract-form-answers error:", e);

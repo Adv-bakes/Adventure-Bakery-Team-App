@@ -416,9 +416,11 @@ export async function uploadResponseAttachment(responseId: string, file: File): 
 export async function extractFormAnswers(
   manifest: FieldManifest[],
   imageUrls: string[],
+  /** A PDF, not a photograph: the function is told so and given each page's text (document mode). */
+  document?: { pageTexts: string[] },
 ): Promise<{ answers: Record<string, any>; warnings: string[] }> {
   const { data, error } = await supabase.functions.invoke("extract-form-answers", {
-    body: { manifest, imageUrls },
+    body: document ? { manifest, imageUrls, source: "pdf", pageTexts: document.pageTexts } : { manifest, imageUrls },
   });
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
