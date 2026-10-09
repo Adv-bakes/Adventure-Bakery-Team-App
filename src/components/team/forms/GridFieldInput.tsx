@@ -19,6 +19,7 @@ import { DictationTextarea } from "./DictationTextarea";
 import { GridRowDialog } from "./GridRowDialog";
 import { DocRefText } from "./DocRefText";
 import { TeamNameInput } from "./TeamNameInput";
+import { LinkedPickInput } from "./LinkedPickInput";
 
 /** How long the "label scan filled …" chip stays up before fading out. */
 const SCAN_UNDO_MS = 12000;
@@ -133,6 +134,19 @@ export function GridCell({ column, value, onChange, disabled, stacked, suggestio
             onChange={onChange}
             control={control}
             titlePath={column.teamPick.titleColumn && rowPath ? `${rowPath}.${column.teamPick.titleColumn}` : undefined}
+          />
+        );
+      }
+      // A value picked from another form's register, which fills the cells beside it.
+      if (column.pickFrom && !disabled) {
+        return (
+          <LinkedPickInput
+            spec={column.pickFrom}
+            className={inputClass}
+            value={value ?? ""}
+            onChange={onChange}
+            control={control}
+            rowPath={rowPath}
           />
         );
       }

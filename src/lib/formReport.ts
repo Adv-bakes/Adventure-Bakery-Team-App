@@ -10,6 +10,8 @@
 // Distinct from Records.tsx / flattenForReport(), which flatten a form's OWN
 // entries; here the report reprojects a *different* form's data.
 
+import { pickOptionsFromRows, type PickOption } from "./pickFrom";
+import type { GridPickFrom } from "./formSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFieldValue, getFormSchema, valueFields, type FormField, type FormSchema, type SelectOptionsFrom } from "@/lib/formSchema";
 import { fetchResponses, type FormResponse } from "@/lib/formResponses";
@@ -243,6 +245,21 @@ export function selectOptionsFromResponses(
     if (value && !byKey.has(value.toLowerCase())) byKey.set(value.toLowerCase(), value);
   }
   return [...byKey.values()].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * The pick-list of a grid column linked to another form's register (GridColumn.pickFrom):
+ * SUBMITTED entries that pass the filters, newest first so the newest entry wins a repeated
+ * name. The shaping is pickOptionsFromRows in pickFrom.ts.
+ */
+export async function loadPickOptions(spec: GridPickFrom): Promise<PickOption[]> {
+  const doc = await fetchSourceForm(spec.form);
+  if (!doc) return [];
+  const rows = (await fetchResponses(doc.id))
+    .filter(r => r.status === "submitted" && (spec.filters ?? []).every(f => matchesFilter(f, r.data ?? {})))
+    .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))
+    .map(r => r.data ?? {});
+  return pickOptionsFromRows(spec, rows);
 }
 
 export async function loadSelectOptions(spec: SelectOptionsFrom): Promise<string[]> {
