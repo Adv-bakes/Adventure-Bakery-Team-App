@@ -100,6 +100,40 @@ const statuses = (p) => p.rows.map(r => r?.status ?? null);
   check("a blank label does not count", T.placeRowsByLabel(["Tables"], [{ _row: "  ", s: 1 }]).byLabel, false);
 }
 
+// ---------- what the document's own text says (the owner's FRM-903 record of 2026-10-08) ----------
+{
+  // The text layer exactly as pdfjs gives it in the browser, three pages.
+  const PAGES = ["Adventure Bakery, LLC Revision Num. v6 \nForm Title Daily Sanitation, Pre-Operation & Release\nRecord\nFilled By Richard Mercer \nForm No. FRM-903 Submitted: 10/8/2026 2:49 PM \nDay / Shift \nDate: 2026-10-08 \nProduction area / line: — \nShift: 1st Shift \nProduct / batch run: Bahama Rum Cakes \n1. Pre-Operation Cleanliness Check \nSurface & equipment check \nVisibly clean Sanitized Corrective action / comments\nTables Pass Pass \nMixers Pass Pass \nBowls Pass Pass \nUtensils Pass Pass \nPans Pass Pass \nRacks Pass N/A \nOvens Pass N/A \nScales Pass N/A \nDepositors Pass Pass \nChopper N/A N/A \nFloors Pass N/A \nHandwash stations (clean, stocked,\ndraining) \nPass Pass \nRestrooms / sanitary facilities Pass Pass \nBreak room / lockers (staff amenities) Pass Pass \n2. Production Equipment — Cleaned & Sanitized per SSOP \nEquipment \nStatus Notes\nHobart V-1401 Mixer — SOP-901 / FRM-909 Clean & sanitized \nKook-E-King Depositor — SOP-902 / FRM-910 Not used today \nAdventure Bakery, LLC Confidential 1 \nThis document contains Confidential Commercial Information which constitutes TRADE SECRETS and is exempt from disclosure under the Freedom of Information Act\npursuant to 5 USC (b) (4) and may not be disclosed without prior written approval from Adventure Bakery, LLC.", "Status Notes\nBeldos 275 Depositor — SOP-903 / FRM-911 Clean & sanitized \nSmipack S560NA Shrink Wrapper — SOP-601 Between-use care (scrape,\nwipe, re-grease) \nGroen TDB Kettle — SOP-904 / FRM-912 Not used today \nMolds — SOP-906 (recorded here) Between-use care (scrape,\nwipe, re-grease) \n3. Detergent & Sanitizer Verification \nDetergent used: Dawn Professional \nDetergent concentration: 1-2 oz per 10 gallons \nDetergent within target?: Pass \nDetergent test method: Measured dose per sink fill \nSanitizer used: Noble Sani-512 \nConcentration (PPM): 200 ppm \nWithin target?: Pass \nTest method (e.g. test strip): Test strip \nFoot baths — use the HIGH-RANGE quat strip. The baths run Sani-512 at 1:160, roughly three times the 1:512 food-contact strength. The\n0-400 ppm strips used on equipment saturate at this concentration and will read high on a bath that has failed. Change the solution when\nthe strip reads below target, when the bath is visibly soiled, or when it has been diluted by water carried in or by washdown. \nFoot baths — Sani-512 at 1:160 \nReading (ppm) At strength? Clean & not\ndiluted?\nAction (none / recharged / changed)\nProduction entrance (from\noffice / break room / reception) \nPass Pass \nWalkthrough — production to\ninventory & packaging \nPass Pass \n4. Glass & Brittle Plastic Check \nGlass dial covers & MIG thermometers \nItem Undamage\nd\nCondition / comments Action taken\nProcessing Room Pan scrubber dials Pass \nProcessing Room Oven controls and door\nglass\nPass \nProcessing Room MIG thermometers Pass \n5. Operational GMP Check \nOperational GMP check \nConforms Corrective action / comments\nHair/beard nets worn; no exposed jewelry Pass \nAdventure Bakery, LLC Confidential 2 \nThis document contains Confidential Commercial Information which constitutes TRADE SECRETS and is exempt from disclosure under the Freedom of Information Act\npursuant to 5 USC (b) (4) and may not be disclosed without prior written approval from Adventure Bakery, LLC.", "Conforms Corrective action / comments\nClean outer garments; no eating/drinking/gum in\nproduction \nPass \nHandwash stations stocked (soap, towels,\nsanitizer) \nPass \nHands washed on entry and as required Pass \nAllergen controls / segregation followed Pass \nWaste and floor debris controlled Pass \nNo condensation or drip over exposed product Pass \nPest control devices in place and intact Pass \nDoors/screens to outside kept closed Pass \n6. Corrective Actions & Release \nAll corrective actions completed before start-up: Pass \nQA Technician (qualified inspector): Signed — Richard Mercer — 10/8/2026 2:49 PM \nProduction Supervisor: Signed — Richard Mercer — 10/8/2026 2:49 PM \nCreated: 10/8/2026 2:47 PM Status: submitted Submitted: 10/8/2026 2:49 PM\nAdventure Bakery, LLC Confidential 3 \nThis document contains Confidential Commercial Information which constitutes TRADE SECRETS and is exempt from disclosure under the Freedom of Information Act\npursuant to 5 USC (b) (4) and may not be disclosed without prior written approval from Adventure Bakery, LLC."];
+  const words = T.textWords(PAGES);
+  const SURFACE = [{ id: "visibly_clean", type: "pass_fail" }, { id: "sanitized", type: "pass_fail" }, { id: "corrective", type: "text" }];
+  const EQUIP = [{ id: "status", type: "select", options: ["Clean & sanitized", "Between-use care (scrape, wipe, re-grease)", "Not used today"] }, { id: "notes", type: "text" }];
+  const GMP = [{ id: "result", type: "pass_fail" }, { id: "corrective", type: "text" }];
+  const surface = (label) => T.readRowFromText(words, label, SURFACE);
+
+  check("Depositors is pass, pass - the cell a model read as N/A", surface("Depositors"), { visibly_clean: "pass", sanitized: "pass" });
+  check("Racks is pass, n/a", surface("Racks"), { visibly_clean: "pass", sanitized: "na" });
+  check("Floors is pass, n/a", surface("Floors"), { visibly_clean: "pass", sanitized: "na" });
+  check("a label wrapped over two lines", surface("Handwash stations (clean, stocked, draining)"), { visibly_clean: "pass", sanitized: "pass" });
+  check("every pre-operation row", ["Tables", "Mixers", "Bowls", "Utensils", "Pans", "Ovens", "Scales", "Restrooms / sanitary facilities", "Break room / lockers (staff amenities)"]
+    .map(l => Object.values(surface(l)).join("/")), ["pass/pass", "pass/pass", "pass/pass", "pass/pass", "pass/pass", "pass/na", "pass/na", "pass/pass", "pass/pass"]);
+  check("a row that is not in the document", surface("Slicer"), {});
+
+  check("the machine a model read wrongly", T.readRowFromText(words, EQUIPMENT[1], EQUIP), { status: "Not used today" });
+  check("every equipment row, one continued on page 2 and one wrapped", EQUIPMENT.map(l => T.readRowFromText(words, l, EQUIP).status), [
+    "Clean & sanitized", "Not used today", "Clean & sanitized", "Between-use care (scrape, wipe, re-grease)", "Not used today", "Between-use care (scrape, wipe, re-grease)",
+  ]);
+  check("a single pass/fail column", T.readRowFromText(words, "Hair/beard nets worn; no exposed jewelry", GMP), { result: "pass" });
+  check("a wrapped GMP row", T.readRowFromText(words, "Handwash stations stocked (soap, towels, sanitizer)", GMP), { result: "pass" });
+
+  // Reading stops where the text stops being plain.
+  check("a table that starts with a free-text column gives nothing", T.readRowFromText(words, "Production entrance (from office / break room / reception)", [{ id: "reading", type: "text" }, { id: "ok", type: "pass_fail" }]), {});
+  check("stops at the first cell that is not a choice", T.readRowFromText(T.textWords(["Tables Pass smudged Pass"]), "Tables", SURFACE), { visibly_clean: "pass" });
+  check("the same label twice with different choices is not used", T.readRowFromText(T.textWords(["Tables Pass Pass", "Tables Fail Pass"]), "Tables", SURFACE), {});
+  check("the same label twice with the same choices is", T.readRowFromText(T.textWords(["Tables Pass N/A", "Tables Pass N/A"]), "Tables", SURFACE), { visibly_clean: "pass", sanitized: "na" });
+  check("a scan has no text", T.readRowFromText(T.textWords([""]), "Tables", SURFACE), {});
+  check("fail is read", T.readRowFromText(T.textWords(["Mixers Fail Pass re-cleaned"]), "Mixers", SURFACE), { visibly_clean: "fail", sanitized: "pass" });
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} checks failed`); process.exit(1); }
 console.log(`grid rows: ${cases} checks passed`);

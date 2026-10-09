@@ -55,3 +55,63 @@ export function placeRowsByLabel(rowLabels: unknown[], incoming: unknown[]): Pla
   }
   return { byLabel: true, rows, unmatched };
 }
+
+// ---------- What the document's own text says a row holds ----------
+
+/** A grid column, as much of it as reading a row needs. */
+export interface TextColumn { id: string; type: string; options?: string[] }
+
+const PASS_FAIL: [string[], string][] = [[["pass"], "pass"], [["fail"], "fail"], [["n", "a"], "na"]];
+
+const startsAt = (words: string[], at: number, seq: string[]) =>
+  seq.length > 0 && seq.every((w, k) => words[at + k] === w);
+
+/**
+ * The choices printed straight after a row's label in the document's text layer, for the row's
+ * LEADING pass/fail and pick-list columns - "Depositors Pass Pass" is pass, pass. Reading stops at
+ * the first column of any other kind (free text cannot be told from the next cell) or the first
+ * cell that is not one of the choices, so a row answers for as many leading columns as the text
+ * is plain about, and no more.
+ *
+ * This is exact where a model reading the page is not: the same PDF gave a model "N/A" for a cell
+ * printed "Pass" (2026-10-09). It is only used for a PDF with a text layer; a scan has none and
+ * returns nothing. If the label is printed more than once with different choices after it, nothing
+ * is returned - which of them is this row cannot be known.
+ */
+export function readRowFromText(words: string[], label: unknown, columns: TextColumn[]): Record<string, string> {
+  const seq = normLabel(label).split(" ").filter(Boolean);
+  if (!seq.length) return {};
+  let found: Record<string, string> | null = null;
+  for (let at = 0; at + seq.length <= words.length; at++) {
+    if (!startsAt(words, at, seq)) continue;
+    let pos = at + seq.length;
+    const got: Record<string, string> = {};
+    for (const col of columns) {
+      let hit: [string[], string] | undefined;
+      if (col.type === "pass_fail") {
+        hit = PASS_FAIL.find(([w]) => startsAt(words, pos, w));
+      } else if (col.type === "select") {
+        // Longest first, so "Not used today" is not taken for an option that is its first word.
+        hit = (col.options ?? [])
+          .map((o): [string[], string] => [normLabel(o).split(" ").filter(Boolean), o])
+          .sort((a, b) => b[0].length - a[0].length)
+          .find(([w]) => startsAt(words, pos, w));
+      } else {
+        break;
+      }
+      if (!hit) break;
+      got[col.id] = hit[1];
+      pos += hit[0].length;
+    }
+    if (!Object.keys(got).length) continue;
+    if (found && JSON.stringify(found) !== JSON.stringify(got)) return {};
+    found = got;
+  }
+  return found ?? {};
+}
+
+/** The document's text as one run of words, the form readRowFromText searches. */
+export function textWords(pageTexts: unknown): string[] {
+  const all = (Array.isArray(pageTexts) ? pageTexts : []).map(t => String(t ?? "")).join(" ");
+  return normLabel(all).split(" ").filter(Boolean);
+}
