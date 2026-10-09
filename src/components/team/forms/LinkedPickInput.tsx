@@ -9,7 +9,7 @@
 // read the cell is simply a text box.
 
 import { useEffect, useId, useRef, useState } from "react";
-import { useController, type Control } from "react-hook-form";
+import { useController, useWatch, type Control } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import type { GridPickFrom } from "@/lib/formSchema";
 import { loadPickOptions } from "@/lib/formReport";
@@ -38,6 +38,33 @@ function FillTarget({ control, name, column, handles }: {
   return null;
 }
 
+/**
+ * "Fill from FRM-207" under a cell whose value is already one of the listed choices while a cell it
+ * could fill is still empty - a row typed before the list existed, or opened again after a reload.
+ * Picking from the list fills by itself; this is the same fill for a value that is already there,
+ * and it runs only when tapped.
+ */
+function FillOffer({ control, rowPath, targets, picked, last, form, onFill }: {
+  control: Control<Record<string, any>>; rowPath: string; targets: string[];
+  picked: PickOption; last: PickOption | null; form: string;
+  onFill: (writes: Record<string, string>) => void;
+}) {
+  const values = useWatch({ control, name: targets.map(column => `${rowPath}.${column}`) }) as unknown[];
+  const current: Record<string, unknown> = {};
+  targets.forEach((column, i) => { current[column] = values?.[i]; });
+  const writes = pickFills(picked, last, current);
+  if (!Object.keys(writes).length) return null;
+  return (
+    <button
+      type="button"
+      className="block text-[11px] text-[#9A6F1E] underline underline-offset-2 hover:text-[#2A1F0E]"
+      onClick={() => onFill(writes)}
+    >
+      Fill from {form}
+    </button>
+  );
+}
+
 export function LinkedPickInput({ spec, value, onChange, className, control, rowPath }: {
   spec: GridPickFrom;
   value: string;
@@ -62,6 +89,11 @@ export function LinkedPickInput({ spec, value, onChange, className, control, row
   // along. After a reload every answer in the row counts as the person's and is kept.
   const last = useRef<PickOption | null>(null);
   const targets = control && rowPath ? Object.keys(spec.fill ?? {}) : [];
+  const matched = targets.length ? matchPick(options, value) : null;
+  const apply = (picked: PickOption, writes: Record<string, string>) => {
+    for (const [column, text] of Object.entries(writes)) handles.current[column]?.onChange(text);
+    last.current = picked;
+  };
 
   return (
     <>
@@ -73,6 +105,7 @@ export function LinkedPickInput({ spec, value, onChange, className, control, row
         value={value ?? ""}
         list={listId}
         autoComplete="off"
+        placeholder={options.length ? `Type, or pick from ${spec.form}` : undefined}
         onChange={(e) => {
           const v = e.target.value;
           onChange(v);
@@ -80,11 +113,16 @@ export function LinkedPickInput({ spec, value, onChange, className, control, row
           if (!picked) return;
           const current: Record<string, unknown> = {};
           for (const column of targets) current[column] = handles.current[column]?.value;
-          const writes = pickFills(picked, last.current, current);
-          for (const [column, text] of Object.entries(writes)) handles.current[column]?.onChange(text);
-          last.current = picked;
+          apply(picked, pickFills(picked, last.current, current));
         }}
       />
+      {matched && (
+        <FillOffer
+          control={control!} rowPath={rowPath!} targets={targets}
+          picked={matched} last={last.current} form={spec.form}
+          onFill={writes => apply(matched, writes)}
+        />
+      )}
       <datalist id={listId}>
         {options.map(o => <option key={o.value} value={o.value}>{o.hint}</option>)}
       </datalist>
