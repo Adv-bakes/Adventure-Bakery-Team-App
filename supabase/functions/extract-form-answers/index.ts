@@ -24,7 +24,7 @@
 // request without `source` is read exactly as it always was.
 // Returns: { answers: { [fieldId]: value }, warnings: string[] }
 
-import { placeRowsByLabel } from "../_shared/gridRows.ts";
+import { placeRowsByLabel, readRowFromText, textWords } from "../_shared/gridRows.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -125,7 +125,7 @@ function coerceScalar(type: string, value: unknown, options?: string[]): any {
 }
 
 /** Whitelist/coerce the model's answers against the manifest; collect warnings. */
-function sanitizeAnswers(rawAnswers: any, manifest: any[], warnings: string[], documentMode = false) {
+function sanitizeAnswers(rawAnswers: any, manifest: any[], warnings: string[], documentMode = false, docWords: string[] = []) {
   const byId = new Map<string, any>();
   for (const item of Array.isArray(manifest) ? manifest : []) {
     if (item && typeof item.id === "string") byId.set(item.id, item);
@@ -175,6 +175,13 @@ function sanitizeAnswers(rawAnswers: any, manifest: any[], warnings: string[], d
           }
         }
         const rows = Array.from({ length: nLabels }, (_, i) => clean(placed?.byLabel ? placed.rows[i] : incoming[i]));
+        // Document mode, and the PDF has a text layer: where the text plainly prints a row's
+        // pass/fail or pick-list choices after its label, those are what the row gets. The
+        // model's reading of the same cells is replaced, right or wrong - the text is the document.
+        if (documentMode && docWords.length && Array.isArray(field.rowLabels)) {
+          const columns = (Array.isArray(field.columns) ? field.columns : []).filter((c: any) => c && typeof c.id === "string");
+          rows.forEach((row, i) => Object.assign(row, readRowFromText(docWords, field.rowLabels[i], columns)));
+        }
         if (rows.some(r => Object.keys(r).length > 0)) out[id] = rows;
       } else {
         const rows = incoming.map(clean).filter(r => Object.keys(r).length > 0);
@@ -258,7 +265,16 @@ Deno.serve(async (req) => {
     const warnings: string[] = Array.isArray(parsed?.warnings)
       ? parsed.warnings.map((w: any) => String(w).slice(0, 300)).slice(0, 25)
       : [];
-    const answers = sanitizeAnswers(parsed?.answers ?? parsed, manifest, warnings, documentMode);
+    // A fixed table the model returned nothing for is still read from the text, so every
+    // fixed grid in the manifest is offered to the check.
+    const rawAnswers = parsed?.answers ?? parsed;
+    const docWords = documentMode ? textWords(pageTexts) : [];
+    if (docWords.length && rawAnswers && typeof rawAnswers === "object") {
+      for (const f of manifest) {
+        if (f?.type === "grid" && f.rowMode === "fixed" && !(f.id in rawAnswers)) rawAnswers[f.id] = [];
+      }
+    }
+    const answers = sanitizeAnswers(rawAnswers, manifest, warnings, documentMode, docWords);
     return json({ answers, warnings });
   } catch (e) {
     console.error("extract-form-answers error:", e);

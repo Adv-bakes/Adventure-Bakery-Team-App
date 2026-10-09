@@ -439,7 +439,14 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   fixed-table row WITH ITS LABEL (`_row`); `placeRowsByLabel` (`_shared/gridRows.ts`, tested by
   `scripts/test-grid-rows.mjs`) puts each row on the form row of that label. A row of the document that
   is no longer on the form (FRM-903's Chopper) is skipped with a warning instead of shifting every row
-  below it. **A request without `source` is read exactly as before** - photographs are untouched, which
+  below it. **Where the PDF has a text layer, the text decides**: `readRowFromText` reads the pass/fail
+  and pick-list choices printed straight after each row's label ("Depositors Pass Pass") for the row's
+  LEADING columns of those kinds, and they replace whatever the model read for those cells. Added the
+  same day, after label placement was live and one cell still came back wrong on the owner's screen
+  while five direct reads of the same PDF were right - a model's reading varies, the text does not. It
+  stops at the first free-text column, gives nothing for a label printed twice with different choices,
+  and does nothing for a scan. Tested on that record's real text layer.
+  **A request without `source` is read exactly as before** - photographs are untouched, which
   is why this could ship without being tried on a photo. The owner deploys the function
   (`npx supabase functions deploy extract-form-answers`); the client is safe before and after.
   **A PDF never fills FRM-903's "Day / Shift" section** (`PDF_FILL_SKIPS` / `pdfFillSkippedFields` in
