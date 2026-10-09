@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { deriveDateValue, deriveTextValue, julianLotCode, nextDerivedFill } from "@/lib/formSchema";
-import { loadSelectOptions } from "@/lib/formReport";
+import { loadSelectOptions, loadSuggestValues } from "@/lib/formReport";
 import { fetchFormLinkTarget, type FormLinkTarget } from "@/lib/formResponses";
 import { ExternalLink } from "lucide-react";
 import { DocRefText, loadDocIndex } from "./DocRefText";
@@ -226,6 +226,25 @@ function DocPickInput({ prefixes, ...rest }: {
   return <SuggestInput {...rest} options={options} />;
 }
 
+/**
+ * A text field with a type-ahead fed by another form (TextField.suggestFrom). The list loads when
+ * the field is first shown; until it answers, or if it cannot be read, the field is an ordinary
+ * text box. Nothing is looked up from the choice - it only saves typing - so more text can follow it.
+ */
+function FormSuggestInput({ spec, ...rest }: {
+  spec: NonNullable<TextField["suggestFrom"]>;
+  value: string; onChange: (v: string) => void; onBlur?: () => void; maxLength?: number; placeholder?: string;
+}) {
+  const [options, setOptions] = useState<SuggestOption[]>([]);
+  const key = JSON.stringify(spec);
+  useEffect(() => {
+    let live = true;
+    loadSuggestValues(JSON.parse(key)).then(values => { if (live) setOptions(values.map(value => ({ value }))); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [key]);
+  return <SuggestInput {...rest} options={options} />;
+}
+
 function useLinkedOptions(spec: SelectOptionsFrom | undefined) {
   const [state, setState] = useState<{ options: string[] | null; failed: boolean }>({ options: null, failed: false });
   const key = spec ? JSON.stringify(spec) : "";
@@ -290,6 +309,19 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer, sugg
                   onChange={rhf.onChange}
                   control={control}
                   titlePath={(field as TextField).teamPick!.titleField}
+                />
+              );
+              break;
+            }
+            if ((field as TextField).suggestFrom && !disabled) {
+              input = (
+                <FormSuggestInput
+                  spec={(field as TextField).suggestFrom!}
+                  value={rhf.value ?? ""}
+                  onChange={rhf.onChange}
+                  onBlur={rhf.onBlur}
+                  maxLength={(field as TextField).maxLength}
+                  placeholder={(field as TextField).placeholder}
                 />
               );
               break;

@@ -71,6 +71,16 @@ check("a typed allergen is not cleared", T.pickFills(rum, null, { supplier: "", 
 check("the same pick again writes nothing", T.pickFills(oil, oil, { supplier: "Great Value", allergens: "Soy" }), {});
 check("an empty cell with nothing to offer is left alone", T.pickFills(rum, null, { supplier: "x", allergens: "" }), {});
 
+// ---------- the type-ahead of a text field fed by another form (TextField.suggestFrom) ----------
+{
+  const sheets = [
+    { product_name: "Rum Cake - Pumpkin Spice" }, { product_name: "Rum Cake - Original" },
+    { product_name: "rum cake - original" }, { product_name: "  " }, {}, { product_name: "Iker Empanada" },
+  ];
+  check("distinct product names, sorted", T.suggestValuesFromRows("product_name", sheets), ["Iker Empanada", "Rum Cake - Original", "Rum Cake - Pumpkin Spice"]);
+  check("no entries, no list", T.suggestValuesFromRows("product_name", []), []);
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} checks failed`); process.exit(1); }
 console.log(`pick from: ${cases} checks passed`);

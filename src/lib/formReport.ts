@@ -10,7 +10,7 @@
 // Distinct from Records.tsx / flattenForReport(), which flatten a form's OWN
 // entries; here the report reprojects a *different* form's data.
 
-import { pickOptionsFromRows, type PickOption } from "./pickFrom";
+import { pickOptionsFromRows, suggestValuesFromRows, type PickOption } from "./pickFrom";
 import type { GridPickFrom } from "./formSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFieldValue, getFormSchema, valueFields, type FormField, type FormSchema, type SelectOptionsFrom } from "@/lib/formSchema";
@@ -260,6 +260,19 @@ export async function loadPickOptions(spec: GridPickFrom): Promise<PickOption[]>
     .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))
     .map(r => r.data ?? {});
   return pickOptionsFromRows(spec, rows);
+}
+
+/**
+ * The type-ahead list of a text field fed by another form (TextField.suggestFrom). Submitted
+ * entries, and drafts too when the field asks for them; practice rows are left out.
+ */
+export async function loadSuggestValues(spec: { form: string; field: string; drafts?: boolean }): Promise<string[]> {
+  const doc = await fetchSourceForm(spec.form);
+  if (!doc) return [];
+  const rows = (await fetchResponses(doc.id))
+    .filter(r => (spec.drafts || r.status === "submitted") && !(r.data && "_test_batch" in r.data))
+    .map(r => r.data ?? {});
+  return suggestValuesFromRows(spec.field, rows);
 }
 
 export async function loadSelectOptions(spec: SelectOptionsFrom): Promise<string[]> {

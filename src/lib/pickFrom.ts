@@ -66,3 +66,18 @@ export function pickFills(
   }
   return writes;
 }
+
+/**
+ * The type-ahead list of a text field fed by another form (TextField.suggestFrom): the distinct
+ * values of `field`, case-insensitively, sorted. `rows` are the entries' answers, already narrowed
+ * to the ones that count (submitted, or drafts too where the field says so). An entry with no
+ * value offers nothing.
+ */
+export function suggestValuesFromRows(field: string, rows: Record<string, any>[]): string[] {
+  const out: string[] = [];
+  for (const data of rows) {
+    const value = text(data?.[field]);
+    if (value && !out.some(v => same(v, value))) out.push(value);
+  }
+  return out.sort((a, b) => a.localeCompare(b));
+}
