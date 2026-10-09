@@ -562,7 +562,7 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   a tap opens or closes it by hand. The fields stay mounted while closed (CSS `hidden`), so values and
   field arrays are untouched. PDFs and the printable blank ignore it. Builder: "Start collapsed" under
   the section description. First use: FRM-401's "Manual readings and changes of state" (owner's request,
-  2026-10-08, migration `20261008000002`).
+  2026-10-08, migration `20261008000002`). Also FRM-507's "3. If a limit was not met" (2026-10-09, migration `20261009000007`); its required "Deviations on this day" answer is inside the section, so the section opens at Submit until that is answered.
 - **Link to another form under a field (`FieldBase.linkTo`):** `{ form, latestEntry? }` renders a link
   under the field (`FormLink` in `FormFieldInput.tsx`, target from `fetchFormLinkTarget`): with
   `latestEntry`, the form's newest submitted entry - else its newest draft, flagged - otherwise the form in
