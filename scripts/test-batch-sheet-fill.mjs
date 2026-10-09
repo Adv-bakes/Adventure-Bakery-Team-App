@@ -180,6 +180,37 @@ check("unknown unit falls back to lb", T.batchSizeOf(rumCake({ batch_size_unit: 
   check("no source field, none written", "formula_source" in values, false);
 }
 
+// ---------- "% of Formula" recalculated from the quantities ----------
+{
+  const R = (rows, o = { nameColumn: "ingredient", asNumber: true }) => T.recalculateShares(rows, "pct", "qty", o);
+  // The Pumpkin Spice sheet (lot 6279): the figures its migration wrote.
+  const pumpkin = [["Vegetable Oil", "17.49 lb"], ["Liquid Eggs", "11.99 lb"], ["Water", "7.99 lb"], ["Cake Mix", "49.97 lb"],
+    ["Baking Powder", "0.25 lb"], ["Egg Shade", "0.31 lb"], ["Pumpkin spice", "0.56 lb"], ["Flavor", "2.00 lb"], ["Baking spray", ""]]
+    .map(([ingredient, qty]) => ({ ingredient, qty, pct: 1, lot: "keep" }));
+  const r = R(pumpkin);
+  check("shares: the pumpkin spice sheet", r.ok && r.rows.map(x => x.pct), [19.31, 13.24, 8.82, 55.18, 0.28, 0.34, 0.62, 2.21, ""]);
+  check("shares: totals", r.ok && [r.lines, r.blank, r.total, r.unit], [8, 1, 90.56, "lb"]);
+  check("shares: other cells untouched", r.ok && r.rows.every(x => x.lot === "keep"), true);
+  check("shares: the input is not changed", pumpkin[0].pct, 1);
+  check("shares: add up to 100.00", r.ok && Math.round(r.rows.reduce((s, x) => s + (x.pct || 0), 0) * 100), 10000);
+
+  // Thirds do not round to 100: the difference goes to the largest line.
+  const thirds = R([{ qty: "1" }, { qty: "1" }, { qty: "1.0001" }]);
+  check("shares: rounding difference goes to the largest", thirds.ok && thirds.rows.map(x => x.pct), [33.33, 33.33, 33.34]);
+  check("shares: text column gets two places", R([{ qty: "1 lb" }, { qty: "3 lb" }], {}).rows.map(x => x.pct), ["25.00", "75.00"]);
+  check("shares: a number typed in a number cell counts", R([{ qty: 2 }, { qty: "2" }]).rows.map(x => x.pct), [50, 50]);
+  check("shares: one line is 100", R([{ qty: "5 kg" }]).rows[0].pct, 100);
+
+  // All or nothing.
+  const range = R([{ ingredient: "Oil", qty: "17 lb" }, { ingredient: "Eggs", qty: "1-2 lb" }]);
+  check("shares: a range stops it, and names the row", [range.ok, /Eggs/.test(range.problem), /1-2 lb/.test(range.problem)], [false, true, true]);
+  const mixed = R([{ ingredient: "Oil", qty: "17 lb" }, { ingredient: "Flavor", qty: "8 oz" }]);
+  check("shares: mixed units stop it", [mixed.ok, /same unit/.test(mixed.problem), /Flavor/.test(mixed.problem)], [false, true, true]);
+  check("shares: no quantities at all", R([{ qty: "" }, {}]).ok, false);
+  check("shares: no rows", R(undefined).ok, false);
+  check("shares: an unnamed row is named by position", /row 2/.test(R([{ qty: "1 lb" }, { qty: "about a cup" }]).problem), true);
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} checks failed`); process.exit(1); }
 console.log(`batch sheet fill: ${cases} checks passed`);

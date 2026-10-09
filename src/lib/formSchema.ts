@@ -273,6 +273,14 @@ export interface GridColumn {
    */
   aiDraft?: "audit_evidence";
   /**
+   * This column is each row's SHARE of the total of another column, as a percentage (FRM-501's
+   * "% of Formula", from Production Qty). The header gets a "Recalculate" link that works every
+   * row out again from the quantities as they stand now - see recalculateShares in
+   * batchSheetFill.ts. It runs only when tapped: the column stays an ordinary cell that can be
+   * typed in, and the result is unsaved with one Undo. `nameColumn` words the messages.
+   */
+  shareOf?: { column: string; nameColumn?: string };
+  /**
    * A text column that offers the names in the team directory as a pick-list (FRM-953's
    * attendee name). It is an offer, never a closed list: a contractor or a temporary worker
    * is still typed in. `titleColumn` names another column of the row that is filled with the

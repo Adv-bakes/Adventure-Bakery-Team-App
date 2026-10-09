@@ -487,6 +487,15 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   rather than guess when the multiplier is blank. FRM-520: Batch 1/2/3 weighed ← Expected qty per batch, no
   multiplier — each batch is weighed separately, as the paper prep sheet records (an "all batches" total was
   built first and dropped).
+- **A share column with a Recalculate link (`GridColumn.shareOf`):** `{ column, nameColumn? }` marks a column as
+  each row's percentage of the total of another column. Its header gets a **Recalculate** link
+  (`GridFieldInput`), which runs `recalculateShares` (`batchSheetFill.ts`, tested in
+  `scripts/test-batch-sheet-fill.mjs`): quantities are read by `parseQty`, the result is to two places
+  and adds up to exactly 100.00 (the rounding difference goes to the largest line), and a row with no
+  quantity gets a blank. **All or nothing**: an unreadable quantity or mixed units changes no cell and
+  says which row. It runs only when tapped - the cells stay typeable - and the result is unsaved with
+  one Undo. Set by migration; the builder has no control for it. First use: FRM-501's % of Formula
+  from Production Qty (owner's request, 2026-10-08, migration `20261008000005`).
 - **Text derived from a date (`TextField.derive`):** `{ fromField, as: "julian_lot" }` FILLS a text field
   from a date field and keeps it in step until someone types over it (`nextDerivedFill`, the rule derived
   dates use); while the date is blank it offers today's value as a link. `julianLotCode` = year digit +
