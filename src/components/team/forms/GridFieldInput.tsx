@@ -13,6 +13,7 @@ import {
   type AiCellDraft, type FillContext, type GridColumn, type GridField, type GridRowValue,
   type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
+import { recalculateShares } from "@/lib/batchSheetFill";
 import { PassFailInput } from "./FormFieldInput";
 import { DictationTextarea } from "./DictationTextarea";
 import { GridRowDialog } from "./GridRowDialog";
@@ -370,6 +371,35 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
     setScan(null);
   };
 
+  // ---- "Recalculate" on a share column (column.shareOf): % of Formula from the quantities ----
+  const [share, setShare] = useState<
+    | { column: string; message: string; prev: GridRowValue[] }
+    | { column: string; problem: string }
+    | null
+  >(null);
+  const recalcShare = (col: GridColumn) => {
+    if (!col.shareOf) return;
+    const prev = rowsRef.current.map(r => ({ ...r }));
+    const result = recalculateShares(prev, col.id, col.shareOf.column, {
+      nameColumn: col.shareOf.nameColumn, asNumber: col.type === "number",
+    });
+    if (result.ok === false) { setShare({ column: col.id, problem: result.problem }); return; }
+    replace(result.rows);
+    const unit = result.unit ? ` ${result.unit}` : "";
+    setShare({
+      column: col.id,
+      prev,
+      message: `${col.label} recalculated from ${result.lines} line${result.lines === 1 ? "" : "s"} totalling ${result.total}${unit}`
+        + (result.blank ? `; ${result.blank} line${result.blank === 1 ? " has" : "s have"} no quantity and ${result.blank === 1 ? "was" : "were"} left blank` : "")
+        + ". Not saved yet.",
+    });
+  };
+  const undoShare = () => {
+    if (!share || !("prev" in share)) return;
+    replace(share.prev);
+    setShare(null);
+  };
+
   /** Swap in one of the other codes the model saw on the pack. */
   const applyAlternateLot = (code: string) => {
     if (!scan || !lotColumn) return;
@@ -435,6 +465,15 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                         </>
                       )}
                       {col.required && <span className="text-red-600 ml-0.5">*</span>}
+                      {col.shareOf && !disabled && (
+                        <button
+                          type="button"
+                          className="block font-normal text-[11px] text-[#9A6F1E] underline underline-offset-2 hover:text-[#2A1F0E]"
+                          onClick={() => recalcShare(col)}
+                        >
+                          Recalculate
+                        </button>
+                      )}
                     </TableHead>
                   ))}
                   {!disabled && <TableHead className="w-8" />}
@@ -570,6 +609,23 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
               className="hidden"
               onChange={e => { const file = e.target.files?.[0]; if (file) runScan(file); }}
             />
+          )}
+
+          {/* What "Recalculate" did, or why it did nothing. */}
+          {share && (
+            <div
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-2.5 py-2 text-xs"
+              style={{ borderColor: "rgba(200,155,60,0.45)", background: "rgba(200,155,60,0.1)" }}
+            >
+              {"prev" in share ? (
+                <>
+                  <span className="text-[#2A1F0E]">{share.message}</span>
+                  <button type="button" onClick={undoShare} className="font-medium text-[#9A6F1E] hover:underline">Undo</button>
+                </>
+              ) : (
+                <span className="text-amber-800">{share.problem}</span>
+              )}
+            </div>
           )}
 
           {/* What the label scan did, and how to take it back. Values land in the

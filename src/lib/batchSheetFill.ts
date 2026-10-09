@@ -80,6 +80,64 @@ export function parseQty(value: unknown): { qty: number; unit: string } | null {
   return unit ? { qty, unit } : null;
 }
 
+// ---------- "% of Formula" worked out from the quantities ----------
+
+export type ShareResult =
+  | { ok: true; rows: Record<string, any>[]; lines: number; blank: number; total: number; unit: string }
+  | { ok: false; problem: string };
+
+/**
+ * Each row's share of the total of its quantity column, as a percentage to two places that adds
+ * up to exactly 100.00 (the rounding difference goes to the largest line). The "Recalculate" link
+ * on a column with `shareOf` - FRM-501's % of Formula, from Production Qty.
+ *
+ * All or nothing. A quantity that cannot be read ("1-2 lb"), or quantities in different units,
+ * stops the whole recalculation with a sentence naming the row: a percentage is never worked out
+ * from a guess, and a part-recalculated column would not add up. A row with no quantity (a
+ * processing aid, a line not yet weighed) gets a blank percentage. `nameColumn` only words the
+ * message. Values are written as numbers when `asNumber` (a number column), else as text.
+ */
+export function recalculateShares(
+  rows: Record<string, any>[] | null | undefined,
+  pctColumn: string,
+  qtyColumn: string,
+  opts: { nameColumn?: string; asNumber?: boolean } = {},
+): ShareResult {
+  const list = Array.isArray(rows) ? rows : [];
+  const nameOf = (row: Record<string, any>, i: number) => text(opts.nameColumn ? row?.[opts.nameColumn] : "") || `row ${i + 1}`;
+  const read: ({ qty: number; unit: string } | null)[] = [];
+  let unit: string | null = null;
+  for (const [i, row] of list.entries()) {
+    const raw = row?.[qtyColumn];
+    if (text(raw) === "" && typeof raw !== "number") { read.push(null); continue; }
+    const q = parseQty(raw);
+    if (!q) return { ok: false, problem: `The quantity for ${nameOf(row, i)} ("${text(raw) || raw}") cannot be read as one amount, so nothing was recalculated.` };
+    if (unit === null) unit = q.unit;
+    else if (q.unit !== unit) {
+      return { ok: false, problem: `The quantities are not all in the same unit (${nameOf(row, i)} is in ${q.unit || "no unit"}, others in ${unit || "no unit"}), so nothing was recalculated.` };
+    }
+    read.push(q);
+  }
+  const lines = read.filter(Boolean).length;
+  if (!lines) return { ok: false, problem: "No line has a quantity yet, so there is nothing to work the percentages out from." };
+
+  // Work in hundredths of a percent so the column adds up to exactly 100.00.
+  const total = read.reduce((sum, q) => sum + (q?.qty ?? 0), 0);
+  const cents = read.map(q => (q ? Math.round((q.qty / total) * 10000) : null));
+  const drift = 10000 - cents.reduce((sum: number, c) => sum + (c ?? 0), 0);
+  if (drift !== 0) {
+    let largest = -1;
+    read.forEach((q, i) => { if (q && (largest < 0 || q.qty > read[largest]!.qty)) largest = i; });
+    cents[largest] = (cents[largest] ?? 0) + drift;
+  }
+  const out = list.map((row, i) => {
+    const c = cents[i];
+    const value = c == null ? "" : opts.asNumber ? c / 100 : (c / 100).toFixed(2);
+    return { ...row, [pctColumn]: value };
+  });
+  return { ok: true, rows: out, lines, blank: list.length - lines, total: Math.round(total * 1000) / 1000, unit: unit ?? "" };
+}
+
 // ---------- Source: an entry of the formula form (FRM-501) ----------
 
 /**
