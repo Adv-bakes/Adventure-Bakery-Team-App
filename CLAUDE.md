@@ -496,6 +496,20 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   says which row. It runs only when tapped - the cells stay typeable - and the result is unsaved with
   one Undo. Set by migration; the builder has no control for it. First use: FRM-501's % of Formula
   from Production Qty (owner's request, 2026-10-08, migration `20261008000005`).
+- **A cell picked from another form's register (`GridColumn.pickFrom`):** `{ form, field, filters?, fill?,
+  hintField? }` on a text grid column offers the `field` values of that form's SUBMITTED entries (newest
+  wins a repeated name) as the browser's own `<datalist>` (`LinkedPickInput`, the `TeamNameInput` pattern),
+  and a pick fills other cells of the row: `fill` maps this grid's column ids to the source form's field
+  ids. **An offer, never a closed list** - anything can be typed, and then nothing is filled. `pickFills`
+  (`src/lib/pickFrom.ts`, no imports, tested by `scripts/test-pick-from.mjs`) writes a cell only if it is
+  empty or still holds what this cell's previous pick wrote in this page visit, so a typed answer is never
+  replaced, and changing the pick carries its fills along. The neighbouring cells are written through
+  their own controllers (`FillTarget`), not `useFieldArray.update`, so the row does not remount. Loader
+  `loadPickOptions` in `formReport.ts`, cached per page load. Set by migration; the builder has no control
+  for it. First use: FRM-501's Ingredient from FRM-207 (not Discontinued; ingredient, additive / flavouring
+  or processing aid), filling Supplier from Manufacturer / brand and Allergen(s) from the ticked allergens
+  (owner's request, 2026-10-09, migration `20261009000001`). Renaming those FRM-207 fields means a new
+  migration for this setting.
 - **Text derived from a date (`TextField.derive`):** `{ fromField, as: "julian_lot" }` FILLS a text field
   from a date field and keeps it in step until someone types over it (`nextDerivedFill`, the rule derived
   dates use); while the date is blank it offers today's value as a link. `julianLotCode` = year digit +

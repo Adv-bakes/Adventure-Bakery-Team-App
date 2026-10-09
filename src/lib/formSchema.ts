@@ -181,6 +181,19 @@ export interface SelectOptionsFrom {
   /** Shown when no submitted entry qualifies yet. */
   emptyText?: string;
 }
+/** What a `pickFrom` grid column offers, and what a pick fills in the same row. */
+export interface GridPickFrom {
+  /** sop_number of the source form, e.g. "FRM-207". */
+  form: string;
+  /** Field id on that form whose value goes into the cell, e.g. "material_name". */
+  field: string;
+  /** Conditions an entry must meet - the same shape and meaning as `optionsFrom.filters`. Only SUBMITTED entries are offered. */
+  filters?: ReportFilter[];
+  /** Column id of this grid -> field id on the source form. A cell is filled only if it is empty (see pickFills). */
+  fill?: Record<string, string>;
+  /** A source field shown beside each choice in the list (the manufacturer). */
+  hintField?: string;
+}
 export interface PassFailField extends FieldBase {
   type: "pass_fail";
   naAllowed?: boolean;
@@ -280,6 +293,13 @@ export interface GridColumn {
    * typed in, and the result is unsaved with one Undo. `nameColumn` words the messages.
    */
   shareOf?: { column: string; nameColumn?: string };
+  /**
+   * A text column that offers another form's register as a pick-list, and fills other cells of
+   * the row from the entry picked (FRM-501's Ingredient, from the Material Specification Register
+   * FRM-207, which fills Supplier and Allergen(s)). An offer, never a closed list: anything can
+   * still be typed, and then nothing is filled. See GridPickFrom and pickFrom.ts.
+   */
+  pickFrom?: GridPickFrom;
   /**
    * A text column that offers the names in the team directory as a pick-list (FRM-953's
    * attendee name). It is an offer, never a closed list: a contractor or a temporary worker
