@@ -86,12 +86,16 @@ async function renderPage(page: any): Promise<string> {
 export const isPdfFile = (file: File): boolean =>
   file.type === "application/pdf" || /\.pdf$/i.test(file.name);
 
+/** One page of a PDF for the form reader: its picture, and its text layer ("" for a scan). */
+export interface PdfPage { dataUrl: string; text: string }
+
 /**
- * Every page of a PDF as a JPEG data URL, in page order, for a reader that only takes pictures
- * (the form entry's "Fill from a photo"). At most `maxPages` pages are rendered. Throws
- * UnreadableDocumentError if the file cannot be opened as a PDF.
+ * Every page of a PDF as a JPEG data URL plus its text layer, in page order, for the form entry's
+ * "Fill from a photo". The text is exact where the picture has to be read by eye, so the reader is
+ * given both. At most `maxPages` pages. Throws UnreadableDocumentError if the file cannot be
+ * opened as a PDF.
  */
-export async function renderPdfPages(file: File, maxPages = 10): Promise<string[]> {
+export async function renderPdfPages(file: File, maxPages = 10): Promise<PdfPage[]> {
   const pdfjs = await loadPdfjs();
   let doc: any;
   try {
@@ -99,9 +103,17 @@ export async function renderPdfPages(file: File, maxPages = 10): Promise<string[
   } catch {
     throw new UnreadableDocumentError(`${file.name} could not be opened.`);
   }
-  const pages: string[] = [];
+  const pages: PdfPage[] = [];
   for (let pno = 1; pno <= Math.min(doc.numPages, maxPages); pno++) {
-    pages.push(await renderPage(await doc.getPage(pno)));
+    const page = await doc.getPage(pno);
+    // Items are joined line by line (hasEOL), so a table row stays one line of text.
+    const content = await page.getTextContent();
+    const text = (content.items || [])
+      .map((i: any) => (typeof i.str === "string" ? i.str + (i.hasEOL ? "\n" : " ") : ""))
+      .join("")
+      .replace(/[ \t]+/g, " ")
+      .trim();
+    pages.push({ dataUrl: await renderPage(page), text });
   }
   return pages;
 }

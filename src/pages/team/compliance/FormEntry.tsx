@@ -402,14 +402,14 @@ export default function FormEntry() {
       // and read nothing, while the same pictures sent directly were read in three seconds.
       const added: ResponseAttachment[] = [];
       // In the order chosen: a kept photo's storage path, or a PDF page's picture.
-      const toRead: ({ path: string } | { dataUrl: string })[] = [];
+      const toRead: ({ path: string } | { dataUrl: string; text: string })[] = [];
       let fromPdf = false;
       for (const file of Array.from(files)) {
         const kept = await uploadResponseAttachment(response.id, file);
         added.push(kept);
         if (!isPdfFile(file)) { toRead.push({ path: kept.path }); continue; }
         fromPdf = true;
-        for (const dataUrl of await renderPdfPages(file)) toRead.push({ dataUrl });
+        for (const page of await renderPdfPages(file)) toRead.push(page);
       }
       const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), ...added]);
       setResponse(updated); // adopt fresh updated_at; keep photos on record
@@ -418,7 +418,14 @@ export default function FormEntry() {
       // Answers a PDF never fills on this form (FRM-903's Day / Shift) are not asked for, and are
       // dropped if they come back anyway.
       const skipped = fromPdf ? pdfFillSkippedFields(doc?.sop_number, schema) : new Set<string>();
-      const read = await extractFormAnswers(answerManifest(schema).filter(f => !skipped.has(f.id)), imageUrls);
+      // Only a read made of PDF pages alone is a "document": the function is then given each
+      // page's text and places table rows by their label. Photos mixed in keep the photo rules.
+      const pdfOnly = fromPdf && toRead.every(r => "dataUrl" in r);
+      const read = await extractFormAnswers(
+        answerManifest(schema).filter(f => !skipped.has(f.id)),
+        imageUrls,
+        pdfOnly ? { pageTexts: toRead.map(r => ("text" in r ? r.text : "")) } : undefined,
+      );
       const warnings = read.warnings;
       const answers = Object.fromEntries(Object.entries(read.answers).filter(([id]) => !skipped.has(id)));
       const count = Object.keys(answers).length;
