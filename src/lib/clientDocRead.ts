@@ -82,6 +82,33 @@ async function renderPage(page: any): Promise<string> {
   return url;
 }
 
+/** True for a file that is a PDF by type or by name (some pickers hand over no type). */
+export const isPdfFile = (file: File): boolean =>
+  file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+
+/**
+ * Every page of a PDF as a JPEG file, in page order, for a reader that only takes pictures (the
+ * form entry's "Fill from a photo"). At most `maxPages` pages are rendered. Throws
+ * UnreadableDocumentError if the file cannot be opened as a PDF.
+ */
+export async function renderPdfPages(file: File, maxPages = 10): Promise<File[]> {
+  const pdfjs = await loadPdfjs();
+  let doc: any;
+  try {
+    doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+  } catch {
+    throw new UnreadableDocumentError(`${file.name} could not be opened.`);
+  }
+  const stem = file.name.replace(/\.pdf$/i, "") || "document";
+  const pages: File[] = [];
+  for (let pno = 1; pno <= Math.min(doc.numPages, maxPages); pno++) {
+    const dataUrl = await renderPage(await doc.getPage(pno));
+    const blob = await (await fetch(dataUrl)).blob();
+    pages.push(new File([blob], `${stem}-page-${pno}.jpg`, { type: "image/jpeg" }));
+  }
+  return pages;
+}
+
 async function readPdf(data: ArrayBuffer): Promise<DocRead> {
   const pdfjs = await loadPdfjs();
   const doc = await pdfjs.getDocument({ data }).promise;

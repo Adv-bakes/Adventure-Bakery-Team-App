@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import {
   answerManifest, buildZodSchema, copyFromEntry, describeFormErrors, emptyValues, getFormSchema, initialsFromName, instanceTitle,
-  mergeScanAnswers, valueFields,
+  mergeScanAnswers, pdfFillSkippedFields, valueFields,
   type AiCellDraft, type FillContext, type FormSchema, type GridColumn, type GridRowValue, type LabelScanResult,
 } from "@/lib/formSchema";
 import { clauseRequirements } from "@/lib/auditGuide";
@@ -34,6 +34,7 @@ import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
 import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
 import { TemperatureReviewFill } from "@/components/team/forms/TemperatureReviewFill";
+import { isPdfFile, renderPdfPages } from "@/lib/clientDocRead";
 import { CalibrationSummary } from "@/components/team/forms/CalibrationSummary";
 import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatureReview";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
@@ -393,16 +394,35 @@ export default function FormEntry() {
     if (!response || !schema) return;
     setScanning(true);
     setScanResult(null);
+    const pagePaths: string[] = [];
     try {
+      // A PDF is accepted as well as a photo. The reader only takes pictures, so each page is
+      // turned into one; the PDF itself is what stays on the entry, and the page pictures are
+      // removed again once they have been read.
       const added: ResponseAttachment[] = [];
+      const readPaths: string[] = [];
+      let fromPdf = false;
       for (const file of Array.from(files)) {
-        added.push(await uploadResponseAttachment(response.id, file));
+        const kept = await uploadResponseAttachment(response.id, file);
+        added.push(kept);
+        if (!isPdfFile(file)) { readPaths.push(kept.path); continue; }
+        fromPdf = true;
+        for (const page of await renderPdfPages(file)) {
+          const temp = await uploadResponseAttachment(response.id, page);
+          pagePaths.push(temp.path);
+          readPaths.push(temp.path);
+        }
       }
       const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), ...added]);
       setResponse(updated); // adopt fresh updated_at; keep photos on record
 
-      const imageUrls = await Promise.all(added.map(a => getResponseAttachmentUrl(a.path)));
-      const { answers, warnings } = await extractFormAnswers(answerManifest(schema), imageUrls);
+      const imageUrls = await Promise.all(readPaths.map(path => getResponseAttachmentUrl(path)));
+      // Answers a PDF never fills on this form (FRM-903's Day / Shift) are not asked for, and are
+      // dropped if they come back anyway.
+      const skipped = fromPdf ? pdfFillSkippedFields(doc?.sop_number, schema) : new Set<string>();
+      const read = await extractFormAnswers(answerManifest(schema).filter(f => !skipped.has(f.id)), imageUrls);
+      const warnings = read.warnings;
+      const answers = Object.fromEntries(Object.entries(read.answers).filter(([id]) => !skipped.has(id)));
       const count = Object.keys(answers).length;
       // Per-row grid merge (not a blind spread): keeps schema-seeded per-row
       // keys the extractor never returns — e.g. a register's _label/Location.
@@ -415,6 +435,8 @@ export default function FormEntry() {
     } catch (e: any) {
       toast.error(e.message ?? "Failed to read the form photo");
     } finally {
+      // Best effort, like deleteResponse: a page picture left behind is harmless.
+      for (const path of pagePaths) void removeResponseAttachment(path).catch(() => undefined);
       setScanning(false);
       if (cameraInputRef.current) cameraInputRef.current.value = "";
       if (scanInputRef.current) scanInputRef.current.value = "";
@@ -941,7 +963,7 @@ export default function FormEntry() {
           <input
             ref={scanInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.pdf,application/pdf"
             multiple
             className="hidden"
             onChange={e => { if (e.target.files?.length) scanAndFill(e.target.files); }}

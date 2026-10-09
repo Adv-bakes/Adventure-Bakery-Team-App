@@ -425,6 +425,15 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   blocks are not). **Known unresolved issue:** regenerating an already-large schema (seen on FRM-001) can
   hit a `SyntaxError: Expected ',' or ']'...` — the model occasionally emits a raw unescaped newline
   inside a JSON string; not yet fixed.
+- **"Fill from a photo" also takes a PDF** (owner's request, 2026-10-09). The file picker of "Choose
+  Photo(s)" accepts `.pdf`; **the wording on screen is unchanged on purpose and still says photo**. The
+  reader (`extract-form-answers`) only takes pictures, so `renderPdfPages` (`clientDocRead.ts`, pdfjs,
+  at most 10 pages) turns each page into a JPEG, which is uploaded, read, and removed again in a
+  `finally`; the PDF itself is what stays on the entry as the attachment. The edge function is untouched.
+  **A PDF never fills FRM-903's "Day / Shift" section** (`PDF_FILL_SKIPS` / `pdfFillSkippedFields` in
+  `formSchema.ts`): those fields are left out of the manifest and dropped from the answers, so the date,
+  area, shift and product run stay as they are on the entry. A photograph still fills them. If photos and
+  a PDF are chosen together, the rule applies to the whole read.
 - **Retention:** `sop_document_responses.document_id` is `ON DELETE RESTRICT` — hard-deleting a form with
   entries fails (code 23503 → "archive instead" toast). Response RLS: staff read all / insert own / update
   own **drafts** only; admin-or-owner (`has_role('admin') OR is_owner()`) update/delete anything.

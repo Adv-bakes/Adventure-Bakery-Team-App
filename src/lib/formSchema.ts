@@ -799,6 +799,21 @@ export function answerManifest(schema: FormSchema): FieldManifest[] {
 }
 
 /**
+ * Sections a PDF never fills when it is given to "Fill from a photo", by form number (owner's
+ * rule, 2026-10-09). FRM-903's "Day / Shift" - the date, the area, the shift and the product run -
+ * is left as it is on the entry: a PDF is a document prepared beforehand, and those four answers
+ * belong to the day it is used on, not to the day it was made. A photograph of that day's paper
+ * copy still fills them.
+ */
+export const PDF_FILL_SKIPS: Record<string, string[]> = { "FRM-903": ["details"] };
+
+/** The field ids a PDF fill leaves alone on this form (empty for every form not listed above). */
+export function pdfFillSkippedFields(formNumber: string | null | undefined, schema: FormSchema): Set<string> {
+  const sections = PDF_FILL_SKIPS[formNumber ?? ""] ?? [];
+  return new Set(schema.sections.filter(sec => sections.includes(sec.id)).flatMap(sec => sec.fields.map(f => f.id)));
+}
+
+/**
  * Merge AI photo-fill answers onto the current form values for review. Scalar
  * fields are overwritten by the extracted value; GRID fields are merged
  * row-by-row rather than replaced wholesale — the extractor returns rows keyed
