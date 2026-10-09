@@ -68,6 +68,14 @@ export interface TextField     extends FieldBase {
    */
   docPick?: { prefixes: string[] };
   /**
+   * A type-ahead fed by another form: focusing the field lists the distinct `field` values of that
+   * form's entries, typing narrows the list, and anything can still be typed - including more
+   * text after a choice (FRM-903's Product / batch run: the product from the formula sheets,
+   * FRM-501, then a batch number typed after it). `drafts` also offers entries not yet submitted,
+   * for a register whose entries are kept as drafts.
+   */
+  suggestFrom?: { form: string; field: string; drafts?: boolean };
+  /**
    * Offer the names in the team directory (FRM-952's employee name) - the scalar twin of
    * GridColumn.teamPick. `titleField` names another top-level text field that is filled with
    * the person's job title (else department) when a listed name is entered and it is empty.

@@ -508,6 +508,14 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   module and its "(ES)" variant are one line. It reuses the list `DocRefText` loads (`loadDocIndex`) and
   renders with `SuggestInput`, so anything else can still be typed. Set by migration - the builder has
   no control for it. First use: FRM-953's Training Title / Topic, prefixes TRN and SOP.
+- **A type-ahead fed by another form (`TextField.suggestFrom`):** `{ form, field, drafts? }` on a top-level
+  text field lists the distinct `field` values of that form's entries in a `SuggestInput` (focus lists
+  all, typing narrows, anything can be typed). Nothing is looked up from the choice, so **more text can
+  follow it** - FRM-903's Product / batch run offers the FRM-501 product names and the operator types
+  the batch number after one. `drafts: true` because FRM-501's entries are kept as drafts. Loader
+  `loadSuggestValues` (`formReport.ts`), pure half `suggestValuesFromRows` (`pickFrom.ts`). Set by
+  migration (`20261009000005`). ⚠️ Not the same thing as the grid's `suggestFrom` below (a grey
+  suggested NUMBER in a cell) - same word, different types, different jobs.
 - **Suggested cell values (`GridColumn.suggestFrom`):** `{ column, times? }` on a number column shows, while
   the cell is EMPTY, a grey placeholder (another column of the row, optionally × a top-level number field)
   and a check button that enters it. **It is never a default value** — the owner's rule: a prefilled weight
