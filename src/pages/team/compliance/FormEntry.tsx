@@ -394,29 +394,27 @@ export default function FormEntry() {
     if (!response || !schema) return;
     setScanning(true);
     setScanResult(null);
-    const pagePaths: string[] = [];
     try {
       // A PDF is accepted as well as a photo. The reader only takes pictures, so each page is
-      // turned into one; the PDF itself is what stays on the entry, and the page pictures are
-      // removed again once they have been read.
+      // turned into one and handed to it directly (a data URL - nothing extra is stored); the
+      // PDF itself is what stays on the entry. The first cut uploaded each page picture and sent
+      // its link like a photo's: on the owner's first real PDF that stalled for over a minute
+      // and read nothing, while the same pictures sent directly were read in three seconds.
       const added: ResponseAttachment[] = [];
-      const readPaths: string[] = [];
+      // In the order chosen: a kept photo's storage path, or a PDF page's picture.
+      const toRead: ({ path: string } | { dataUrl: string })[] = [];
       let fromPdf = false;
       for (const file of Array.from(files)) {
         const kept = await uploadResponseAttachment(response.id, file);
         added.push(kept);
-        if (!isPdfFile(file)) { readPaths.push(kept.path); continue; }
+        if (!isPdfFile(file)) { toRead.push({ path: kept.path }); continue; }
         fromPdf = true;
-        for (const page of await renderPdfPages(file)) {
-          const temp = await uploadResponseAttachment(response.id, page);
-          pagePaths.push(temp.path);
-          readPaths.push(temp.path);
-        }
+        for (const dataUrl of await renderPdfPages(file)) toRead.push({ dataUrl });
       }
       const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), ...added]);
       setResponse(updated); // adopt fresh updated_at; keep photos on record
 
-      const imageUrls = await Promise.all(readPaths.map(path => getResponseAttachmentUrl(path)));
+      const imageUrls = await Promise.all(toRead.map(r => "path" in r ? getResponseAttachmentUrl(r.path) : r.dataUrl));
       // Answers a PDF never fills on this form (FRM-903's Day / Shift) are not asked for, and are
       // dropped if they come back anyway.
       const skipped = fromPdf ? pdfFillSkippedFields(doc?.sop_number, schema) : new Set<string>();
@@ -435,8 +433,6 @@ export default function FormEntry() {
     } catch (e: any) {
       toast.error(e.message ?? "Failed to read the form photo");
     } finally {
-      // Best effort, like deleteResponse: a page picture left behind is harmless.
-      for (const path of pagePaths) void removeResponseAttachment(path).catch(() => undefined);
       setScanning(false);
       if (cameraInputRef.current) cameraInputRef.current.value = "";
       if (scanInputRef.current) scanInputRef.current.value = "";
