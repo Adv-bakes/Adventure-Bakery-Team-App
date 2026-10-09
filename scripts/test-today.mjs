@@ -40,7 +40,7 @@ check("mapping: all present", T.checkTodayMapping({
   "FRM-801": ["dispatch_date", "customer", "loaded"],
   "FRM-702": ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"],
   "FRM-301": ["receiving_log"],
-  "FRM-507": ["production_date", "product", "oven_loads"],
+  "FRM-507": ["production_date", "oven_loads"],
   "FRM-606": ["production_date", "product", "lot_code"],
 }), []);
 check("mapping: renamed and missing", T.checkTodayMapping({ "FRM-903": ["inspection_date"] }).slice(0, 2),

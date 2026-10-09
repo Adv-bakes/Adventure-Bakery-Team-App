@@ -120,6 +120,20 @@ check("no warnings on a clean lot", f.warnings, []);
 has("a code shared by two products: the other product's oven loads are not counted",
   T.releaseFill(R, "Coconut Rum Cake", "6273", "self").notes.batch, "FRM-507: no oven load recorded for this lot. FRM-606: no sealing check recorded for this lot.");
 
+// FRM-507 from v2: the product is on each oven load, and one record covers two flavors.
+{
+  const r = T.emptyReleaseRecords();
+  r.lots.push(...R.lots);
+  r.baking.push({ id: "b2", status: "submitted", date: "2026-09-30T12:00:00Z", data: { production_date: "2026-09-30", oven_loads: [
+    { product: "Rum Cake - Original", lot_code: "6273", within_limits: "pass" },
+    { product: "Coconut Rum Cake", lot_code: "6273", within_limits: "fail" },
+    { product: "rum cake - original", lot_code: "6273", within_limits: "pass" },
+    { product: "", lot_code: "6273", within_limits: "pass" },
+  ] } });
+  has("product on the row: only this product's loads, and one naming no product", T.releaseFill(r, "Rum Cake - Original", "6273", "self").notes.batch, "FRM-507: 3 oven loads for this lot, all passed.");
+  has("product on the row: the other flavor's failed load is its own", T.releaseFill(r, "Coconut Rum Cake", "6273", "self").notes.batch, "FRM-507: 2 oven loads for this lot, 1 FAILED.");
+}
+
 // ---- gaps are stated
 const g = T.releaseFill(R, "Rum Cake - Original", "7777", "self");
 has("unknown lot: a warning", g.warnings[0], "No Production Lot Record (FRM-520) found for Rum Cake - Original lot 7777.");
@@ -210,7 +224,7 @@ check("mapping: a renamed field and a missing form are named",
   T.checkReleaseMapping({ "FRM-520": ["product", "lot_code", "bake_date", "pack_date", "units_packed", "film_lot", "code_check", "ingredients"],
     "FRM-701": T.RELEASE_SOURCES.releases.fields.slice(), "FRM-702": T.RELEASE_SOURCES.holds.fields.slice(),
     "FRM-903": ["area_line", "shift"], "FRM-601": T.RELEASE_SOURCES.labels.fields.slice(), "FRM-704": T.RELEASE_SOURCES.specs.fields.slice(),
-    "FRM-507": ["production_date", "product", "oven_loads"] }),
+    "FRM-507": ["production_date", "oven_loads"] }),
   ['FRM-903 no longer has "inspection_date"', "FRM-606 was not found"]);
 
 rmSync(out, { recursive: true, force: true });

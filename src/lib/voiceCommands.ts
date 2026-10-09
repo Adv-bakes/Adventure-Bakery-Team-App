@@ -802,6 +802,9 @@ export function applyVoiceFill(
   // earlier revision), otherwise in the field at the top, below.
   const spokenLot = fill.entryFields.lot;
   if (spokenLot && columnIds.has("lot_code") && !row.lot_code) row.lot_code = spokenLot;
+  // The product likewise: on the row where the table has a Product column (FRM-507 from v2, one
+  // record for the day whatever is baked), otherwise in the field at the top, below.
+  if (fill.entryFields.product && columnIds.has("product") && !row.product) row.product = fill.entryFields.product;
 
   const def = VOICE_COMMANDS.find(d => d.id === fill.commandId);
   if (def?.limitsCheck && !def.limitsCheck.matches(schema)) {

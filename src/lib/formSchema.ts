@@ -201,6 +201,8 @@ export interface GridPickFrom {
   fill?: Record<string, string>;
   /** A source field shown beside each choice in the list (the manufacturer). */
   hintField?: string;
+  /** Also offer entries not yet submitted, for a source whose entries are kept as drafts (FRM-501's formula sheets). */
+  drafts?: boolean;
 }
 export interface PassFailField extends FieldBase {
   type: "pass_fail";

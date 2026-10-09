@@ -33,7 +33,8 @@ export const RELEASE_SOURCES = {
   preops:   { form: "FRM-903", fields: ["inspection_date", "area_line", "shift"], grids: {} },
   labels:   { form: "FRM-601", fields: ["product_name", "label_artwork_version", "controlled_label_id", "customer_brand", "approval_evidence", "approval_date"], grids: {} },
   specs:    { form: "FRM-704", fields: ["product_name", "customer_brand", "net_weight"], grids: {} },
-  baking:   { form: "FRM-507", fields: ["production_date", "product"], grids: { oven_loads: ["lot_code", "within_limits"] } },
+  // FRM-507 named the product once at the top until its v2 (2026-10-09) and on each oven load since.
+  baking:   { form: "FRM-507", fields: ["production_date"], optional: ["product"], grids: { oven_loads: ["product", "lot_code", "within_limits"] } },
   sealing:  { form: "FRM-606", fields: ["production_date", "product"], optional: ["lot_code"], grids: { seal_checks: ["lot_code", "visual", "pull_test"] } },
 } as const satisfies Record<string, ReleaseSourceSpec>;
 
@@ -182,12 +183,16 @@ export interface ReleaseFill {
 
 /** "FRM-507: 3 loads for this lot, all within limits" - or what is missing, said plainly. */
 function ccpLine(form: string, what: string, entries: ReleaseEntry[], grid: string, product: string, lot: string, passKeys: string[]): string {
-  // A lot is product + code, so a record that names another product is not this lot's. One that
+  // A lot is product + code, so a row that names another product is not this lot's. One that
   // names no product is kept: leaving it out would hide a load that may belong here.
+  // The product and the lot are on the row where the form asks for them per row, otherwise they
+  // are the entry's own.
   const rows = entries
-    .filter(e => !normName(e.data.product) || sameProduct(e.data.product, product))
-    // The lot is on the row where the form asks for it per row, otherwise it is the entry's own.
     .flatMap(e => rowsOf(e, grid)
+      .filter(r => {
+        const named = normName(r.product) ? r.product : e.data.product;
+        return !normName(named) || sameProduct(named, product);
+      })
       .filter(r => normLot(str(r.lot_code) ? r.lot_code : e.data.lot_code) === normLot(lot))
       .map(r => ({ r, draft: isDraft(e) })));
   if (rows.length === 0) return `${form}: no ${what} recorded for this lot.`;

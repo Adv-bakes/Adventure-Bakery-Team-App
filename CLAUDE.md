@@ -1493,6 +1493,14 @@ check that did not happen.
     *No aprobado*. Accents are folded for matching (ñ kept) but product names keep what was said.
   - The print page takes `?lang=en|es|both` (default both), one language per card. The Spanish card wording
     is a draft for a Spanish-speaking team member to check before it goes on the wall.
+- **FRM-507 from v2 (2026-10-09): the product is on each oven load, one record per day.** Two flavors baked
+  on one day share the day's lot code and used to need two records. `product` left the top of the form and
+  is a required column of `oven_loads`, offering FRM-501's product names (`pickFrom` with `drafts: true`,
+  since formula sheets are kept as drafts). `applyVoiceFill` writes the spoken product on the row when the
+  table has that column, `createVoiceEntry` prefills a top field only where the form has it, and
+  `releaseAssist.ccpLine` reads the product from the row, else from the entry (records filled at revision
+  New). The owner wants the baking voice command started from a button per lot + product on the Today
+  page - NOT yet built (2026-10-09).
 - **FRM-606 from v2 (2026-10-07): the lot is entered once, and a row carries one check.** `lot_code` is a
   field at the top; `fill.entryFields.lot` carries it and `applyVoiceFill` fills it when empty (or writes
   the row's `lot_code` on an entry filled under the earlier revision). Check types are `Set-up`,

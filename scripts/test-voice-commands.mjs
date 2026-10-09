@@ -24,7 +24,16 @@ function bundle(src, name) {
 
 const V = await bundle("src/lib/voiceCommands.ts", "voice.mjs");
 const F = await bundle("src/lib/formSchema.ts", "schema.mjs");
-const S507 = JSON.parse(readFileSync("sop-drafts/FRM-507-ccp1-baking-monitoring-schema.json", "utf8"));
+// The file is FRM-507 as it is now (v2: the product on each oven load). S507 is the form as it
+// was at revision New - one Product field at the top - which entries filled then still use.
+const S507_V2 = JSON.parse(readFileSync("sop-drafts/FRM-507-ccp1-baking-monitoring-schema.json", "utf8"));
+const S507 = JSON.parse(JSON.stringify(S507_V2));
+{
+  const day = S507.sections.find(s => s.id === "day");
+  day.fields.splice(2, 0, { id: "product", type: "text", label: "Product", width: "half", required: true });
+  const loads = S507.sections.flatMap(s => s.fields).find(f => f.id === "oven_loads");
+  loads.columns = loads.columns.filter(c => c.id !== "product");
+}
 const S606 = JSON.parse(readFileSync("sop-drafts/FRM-606-ccp2-vacuum-sealing-monitoring-schema.json", "utf8"));
 
 let failed = 0;
@@ -198,6 +207,19 @@ for (const [line, want] of lots) {
   check(!noGrid.ok && /no "nope" table/.test(noGrid.error), "unknown table refused", noGrid);
   const extra = V.applyVoiceFill(S507, fresh, { ...fill, row: { ...fill.row, bogus: "x" } }, { userInitials: "TP" });
   check(extra.ok && !("bogus" in extra.values.oven_loads[0]) && extra.warnings.some(w => /"bogus"/.test(w.text)), "unknown column dropped with a warning");
+
+  // FRM-507 from v2: no Product at the top, the product goes on the oven load.
+  {
+    const fresh2 = { ...F.emptyValues(S507_V2, { userInitials: "CR" }), production_date: "2026-09-11" };
+    const v2 = V.applyVoiceFill(S507_V2, fresh2, fill, { userInitials: "TP" });
+    check(v2.ok && v2.values.oven_loads[0].product === "Your Product", "v2: the product is written on the oven load", v2.ok && v2.values.oven_loads[0]);
+    check(v2.ok && !("product" in v2.values), "v2: nothing is written at the top", v2.ok && Object.keys(v2.values));
+    check(v2.ok && !v2.warnings.some(w => w.code === "no_column" || w.code === "product_mismatch"), "v2: no warning about it", v2.ok && v2.warnings);
+    const second = V.applyVoiceFill(S507_V2, v2.values, { ...fill, entryFields: { product: "Other Loaf" } }, { userInitials: "TP" });
+    check(second.ok && second.values.oven_loads.map(r => r.product).join("|") === "Your Product|Other Loaf" && !second.warnings.some(w => w.code === "product_mismatch"),
+      "v2: a second product the same day is a second row of the same record", second.ok && second.values.oven_loads);
+    check(V.limitsStillMatch(S507_V2) === true, "v2: the printed limits still match the parser");
+  }
 
   check(V.limitsStillMatch(S507) === true, "FRM-507's printed limits match the parser");
   const moved = JSON.parse(JSON.stringify(S507).replace("At least 350°F", "At least 360°F"));
