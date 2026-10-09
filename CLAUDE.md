@@ -428,8 +428,11 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
 - **"Fill from a photo" also takes a PDF** (owner's request, 2026-10-09). The file picker of "Choose
   Photo(s)" accepts `.pdf`; **the wording on screen is unchanged on purpose and still says photo**. The
   reader (`extract-form-answers`) only takes pictures, so `renderPdfPages` (`clientDocRead.ts`, pdfjs,
-  at most 10 pages) turns each page into a JPEG, which is uploaded, read, and removed again in a
-  `finally`; the PDF itself is what stays on the entry as the attachment. The edge function is untouched.
+  at most 10 pages) turns each page into a JPEG **data URL that is sent to the function directly**; the
+  PDF itself is what stays on the entry as the attachment. The edge function is untouched. ⚠️ The first
+  cut uploaded each page picture and sent its signed link, as photos do: on the owner's first real PDF
+  that stalled for over a minute and filled nothing (cause not found - the function logs could not be
+  read), while the same pictures sent directly were read in three seconds. Do not go back to links.
   **A PDF never fills FRM-903's "Day / Shift" section** (`PDF_FILL_SKIPS` / `pdfFillSkippedFields` in
   `formSchema.ts`): those fields are left out of the manifest and dropped from the answers, so the date,
   area, shift and product run stay as they are on the entry. A photograph still fills them. If photos and
