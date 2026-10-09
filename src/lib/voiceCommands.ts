@@ -85,6 +85,11 @@ export interface VoiceFill {
   /** The language that was spoken, and the language the messages above are in. */
   lang?: VoiceLang;
   uiLang?: VoiceLang;
+  /**
+   * A row started from a lot's button on the Today page with no readings yet (the operator chose
+   * to type them): the time, product and lot only. The entry page words its banner accordingly.
+   */
+  started?: boolean;
 }
 
 export type Slots = Record<string, unknown>;
@@ -268,7 +273,7 @@ function productAndLot(n: string[], tokens: Token[], lotBefore: number, lex: Lex
  * FRM-507 Section 1 prints these limits. The parser judges against the same numbers, and
  * `limitsCheck` refuses to judge at all if the form's printed limits ever stop matching them.
  */
-export const CCP1_LIMITS = { ovenMinF: 350, bakeMinMinutes: 27 } as const;
+export const CCP1_LIMITS = { ovenMinF: 350, bakeMinMinutes: 27, internalMinF: 180 } as const;
 
 export function judgeBake(tempF: number, minutes: number): boolean {
   return tempF >= CCP1_LIMITS.ovenMinF && minutes >= CCP1_LIMITS.bakeMinMinutes;
@@ -461,6 +466,215 @@ export function limitsStillMatch(schema: FormSchema): boolean {
   if (!field) return false;
   const text = JSON.stringify(field.rows ?? []);
   return text.includes(`At least ${CCP1_LIMITS.ovenMinF}°F`) && text.includes(`At least ${CCP1_LIMITS.bakeMinMinutes} minutes`);
+}
+
+/** True while FRM-507 still prints 180°F for the internal temperature - asked only when a probe reading is recorded. */
+export function probeLimitStillMatches(schema: FormSchema): boolean {
+  const field = allFields(schema).find(f => f.id === "limits" && f.type === "reference_table") as { rows?: unknown } | undefined;
+  return !!field && JSON.stringify(field.rows ?? []).includes(`At least ${CCP1_LIMITS.internalMinF}°F`);
+}
+
+// ─── CCP 1 from a lot's button on the Today page ─────────────────────────────
+//
+// The Today page lists each lot + product in progress, so the operator does not say them again:
+// the button supplies both and only the readings are spoken - "Temperature 350, bake time 27",
+// and "probe 180" when the load was probed. Same limits, same row, same rule that a spoken Fail is
+// never turned into a Pass. Nothing here saves anything.
+
+// A load just out of the oven is never under 100°F inside; the floor also keeps "one eighty" from being read as 81.
+const PROBE_RANGE: [number, number] = [100, 300];
+
+interface BakeReadingText {
+  /** Longest first: on a tie at one position the first listed wins. */
+  temp: string[][];
+  minutes: string[][];
+  probe: string[][];
+  names: { temp: string; minutes: string; probe: string };
+  /** The line for the wall card and the dialog, and what the test parses back. */
+  card: { heading: string; intro: string; say: string; sayWithProbe: string; examples: string[]; notes: string[] };
+}
+
+export const BAKE_READING_TEXT: Record<VoiceLang, BakeReadingText> = {
+  en: {
+    temp: [["oven", "temperature"], ["oven", "temp"], ["temperature"], ["temp"], ["oven"]],
+    minutes: [["bake", "time"], ["baked", "time"], ["baking", "time"], ["time"], ["bake"], ["baked"]],
+    probe: [["internal", "temperature"], ["internal", "temp"], ["probe"], ["internal"], ["core"]],
+    names: { temp: "oven temperature", minutes: "bake time", probe: "probe reading" },
+    card: {
+      heading: "Oven load from the Today page",
+      intro: "On the Today page, tap Record bake on the lot's row, then Speak the reading. The product and the lot come from the row - say only the readings.",
+      notes: [
+        "Say the numbers you read at the oven. The app decides Pass or Fail from them.",
+        `Critical limits: oven at least ${CCP1_LIMITS.ovenMinF}°F, bake time at least ${CCP1_LIMITS.bakeMinMinutes} minutes, and at least ${CCP1_LIMITS.internalMinF}°F inside when the load is probed.`,
+        "Within the limits, check the row on the screen and tap Accept. If a limit is not met the record opens: do not release the load, follow Section 3.",
+        "Say \"failed\" at the end if the load is not good for a reason the numbers do not show.",
+      ],
+      say: "Temperature 350, bake time 27",
+      sayWithProbe: "Temperature 350, bake time 27, probe 180",
+      examples: ["Temperature 350, bake time 27", "Temperature 350, bake time 27, probe 180", "Temperature 350 for 27 minutes"],
+    },
+  },
+  es: {
+    temp: [["temperatura", "del", "horno"], ["temperatura"], ["horno"]],
+    minutes: [["tiempo", "de", "horneado"], ["tiempo", "de", "horneo"], ["tiempo"]],
+    probe: [["temperatura", "interna"], ["sonda"], ["interna"], ["interno"], ["centro"]],
+    names: { temp: "la temperatura del horno", minutes: "el tiempo de horneado", probe: "la lectura de la sonda" },
+    card: {
+      heading: "Hornada desde la página Hoy",
+      intro: "En la página Hoy, toque Registrar horneado en la fila del lote y luego Decir la lectura. El producto y el lote salen de la fila: diga solo las lecturas.",
+      notes: [
+        "Diga los números que leyó en el horno. La app decide Aprobado o Rechazado con ellos.",
+        `Límites críticos: horno de al menos ${CCP1_LIMITS.ovenMinF} °F, tiempo de horneado de al menos ${CCP1_LIMITS.bakeMinMinutes} minutos, y al menos ${CCP1_LIMITS.internalMinF} °F por dentro cuando se mide con la sonda.`,
+        "Dentro de los límites, revise la fila en la pantalla y toque Aceptar. Si no se cumple un límite se abre el registro: no libere la hornada, siga la Sección 3.",
+        "Diga \"rechazado\" al final si la hornada no está bien por algo que los números no muestran.",
+      ],
+      say: "Temperatura 350, tiempo 27",
+      sayWithProbe: "Temperatura 350, tiempo 27, sonda 180",
+      examples: ["Temperatura 350, tiempo 27", "Temperatura 350, tiempo 27, sonda 180", "Temperatura 350 por 27 minutos"],
+    },
+  },
+};
+
+export interface BakeReading {
+  ok: boolean;
+  transcript: string;
+  lang: VoiceLang;
+  temp?: number;
+  minutes?: number;
+  /** Present only when a probe reading was said. */
+  probe?: number;
+  /** A result the operator said aloud. Only "fail" changes anything: a Pass is always the app's own. */
+  spoken?: "pass" | "fail";
+  /** Present when not ok. */
+  missing?: ("temp" | "minutes")[];
+  message?: string;
+}
+
+/** One spoken line of readings. `lang` is the language spoken; `uiLang` the language of the message. */
+export function parseBakeReading(transcript: string, lang: VoiceLang = "en", uiLang: VoiceLang = lang): BakeReading {
+  const M = VOICE_MSG[uiLang];
+  const lex = LEXICONS[lang];
+  const t = BAKE_READING_TEXT[lang];
+  const names = BAKE_READING_TEXT[uiLang].names;
+  const tokens = normalizeTranscript(transcript, lang);
+  const n = tokens.map(x => x.n);
+
+  // The probe first, and its words masked: "internal temperature 180" must not be taken for the oven's.
+  const [probeAt, probeLen] = firstOf(n, t.probe);
+  const masked = n.map((w, i) => (probeAt >= 0 && i >= probeAt && i < probeAt + probeLen ? "\u0000" : w));
+  const [tempAt, tempLen] = firstOf(masked, t.temp);
+  const [minAt, minLen] = firstOf(masked, t.minutes);
+
+  // Each reading is the words between its own name and the next name said.
+  const marks = [
+    { slot: "temp", at: tempAt, len: tempLen }, { slot: "minutes", at: minAt, len: minLen }, { slot: "probe", at: probeAt, len: probeLen },
+  ].filter(m => m.at >= 0).sort((a, b) => a.at - b.at);
+  const spans: Record<string, string[]> = {};
+  marks.forEach((m, i) => { spans[m.slot] = n.slice(m.at + m.len, i + 1 < marks.length ? marks[i + 1].at : n.length); });
+  // Words before the first name belong to the oven temperature when it was not named: "350, bake time 27".
+  const lead = n.slice(0, marks.length ? marks[0].at : n.length);
+  if (tempAt < 0) spans.temp = lead;
+
+  // No name for the time: "350 for 27 minutes", or just the two numbers.
+  if (minAt < 0 && spans.temp) {
+    const span = spans.temp;
+    let split = -1;
+    for (let i = span.length - 1; i >= 0; i--) if (lex.separators.has(span[i])) { split = i; break; }
+    if (split < 0 && lex.digitSeparator) {
+      const d = lex.digitSeparator;
+      split = span.findIndex((w, i) => w === d && i > 0 && i < span.length - 1
+        && lex.numberCandidates(span.slice(0, i), { range: OVEN_RANGE, hundredsShorthand: true }).length > 0);
+    }
+    let after = split >= 0 ? split + 1 : -1;
+    if (split < 0) {
+      const digits = span.map((w, i) => (/^\d+(\.\d+)?$|^\d{1,2}:\d{2}$/.test(w) ? i : -1)).filter(i => i >= 0);
+      if (digits.length === 2) { split = digits[1]; after = digits[1]; }
+    }
+    if (split >= 0) { spans.minutes = span.slice(after); spans.temp = span.slice(0, split); }
+  }
+
+  let bad: { slot: "temp" | "minutes" | "probe"; heard: string; range: [number, number] } | undefined;
+  const read = (slot: "temp" | "minutes" | "probe", range: [number, number], hundreds = false): number | undefined => {
+    if (!spans[slot]) return undefined;
+    // A result said at the end ("... 27, failed") is not part of the number before it.
+    const stop = spans[slot].findIndex(w => lex.resultIn([w]) !== undefined);
+    const span = stop >= 0 ? spans[slot].slice(0, stop) : spans[slot];
+    const v = parseNumber(span, { range, hundredsShorthand: hundreds }, lang);
+    if (v?.value !== undefined) return v.value;
+    if (v?.heard !== undefined) bad = bad ?? { slot, heard: v.heard, range };
+    return undefined;
+  };
+  const temp = read("temp", OVEN_RANGE, true);
+  const minutes = read("minutes", BAKE_RANGE);
+  const probe = read("probe", PROBE_RANGE, true);
+  const spoken = lex.resultIn(n);
+
+  const base = { transcript, lang, temp, minutes, probe, spoken };
+  if (bad) return { ...base, ok: false, message: M.badValue(bad.heard, names[bad.slot], bad.range) };
+  const missing: ("temp" | "minutes")[] = [];
+  if (temp === undefined) missing.push("temp");
+  if (minutes === undefined) missing.push("minutes");
+  if (missing.length) return { ...base, ok: false, missing, message: M.reading.missing(missing.map(m => names[m])) };
+  return { ...base, ok: true };
+}
+
+/** Every alternative the recogniser offered: the first that reads whole, else the one that got furthest. */
+export function parseBakeAlternatives(alternatives: string[], lang: VoiceLang = "en", uiLang: VoiceLang = lang): BakeReading {
+  const results = alternatives.filter(a => a && a.trim()).map(a => parseBakeReading(a, lang, uiLang));
+  if (!results.length) return parseBakeReading("", lang, uiLang);
+  return results.find(r => r.ok) ?? [...results].sort((a, b) => (a.missing?.length ?? 0.5) - (b.missing?.length ?? 0.5))[0];
+}
+
+export interface BakeLot { product: string; lot: string }
+
+/** The oven-load row for a lot, from readings that were spoken. The same row the card command builds. */
+export function buildBakeFill(lot: BakeLot, reading: BakeReading, spokenAt: Date, uiLang: VoiceLang = "en"): VoiceFill {
+  const M = VOICE_MSG[uiLang];
+  const temp = reading.temp as number;
+  const minutes = reading.minutes as number;
+  const probe = reading.probe;
+  const probeOk = probe === undefined || probe >= CCP1_LIMITS.internalMinF;
+  const withinLimits = judgeBake(temp, minutes) && probeOk;
+  const verdict: "pass" | "fail" = reading.spoken === "fail" ? "fail" : withinLimits ? "pass" : "fail";
+  const warnings: VoiceWarning[] = [];
+  if (!withinLimits) {
+    const misses: string[] = [];
+    if (temp < CCP1_LIMITS.ovenMinF) misses.push(M.bakeTempMiss(temp, CCP1_LIMITS.ovenMinF));
+    if (minutes < CCP1_LIMITS.bakeMinMinutes) misses.push(M.bakeTimeMiss(minutes, CCP1_LIMITS.bakeMinMinutes));
+    if (!probeOk) misses.push(M.bakeProbeMiss(probe as number, CCP1_LIMITS.internalMinF));
+    warnings.push({ level: "fail", section: "deviation", code: "bake_limits_fail", text: M.bakeFail(reading.spoken === "pass", misses) });
+  } else if (reading.spoken === "fail") {
+    warnings.push({ level: "fail", section: "deviation", code: "spoken_fail", text: M.spokenFail });
+  }
+  const timeOut = format(spokenAt, "HH:mm");
+  const row: Record<string, string> = {
+    time_out: timeOut, lot_code: lot.lot, oven_temp: String(temp), bake_time: String(minutes), within_limits: verdict,
+  };
+  if (probe !== undefined) row.internal_temp = String(probe);
+  const summary: VoiceSummaryLine[] = [
+    { key: "time_out", label: M.summary.timeOut, value: timeOut },
+    { key: "product", label: M.summary.product, value: lot.product },
+    { key: "lot", label: M.summary.lot, value: lot.lot },
+    { key: "temp", label: M.summary.ovenTemp, value: M.summary.temp(temp), flag: temp >= CCP1_LIMITS.ovenMinF ? "pass" : "fail" },
+    { key: "minutes", label: M.summary.bakeTime, value: M.summary.minutes(minutes), flag: minutes >= CCP1_LIMITS.bakeMinMinutes ? "pass" : "fail" },
+  ];
+  if (probe !== undefined) summary.push({ key: "probe", label: M.summary.probe, value: M.summary.temp(probe), flag: probeOk ? "pass" : "fail" });
+  summary.push({ key: "within_limits", label: M.summary.withinLimits, value: verdict === "pass" ? M.summary.pass : M.summary.fail, flag: verdict });
+  return {
+    commandId: "ccp1_bake", formNumber: "FRM-507", title: "CCP 1 Baking Monitoring Record", gridId: "oven_loads",
+    productionDate: format(spokenAt, "yyyy-MM-dd"), entryFields: { product: lot.product },
+    row, warnings, summary, lang: reading.lang, uiLang,
+  };
+}
+
+/** A row for a lot with no readings yet: the operator chose to type them into the record. */
+export function startedBakeFill(lot: BakeLot, at: Date, uiLang: VoiceLang = "en"): VoiceFill {
+  return {
+    commandId: "ccp1_bake", formNumber: "FRM-507", title: "CCP 1 Baking Monitoring Record", gridId: "oven_loads",
+    productionDate: format(at, "yyyy-MM-dd"), entryFields: { product: lot.product },
+    row: { time_out: format(at, "HH:mm"), lot_code: lot.lot },
+    warnings: [], summary: [], uiLang, started: true,
+  };
 }
 
 // ─── CCP 2: vacuum sealing ───────────────────────────────────────────────────
@@ -807,7 +1021,9 @@ export function applyVoiceFill(
   if (fill.entryFields.product && columnIds.has("product") && !row.product) row.product = fill.entryFields.product;
 
   const def = VOICE_COMMANDS.find(d => d.id === fill.commandId);
-  if (def?.limitsCheck && !def.limitsCheck.matches(schema)) {
+  // A row with no verdict to judge (one started by hand) has nothing to check against the form.
+  const probed = fill.commandId === "ccp1_bake" && !!row.internal_temp;
+  if (def?.limitsCheck && "within_limits" in row && (!def.limitsCheck.matches(schema) || (probed && !probeLimitStillMatches(schema)))) {
     for (const col of def.limitsCheck.clearColumns) if (col in row) row[col] = "";
     warnings.push({ level: "warn", code: "limits_changed", text: M.limitsChanged });
   }

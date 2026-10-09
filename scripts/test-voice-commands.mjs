@@ -414,5 +414,91 @@ for (const [line, want] of esLots) {
   check(V.sameProduct("Piña Colada", "pina colada") && V.sameProduct("YOUR PRODUCTS", "Your Product") && !V.sameProduct("Pan", "Pastel"), "sameProduct folds accents");
 }
 
+// ── The readings said from a lot's button on the Today page ────────────────────
+{
+  const LOT = { product: "Rum Cake - Pumpkin Spice", lot: "6279" };
+  const read = (line, lang = "en") => V.parseBakeReading(line, lang);
+  const nums = r => [r.ok, r.temp, r.minutes, r.probe, r.spoken];
+
+  // Every line printed on the wall card reads back, in its own language.
+  for (const lang of ["en", "es"]) {
+    for (const line of V.BAKE_READING_TEXT[lang].card.examples) {
+      const r = read(line, lang);
+      check(r.ok && r.temp === 350 && r.minutes === 27 && (/180/.test(line) ? r.probe === 180 : r.probe === undefined), `card line reads back (${lang}): ${line}`, r);
+    }
+  }
+
+  const same = [
+    "Temperature 350 Bake Time 27 Probe 180", "temperature 350 bake time 27 probe 180", "Temp 350, time 27, probe 180",
+    "oven temperature 350 degrees bake time 27 minutes internal temperature 180", "350 bake time 27 probe 180",
+    "probe 180 temperature 350 bake time 27", "bake time 27 temperature 350 probe 180",
+    "temperature three fifty bake time twenty seven probe one eighty",
+  ];
+  for (const line of same) check(JSON.stringify(nums(read(line))) === JSON.stringify([true, 350, 27, 180, undefined]), `variation: ${line}`, nums(read(line)));
+  const noProbe = ["Temperature 350 bake time 27", "temperature 350 for 27 minutes", "350 for 27 minutes", "temperature 3:50 bake time 27", "350 27", "temperature 350 4 27 minutes"];
+  for (const line of noProbe) check(JSON.stringify(nums(read(line))) === JSON.stringify([true, 350, 27, undefined, undefined]), `no probe: ${line}`, nums(read(line)));
+  const es = ["Temperatura 350 tiempo 27 sonda 180", "temperatura del horno 350 grados tiempo de horneado 27 minutos temperatura interna 180", "temperatura trescientos cincuenta tiempo veintisiete sonda ciento ochenta"];
+  for (const line of es) check(JSON.stringify(nums(read(line, "es"))) === JSON.stringify([true, 350, 27, 180, undefined]), `Spanish: ${line}`, nums(read(line, "es")));
+  check(read("temperatura 350 por 27 minutos y medio", "es").minutes === 27.5, "Spanish half minute", read("temperatura 350 por 27 minutos y medio", "es"));
+
+  const said = read("temperature 350 bake time 27 failed");
+  check(said.ok && said.spoken === "fail", "a spoken failed is heard", said);
+  check(read("temperature 350 bake time 27 passed").spoken === "pass", "a spoken passed is heard");
+
+  const noTime = read("temperature 350");
+  check(!noTime.ok && noTime.missing.join() === "minutes" && /bake time/.test(noTime.message), "missing bake time is named", noTime);
+  const nothing = read("what time is it");
+  check(!nothing.ok && nothing.missing.includes("temp"), "nothing useful: not ok", nothing);
+  check(!read("").ok, "empty: not ok");
+  const wild = read("temperature 9000 bake time 27");
+  check(!wild.ok && /9000/.test(wild.message), "a temperature outside the range is refused, not guessed", wild);
+  const esMissing = read("temperatura 350", "es");
+  check(!esMissing.ok && /tiempo de horneado/.test(esMissing.message), "Spanish missing message", esMissing);
+  check(V.parseBakeAlternatives(["temperature 350", "temperature 350 bake time 27"]).ok, "alternatives: the one that reads whole wins");
+  check(!V.parseBakeAlternatives(["temperature 350"]).ok && !V.parseBakeAlternatives([]).ok, "alternatives: none reads");
+
+  // The row, and the verdict.
+  const pass = V.buildBakeFill(LOT, read("temperature 350 bake time 27"), AT);
+  const card = V.parseCommand(V.renderExample(V.VOICE_COMMANDS[0]), AT).fill;
+  check(JSON.stringify({ ...pass.row, lot_code: "" }) === JSON.stringify({ ...card.row, lot_code: "" }), "same row as the card command for the same numbers", [pass.row, card.row]);
+  check(pass.row.within_limits === "pass" && pass.row.lot_code === "6279" && pass.entryFields.product === LOT.product && !("internal_temp" in pass.row) && pass.warnings.length === 0, "pass: lot and product from the button, no probe cell", pass);
+  const probed = V.buildBakeFill(LOT, read("temperature 350 bake time 27 probe 181"), AT);
+  check(probed.row.within_limits === "pass" && probed.row.internal_temp === "181", "probe at the limit or above passes and is recorded", probed.row);
+  const cold = V.buildBakeFill(LOT, read("temperature 350 bake time 27 probe 170"), AT);
+  check(cold.row.within_limits === "fail" && cold.warnings.some(w => w.section === "deviation" && /internal temperature 170/.test(w.text)), "probe below 180 fails", cold);
+  const low = V.buildBakeFill(LOT, read("temperature 340 bake time 20"), AT);
+  check(low.row.within_limits === "fail" && /340/.test(low.warnings[0].text) && /20 minutes/.test(low.warnings[0].text), "temperature and time misses both named", low.warnings);
+  const saidFail = V.buildBakeFill(LOT, said, AT);
+  check(saidFail.row.within_limits === "fail" && saidFail.warnings[0].code === "spoken_fail", "a spoken failed is never upgraded", saidFail);
+  const saidPass = V.buildBakeFill(LOT, read("temperature 340 bake time 27 passed"), AT);
+  check(saidPass.row.within_limits === "fail", "a spoken passed does not override the numbers", saidPass.row);
+  const esFill = V.buildBakeFill(LOT, read("temperatura 350 tiempo 27 sonda 180", "es"), AT, "es");
+  const enFill = V.buildBakeFill(LOT, read("temperature 350 bake time 27 probe 180"), AT);
+  check(JSON.stringify(esFill.row) === JSON.stringify(enFill.row), "Spanish and English give the identical row", [esFill.row, enFill.row]);
+
+  // Into the real form (v2): one record for the day, a row per lot + product.
+  const fresh = { ...F.emptyValues(S507_V2, { userInitials: "CR" }), production_date: "2026-09-11" };
+  const a = V.applyVoiceFill(S507_V2, fresh, probed, { userInitials: "TP" });
+  check(a.ok && a.rowIndex === 0 && a.values.oven_loads[0].product === LOT.product && a.values.oven_loads[0].lot_code === "6279"
+    && a.values.oven_loads[0].internal_temp === "181" && a.values.oven_loads[0].initials === "TP" && a.values.oven_loads[0].time_out === "10:40"
+    && a.warnings.length === 0, "applied to FRM-507 v2 with no warnings", a.ok && [a.values.oven_loads[0], a.warnings]);
+  const b = V.applyVoiceFill(S507_V2, a.values, V.buildBakeFill({ product: "Rum Cake - Original", lot: "6279" }, read("temperature 355 bake time 28"), AT), { userInitials: "TP" });
+  check(b.ok && b.values.oven_loads.length === 2 && b.values.oven_loads[1].product === "Rum Cake - Original" && b.warnings.length === 0, "the other flavor is a second row of the same record", b.ok && b.values.oven_loads);
+  const noProbeLimit = JSON.parse(JSON.stringify(S507_V2).replace("At least 180°F", "At least 185°F"));
+  const c = V.applyVoiceFill(noProbeLimit, fresh, probed, { userInitials: "TP" });
+  check(c.ok && c.values.oven_loads[0].within_limits === "" && c.warnings.some(w => w.code === "limits_changed"), "a changed probe limit leaves a probed row unjudged", c.ok && c.warnings);
+  const d = V.applyVoiceFill(noProbeLimit, fresh, pass, { userInitials: "TP" });
+  check(d.ok && d.values.oven_loads[0].within_limits === "pass", "and does not touch a row with no probe reading");
+
+  // Open the record: a row with the time, product and lot, and nothing judged.
+  const started = V.startedBakeFill(LOT, AT);
+  const e = V.applyVoiceFill(S507_V2, fresh, started, { userInitials: "TP" });
+  check(e.ok && started.started && e.values.oven_loads[0].product === LOT.product && e.values.oven_loads[0].lot_code === "6279"
+    && e.values.oven_loads[0].time_out === "10:40" && e.values.oven_loads[0].initials === "TP"
+    && !e.values.oven_loads[0].oven_temp && !e.values.oven_loads[0].within_limits && e.warnings.length === 0, "a started row carries no readings and no warnings", e.ok && [e.values.oven_loads[0], e.warnings]);
+  const f = V.applyVoiceFill(JSON.parse(JSON.stringify(S507_V2).replace("At least 350°F", "At least 360°F")), fresh, started, { userInitials: "TP" });
+  check(f.ok && !f.warnings.some(w => w.code === "limits_changed"), "a started row is not checked against the limits");
+}
+
 console.log(failed ? `\n${failed} FAILED, ${passed} passed` : `\nALL ${passed} PASS`);
 process.exit(failed ? 1 : 0);

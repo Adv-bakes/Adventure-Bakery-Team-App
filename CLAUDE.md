@@ -1501,6 +1501,24 @@ check that did not happen.
   `releaseAssist.ccpLine` reads the product from the row, else from the entry (records filled at revision
   New). The owner wants the baking voice command started from a button per lot + product on the Today
   page - NOT yet built (2026-10-09).
+- **Record bake, on a lot's row of the Today page (2026-10-09, `components/team/today/BakeLoadButton.tsx`).**
+  Each lot + product in progress has a **Record bake** button before Continue, for one oven load on the
+  day's FRM-507. The row supplies the product and the lot; a menu offers two ways in. **Speak the reading**:
+  "Temperature 350, bake time 27", optionally "probe 180" (`parseBakeReading` / `parseBakeAlternatives`,
+  `BAKE_READING_TEXT` holds the words per language and the wall card's lines; a typed box under it is the
+  fallback). Within the limits, the row is shown and **Accept saves it without leaving the page** - the one
+  path that saves with the form closed, an explicit tap on a row the operator has read. A limit missed, or
+  a spoken "failed", saves nothing and opens the record with the row unsaved and Section 3 flagged.
+  **Open the record** hands over a row with only the time, product, lot and initials (`startedBakeFill`,
+  `VoiceFill.started`, its own banner wording). Both hand-overs reuse `state.voiceCommand`.
+  Nothing is created by listening: the day's record (`findDraftForDay`, the signed-in person's draft dated
+  today) is looked up or created only on Accept, a failed reading, or Open the record. Accept opens the
+  record instead of saving when the draft is on an earlier revision or applying the row raises a warning
+  (`NEEDS_RECORD`). **The probe is optional**: said, it is recorded and judged against 180°F
+  (`CCP1_LIMITS.internalMinF`, `probeLimitStillMatches`); the day-level "Internal temperature on this day"
+  answer is left to the person signing. `PROBE_RANGE` starts at 100 so "one eighty" is not read as 81.
+  The dialog is opened a tick after the menu item is chosen, or the two fight over focus. Checked on a
+  temporary harness route with the database stubbed; the microphone itself is untested from here.
 - **FRM-606 from v2 (2026-10-07): the lot is entered once, and a row carries one check.** `lot_code` is a
   field at the top; `fill.entryFields.lot` carries it and `applyVoiceFill` fills it when empty (or writes
   the row's `lot_code` on an entry filled under the earlier revision). Check types are `Set-up`,

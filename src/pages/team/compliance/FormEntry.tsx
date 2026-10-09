@@ -795,11 +795,16 @@ export default function FormEntry() {
                 <Mic className="w-4 h-4 text-[#9A6F1E] mt-0.5 shrink-0" />
                 <div className="text-sm text-[#2A1F0E] space-y-0.5">
                   <p>
-                    <strong>{VOICE_MSG[voice.lang].banner.addedLead}</strong>
-                    {VOICE_MSG[voice.lang].banner.addedBody(voice.rowIndex + 1, voice.gridLabel)}
+                    {/* A row started from a lot's button on the Today page has no readings and nothing was heard. */}
+                    <strong>{voice.state.fill.started ? VOICE_MSG[voice.lang].banner.startedLead : VOICE_MSG[voice.lang].banner.addedLead}</strong>
+                    {voice.state.fill.started
+                      ? VOICE_MSG[voice.lang].banner.startedBody(voice.rowIndex + 1, voice.gridLabel)
+                      : VOICE_MSG[voice.lang].banner.addedBody(voice.rowIndex + 1, voice.gridLabel)}
                     <strong>Save Draft</strong>{VOICE_MSG[voice.lang].banner.addedTail}
                   </p>
-                  <p className="text-xs text-[#2A1F0E]/80 italic">{VOICE_MSG[voice.lang].banner.heard(voice.state.transcript)}</p>
+                  {voice.state.transcript && (
+                    <p className="text-xs text-[#2A1F0E]/80 italic">{VOICE_MSG[voice.lang].banner.heard(voice.state.transcript)}</p>
+                  )}
                 </div>
               </div>
               <WarningList warnings={voice.warnings} />

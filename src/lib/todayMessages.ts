@@ -25,6 +25,15 @@ export interface TodayMessages {
   stage: Record<string, string>;
   onHold: string;
   recordOvenLoad: string;
+  /** The bake button on a lot's row, its menu and its dialog. */
+  bake: {
+    button: string; speak: string; open: string;
+    title(lot: string, product: string): string;
+    listening: string; say(line: string, withProbe: string): string; heard(t: string): string;
+    typeHere: string; use: string; again: string; accept: string; openInstead: string; cancel: string;
+    initials: string; passLead: string; saved(lot: string, product: string): string;
+    failLead: string; openFailed: string; noSpeech: string; needsRecord: string;
+  };
   recordSealChecks: string;
   ccpTodayNone: string;
   ccpBakingToday(n: number): string;
@@ -82,6 +91,28 @@ const en: TodayMessages = {
   },
   onHold: "On hold (FRM-702)",
   recordOvenLoad: "Record an oven load (FRM-507)",
+  bake: {
+    button: "Record bake",
+    speak: "Speak the reading",
+    open: "Open the record",
+    title: (lot, product) => `Oven load · Lot ${lot} · ${product}`,
+    listening: "Listening…",
+    say: (line, withProbe) => `Say: "${line}". If the load was probed: "${withProbe}".`,
+    heard: t => `Heard: "${t}"`,
+    typeHere: "Or type the reading",
+    use: "Use",
+    again: "Try again",
+    accept: "Accept",
+    openInstead: "Open the record instead",
+    cancel: "Cancel",
+    initials: "Initials",
+    passLead: "Within the critical limits. Check the row, then accept it.",
+    saved: (lot, product) => `Oven load recorded for Lot ${lot} · ${product}.`,
+    failLead: "A limit was not met. Opening the record…",
+    openFailed: "Could not open the baking record",
+    noSpeech: "This browser has no speech recognition. Type the reading below, or open the record.",
+    needsRecord: "This row needs to be checked in the record. Opening it…",
+  },
   recordSealChecks: "Record seal checks (FRM-606)",
   ccpTodayNone: "No CCP record started today.",
   ccpBakingToday: n => n === 0 ? "Today's baking record is open." : `Today's baking record has ${n} oven load${n === 1 ? "" : "s"}.`,
@@ -139,6 +170,28 @@ const es: TodayMessages = {
   },
   onHold: "Retenido (FRM-702)",
   recordOvenLoad: "Registrar una hornada (FRM-507)",
+  bake: {
+    button: "Registrar horneado",
+    speak: "Decir la lectura",
+    open: "Abrir el registro",
+    title: (lot, product) => `Hornada · Lote ${lot} · ${product}`,
+    listening: "Escuchando…",
+    say: (line, withProbe) => `Diga: "${line}". Si se midió con la sonda: "${withProbe}".`,
+    heard: t => `Escuchado: "${t}"`,
+    typeHere: "O escriba la lectura",
+    use: "Usar",
+    again: "Intentar otra vez",
+    accept: "Aceptar",
+    openInstead: "Abrir el registro",
+    cancel: "Cancelar",
+    initials: "Iniciales",
+    passLead: "Dentro de los límites críticos. Revise la fila y acéptela.",
+    saved: (lot, product) => `Hornada registrada para el Lote ${lot} · ${product}.`,
+    failLead: "No se cumplió un límite. Abriendo el registro…",
+    openFailed: "No se pudo abrir el registro de horneado",
+    noSpeech: "Este navegador no tiene reconocimiento de voz. Escriba la lectura abajo o abra el registro.",
+    needsRecord: "Esta fila debe revisarse en el registro. Abriéndolo…",
+  },
   recordSealChecks: "Registrar las revisiones de sellado (FRM-606)",
   ccpTodayNone: "Hoy no se ha empezado ningún registro de PCC.",
   ccpBakingToday: n => n === 0 ? "El registro de horneado de hoy está abierto." : `El registro de horneado de hoy tiene ${n} hornada${n === 1 ? "" : "s"}.`,

@@ -3,7 +3,7 @@ import { es as esLocale } from "date-fns/locale";
 import { useSearchParams } from "react-router-dom";
 import { Printer } from "lucide-react";
 import {
-  VOICE_COMMANDS, VOICE_REGISTRY_VERSION, renderExample, type VoiceCommandDef,
+  BAKE_READING_TEXT, VOICE_COMMANDS, VOICE_REGISTRY_VERSION, renderExample, type VoiceCommandDef,
 } from "@/lib/voiceCommands";
 import { HANDS_FREE_CARD, HANDS_FREE_FORM } from "@/lib/voiceHandsFree";
 import type { VoiceLang } from "@/lib/voiceLexicon";
@@ -66,6 +66,31 @@ function ScriptCard({ def, lang, last }: { def: VoiceCommandDef; lang: VoiceLang
       <p className="mt-5 text-base border-t border-[#2A1F0E]/40 pt-3">{text.limitsText}</p>
 
       <p className="mt-6 text-xs">{card.footer(VOICE_REGISTRY_VERSION, def.formNumber, printed)}</p>
+    </section>
+  );
+}
+
+/** The readings said from a lot's "Record bake" button on the Today page. Same text the parser is tested on. */
+function BakeReadingCard({ lang }: { lang: VoiceLang }) {
+  const card = BAKE_READING_TEXT[lang].card;
+  const printed = lang === "es"
+    ? format(new Date(), "d 'de' MMM yyyy", { locale: esLocale })
+    : format(new Date(), "d MMM yyyy");
+  return (
+    <section
+      lang={lang}
+      className="border-2 border-[#2A1F0E] rounded-lg p-6 mb-6 print:mb-0 print:border-0 print:rounded-none"
+      style={{ breakAfter: "page", pageBreakAfter: "always" }}
+    >
+      <h2 className="text-3xl font-bold">{card.heading}</h2>
+      <p className="mt-1 text-base">{card.intro}</p>
+      <div className="mt-5 space-y-2">
+        {card.examples.map(line => <p key={line} className="text-2xl font-semibold">"{line}"</p>)}
+      </div>
+      <ul className="mt-5 list-disc pl-6 space-y-1 text-base">
+        {card.notes.map((note, i) => <li key={i}>{note}</li>)}
+      </ul>
+      <p className="mt-6 text-xs">{VOICE_MSG[lang].card.footer(VOICE_REGISTRY_VERSION, "FRM-507", printed)}</p>
     </section>
   );
 }
@@ -141,6 +166,7 @@ export default function VoiceCommandScripts() {
         {cards.map(({ def, lang }) => (
           <ScriptCard key={`${lang}-${def.id}`} def={def} lang={lang} last={false} />
         ))}
+        {langs.map(lang => <BakeReadingCard key={`${lang}-bake-reading`} lang={lang} />)}
         {langs.map((lang, i) => (
           <HandsFreeCard key={`${lang}-handsfree`} lang={lang} last={i === langs.length - 1} />
         ))}

@@ -31,6 +31,7 @@ import {
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
+import { BakeLoadButton } from "@/components/team/today/BakeLoadButton";
 
 const LANG_KEY = "today.lang";
 type Doc = { id: string; sop_number: string; revision: string | null; content: any };
@@ -283,11 +284,20 @@ export default function Today() {
                       {l.stage === "awaiting_release" || l.stage === "released" ? (
                         <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>FRM-520</Link></Button>
                       ) : (
-                        <Button asChild size="sm" variant="outline" disabled={!open}>
-                          <Link to={entryHref(l.docId, l.id)} aria-disabled={!open} onClick={e => { if (!open) e.preventDefault(); }}>
-                            {M.continueLot}
-                          </Link>
-                        </Button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Baking comes before the lot record's next step, so its button comes first. */}
+                          {canVoice && docOf("baking") && l.lotCode && l.product && (
+                            <BakeLoadButton
+                              doc={docOf("baking")!} lot={l.lotCode} product={l.product} today={today}
+                              lang={lang} disabled={!open} onSaved={load}
+                            />
+                          )}
+                          <Button asChild size="sm" variant="outline" disabled={!open}>
+                            <Link to={entryHref(l.docId, l.id)} aria-disabled={!open} onClick={e => { if (!open) e.preventDefault(); }}>
+                              {M.continueLot}
+                            </Link>
+                          </Button>
+                        </div>
                       )}
                     </li>
                   ))}
