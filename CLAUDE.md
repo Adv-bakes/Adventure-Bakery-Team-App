@@ -504,7 +504,10 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   (`src/lib/pickFrom.ts`, no imports, tested by `scripts/test-pick-from.mjs`) writes a cell only if it is
   empty or still holds what this cell's previous pick wrote in this page visit, so a typed answer is never
   replaced, and changing the pick carries its fills along. The neighbouring cells are written through
-  their own controllers (`FillTarget`), not `useFieldArray.update`, so the row does not remount. Loader
+  their own controllers (`FillTarget`), not `useFieldArray.update`, so the row does not remount. A cell whose
+  value is ALREADY a listed choice while a target cell is empty shows a **Fill from FRM-207** link
+  (`FillOffer`) - the owner opened an existing sheet, where nothing changes so nothing fired, and took the
+  feature for broken (2026-10-09). Checked on a temporary harness route with `supabase.from` stubbed. Loader
   `loadPickOptions` in `formReport.ts`, cached per page load. Set by migration; the builder has no control
   for it. First use: FRM-501's Ingredient from FRM-207 (not Discontinued; ingredient, additive / flavouring
   or processing aid), filling Supplier from Manufacturer / brand and Allergen(s) from the ticked allergens
