@@ -16,6 +16,9 @@ export interface VoiceMessages {
 
   lotCheck(lot: string): string;
   bakeTempMiss(temp: number, limit: number): string;
+  bakeProbeMiss(temp: number, limit: number): string;
+  /** The short line said from a lot's button on the Today page. */
+  reading: { missing(names: string[]): string };
   bakeTimeMiss(minutes: number, limit: number): string;
   bakeFail(saidPass: boolean, misses: string[]): string;
   spokenFail: string;
@@ -34,6 +37,7 @@ export interface VoiceMessages {
 
   summary: {
     product: string; lot: string; ovenTemp: string; bakeTime: string; withinLimits: string;
+    timeOut: string; probe: string;
     check: string; vacuum: string; visual: string; pull: string;
     pass: string; fail: string; pickInForm: string;
     temp(t: number): string; minutes(m: number): string; inches(v: number): string;
@@ -51,6 +55,7 @@ export interface VoiceMessages {
 
   banner: {
     addedLead: string; addedBody(row: number, grid: string): string; addedTail: string; heard(t: string): string;
+    startedLead: string; startedBody(row: number, grid: string): string;
     goToSection3: string; undo: string; dismiss: string;
     refusedSubmitted: string; refusedNotMine: string; stale: string; reload: string;
   };
@@ -95,6 +100,8 @@ const EN: VoiceMessages = {
 
   lotCheck: lot => `Check the lot code "${lot}" against the label before saving.`,
   bakeTempMiss: (t, l) => `oven temperature ${t}°F is below the ${l}°F limit`,
+  bakeProbeMiss: (t, l) => `internal temperature ${t}°F is below the ${l}°F limit`,
+  reading: { missing: names => `I did not hear the ${joinAnd(names, "or")}. Say it again, for example "Temperature 350, bake time 27".` },
   bakeTimeMiss: (m, l) => `bake time ${m} minutes is under the ${l}-minute limit`,
   bakeFail: (saidPass, misses) =>
     `${saidPass ? "You said Passed, but the " : "The "}${misses.join(" and ")}. Recorded as FAIL. Do not release this load - follow Section 3.`,
@@ -117,7 +124,7 @@ const EN: VoiceMessages = {
 
   summary: {
     product: "Product", lot: "Lot", ovenTemp: "Oven temperature", bakeTime: "Bake time",
-    withinLimits: "Within critical limits", check: "Check", vacuum: "Vacuum gauge", visual: "Visual",
+    withinLimits: "Within critical limits", timeOut: "Time out of oven", probe: "Internal temperature", check: "Check", vacuum: "Vacuum gauge", visual: "Visual",
     pull: "Pull test", pass: "PASS", fail: "FAIL", pickInForm: "— pick in the form",
     temp: t => `${t}°F`, minutes: m => `${m} min`, inches: v => `${v} in. Hg`, checkValue: o => o,
   },
@@ -151,6 +158,8 @@ const EN: VoiceMessages = {
   },
 
   banner: {
+    startedLead: "Row started.",
+    startedBody: (row, grid) => ` Enter the readings in row ${row} of ${grid}, then tap `,
     addedLead: "Added by voice.",
     addedBody: (row, grid) => ` Check row ${row} of ${grid} — especially the lot code — then tap `,
     addedTail: ". Nothing is saved until you do.",
@@ -257,6 +266,8 @@ const ES: VoiceMessages = {
 
   lotCheck: lot => `Compare el código de lote "${lot}" con la etiqueta antes de guardar.`,
   bakeTempMiss: (t, l) => `la temperatura del horno de ${t} °F está por debajo del límite de ${l} °F`,
+  bakeProbeMiss: (t, l) => `la temperatura interna de ${t} °F está por debajo del límite de ${l} °F`,
+  reading: { missing: names => `No escuché ${joinNi(names)}. Dígalo otra vez, por ejemplo "Temperatura 350, tiempo 27".` },
   bakeTimeMiss: (m, l) => `el tiempo de horneado de ${m} minutos es menor que el límite de ${l} minutos`,
   bakeFail: (saidPass, misses) =>
     `${saidPass ? `Usted dijo Aprobado, pero ${misses.join(" y ")}.` : `${capitalise(misses.join(" y "))}.`} Se registró como NO APROBADO (Fail). No libere esta hornada: siga la Sección 3.`,
@@ -280,7 +291,7 @@ const ES: VoiceMessages = {
 
   summary: {
     product: "Producto", lot: "Lote", ovenTemp: "Temperatura del horno", bakeTime: "Tiempo de horneado",
-    withinLimits: "Dentro de los límites críticos", check: "Revisión", vacuum: "Manómetro de vacío",
+    withinLimits: "Dentro de los límites críticos", timeOut: "Hora de salida del horno", probe: "Temperatura interna", check: "Revisión", vacuum: "Manómetro de vacío",
     visual: "Visual", pull: "Prueba de jalón", pass: "APROBADO (Pass)", fail: "NO APROBADO (Fail)",
     pickInForm: "— elíjalo en el formulario",
     temp: t => `${t} °F`, minutes: m => `${m} min`, inches: v => `${v} pulg. Hg`,
@@ -316,6 +327,8 @@ const ES: VoiceMessages = {
   },
 
   banner: {
+    startedLead: "Fila iniciada.",
+    startedBody: (row, grid) => ` Escriba las lecturas en la fila ${row} de ${grid} y luego toque `,
     addedLead: "Agregado por voz.",
     addedBody: (row, grid) => ` Revise la fila ${row} de ${grid} (sobre todo el código de lote) y toque `,
     addedTail: ". No se guarda nada hasta que lo haga.",
