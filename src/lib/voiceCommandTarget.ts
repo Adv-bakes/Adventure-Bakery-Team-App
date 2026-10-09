@@ -69,13 +69,15 @@ export async function findTodaysDrafts(formId: string, productionDate: string): 
   return (data ?? []) as FormResponse[];
 }
 
-/** A new entry for the day, with the product already filled. Only ever called after the operator taps. */
+/** A new entry for the day. Only ever called after the operator taps. */
 export function createVoiceEntry(form: VoiceForm, fill: VoiceFill): Promise<FormResponse> {
-  const prefill: Record<string, unknown> = { production_date: fill.productionDate, product: fill.entryFields.product };
-  // Only where this revision of the form asks for the lot once at the top; an answer key the form
-  // does not have would show up as an unmapped answer.
-  const hasLotField = (getFormSchema(form.content)?.sections ?? []).some(s => (s.fields ?? []).some(f => f.id === "lot_code"));
-  if (fill.entryFields.lot && hasLotField) prefill.lot_code = fill.entryFields.lot;
+  const prefill: Record<string, unknown> = { production_date: fill.productionDate };
+  // The product and the lot go at the top only where this revision of the form asks for them
+  // there (FRM-507 names the product on each oven load from v2); an answer key the form does not
+  // have would show up as an unmapped answer.
+  const hasField = (id: string) => (getFormSchema(form.content)?.sections ?? []).some(s => (s.fields ?? []).some(f => f.id === id));
+  if (hasField("product")) prefill.product = fill.entryFields.product;
+  if (fill.entryFields.lot && hasField("lot_code")) prefill.lot_code = fill.entryFields.lot;
   return createResponse(form, prefill);
 }
 

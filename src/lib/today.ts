@@ -20,7 +20,7 @@ export const TODAY_FORMS = {
   dispatches: { form: "FRM-801", fields: ["dispatch_date", "customer"], grids: { loaded: ["product", "lot_code"] } },
   holds:      { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"], grids: {} },
   receipts:   { form: "FRM-301", fields: [], grids: { receiving_log: ["supplier_name", "material_description"] } },
-  baking:     { form: "FRM-507", fields: ["production_date", "product"], grids: { oven_loads: ["lot_code"] } },
+  baking:     { form: "FRM-507", fields: ["production_date"], grids: { oven_loads: ["lot_code"] } },
   sealing:    { form: "FRM-606", fields: ["production_date", "product", "lot_code"], grids: {} },
 } as const satisfies Record<string, TodaySourceSpec>;
 

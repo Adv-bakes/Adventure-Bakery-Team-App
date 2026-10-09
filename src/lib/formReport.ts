@@ -256,7 +256,8 @@ export async function loadPickOptions(spec: GridPickFrom): Promise<PickOption[]>
   const doc = await fetchSourceForm(spec.form);
   if (!doc) return [];
   const rows = (await fetchResponses(doc.id))
-    .filter(r => r.status === "submitted" && (spec.filters ?? []).every(f => matchesFilter(f, r.data ?? {})))
+    .filter(r => (spec.drafts ? !(r.data && "_test_batch" in r.data) : r.status === "submitted")
+      && (spec.filters ?? []).every(f => matchesFilter(f, r.data ?? {})))
     .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))
     .map(r => r.data ?? {});
   return pickOptionsFromRows(spec, rows);
