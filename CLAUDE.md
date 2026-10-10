@@ -1554,6 +1554,17 @@ check that did not happen.
   "of this batch", and withdraws the review request; the signature is left for the operator to clear.
   Section 3's "Deviations on this day" is never answered by the app. On a revision without the column
   (`hasLastLoadColumn`) none of the marks are offered. Seal checks have no equivalent yet.
+- **Suggested bake figures in the Enter the reading pop-up (2026-10-10, `src/lib/bakeTargets.ts`).** The oven
+  temperature and bake time boxes show, in grey, what the product's formula sheet states - FRM-501's
+  Process Parameters table, rows "Process / Bake temperature" and "Process / Bake time", column
+  Target / Spec - with a **Use 350** link under the box. **Never a default**: the box stays empty until the
+  link is tapped or a figure is typed (the weights rule). `readTarget` reads only a plain figure ("350",
+  "350°F", "27 min"), never a range or a figure buried in text; `bakeTargets` finds the rows BY LABEL and
+  takes each figure from the newest sheet of the product that states it (drafts count). Loader
+  `loadBakeTargets` in `formReport.ts`, which never throws. The probe box has no suggestion: the formula
+  sheet has no internal-temperature row, and 180°F is the HACCP limit, not a target to copy in. Renaming
+  those FRM-501 rows or columns means updating `BAKE_TARGET_SOURCE` and the label match. Tested by
+  `scripts/test-bake-targets.mjs`.
 - **Record seal check, on a lot's row of the Today page (2026-10-09, `components/team/today/SealCheckButton.tsx`).**
   The sibling of Record bake, with the same rules (menu Speak the check / Open the record; a passed check
   is shown and **Accept** saves it; a failed check saves nothing and opens the record with the row unsaved
