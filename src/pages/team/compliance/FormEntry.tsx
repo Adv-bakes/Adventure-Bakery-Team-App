@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -29,6 +29,7 @@ import {
 } from "@/lib/formResponses";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
 import { DocSelfContext } from "@/components/team/forms/DocRefText";
+import { deriveDeviations, deviationFormFor, deviationProblems } from "@/lib/ccpDeviations";
 import type { ScanRequest } from "@/components/team/forms/GridFieldInput";
 import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments";
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
@@ -242,6 +243,27 @@ export default function FormEntry() {
     [signer?.name],
   );
   const canEdit = !isSubmitted && (isMine || isAdmin);
+
+  // Section 3 of a CCP record (FRM-507, FRM-606) is worked out from the loads or checks on the
+  // record itself and kept in step as they change - see ccpDeviations.ts. What was DONE about a
+  // deviation stays a person's to fill in.
+  const deviationCfg = useMemo(() => deviationFormFor(doc?.sop_number, schema), [doc?.sop_number, schema]);
+  const withDeviations = (values: Record<string, any>): Record<string, any> =>
+    deviationCfg ? (deriveDeviations(deviationCfg, values).values as Record<string, any>) : values;
+  const deviationSource = JSON.stringify(useWatch({ control: form.control, name: (deviationCfg?.grid ?? "__none__") as any }) ?? null);
+  const deviationsSeen = useRef<string | null>(null);
+  useEffect(() => {
+    if (!deviationCfg || !canEdit || loading || !response) return;
+    const res = deriveDeviations(deviationCfg, form.getValues());
+    // The first look at a record only shows what follows from it; it becomes an unsaved change once the checks change.
+    const first = deviationsSeen.current !== response.id;
+    deviationsSeen.current = response.id;
+    if (!res.changed) return;
+    const opts = { shouldDirty: !first };
+    form.setValue(deviationCfg.answer as any, res.values[deviationCfg.answer] as any, opts);
+    if (res.values[deviationCfg.log] !== form.getValues(deviationCfg.log as any)) form.setValue(deviationCfg.log as any, res.values[deviationCfg.log] as any, opts);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviationCfg, deviationSource, canEdit, loading, response?.id]);
   const readOnly = !canEdit;
   // Keyed on the entry's own (resolved) schema: the helper is tied to that revision's field ids.
   const releaseAssist = useReleaseAssist({
@@ -312,6 +334,9 @@ export default function FormEntry() {
       if (!response) return;
       setMissing(null);
       setConfirmSubmit(false);
+      // A CCP record whose Section 3 disagrees with its own loads or checks is not submitted.
+      const disagree = deviationCfg ? deviationProblems(deviationCfg, values) : [];
+      if (disagree.length) { toast.error(disagree[0], { duration: 12000 }); return; }
       setSubmitting(true);
       try {
         const updated = await submitResponse(response.id, values, response.updated_at);
@@ -655,7 +680,8 @@ export default function FormEntry() {
       const res = applyHandsFreeRow(schema, base, row, fillContext, lang);
       if (!res.ok) return null;
       placed = { index: res.rowIndex };
-      return res.values as Record<string, any>;
+      // Saved as it is spoken, so Section 3 is worked out here and saved with the row.
+      return withDeviations(res.values as Record<string, any>);
     };
     const values = place({ ...emptyValues(schema), ...form.getValues() });
     if (!values) return { ok: false };
@@ -674,7 +700,7 @@ export default function FormEntry() {
       // Only the row that was spoken, and only if nobody has changed it since.
       if (JSON.stringify(rows[last.index]) !== last.row) return null;
       rows.splice(last.index, 1);
-      return { ...base, seal_checks: rows.length ? rows : emptyValues(schema, fillContext).seal_checks };
+      return withDeviations({ ...base, seal_checks: rows.length ? rows : emptyValues(schema, fillContext).seal_checks });
     };
     const values = remove({ ...emptyValues(schema), ...form.getValues() });
     if (!values) return false;

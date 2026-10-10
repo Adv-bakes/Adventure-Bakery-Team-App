@@ -1568,6 +1568,22 @@ check that did not happen.
   pull test, done after sealing. `markLastCheck` marks the last row that holds a check. The Enter the
   check pop-up takes the check type, air check and pull test (pass / fail / not done) and the gauge; a
   fail opens the record as always. The reviewer choice is shared with baking (`bake.reviewer`).
+- **Section 3 of the CCP records is derived (2026-10-10, `src/lib/ccpDeviations.ts`, Gabriela approved).** On
+  FRM-507 and FRM-606, "Deviations on this day" and the deviations table are worked out from the record's
+  own oven loads / seal checks (`CCP_DEVIATION_FORMS`, `deriveDeviations`): **None** once every judged row
+  passed, **Yes** plus one line per failed row saying what was out of limit. **What was done about it is
+  never derived** - Action and the FRM-702 / FRM-007 reference stay blank and required, so a record with a
+  failed load cannot be submitted until a person says. A line the app wrote carries hidden `_src` (which
+  row) and `_auto` (what it wrote): while its wording is untouched it follows its source, and it goes if
+  the load turns out to have passed; once reworded or acted on it is the person's and is left alone, as
+  are lines typed by hand and a Yes a person chose. Pure and idempotent. It runs in three places: the
+  entry page (an effect on the checks grid - `setValue` on the answer and the table, so the row being
+  typed in the checks grid keeps its focus; the first look at a record does not mark it unsaved), the
+  Today buttons' Accept / Save, and the hands-free auto-save. `deviationProblems` blocks Submit when the
+  section and the checks disagree. `deviationFormFor` returns null on a revision whose fields or options
+  do not match, and nothing is derived. `SelectField.restingValue` (migration `20261010000003`, no
+  revision change) names the "None" option so a derived None does not open the collapsed section
+  (`sectionHasAnswers`). Tested by `scripts/test-ccp-deviations.mjs` against the real schemas.
 - **Suggested bake figures in the Enter the reading pop-up (2026-10-10, `src/lib/bakeTargets.ts`).** The oven
   temperature and bake time boxes show, in grey, what the product's formula sheet states - FRM-501's
   Process Parameters table, rows "Process / Bake temperature" and "Process / Bake time", column

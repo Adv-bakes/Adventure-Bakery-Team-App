@@ -156,6 +156,12 @@ export interface SelectField   extends FieldBase {
   type: "select";
   options: string[];
   multiple?: boolean;
+  /**
+   * The option that means "nothing to report" ("None - every load met the limits"). Holding it does
+   * not count as an answer when deciding whether a collapsed section opens (sectionHasAnswers), so
+   * a section for exceptions stays one line on an ordinary day even though its question is answered.
+   */
+  restingValue?: string;
   // Stored on some seeded schemas but NOT rendered — there is no free-text "other"
   // input. Offer "Other" as an option instead.
   allowOther?: boolean;
@@ -591,6 +597,7 @@ export function sectionHasAnswers(section: FormSection, values: Record<string, a
     }
     if (blankCell(v)) continue;
     if (v === field.defaultValue) continue;
+    if (field.type === "select" && v === (field as SelectField).restingValue) continue;
     if ((field as DateField).defaultToday) continue;
     return true;
   }
