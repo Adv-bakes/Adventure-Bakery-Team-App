@@ -21,7 +21,7 @@ export const TODAY_FORMS = {
   holds:      { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"], grids: {} },
   receipts:   { form: "FRM-301", fields: [], grids: { receiving_log: ["supplier_name", "material_description"] } },
   baking:     { form: "FRM-507", fields: ["production_date", "monitored_by"], grids: { oven_loads: ["lot_code"] } },
-  sealing:    { form: "FRM-606", fields: ["production_date", "product", "lot_code"], grids: {} },
+  sealing:    { form: "FRM-606", fields: ["production_date", "product", "lot_code", "monitored_by"], grids: { seal_checks: ["check"] } },
 } as const satisfies Record<string, TodaySourceSpec>;
 
 export type TodayKind = keyof typeof TODAY_FORMS;
@@ -241,6 +241,44 @@ export function bakingAwaitingReview(records: TodayRecords, today: string): { by
   for (const e of records.baking) {
     if (day(e.data.production_date) !== today || isSubmitted(e)) continue;
     if (!rowsOf(e, "oven_loads").some(r => str(r.last_load) === LAST_OF_LOT)) continue;
+    const name = str(e.data.monitored_by?.name);
+    if (name) return { by: name };
+  }
+  return null;
+}
+
+/** FRM-606's Last check options (v3). The same two strings voiceHandsFree.ts writes. */
+const LAST_CHECK_OF_BATCH = "Last check of this batch";
+const LAST_CHECK_OF_LOT = "Last check of this lot";
+
+/** `loads` is the number of seal checks recorded today for the batch; `done` as for baking. */
+export type SealState = BakeState;
+
+/**
+ * How far the seal checks of one batch have got today, read from every FRM-606 dated today. A
+ * record is one batch's (product + lot code at the top), so the batch is done when its own record
+ * carries a Last check mark, or when any record of the same lot code says "of this lot".
+ */
+export function sealState(records: TodayRecords, today: string, product: string, lot: string): SealState {
+  let loads = 0;
+  let batch = false;
+  let whole = false;
+  for (const e of records.sealing) {
+    if (day(e.data.production_date) !== today || !normLot(lot) || normLot(e.data.lot_code) !== normLot(lot)) continue;
+    const rows = rowsOf(e, "seal_checks");
+    if (rows.some(r => str(r.last_check) === LAST_CHECK_OF_LOT)) whole = true;
+    if (!sameProduct(e.data.product, product)) continue;
+    loads += rows.filter(r => str(r.check)).length;
+    if (rows.some(r => str(r.last_check) === LAST_CHECK_OF_BATCH || str(r.last_check) === LAST_CHECK_OF_LOT)) batch = true;
+  }
+  return { loads, done: whole ? "lot" : batch ? "batch" : "open" };
+}
+
+/** Who signed today's sealing records as the operator, once a check is marked the last of its lot. */
+export function sealingAwaitingReview(records: TodayRecords, today: string): { by: string } | null {
+  for (const e of records.sealing) {
+    if (day(e.data.production_date) !== today || isSubmitted(e)) continue;
+    if (!rowsOf(e, "seal_checks").some(r => str(r.last_check) === LAST_CHECK_OF_LOT)) continue;
     const name = str(e.data.monitored_by?.name);
     if (name) return { by: name };
   }

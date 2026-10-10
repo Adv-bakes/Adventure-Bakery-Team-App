@@ -242,6 +242,71 @@ check(H.nextReminderAt(T0, T0 + 5 * MIN, T0 + 2 * MIN) === T0 + 35 * MIN, "count
   check(other.ok && other.warnings.some(w => w.code === "lot_mismatch"), "another lot's record is noticed, not written to quietly", other.ok && other.warnings);
 }
 
+// ── 10. The last check of the batch, and of the lot (FRM-606 v3) ──────────────
+{
+  const LOT = { product: "Rum Cake - Original", lot: "6283" };
+  const AT = new Date(2026, 9, 10, 14, 5);
+  const B = H.SEAL_LAST_VALUES.batch, L = H.SEAL_LAST_VALUES.lot;
+  const line = (text, lang = "en") => H.parseSealLine([text], lang);
+
+  check(same(H.splitLastPhrase("air check passed last check of this batch"), { rest: "air check passed", last: "batch" }), "the closing phrase is cut out of the sentence");
+  check(same(H.splitLastPhrase("air check passed"), { rest: "air check passed" }), "no phrase, the sentence as it came");
+  const withBatch = ["air check passed last check of this batch", "air check passed, last check of the batch", "last check of this batch air check passed", "air check passed final check of this batch", "aircheck passed last check this batch"];
+  for (const t of withBatch) { const r = line(t); check(same(r.row, { check: "In process", visual: "pass" }) && r.last === "batch" && !r.markOnly, `batch: ${t}`, r); }
+  const lotLine = line("boxing check passed last check of this lot");
+  check(lotLine.row?.check === "At boxing" && lotLine.last === "lot", "lot: on a boxing check", lotLine);
+  const pull = line("pull test passed, last check of this lot");
+  check(same(pull.row, { check: "At boxing", pull_test: "pass" }) && pull.last === "lot", "lot: on a pull test", pull);
+  const setup = line("set up air check passed vacuum 27 last check of this batch");
+  check(same(setup.row, { check: "Set-up", visual: "pass", vacuum_reading: "27" }) && setup.last === "batch", "the phrase does not disturb the check type or the gauge", setup);
+  check(line("air check passed").last === undefined && same(line("air check passed").row, { check: "In process", visual: "pass" }), "no phrase, no mark");
+  const failed = line("air check failed last check of this batch");
+  check(failed.row?.visual === "fail" && failed.last === "batch", "a failed last check is still a failed check", failed);
+  const esB = line("revisión de aire aprobada, última revisión de esta tanda", "es"), esL = line("prueba de jalón aprobada última revisión del lote", "es");
+  check(esB.row?.visual === "pass" && esB.last === "batch" && esL.row?.pull_test === "pass" && esL.last === "lot", "Spanish closing phrases", [esB, esL]);
+
+  const only = line("last check of this batch"), onlyLot = line("last check of this lot"), onlyEs = line("última revisión del lote", "es");
+  check(only.markOnly && only.last === "batch" && !only.row && onlyLot.markOnly && onlyLot.last === "lot" && onlyEs.markOnly && onlyEs.last === "lot", "the phrase alone is a mark, not a check", [only, onlyLot, onlyEs]);
+  const nothing = line("what time is lunch");
+  check(!nothing.row && !nothing.markOnly && !nothing.last && nothing.transcript === "what time is lunch", "nothing understood: no row, no mark, the words kept for correcting", nothing);
+  check(H.parseSealLine(["what was that", "air check passed last check of this lot"]).last === "lot", "alternatives: the one with a check wins");
+  check(H.parseSealLine(["last check of this batch", "air check passed last check of this batch"]).row?.visual === "pass", "alternatives: a whole check beats a bare mark");
+  check(same(H.parseSealLine([]), { transcript: "" }), "nothing said");
+
+  const fill = H.sealButtonFill(LOT, line("air check passed last check of this batch").row, AT, "en", "batch");
+  check(fill.row.last_check === B && fill.summary.some(l => l.key === "last_check" && l.value === B) && fill.warnings.length === 0, "the mark is on the row and in the summary", fill);
+  check(!("last_check" in H.sealButtonFill(LOT, line("air check passed").row, AT).row), "no mark, no cell");
+  check(H.sealButtonFill(LOT, esL.row, AT, "es", esL.last).row.last_check === L, "the record keeps the form's own English option whatever was spoken");
+
+  check(H.hasLastCheckColumn(S606) && !H.hasLastCheckColumn(null), "the form on file has the Last check column");
+  const noCol = JSON.parse(JSON.stringify(S606));
+  const grid = noCol.sections.flatMap(s => s.fields).find(f => f.id === "seal_checks");
+  grid.columns = grid.columns.filter(c => c.id !== "last_check");
+  check(!H.hasLastCheckColumn(noCol), "an earlier revision has not");
+  const fresh = { ...F.emptyValues(S606, { userInitials: "CR" }), production_date: "2026-10-10", product: LOT.product, lot_code: "6283" };
+  const a = V.applyVoiceFill(S606, fresh, fill, { userInitials: "TP" });
+  check(a.ok && a.values.seal_checks[0].last_check === B && a.warnings.length === 0, "applied to the form with no warnings", a.ok && [a.values.seal_checks[0], a.warnings]);
+  const old = V.applyVoiceFill(noCol, { ...F.emptyValues(noCol, { userInitials: "CR" }), production_date: "2026-10-10", product: LOT.product, lot_code: "6283" }, fill, { userInitials: "TP" });
+  check(old.ok && old.warnings.some(w => w.code === "no_column"), "on a revision without the column the mark is refused loudly", old.ok && old.warnings);
+
+  // Marks on checks already recorded. The record is the batch's own.
+  const rec = { seal_checks: [{ time: "09:00", check: "Set-up", visual: "pass" }, { time: "10:00", check: "In process", visual: "pass" }, { time: "", check: "" }] };
+  const m = H.markLastCheck(rec, "batch");
+  check(m.rowIndex === 1 && m.values.seal_checks.map(r => r.last_check ?? "").join("|") === `|${B}|`, "the mark goes on the last row that holds a check, not a blank one", m);
+  check(rec.seal_checks.every(r => !("last_check" in r)), "the values passed in are not changed");
+  check(H.markLastCheck({ seal_checks: [{ check: "" }] }, "batch") === null && H.markLastCheck({}, "lot") === null, "no check recorded: nothing to mark");
+  const lotMarked = H.markLastCheck(rec, "lot").values;
+  const mine = H.clearLastCheck(lotMarked, true);
+  check(mine.changed && mine.hadLot && mine.values.seal_checks.every(r => !r.last_check), "reopening the batch's own record takes every mark off", mine);
+  const other = H.clearLastCheck(lotMarked, false);
+  check(other.changed && other.hadLot && other.values.seal_checks[1].last_check === B, "another batch's lot mark becomes a batch mark: the lot is open, that batch still done", other);
+  const otherBatch = H.clearLastCheck(m.values, false);
+  check(!otherBatch.changed && !otherBatch.hadLot && otherBatch.values === m.values, "another batch's own mark is left alone");
+  check(!H.clearLastCheck(rec, true).changed, "nothing marked: nothing changed");
+
+  for (const lang of ["en", "es"]) check(H.SEAL_BUTTON_CARD[lang].notes.some(n => /last check of this lot|última revisión del lote/.test(n)), `the wall card (${lang}) says how to finish`);
+}
+
 rmSync(out, { recursive: true, force: true });
 console.log(failed ? `\n${failed} FAILED, ${passed} passed` : `\nALL ${passed} PASS`);
 process.exit(failed ? 1 : 0);

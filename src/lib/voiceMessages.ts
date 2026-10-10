@@ -37,7 +37,7 @@ export interface VoiceMessages {
 
   summary: {
     product: string; lot: string; ovenTemp: string; bakeTime: string; withinLimits: string;
-    timeOut: string; probe: string; time: string; lastLoad: string;
+    timeOut: string; probe: string; time: string; lastLoad: string; lastCheck: string;
     check: string; vacuum: string; visual: string; pull: string;
     pass: string; fail: string; pickInForm: string;
     temp(t: number): string; minutes(m: number): string; inches(v: number): string;
@@ -124,7 +124,7 @@ const EN: VoiceMessages = {
 
   summary: {
     product: "Product", lot: "Lot", ovenTemp: "Oven temperature", bakeTime: "Bake time",
-    withinLimits: "Within critical limits", timeOut: "Time out of oven", probe: "Internal temperature", time: "Time", lastLoad: "Last load", check: "Check", vacuum: "Vacuum gauge", visual: "Visual",
+    withinLimits: "Within critical limits", timeOut: "Time out of oven", probe: "Internal temperature", time: "Time", lastLoad: "Last load", lastCheck: "Last check", check: "Check", vacuum: "Vacuum gauge", visual: "Visual",
     pull: "Pull test", pass: "PASS", fail: "FAIL", pickInForm: "— pick in the form",
     temp: t => `${t}°F`, minutes: m => `${m} min`, inches: v => `${v} in. Hg`, checkValue: o => o,
   },
@@ -291,7 +291,7 @@ const ES: VoiceMessages = {
 
   summary: {
     product: "Producto", lot: "Lote", ovenTemp: "Temperatura del horno", bakeTime: "Tiempo de horneado",
-    withinLimits: "Dentro de los límites críticos", timeOut: "Hora de salida del horno", probe: "Temperatura interna", time: "Hora", lastLoad: "Última hornada", check: "Revisión", vacuum: "Manómetro de vacío",
+    withinLimits: "Dentro de los límites críticos", timeOut: "Hora de salida del horno", probe: "Temperatura interna", time: "Hora", lastLoad: "Última hornada", lastCheck: "Última revisión", check: "Revisión", vacuum: "Manómetro de vacío",
     visual: "Visual", pull: "Prueba de jalón", pass: "APROBADO (Pass)", fail: "NO APROBADO (Fail)",
     pickInForm: "— elíjalo en el formulario",
     temp: t => `${t} °F`, minutes: m => `${m} min`, inches: v => `${v} pulg. Hg`,

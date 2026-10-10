@@ -30,12 +30,12 @@
         },
         {
           "id": "lot_code",
+          "help": "Once for the day. It is not entered on each row.",
           "type": "text",
           "label": "Lot / batch code",
           "width": "half",
           "required": true,
-          "showInList": true,
-          "help": "Once for the day. It is not entered on each row."
+          "showInList": true
         },
         {
           "id": "limits",
@@ -82,7 +82,7 @@
       "fields": [
         {
           "id": "seal_checks",
-          "help": "A row at Set-up, after any change or adjustment, and at the end of the run; In process rows may be added at any time. At boxing: a row for the pull test, and a row when every pouch has been looked at again.",
+          "help": "A row at Set-up, after any change or adjustment, and at the end of the run; In process rows may be added at any time. At boxing: a row for the pull test, and a row when every pouch has been looked at again. On the final check, say so under Last check: of this batch when that product's sealing and boxing checks are finished for the day, or of this lot when all the day's checks are finished.",
           "rows": {
             "min": 1,
             "mode": "dynamic",
@@ -144,6 +144,16 @@
               "unit": "mm",
               "label": "Seal width, if measured",
               "width": 1
+            },
+            {
+              "id": "last_check",
+              "type": "select",
+              "label": "Last check",
+              "width": 2,
+              "options": [
+                "Last check of this batch",
+                "Last check of this lot"
+              ]
             },
             {
               "id": "initials",
@@ -242,7 +252,8 @@
             }
           ]
         }
-      ]
+      ],
+      "collapsed": true
     },
     {
       "id": "signoff",
@@ -282,7 +293,6 @@
     }
   ],
   "settings": {
-    "deletable": false,
     "attachmentsEnabled": true,
     "allowMultipleDrafts": true,
     "requireVerification": true,

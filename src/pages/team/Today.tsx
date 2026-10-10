@@ -27,7 +27,7 @@ import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords } 
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
   attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, lastReceipt, localDay, lotsInProgress, openHolds,
-  ovenLoads, preopState, productionOpen, TODAY_FORMS,
+  ovenLoads, preopState, productionOpen, sealState, sealingAwaitingReview, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
@@ -125,6 +125,7 @@ export default function Today() {
   const holds: TodayEntry[] = useMemo(() => records ? openHolds(records.holds) : [], [records]);
   const ccp = useMemo(() => records ? ccpToday(records, today) : { baking: null, sealing: [] }, [records, today]);
   const review = useMemo(() => records ? bakingAwaitingReview(records, today) : null, [records, today]);
+  const sealReview = useMemo(() => records ? sealingAwaitingReview(records, today) : null, [records, today]);
   const dispatch = useMemo(() => records ? lastDispatch(records.dispatches) : null, [records]);
   const receipt = useMemo(() => records ? lastReceipt(records.receipts) : null, [records]);
   const awaitingRelease = lots.filter(l => l.stage === "awaiting_release");
@@ -298,6 +299,7 @@ export default function Today() {
                           {canVoice && docOf("sealing") && l.lotCode && l.product && (
                             <SealCheckButton
                               doc={docOf("sealing")!} lot={l.lotCode} product={l.product} today={today}
+                              state={sealState(records!, today, l.product, l.lotCode)}
                               lang={lang} disabled={!open} onSaved={load}
                             />
                           )}
@@ -337,6 +339,7 @@ export default function Today() {
                   ? [ccp.baking ? M.ccpBakingToday(ovenLoads(ccp.baking)) : null, ccp.sealing.length ? M.ccpSealingToday(ccp.sealing.length) : null].filter(Boolean).join(" ")
                   : M.ccpTodayNone}
                 {review && <span className="ml-1 font-medium text-emerald-700">{M.bake.awaitingReview(review.by)}</span>}
+                {sealReview && <span className="ml-1 font-medium text-emerald-700">{M.seal.awaitingReview(sealReview.by)}</span>}
               </p>
             </>
           ))}

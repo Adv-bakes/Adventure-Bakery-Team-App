@@ -51,6 +51,14 @@ export interface TodayMessages {
     title(lot: string, product: string): string; say: string;
     passLead: string; saved(lot: string, product: string): string;
     failLead: string; unclear: string; openFailed: string;
+    /** Entering a check in a pop-up, and marking the last check of the batch or of the lot. */
+    enter: string; done: string; notDone: string; doneTitle(lot: string, product: string): string;
+    checkType: string; airCheck: string; pullTest: string; vacuum: string; pass: string; fail: string; notDoneYet: string;
+    lastLabel: string; lastNone: string; lastBatch: string; lastLot: string; lastBatchHelp: string; lastLotHelp: string; sayLast: string;
+    markOnly(which: string): string; noCheckYet: string;
+    savedBatch(lot: string, product: string): string; savedLot(lot: string, reviewer: string, records: number): string;
+    reopened(lot: string, product: string): string; nothingToReopen: string; doneTip: string;
+    reviewNote(date: string, lot: string, product: string): string; awaitingReview(by: string): string;
   };
   recordSealChecks: string;
   ccpTodayNone: string;
@@ -173,6 +181,33 @@ const en: TodayMessages = {
     failLead: "A check failed. Opening the record…",
     unclear: 'I did not hear which check, or its result. Say it again, for example "Air check passed".',
     openFailed: "Could not open the sealing record",
+    enter: "Enter the check",
+    done: "Checks done…",
+    notDone: "Checks not finished",
+    doneTitle: (lot, product) => `Checks done · Lot ${lot} · ${product}`,
+    checkType: "Check",
+    airCheck: "Air check (visual)",
+    pullTest: "Pull test",
+    vacuum: "Vacuum gauge (in. Hg)",
+    pass: "Pass",
+    fail: "Fail",
+    notDoneYet: "Not done",
+    lastLabel: "Is this the last check?",
+    lastNone: "More checks to come",
+    lastBatch: "Last check of this batch",
+    lastLot: "Last check of this lot",
+    lastBatchHelp: "This product's sealing and boxing checks are finished for today.",
+    lastLotHelp: "All of today's checks are finished. The records for this lot are signed in your name and sent for review.",
+    sayLast: 'On the final check, add "last check of this batch" or "last check of this lot".',
+    markOnly: which => `Marks the check recorded last for this batch as: ${which}.`,
+    noCheckYet: "No check is recorded for this batch on your record today, so there is nothing to mark.",
+    savedBatch: (lot, product) => `Checks finished for Lot ${lot} · ${product}.`,
+    savedLot: (lot, reviewer, n) => `Checks finished for Lot ${lot}. ${n === 1 ? "The record was" : `${n} records were`} sent to ${reviewer} for review.`,
+    reopened: (lot, product) => `Checks reopened for Lot ${lot} · ${product}.`,
+    nothingToReopen: "There is no finished mark on your records for this batch.",
+    doneTip: "Record seal check - checks finished",
+    reviewNote: (date, lot, product) => `Sealing record for ${date}, lot ${lot}, ${product}: the last check is recorded. Please review and sign.`,
+    awaitingReview: by => `Today's seal checks are finished and signed by ${by}. Waiting for review.`,
   },
   recordSealChecks: "Record seal checks (FRM-606)",
   ccpTodayNone: "No CCP record started today.",
@@ -295,6 +330,33 @@ const es: TodayMessages = {
     failLead: "Una revisión falló. Abriendo el registro…",
     unclear: 'No escuché qué revisión, o su resultado. Dígalo otra vez, por ejemplo "Revisión de aire aprobada".',
     openFailed: "No se pudo abrir el registro de sellado",
+    enter: "Escribir la revisión",
+    done: "Revisiones terminadas…",
+    notDone: "Las revisiones no han terminado",
+    doneTitle: (lot, product) => `Revisiones terminadas · Lote ${lot} · ${product}`,
+    checkType: "Revisión",
+    airCheck: "Revisión de aire (visual)",
+    pullTest: "Prueba de jalón",
+    vacuum: "Manómetro de vacío (pulg. Hg)",
+    pass: "Aprobada",
+    fail: "Rechazada",
+    notDoneYet: "No se hizo",
+    lastLabel: "¿Es la última revisión?",
+    lastNone: "Faltan más revisiones",
+    lastBatch: "Última revisión de esta tanda",
+    lastLot: "Última revisión del lote",
+    lastBatchHelp: "Las revisiones de sellado y de empaque de este producto ya terminaron por hoy.",
+    lastLotHelp: "Todas las revisiones de hoy terminaron. Los registros de este lote se firman con su nombre y se envían a revisión.",
+    sayLast: 'En la última revisión, agregue "última revisión de esta tanda" o "última revisión del lote".',
+    markOnly: which => `Marca la última revisión registrada de esta tanda como: ${which}.`,
+    noCheckYet: "No hay ninguna revisión de esta tanda en su registro de hoy, así que no hay nada que marcar.",
+    savedBatch: (lot, product) => `Revisiones terminadas para el Lote ${lot} · ${product}.`,
+    savedLot: (lot, reviewer, n) => `Revisiones terminadas para el Lote ${lot}. ${n === 1 ? "El registro se envió" : `Se enviaron ${n} registros`} a ${reviewer} para revisión.`,
+    reopened: (lot, product) => `Revisiones reabiertas para el Lote ${lot} · ${product}.`,
+    nothingToReopen: "No hay marca de terminado en sus registros para esta tanda.",
+    doneTip: "Registrar sellado - revisiones terminadas",
+    reviewNote: (date, lot, product) => `Sealing record for ${date}, lot ${lot}, ${product}: the last check is recorded. Please review and sign.`,
+    awaitingReview: by => `Las revisiones de sellado de hoy terminaron y las firmó ${by}. En espera de revisión.`,
   },
   recordSealChecks: "Registrar las revisiones de sellado (FRM-606)",
   ccpTodayNone: "Hoy no se ha empezado ningún registro de PCC.",
