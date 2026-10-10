@@ -107,7 +107,7 @@ export function parseBestBy(text: unknown): YearMonth | null {
   return null;
 }
 
-const LABEL_WORDS = /best\s*(by|before|if used by)|use by|exp(ires|iry|iration)?\.?|bb/g;
+const LABEL_WORDS = /best\s*(by|before|if used by)|use by|exp(ires|iry|iration)?\.?|bb\b/g;
 const ENGLISH_MONTH = (word: string) => MONTHS.some(name => name === word || name.slice(0, 3) === word) || word === "sept";
 
 /**

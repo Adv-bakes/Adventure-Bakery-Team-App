@@ -95,7 +95,11 @@ interface FormRendererProps {
    * field named by `afterField`, else after all its fields (FRM-401's last calibration check, in
    * Device accuracy, under the opening note).
    */
-  afterSection?: { sectionId: string; node: ReactNode; inside?: boolean; afterField?: string };
+  afterSection?: {
+    sectionId: string; node: ReactNode; inside?: boolean; afterField?: string;
+    /** Further full-width lines inside the same section, each under the field it names (`inside` only). */
+    more?: { afterField: string; node: ReactNode }[];
+  };
 }
 
 /**
@@ -274,6 +278,9 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
                     <Fragment key={field.id}>
                       {renderField(field)}
                       {within && slot!.afterField === field.id && <div className="col-span-1 md:col-span-6">{slot!.node}</div>}
+                      {slot?.more?.filter(m => m.afterField === field.id).map((m, i) => (
+                        <div key={i} className="col-span-1 md:col-span-6">{m.node}</div>
+                      ))}
                     </Fragment>
                   ))}
                 </div>
