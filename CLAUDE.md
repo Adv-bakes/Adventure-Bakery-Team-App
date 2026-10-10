@@ -1408,10 +1408,29 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
 - The same product name must be used on FRM-501, FRM-520 and the release record: the lot trace and
   the release helper match by product name ("Rum Cake - Original").
 - **FRM-501 carries the product's bar code number** (`barcode_number`, Section 1, optional; owner's
-  request 2026-10-10, migration `20261010000004`). It is what FRM-520's first-pack check is to compare
-  the bar code on the pack with, when filled in - that comparison is NOT built yet. The revision was
-  deliberately left at "New": every formula sheet is an open draft pinned to that revision, and a new
-  revision would show them the old layout without the field.
+  request 2026-10-10, migration `20261010000004`). The revision was deliberately left at "New": every
+  formula sheet is an open draft pinned to that revision, and a new revision would show them the old
+  layout without the field.
+- **First-pack check from a photo (FRM-520, 2026-10-10, `src/lib/firstPackCheck.ts` +
+  `components/team/forms/FirstPackCheck.tsx`).** Under "Code on the pack" on an editable entry
+  (`firstPackReady(schema)`), **Photograph the first pack** keeps the photo on the record, reads it with
+  `extract-package-label` in `finished_goods` mode (the function is unchanged), and shows one line per
+  point (`checkFirstPack`): flavor against the record's Product (a flavor word on the pack the record
+  lacks is a mismatch; one only the record has "needs a look"), lot code (`normLot`), best-by **month**
+  = bake date + 12 months (`expectedBestBy`, owner's rule: made 10 Oct 2026 says October 2027;
+  `parseBestBy` reads only a plain date), and the bar code against the formula sheet's number
+  (`loadProductBarcode` in `formReport.ts`; skipped when the sheet has none). The bar code is decoded
+  from the picture with the browser's `BarcodeDetector` where there is one (`barcodeDecode.ts`, Android
+  Chrome) - a real scan; printed digits alone that agree are "needs a look", not a match. **Evidence,
+  never the answer**: unread is never a match; when every point agrees a button offers the answer as one
+  tap; a mismatch says to stop packing, and warns if the answer says Matches. The result is written into
+  the photo's attachment note (`packNote`, prefix "First pack photo"), which is how it survives a reload
+  and how later photos (new film roll, change of product) are listed. Nothing blocks Submit.
+  **"First pack checked by"** is filled with the signed-in person's name at the moment the answer is
+  given in this page visit (never on opening, never over a name), and offers team names (`teamPick`,
+  migration `20261010000005`, no revision change). `FIRST_PACK` is the single map of field ids. Tested
+  by `scripts/test-first-pack.mjs`; the on-screen flow was checked on a harness with a stubbed reader.
+  **Untested from here: the camera, the real read of an ink-jet coded box, and BarcodeDetector.**
 - Not built: picking the formula from the Product field itself, scaling for a part batch, and
   creating a batch sheet from an FRM-501 entry.
 - The batch sheet list page (`/team/operations/batch-sheets`) had a route but no sidebar link until

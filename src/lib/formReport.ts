@@ -16,6 +16,7 @@ import type { GridPickFrom } from "./formSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFieldValue, getFormSchema, valueFields, type FormField, type FormSchema, type SelectOptionsFrom } from "@/lib/formSchema";
 import { fetchResponses, type FormResponse } from "@/lib/formResponses";
+import { FIRST_PACK, productBarcode } from "./firstPackCheck";
 
 export const REPORT_SCHEMA_VERSION = 1;
 
@@ -295,6 +296,23 @@ export async function loadBakeTargets(product: string): Promise<BakeTargets> {
     return bakeTargets(grid?.rows?.labels ?? [], entries, product);
   } catch {
     return {};
+  }
+}
+
+/**
+ * The bar code number on the product's formula sheet (FRM-501), for the first-pack check on the
+ * lot record. Blank when the sheet states none. Never throws - the check then skips the bar code.
+ */
+export async function loadProductBarcode(product: string): Promise<string> {
+  try {
+    const doc = await fetchSourceForm(FIRST_PACK.barcodeSource.form);
+    if (!doc) return "";
+    const entries = (await fetchResponses(doc.id))   // newest first
+      .filter(r => !(r.data && "_test_batch" in r.data))
+      .map(r => r.data ?? {});
+    return productBarcode(entries, product);
+  } catch {
+    return "";
   }
 }
 
