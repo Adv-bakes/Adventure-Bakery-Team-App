@@ -37,6 +37,10 @@ import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDial
 import { TemperatureReviewFill } from "@/components/team/forms/TemperatureReviewFill";
 import { isPdfFile, renderPdfPages } from "@/lib/clientDocRead";
 import { CalibrationSummary } from "@/components/team/forms/CalibrationSummary";
+import { FirstPackCheck, firstPackNotes } from "@/components/team/forms/FirstPackCheck";
+import { FIRST_PACK, checkFirstPack, firstPackReady, packNote, type PackLine } from "@/lib/firstPackCheck";
+import { decodeBarcode } from "@/lib/barcodeDecode";
+import { loadProductBarcode } from "@/lib/formReport";
 import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatureReview";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
@@ -526,6 +530,38 @@ export default function FormEntry() {
       // Best-effort, like deleteResponse: an orphaned file is harmless, and
       // failing the scan over a stray object would not be.
       if (transientPath) await removeResponseAttachment(transientPath).catch(() => { /* orphan */ });
+    }
+  };
+
+  // FRM-520's first-pack check from a photo. The photo is kept on the record straight away, read,
+  // and compared with the record and the product's formula sheet; the result is then written into
+  // the photo's note so it stays with the record. Evidence only - the answer is the person's.
+  const firstPack = canEdit && doc?.sop_number === FIRST_PACK.form && firstPackReady(schema);
+  const checkFirstPackPhoto = async (file: File): Promise<PackLine[] | null> => {
+    if (!response) return null;
+    let kept = false;
+    try {
+      const uploaded = await uploadResponseAttachment(response.id, file);
+      const withPhoto = await saveResponseAttachments(response.id, [...(response.attachments ?? []), { ...uploaded, note: FIRST_PACK.notePrefix }]);
+      setResponse(withPhoto); // adopt the fresh updated_at, as the other scans do
+      kept = true;
+      const v = form.getValues() as Record<string, unknown>;
+      const [result, decodedBarcode, barcode] = await Promise.all([
+        getResponseAttachmentUrl(uploaded.path).then(url => extractPackageLabel([url], ["product_name", "lot_code", "best_by", "barcode"], "finished_goods")),
+        decodeBarcode(file),
+        loadProductBarcode(String(v[FIRST_PACK.product] ?? "")),
+      ]);
+      const lines = checkFirstPack(
+        { product: String(v[FIRST_PACK.product] ?? ""), lot: String(v[FIRST_PACK.lot] ?? ""), bakeDate: String(v[FIRST_PACK.bakeDate] ?? ""), barcode },
+        { ...result.facts, decodedBarcode },
+      );
+      const noted = await saveResponseAttachments(response.id, (withPhoto.attachments ?? []).map(a =>
+        a.path === uploaded.path ? { ...a, note: packNote(lines) } : a));
+      setResponse(noted);
+      return lines;
+    } catch (e: any) {
+      toast.error(`${e.message ?? "The photo could not be read"}${kept ? " - the photo itself was kept on the record." : ""}`);
+      return null;
     }
   };
 
@@ -1059,6 +1095,19 @@ export default function FormEntry() {
             inside: true,
             afterField: "accuracy_intro",
             node: <CalibrationSummary />,
+          } : firstPack ? {
+            // FRM-520: the first pack from a photo, just under "Code on the pack".
+            sectionId: FIRST_PACK.section,
+            inside: true,
+            afterField: FIRST_PACK.answer,
+            node: (
+              <FirstPackCheck
+                form={form}
+                signerName={signer?.name}
+                notes={firstPackNotes(response.attachments)}
+                onPhoto={checkFirstPackPhoto}
+              />
+            ),
           } : undefined}
         />
       </DocSelfContext.Provider>
