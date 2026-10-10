@@ -1420,8 +1420,10 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
   = bake date + 12 months (`expectedBestBy`, owner's rule: made 10 Oct 2026 says October 2027;
   `parseBestBy` reads only a plain date), and the bar code against the formula sheet's number
   (`loadProductBarcode` in `formReport.ts`; skipped when the sheet has none). The bar code is decoded
-  from the picture with the browser's `BarcodeDetector` where there is one (`barcodeDecode.ts`, Android
-  Chrome) - a real scan; printed digits alone that agree are "needs a look", not a match. **Evidence,
+  from the picture (`barcodeDecode.ts`): the browser's `BarcodeDetector` where there is one (Android
+  Chrome), else the ZXing library (`@zxing/library`, loaded only then) - Chrome on Windows has no
+  detector, and the owner's first try on a laptop came back "not scanned" (2026-10-10). A decode is a
+  real scan; printed digits alone that agree are "needs a look", not a match. **Evidence,
   never the answer**: unread is never a match; when every point agrees a button offers the answer as one
   tap; a mismatch says to stop packing, and warns if the answer says Matches. The result is written into
   the photo's attachment note (`packNote`, prefix "First pack photo"), which is how it survives a reload
