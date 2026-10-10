@@ -42,7 +42,7 @@ const NEEDS_RECORD = new Set(["limits_changed", "no_column", "no_initials", "pro
 type Heard = { transcript: string; ok: boolean };
 
 // The pop-up sits on a cream panel, where the default field looks switched off: white, with a clear edge.
-const FIELD = "bg-white border-[#2A1F0E]/40 text-[#2A1F0E] placeholder:text-[#2A1F0E]/40 focus-visible:ring-[#C89B3C]";
+const FIELD = "bg-white border-[#2A1F0E]/75 text-[#2A1F0E] font-medium placeholder:font-normal placeholder:text-[#2A1F0E]/55 focus-visible:ring-[#C89B3C]";
 
 export function SealCheckButton({ doc, lot, product, today, lang, disabled, onSaved }: {
   doc: Doc;
