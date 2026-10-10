@@ -36,6 +36,7 @@ export interface TodayMessages {
     /** Entering a reading in a pop-up, and marking the last load of the batch or of the lot. */
     enter: string; done: string; notDone: string; doneTitle(lot: string, product: string): string;
     temp: string; minutes: string; probe: string; optional: string; save: string;
+    useSuggested(value: number): string; suggestedFrom: string;
     lastLabel: string; lastNone: string; lastBatch: string; lastLot: string;
     lastBatchHelp: string; lastLotHelp: string; sayLast: string;
     sendTo: string; choose: string; noReviewers: string;
@@ -137,6 +138,8 @@ const en: TodayMessages = {
     minutes: "Bake time (min)",
     probe: "Internal temperature (°F)",
     optional: "if probed",
+    useSuggested: v => `Use ${v}`,
+    suggestedFrom: "The figure on this product's formula sheet (FRM-501). Tap to enter it if it is what the oven read.",
     save: "Save",
     lastLabel: "Is this the last load?",
     lastNone: "More loads to come",
@@ -257,6 +260,8 @@ const es: TodayMessages = {
     minutes: "Tiempo de horneado (min)",
     probe: "Temperatura interna (°F)",
     optional: "si se midió",
+    useSuggested: v => `Usar ${v}`,
+    suggestedFrom: "La cifra de la hoja de fórmula de este producto (FRM-501). Toque para escribirla si es lo que marcó el horno.",
     save: "Guardar",
     lastLabel: "¿Es la última hornada?",
     lastNone: "Faltan más hornadas",

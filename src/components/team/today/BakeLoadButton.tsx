@@ -34,7 +34,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, ChevronDown, FilePenLine, Flame, Keyboard, Loader2, Mic, RotateCcw } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, FilePenLine, Flame, Keyboard, Loader2, Mic, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,8 @@ import {
 import { newVoiceState } from "@/lib/voiceCommandTarget";
 import { speechRecognitionSupported, useSpeechCommand } from "@/hooks/useSpeechCommand";
 import { useUserPref } from "@/lib/userPrefs";
+import { loadBakeTargets } from "@/lib/formReport";
+import type { BakeTargets } from "@/lib/bakeTargets";
 import type { BakeState } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 
@@ -99,6 +101,8 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
   const [ctx, setCtx] = useState<FillContext>({ userInitials: "" });
   const [signer, setSigner] = useState<{ id: string; name: string } | null>(null);
   const [reviewers, setReviewers] = useState<Signatory[] | null>(null);
+  // What the product's formula sheet says the bake should be: offered, never entered for the operator.
+  const [targets, setTargets] = useState<BakeTargets>({});
   // Who this person last sent a record to: theirs, on any device.
   const [reviewerPref, setReviewerPref] = useUserPref<string>("bake.reviewer", "");
   const [reviewerPick, setReviewerPick] = useState<string | null>(null);
@@ -150,6 +154,7 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
     setChoice(m === "done" ? (state.done === "batch" ? "lot" : "batch") : "none");
     // Started inside the tap, which is what lets a browser open the microphone.
     if (m === "speak" && speechRecognitionSupported) speech.start();
+    if (m === "enter") loadBakeTargets(product).then(t => { if (live.current) setTargets(t); });
     loadPeople();
     // The dialog opens once the menu has finished closing: opened in the same tick, the two fight
     // over focus and the page can be left not taking taps.
@@ -428,16 +433,30 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
               <div className="grid grid-cols-3 gap-2">
                 <label className="flex flex-col justify-end gap-1">
                   <span className="text-xs font-medium text-[#2A1F0E]">{M.temp}</span>
-                  <Input className={FIELD} inputMode="decimal" autoFocus value={entry.temp} onChange={e => setEntry({ ...entry, temp: e.target.value })} />
+                  <Input className={FIELD} inputMode="decimal" autoFocus placeholder={targets.temp !== undefined ? String(targets.temp) : undefined} value={entry.temp} onChange={e => setEntry({ ...entry, temp: e.target.value })} />
                 </label>
                 <label className="flex flex-col justify-end gap-1">
                   <span className="text-xs font-medium text-[#2A1F0E]">{M.minutes}</span>
-                  <Input className={FIELD} inputMode="decimal" value={entry.minutes} onChange={e => setEntry({ ...entry, minutes: e.target.value })} />
+                  <Input className={FIELD} inputMode="decimal" placeholder={targets.minutes !== undefined ? String(targets.minutes) : undefined} value={entry.minutes} onChange={e => setEntry({ ...entry, minutes: e.target.value })} />
                 </label>
                 <label className="flex flex-col justify-end gap-1">
                   <span className="text-xs font-medium text-[#2A1F0E]">{M.probe}</span>
                   <Input className={FIELD} inputMode="decimal" placeholder={M.optional} value={entry.probe} onChange={e => setEntry({ ...entry, probe: e.target.value })} />
                 </label>
+                {/* The formula sheet's figures, on their own row so the three boxes stay level. A box is
+                    never filled for the operator: the grey figure is taken with a tap, or typed over. */}
+                {(["temp", "minutes"] as const).map(k => (
+                  <div key={k} className="min-h-0">
+                    {targets[k] !== undefined && entry[k].trim() === "" && (
+                      <button
+                        type="button" title={M.suggestedFrom} onClick={() => setEntry(e => ({ ...e, [k]: String(targets[k]) }))}
+                        className="flex items-center gap-1 text-xs font-medium text-[#9A6F1E] underline underline-offset-2 hover:text-[#2A1F0E]"
+                      >
+                        <Check className="w-3.5 h-3.5" aria-hidden />{M.useSuggested(targets[k] as number)}
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
               {canMark && lastChoice(["none", "batch", "lot"])}
             </form>

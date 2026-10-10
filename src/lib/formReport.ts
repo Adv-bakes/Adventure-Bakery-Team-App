@@ -11,6 +11,7 @@
 // entries; here the report reprojects a *different* form's data.
 
 import { pickOptionsFromRows, suggestValuesFromRows, type PickOption } from "./pickFrom";
+import { BAKE_TARGET_SOURCE, bakeTargets, type BakeTargets } from "./bakeTargets";
 import type { GridPickFrom } from "./formSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFieldValue, getFormSchema, valueFields, type FormField, type FormSchema, type SelectOptionsFrom } from "@/lib/formSchema";
@@ -274,6 +275,27 @@ export async function loadSuggestValues(spec: { form: string; field: string; dra
     .filter(r => (spec.drafts || r.status === "submitted") && !(r.data && "_test_batch" in r.data))
     .map(r => r.data ?? {});
   return suggestValuesFromRows(spec.field, rows);
+}
+
+/**
+ * The oven temperature and bake time a product's formula sheet states (FRM-501's Process
+ * Parameters, Target / Spec), for the suggestions where a bake reading is typed. Drafts count -
+ * formula sheets are kept as drafts - and practice rows do not. Never throws: with no sheet, or
+ * one that cannot be read, there is simply nothing to suggest.
+ */
+export async function loadBakeTargets(product: string): Promise<BakeTargets> {
+  try {
+    const doc = await fetchSourceForm(BAKE_TARGET_SOURCE.form);
+    if (!doc) return {};
+    const grid = (getFormSchema(doc.content)?.sections ?? []).flatMap(sec => sec.fields ?? [])
+      .find(f => f.id === BAKE_TARGET_SOURCE.grid) as { rows?: { labels?: string[] } } | undefined;
+    const entries = (await fetchResponses(doc.id))   // newest first
+      .filter(r => !(r.data && "_test_batch" in r.data))
+      .map(r => r.data ?? {});
+    return bakeTargets(grid?.rows?.labels ?? [], entries, product);
+  } catch {
+    return {};
+  }
 }
 
 export async function loadSelectOptions(spec: SelectOptionsFrom): Promise<string[]> {
