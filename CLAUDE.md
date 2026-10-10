@@ -1430,6 +1430,11 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
   given in this page visit (never on opening, never over a name), and offers team names (`teamPick`,
   migration `20261010000005`, no revision change). `FIRST_PACK` is the single map of field ids. Tested
   by `scripts/test-first-pack.mjs`; the on-screen flow was checked on a harness with a stubbed reader.
+  **The best-by date must be in English** (`bestByNotEnglish`, owner 2026-10-10: a lot was once packed
+  with "Augusto 2027" and it was found only after packing): any word of the date that is not an English
+  month is a mismatch, worded with what it should say. The `finished_goods` prompt tells the reader never
+  to translate or correct the date or the product name - without that a model may quietly return
+  "August" (the owner deploys the function: `npx supabase functions deploy extract-package-label`).
   **Untested from here: the camera, the real read of an ink-jet coded box, and BarcodeDetector.**
 - Not built: picking the formula from the Product field itself, scaling for a part batch, and
   creating a batch sheet from an FRM-501 entry.

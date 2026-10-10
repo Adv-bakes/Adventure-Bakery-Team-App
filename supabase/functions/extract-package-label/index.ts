@@ -126,6 +126,7 @@ IDENTIFYING THE LOT CODE:
 
 READING THE DATE — this matters as much as the lot:
 - Report "best_by" EXACTLY AS PRINTED. If the pack says "July 2027", return "July 2027". If it says "07/15/2027", return "07/15/2027".
+- Do NOT translate it or correct its spelling. If the pack says "Augusto 2027" or "Octubre 2027", return exactly that - a date printed in the wrong language is a fault the reader of your answer must see, and "August 2027" would hide it. The same goes for "product_name".
 - Do NOT convert it, normalize it to YYYY-MM-DD, or invent a day that is not printed. These packs are frequently coded to the month only, and a day you supplied would be recorded as though the pack carried it.
 - If more than one date is printed (e.g. a pack date and a best-by), put the best-by in "best_by" and the other in "extras".
 

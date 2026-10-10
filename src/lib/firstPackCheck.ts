@@ -107,6 +107,20 @@ export function parseBestBy(text: unknown): YearMonth | null {
   return null;
 }
 
+const LABEL_WORDS = /best\s*(by|before|if used by)|use by|exp(ires|iry|iration)?\.?|bb/g;
+const ENGLISH_MONTH = (word: string) => MONTHS.some(name => name === word || name.slice(0, 3) === word) || word === "sept";
+
+/**
+ * The words of a printed best-by date that are not English: "Augusto 2027" gives ["augusto"],
+ * "Octubre 2027" gives ["octubre"]. The pack is sold in English, and a date coded in Spanish was
+ * once found only after the whole lot was packed (owner, 2026-10-10). Any word of the date that is
+ * not an English month (or its three-letter form) counts - a misspelt month is wrong on a pack too.
+ */
+export function bestByNotEnglish(text: unknown): string[] {
+  const s = fold(text).replace(LABEL_WORDS, " ");
+  return (s.match(/[a-zñ]+/g) ?? []).filter(w => !ENGLISH_MONTH(w) && !/^(st|nd|rd|th|of)$/.test(w));
+}
+
 /**
  * Two bar code numbers for the same thing: the same digits, or a 12-digit UPC against its 13-digit
  * EAN form (a leading zero). Blank matches nothing.
@@ -150,6 +164,7 @@ export function checkFirstPack(expected: PackExpected, read: PackRead): PackLine
   const got = parseBestBy(read.best_by);
   if (!want) lines.push({ point: "best_by", state: "skipped", text: "Best-by date: the record has no bake date yet." });
   else if (!str(read.best_by)) lines.push({ point: "best_by", state: "unread", text: `Best-by date: could not be read from the photo. It should say ${monthLabel(want)}.` });
+  else if (bestByNotEnglish(read.best_by).length) lines.push({ point: "best_by", state: "mismatch", text: `Best-by date does NOT match: the pack says "${str(read.best_by)}", which is not in English. It should say ${monthLabel(want)}.` });
   else if (!got) lines.push({ point: "best_by", state: "check", text: `Best-by date needs a look: the pack says "${str(read.best_by)}". It should say ${monthLabel(want)}.` });
   else if (got.year === want.year && got.month === want.month) lines.push({ point: "best_by", state: "match", text: `Best-by date matches: ${str(read.best_by)}.` });
   else lines.push({ point: "best_by", state: "mismatch", text: `Best-by date does NOT match: the pack says "${str(read.best_by)}". It should say ${monthLabel(want)}.` });
