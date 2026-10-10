@@ -12,6 +12,7 @@ import { FormFieldInput } from "./FormFieldInput";
 import type { FieldSuggest } from "./SuggestInput";
 import { SqfSectionGuide } from "./SqfSectionGuide";
 import { DocRefText, DocSelfContext } from "./DocRefText";
+import { useUserPref } from "@/lib/userPrefs";
 import { GridFieldInput, type GridFieldInputProps } from "./GridFieldInput";
 import type { Signer } from "./SignatureFieldInput";
 
@@ -102,29 +103,26 @@ interface FormRendererProps {
  * instance (the caller decides defaultValues, resolver, and what save/submit
  * mean — the entry editor and the builder Preview both reuse this).
  */
+/** Nothing hidden: one constant, so the setting's default keeps the same identity between renders. */
+const NONE_HIDDEN: string[] = [];
+
 /**
  * A form's helper text (an `info` field), which the reader can put away once it has been read.
  *
  * Shown by default. "Hide" folds it to one line carrying its label, and the choice is remembered
- * for THAT block of THAT form on this device (localStorage, keyed by the document and the field),
- * so it is still hidden the next time any entry of the form is opened - and one tap brings it
+ * for THAT block of THAT form for THAT PERSON (user_preferences, key "form.helpHidden:<document
+ * id>", value = the ids of the hidden blocks), so it follows them to any device, is not shared
+ * with whoever else uses the tablet, and holds for every entry of the form. One tap brings it
  * back. Nothing about it is stored on the record, and PDFs always print the text.
  *
  * Where no document is known (the form builder's preview) the toggle still works for the visit.
  */
 function InfoBlock({ field }: { field: InfoField }) {
   const docId = useContext(DocSelfContext);
-  const key = docId ? `form.infoHidden.${docId}.${field.id}` : null;
-  const [hidden, setHidden] = useState(() => {
-    if (!key) return false;
-    try { return localStorage.getItem(key) === "1"; } catch { return false; }
-  });
-  const toggle = () => {
-    const next = !hidden;
-    setHidden(next);
-    if (!key) return;
-    try { if (next) localStorage.setItem(key, "1"); else localStorage.removeItem(key); } catch { /* no storage: this visit only */ }
-  };
+  const [hiddenIds, setHiddenIds] = useUserPref<string[]>(docId ? `form.helpHidden:${docId}` : null, NONE_HIDDEN);
+  const list = Array.isArray(hiddenIds) ? hiddenIds : NONE_HIDDEN;
+  const hidden = list.includes(field.id);
+  const toggle = () => setHiddenIds(hidden ? list.filter(id => id !== field.id) : [...list, field.id]);
   const text = field.text || field.label;
   if (hidden) {
     return (
