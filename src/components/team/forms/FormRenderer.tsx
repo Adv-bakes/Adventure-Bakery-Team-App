@@ -1,6 +1,6 @@
 import { Fragment, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useFormState, useWatch, type UseFormReturn } from "react-hook-form";
-import { Camera, ChevronDown, ChevronRight, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
+import { Camera, ChevronDown, ChevronRight, ImagePlus, Info, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -130,7 +130,7 @@ function InfoBlock({ field }: { field: InfoField }) {
         type="button" onClick={toggle} aria-expanded={false}
         className="flex items-center gap-1 text-xs text-[#9A6F1E] hover:text-[#2A1F0E]"
       >
-        <ChevronRight className="w-3.5 h-3.5" />
+        <Info className="w-3.5 h-3.5" aria-hidden />
         <span className="underline underline-offset-2">{field.text && field.label ? `Show: ${field.label}` : "Show the note"}</span>
       </button>
     );
@@ -141,7 +141,7 @@ function InfoBlock({ field }: { field: InfoField }) {
         type="button" onClick={toggle} aria-expanded
         className="float-right ml-3 mb-1 flex items-center gap-0.5 text-[11px] text-[#9A6F1E] hover:text-[#2A1F0E]"
       >
-        <ChevronDown className="w-3.5 h-3.5" />
+        <Info className="w-3.5 h-3.5" aria-hidden />
         <span className="underline underline-offset-2">Hide</span>
       </button>
       <p className="text-xs text-[#2A1F0E]/80 whitespace-pre-wrap"><DocRefText text={text} /></p>
