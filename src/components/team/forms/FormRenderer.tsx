@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useFormState, useWatch, type UseFormReturn } from "react-hook-form";
 import { Camera, ChevronDown, ChevronRight, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
 import { FormFieldInput } from "./FormFieldInput";
 import type { FieldSuggest } from "./SuggestInput";
 import { SqfSectionGuide } from "./SqfSectionGuide";
-import { DocRefText } from "./DocRefText";
+import { DocRefText, DocSelfContext } from "./DocRefText";
 import { GridFieldInput, type GridFieldInputProps } from "./GridFieldInput";
 import type { Signer } from "./SignatureFieldInput";
 
@@ -102,6 +102,55 @@ interface FormRendererProps {
  * instance (the caller decides defaultValues, resolver, and what save/submit
  * mean — the entry editor and the builder Preview both reuse this).
  */
+/**
+ * A form's helper text (an `info` field), which the reader can put away once it has been read.
+ *
+ * Shown by default. "Hide" folds it to one line carrying its label, and the choice is remembered
+ * for THAT block of THAT form on this device (localStorage, keyed by the document and the field),
+ * so it is still hidden the next time any entry of the form is opened - and one tap brings it
+ * back. Nothing about it is stored on the record, and PDFs always print the text.
+ *
+ * Where no document is known (the form builder's preview) the toggle still works for the visit.
+ */
+function InfoBlock({ field }: { field: InfoField }) {
+  const docId = useContext(DocSelfContext);
+  const key = docId ? `form.infoHidden.${docId}.${field.id}` : null;
+  const [hidden, setHidden] = useState(() => {
+    if (!key) return false;
+    try { return localStorage.getItem(key) === "1"; } catch { return false; }
+  });
+  const toggle = () => {
+    const next = !hidden;
+    setHidden(next);
+    if (!key) return;
+    try { if (next) localStorage.setItem(key, "1"); else localStorage.removeItem(key); } catch { /* no storage: this visit only */ }
+  };
+  const text = field.text || field.label;
+  if (hidden) {
+    return (
+      <button
+        type="button" onClick={toggle} aria-expanded={false}
+        className="flex items-center gap-1 text-xs text-[#9A6F1E] hover:text-[#2A1F0E]"
+      >
+        <ChevronRight className="w-3.5 h-3.5" />
+        <span className="underline underline-offset-2">{field.text && field.label ? `Show: ${field.label}` : "Show the note"}</span>
+      </button>
+    );
+  }
+  return (
+    <div className="rounded-md bg-[#C89B3C]/5 p-2.5">
+      <button
+        type="button" onClick={toggle} aria-expanded
+        className="float-right ml-3 mb-1 flex items-center gap-0.5 text-[11px] text-[#9A6F1E] hover:text-[#2A1F0E]"
+      >
+        <ChevronDown className="w-3.5 h-3.5" />
+        <span className="underline underline-offset-2">Hide</span>
+      </button>
+      <p className="text-xs text-[#2A1F0E]/80 whitespace-pre-wrap"><DocRefText text={text} /></p>
+    </div>
+  );
+}
+
 export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLabel, fillContext, onDraftCell, suggest, afterSection }: FormRendererProps) {
   const renderField = (field: SchemaField) => {
     // Grids and reference tables always take the full row regardless of width hint
@@ -119,11 +168,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
         );
         break;
       case "info":
-        el = (
-          <p className="text-xs text-[#2A1F0E]/80 whitespace-pre-wrap rounded-md bg-[#C89B3C]/5 p-2.5">
-            <DocRefText text={(field as InfoField).text || field.label} />
-          </p>
-        );
+        el = <InfoBlock field={field as InfoField} />;
         break;
       case "grid":
         el = (
