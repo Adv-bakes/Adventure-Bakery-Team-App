@@ -139,20 +139,21 @@ export function deriveDeviations(cfg: DeviationForm, values: Row): { values: Row
   const fresh = fails.filter(f => !used.has(f.key));
   // A new entry is born with one empty line in the table: a first deviation takes its place rather
   // than sitting under it.
-  const kept = fresh.length ? next.filter(r => str(r._src) !== "" || hasContent(r)) : next;
-  next.length = 0;
-  next.push(...kept, ...fresh.map(f => ({ ...f.cells, _src: f.key, _auto: JSON.stringify(f.cells) })));
+  const lines: Row[] = [
+    ...(fresh.length ? next.filter(r => str(r._src) !== "" || hasContent(r)) : next),
+    ...fresh.map(f => ({ ...f.cells, _src: f.key, _auto: JSON.stringify(f.cells) })),
+  ];
 
   const current = str(values[cfg.answer]);
   const judged = source.filter(cfg.judged).length;
   let answer = current;
   if (fails.length) answer = cfg.yes;
-  else if (next.some(hasContent)) answer = current;           // a deviation somebody wrote by hand stands
+  else if (lines.some(hasContent)) answer = current;           // a deviation somebody wrote by hand stands
   else if (judged > 0 && (current === "" || (current === cfg.yes && removed))) answer = cfg.none;
 
-  const logChanged = JSON.stringify(next) !== JSON.stringify(log);
+  const logChanged = JSON.stringify(lines) !== JSON.stringify(log);
   if (!logChanged && answer === current) return { values, changed: false };
-  return { values: { ...values, [cfg.answer]: answer, ...(logChanged ? { [cfg.log]: next } : {}) }, changed: true };
+  return { values: { ...values, [cfg.answer]: answer, ...(logChanged ? { [cfg.log]: lines } : {}) }, changed: true };
 }
 
 /**
