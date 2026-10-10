@@ -33,6 +33,16 @@ export interface TodayMessages {
     typeHere: string; use: string; again: string; accept: string; openInstead: string; cancel: string;
     initials: string; passLead: string; saved(lot: string, product: string): string;
     failLead: string; openFailed: string; noSpeech: string; needsRecord: string;
+    /** Entering a reading in a pop-up, and marking the last load of the batch or of the lot. */
+    enter: string; done: string; notDone: string; doneTitle(lot: string, product: string): string;
+    temp: string; minutes: string; probe: string; optional: string; save: string;
+    lastLabel: string; lastNone: string; lastBatch: string; lastLot: string;
+    lastBatchHelp: string; lastLotHelp: string; sayLast: string;
+    sendTo: string; choose: string; noReviewers: string;
+    markOnly(which: string): string; noLoadYet: string;
+    savedBatch(lot: string, product: string): string; savedLot(lot: string, reviewer: string): string;
+    reviewFailed: string; reopened(lot: string, product: string): string; nothingToReopen: string;
+    doneTip: string; reviewNote(date: string, lot: string): string; awaitingReview(by: string): string;
   };
   /** The seal-check button on a lot's row. The dialog's common wording (Accept, Try again ...) is `bake`'s. */
   seal: {
@@ -119,6 +129,35 @@ const en: TodayMessages = {
     openFailed: "Could not open the baking record",
     noSpeech: "This browser has no speech recognition. Type it below, or open the record.",
     needsRecord: "This row needs to be checked in the record. Opening it…",
+    enter: "Enter the reading",
+    done: "Baking done…",
+    notDone: "Baking not finished",
+    doneTitle: (lot, product) => `Baking done · Lot ${lot} · ${product}`,
+    temp: "Oven temperature (°F)",
+    minutes: "Bake time (min)",
+    probe: "Internal temperature (°F)",
+    optional: "if probed",
+    save: "Save",
+    lastLabel: "Is this the last load?",
+    lastNone: "More loads to come",
+    lastBatch: "Last load of this batch",
+    lastLot: "Last load of this lot",
+    lastBatchHelp: "This product is finished baking for today.",
+    lastLotHelp: "All of today's baking is finished. The record is signed in your name and sent for review.",
+    sayLast: 'On the final load, add "last load of this batch" or "last load of this lot".',
+    sendTo: "Send for review to",
+    choose: "Choose…",
+    noReviewers: "No reviewer could be listed. Open the record and use Request signature.",
+    markOnly: which => `Marks the load recorded last for this batch as: ${which}.`,
+    noLoadYet: "No oven load is recorded for this batch on your record today, so there is nothing to mark.",
+    savedBatch: (lot, product) => `Baking finished for Lot ${lot} · ${product}.`,
+    savedLot: (lot, reviewer) => `Baking finished for Lot ${lot}. The record was sent to ${reviewer} for review.`,
+    reviewFailed: "The load was saved, but the review request could not be sent. Open the record and use Request signature.",
+    reopened: (lot, product) => `Baking reopened for Lot ${lot} · ${product}.`,
+    nothingToReopen: "There is no finished mark on your record for this batch.",
+    doneTip: "Record bake - baking finished",
+    reviewNote: (date, lot) => `Baking record for ${date}: the last load of lot ${lot} is recorded. Please review and sign.`,
+    awaitingReview: by => `Today's baking is finished and signed by ${by}. Waiting for review.`,
   },
   seal: {
     button: "Record seal check",
@@ -210,6 +249,35 @@ const es: TodayMessages = {
     openFailed: "No se pudo abrir el registro de horneado",
     noSpeech: "Este navegador no tiene reconocimiento de voz. Escríbalo abajo o abra el registro.",
     needsRecord: "Esta fila debe revisarse en el registro. Abriéndolo…",
+    enter: "Escribir la lectura",
+    done: "Horneado terminado…",
+    notDone: "El horneado no ha terminado",
+    doneTitle: (lot, product) => `Horneado terminado · Lote ${lot} · ${product}`,
+    temp: "Temperatura del horno (°F)",
+    minutes: "Tiempo de horneado (min)",
+    probe: "Temperatura interna (°F)",
+    optional: "si se midió",
+    save: "Guardar",
+    lastLabel: "¿Es la última hornada?",
+    lastNone: "Faltan más hornadas",
+    lastBatch: "Última hornada de esta tanda",
+    lastLot: "Última hornada del lote",
+    lastBatchHelp: "Este producto ya terminó de hornearse por hoy.",
+    lastLotHelp: "Todo el horneado de hoy terminó. El registro se firma con su nombre y se envía a revisión.",
+    sayLast: 'En la última hornada, agregue "última hornada de esta tanda" o "última hornada del lote".',
+    sendTo: "Enviar a revisión a",
+    choose: "Elija…",
+    noReviewers: "No se pudo mostrar a quién enviarlo. Abra el registro y use Solicitar firma.",
+    markOnly: which => `Marca la última hornada registrada de esta tanda como: ${which}.`,
+    noLoadYet: "No hay ninguna hornada de esta tanda en su registro de hoy, así que no hay nada que marcar.",
+    savedBatch: (lot, product) => `Horneado terminado para el Lote ${lot} · ${product}.`,
+    savedLot: (lot, reviewer) => `Horneado terminado para el Lote ${lot}. El registro se envió a ${reviewer} para revisión.`,
+    reviewFailed: "La hornada se guardó, pero no se pudo enviar la solicitud de revisión. Abra el registro y use Solicitar firma.",
+    reopened: (lot, product) => `Horneado reabierto para el Lote ${lot} · ${product}.`,
+    nothingToReopen: "No hay marca de terminado en su registro para esta tanda.",
+    doneTip: "Registrar horneado - horneado terminado",
+    reviewNote: (date, lot) => `Baking record for ${date}: the last load of lot ${lot} is recorded. Please review and sign.`,
+    awaitingReview: by => `El horneado de hoy terminó y lo firmó ${by}. En espera de revisión.`,
   },
   seal: {
     button: "Registrar sellado",

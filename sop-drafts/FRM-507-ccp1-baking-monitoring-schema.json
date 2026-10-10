@@ -58,7 +58,7 @@
       "fields": [
         {
           "id": "oven_loads",
-          "help": "One row per load, written when the load comes out of the oven, with the product that was in it. A rebake is a new row with the same product and lot code.",
+          "help": "One row per load, written when the load comes out of the oven, with the product that was in it. A rebake is a new row with the same product and lot code. On the final load, say so under Last load: of this batch when that product is finished for the day, or of this lot when all the day's baking is finished.",
           "rows": {
             "min": 1,
             "mode": "dynamic",
@@ -123,6 +123,16 @@
               "label": "Within critical limits",
               "width": 1,
               "required": true
+            },
+            {
+              "id": "last_load",
+              "type": "select",
+              "label": "Last load",
+              "width": 2,
+              "options": [
+                "Last load of this batch",
+                "Last load of this lot"
+              ]
             },
             {
               "id": "initials",

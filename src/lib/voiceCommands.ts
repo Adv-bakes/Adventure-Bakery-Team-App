@@ -490,6 +490,12 @@ interface BakeReadingText {
   minutes: string[][];
   probe: string[][];
   names: { temp: string; minutes: string; probe: string };
+  /**
+   * The closing phrase: "last load of this batch" / "... of this lot". A word of `opener` followed
+   * within a few words by a word of `batch` or `lot` - loose on purpose, since the recogniser drops
+   * and swaps the small words between them.
+   */
+  last: { opener: string[]; batch: string[]; lot: string[] };
   /** The line for the wall card and the dialog, and what the test parses back. */
   card: { heading: string; intro: string; say: string; sayWithProbe: string; examples: string[]; notes: string[] };
 }
@@ -500,6 +506,7 @@ export const BAKE_READING_TEXT: Record<VoiceLang, BakeReadingText> = {
     minutes: [["bake", "time"], ["baked", "time"], ["baking", "time"], ["time"], ["bake"], ["baked"]],
     probe: [["internal", "temperature"], ["internal", "temp"], ["probe"], ["internal"], ["core"]],
     names: { temp: "oven temperature", minutes: "bake time", probe: "probe reading" },
+    last: { opener: ["last", "final"], batch: ["batch", "batches", "bash", "badge"], lot: ["lot", "lots"] },
     card: {
       heading: "Oven load from the Today page",
       intro: "On the Today page, tap Record bake on the lot's row, then Speak the reading. The product and the lot come from the row - say only the readings.",
@@ -508,10 +515,14 @@ export const BAKE_READING_TEXT: Record<VoiceLang, BakeReadingText> = {
         `Critical limits: oven at least ${CCP1_LIMITS.ovenMinF}°F, bake time at least ${CCP1_LIMITS.bakeMinMinutes} minutes, and at least ${CCP1_LIMITS.internalMinF}°F inside when the load is probed.`,
         "Within the limits, check the row on the screen and tap Accept. If a limit is not met the record opens: do not release the load, follow Section 3.",
         "Say \"failed\" at the end if the load is not good for a reason the numbers do not show.",
+        "On the final load, end with \"last load of this batch\" when that product is finished for the day, or \"last load of this lot\" when all the day's baking is finished - that sends the record for review.",
       ],
       say: "Temperature 350, bake time 27",
       sayWithProbe: "Temperature 350, bake time 27, probe 180",
-      examples: ["Temperature 350, bake time 27", "Temperature 350, bake time 27, probe 180", "Temperature 350 for 27 minutes"],
+      examples: [
+        "Temperature 350, bake time 27", "Temperature 350, bake time 27, probe 180", "Temperature 350 for 27 minutes",
+        "Temperature 350, bake time 27, last load of this batch", "Temperature 350, bake time 27, last load of this lot",
+      ],
     },
   },
   es: {
@@ -519,6 +530,7 @@ export const BAKE_READING_TEXT: Record<VoiceLang, BakeReadingText> = {
     minutes: [["tiempo", "de", "horneado"], ["tiempo", "de", "horneo"], ["tiempo"]],
     probe: [["temperatura", "interna"], ["sonda"], ["interna"], ["interno"], ["centro"]],
     names: { temp: "la temperatura del horno", minutes: "el tiempo de horneado", probe: "la lectura de la sonda" },
+    last: { opener: ["ultima", "ultimo", "final"], batch: ["tanda", "bache", "batch"], lot: ["lote", "lotes"] },
     card: {
       heading: "Hornada desde la página Hoy",
       intro: "En la página Hoy, toque Registrar horneado en la fila del lote y luego Decir la lectura. El producto y el lote salen de la fila: diga solo las lecturas.",
@@ -527,10 +539,14 @@ export const BAKE_READING_TEXT: Record<VoiceLang, BakeReadingText> = {
         `Límites críticos: horno de al menos ${CCP1_LIMITS.ovenMinF} °F, tiempo de horneado de al menos ${CCP1_LIMITS.bakeMinMinutes} minutos, y al menos ${CCP1_LIMITS.internalMinF} °F por dentro cuando se mide con la sonda.`,
         "Dentro de los límites, revise la fila en la pantalla y toque Aceptar. Si no se cumple un límite se abre el registro: no libere la hornada, siga la Sección 3.",
         "Diga \"rechazado\" al final si la hornada no está bien por algo que los números no muestran.",
+        "En la última hornada, termine con \"última hornada de esta tanda\" cuando ese producto ya terminó por hoy, o \"última hornada del lote\" cuando terminó todo el horneado del día: eso envía el registro a revisión.",
       ],
       say: "Temperatura 350, tiempo 27",
       sayWithProbe: "Temperatura 350, tiempo 27, sonda 180",
-      examples: ["Temperatura 350, tiempo 27", "Temperatura 350, tiempo 27, sonda 180", "Temperatura 350 por 27 minutos"],
+      examples: [
+        "Temperatura 350, tiempo 27", "Temperatura 350, tiempo 27, sonda 180", "Temperatura 350 por 27 minutos",
+        "Temperatura 350, tiempo 27, última hornada de esta tanda", "Temperatura 350, tiempo 27, última hornada del lote",
+      ],
     },
   },
 };
@@ -545,10 +561,20 @@ export interface BakeReading {
   probe?: number;
   /** A result the operator said aloud. Only "fail" changes anything: a Pass is always the app's own. */
   spoken?: "pass" | "fail";
+  /** The closing phrase, when it was said: this load is the last of the batch, or of the whole lot. */
+  last?: LastLoad;
+  /** Only the closing phrase was said, with no readings: it marks the load already recorded. */
+  markOnly?: boolean;
   /** Present when not ok. */
   missing?: ("temp" | "minutes")[];
   message?: string;
 }
+
+/** Which "last load" a load is: of its batch (a product within the day's lot) or of the whole lot. */
+export type LastLoad = "batch" | "lot";
+
+/** FRM-507's Last load options (v3), exactly as the form defines them. Every language maps onto these. */
+export const LAST_LOAD_VALUES: Record<LastLoad, string> = { batch: "Last load of this batch", lot: "Last load of this lot" };
 
 /** One spoken line of readings. `lang` is the language spoken; `uiLang` the language of the message. */
 export function parseBakeReading(transcript: string, lang: VoiceLang = "en", uiLang: VoiceLang = lang): BakeReading {
@@ -557,7 +583,21 @@ export function parseBakeReading(transcript: string, lang: VoiceLang = "en", uiL
   const t = BAKE_READING_TEXT[lang];
   const names = BAKE_READING_TEXT[uiLang].names;
   const tokens = normalizeTranscript(transcript, lang);
-  const n = tokens.map(x => x.n);
+  const all = tokens.map(x => x.n);
+
+  // The closing phrase is taken out first, so its words are not read as part of a number.
+  let last: LastLoad | undefined;
+  let n = all;
+  for (let i = 0; i < all.length && !last; i++) {
+    if (!t.last.opener.includes(all[i])) continue;
+    for (let k = i + 1; k < Math.min(all.length, i + 6); k++) {
+      const which: LastLoad | undefined = t.last.batch.includes(all[k]) ? "batch" : t.last.lot.includes(all[k]) ? "lot" : undefined;
+      if (!which) continue;
+      last = which;
+      n = [...all.slice(0, i), ...all.slice(k + 1)];
+      break;
+    }
+  }
 
   // The probe first, and its words masked: "internal temperature 180" must not be taken for the oven's.
   const [probeAt, probeLen] = firstOf(n, t.probe);
@@ -609,8 +649,10 @@ export function parseBakeReading(transcript: string, lang: VoiceLang = "en", uiL
   const probe = read("probe", PROBE_RANGE, true);
   const spoken = lex.resultIn(n);
 
-  const base = { transcript, lang, temp, minutes, probe, spoken };
+  const base = { transcript, lang, temp, minutes, probe, spoken, last };
   if (bad) return { ...base, ok: false, message: M.badValue(bad.heard, names[bad.slot], bad.range) };
+  // The closing phrase on its own: nothing to judge, it marks the load already recorded.
+  if (last && temp === undefined && minutes === undefined && probe === undefined) return { ...base, ok: false, markOnly: true };
   const missing: ("temp" | "minutes")[] = [];
   if (temp === undefined) missing.push("temp");
   if (minutes === undefined) missing.push("minutes");
@@ -622,7 +664,8 @@ export function parseBakeReading(transcript: string, lang: VoiceLang = "en", uiL
 export function parseBakeAlternatives(alternatives: string[], lang: VoiceLang = "en", uiLang: VoiceLang = lang): BakeReading {
   const results = alternatives.filter(a => a && a.trim()).map(a => parseBakeReading(a, lang, uiLang));
   if (!results.length) return parseBakeReading("", lang, uiLang);
-  return results.find(r => r.ok) ?? [...results].sort((a, b) => (a.missing?.length ?? 0.5) - (b.missing?.length ?? 0.5))[0];
+  return results.find(r => r.ok) ?? results.find(r => r.markOnly)
+    ?? [...results].sort((a, b) => (a.missing?.length ?? 0.5) - (b.missing?.length ?? 0.5))[0];
 }
 
 export interface BakeLot { product: string; lot: string }
@@ -651,6 +694,7 @@ export function buildBakeFill(lot: BakeLot, reading: BakeReading, spokenAt: Date
     time_out: timeOut, lot_code: lot.lot, oven_temp: String(temp), bake_time: String(minutes), within_limits: verdict,
   };
   if (probe !== undefined) row.internal_temp = String(probe);
+  if (reading.last) row.last_load = LAST_LOAD_VALUES[reading.last];
   const summary: VoiceSummaryLine[] = [
     { key: "time_out", label: M.summary.timeOut, value: timeOut },
     { key: "product", label: M.summary.product, value: lot.product },
@@ -660,11 +704,61 @@ export function buildBakeFill(lot: BakeLot, reading: BakeReading, spokenAt: Date
   ];
   if (probe !== undefined) summary.push({ key: "probe", label: M.summary.probe, value: M.summary.temp(probe), flag: probeOk ? "pass" : "fail" });
   summary.push({ key: "within_limits", label: M.summary.withinLimits, value: verdict === "pass" ? M.summary.pass : M.summary.fail, flag: verdict });
+  if (reading.last) summary.push({ key: "last_load", label: M.summary.lastLoad, value: LAST_LOAD_VALUES[reading.last] });
   return {
     commandId: "ccp1_bake", formNumber: "FRM-507", title: "CCP 1 Baking Monitoring Record", gridId: "oven_loads",
     productionDate: format(spokenAt, "yyyy-MM-dd"), entryFields: { product: lot.product },
     row, warnings, summary, lang: reading.lang, uiLang,
   };
+}
+
+// The marks on loads already recorded. A lot is product + code, compared as everywhere else:
+// the product loosely (sameProduct), the code without case, spaces or punctuation.
+const sameLotCode = (a: unknown, b: unknown) => {
+  const norm = (v: unknown) => String(v ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return norm(a) !== "" && norm(a) === norm(b);
+};
+const ovenRows = (values: Record<string, unknown>): Record<string, unknown>[] =>
+  Array.isArray(values.oven_loads) ? (values.oven_loads as Record<string, unknown>[]) : [];
+
+/** True when this revision of FRM-507 has the Last load column (v3). Before it, nothing can be marked. */
+export function hasLastLoadColumn(schema: FormSchema | null | undefined): boolean {
+  const grid = schema ? allFields(schema).find(f => f.id === "oven_loads" && f.type === "grid") as GridField | undefined : undefined;
+  return !!grid?.columns.some(c => c.id === "last_load");
+}
+
+/**
+ * Mark the load recorded LAST for this batch (product + lot code) as its last load, or the lot's.
+ * Null when the record has no load for the batch: there is nothing to put the mark on, and a mark
+ * is never written on another product's row.
+ */
+export function markLastLoad(values: Record<string, unknown>, lot: BakeLot, which: LastLoad): { values: Record<string, unknown>; rowIndex: number; time: string } | null {
+  const rows = ovenRows(values);
+  let at = -1;
+  rows.forEach((r, i) => { if (sameProduct(String(r?.product ?? ""), lot.product) && sameLotCode(r?.lot_code, lot.lot)) at = i; });
+  if (at < 0) return null;
+  const next = rows.map((r, i) => (i === at ? { ...r, last_load: LAST_LOAD_VALUES[which] } : r));
+  return { values: { ...values, oven_loads: next }, rowIndex: at, time: String(rows[at]?.time_out ?? "") };
+}
+
+/**
+ * "Baking not finished" for a batch: its own marks come off, and a "last load of this lot" on
+ * another product's row becomes "of this batch" - the lot is no longer finished, but that
+ * product still is. `changed` false means there was nothing to take back on this record.
+ */
+export function clearLastLoad(values: Record<string, unknown>, lot: BakeLot): { values: Record<string, unknown>; changed: boolean; lotReopened: boolean } {
+  let changed = false;
+  let lotReopened = false;
+  const next = ovenRows(values).map(r => {
+    const mark = String(r?.last_load ?? "");
+    if (!mark || !sameLotCode(r?.lot_code, lot.lot)) return r;
+    const mine = sameProduct(String(r?.product ?? ""), lot.product);
+    if (mark === LAST_LOAD_VALUES.lot) lotReopened = true;
+    if (mine) { changed = true; return { ...r, last_load: "" }; }
+    if (mark === LAST_LOAD_VALUES.lot) { changed = true; return { ...r, last_load: LAST_LOAD_VALUES.batch }; }
+    return r;
+  });
+  return { values: changed ? { ...values, oven_loads: next } : values, changed, lotReopened: changed && lotReopened };
 }
 
 /** A row for a lot with no readings yet: the operator chose to type them into the record. */
