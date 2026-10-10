@@ -562,7 +562,7 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   a tap opens or closes it by hand. The fields stay mounted while closed (CSS `hidden`), so values and
   field arrays are untouched. PDFs and the printable blank ignore it. Builder: "Start collapsed" under
   the section description. First use: FRM-401's "Manual readings and changes of state" (owner's request,
-  2026-10-08, migration `20261008000002`). Also FRM-507's "3. If a limit was not met" (2026-10-09, migration `20261009000007`); its required "Deviations on this day" answer is inside the section, so the section opens at Submit until that is answered.
+  2026-10-08, migration `20261008000002`). Also FRM-507's "3. If a limit was not met" (2026-10-09, migration `20261009000007`); its required "Deviations on this day" answer is inside the section, so the section opens at Submit until that is answered. FRM-606's section 3 the same (migration `20261009000010`).
 - **Helper text can be put away (`InfoBlock` in `FormRenderer`, 2026-10-09):** every `info` field is shown
   by default with a **Hide** link (an information icon before it, so it reads apart from other links); hidden, it is one line ("Show: Before you start", from the field's
   label). The choice is remembered **per person**, per form and per block: `useUserPref` with key
