@@ -40,6 +40,8 @@ import { CalibrationSummary } from "@/components/team/forms/CalibrationSummary";
 import { FirstPackCheck, firstPackNotes } from "@/components/team/forms/FirstPackCheck";
 import { FIRST_PACK, checkFirstPack, firstPackReady, packNote, type PackLine } from "@/lib/firstPackCheck";
 import { decodeBarcode } from "@/lib/barcodeDecode";
+import { PackCountLine } from "@/components/team/forms/PackCountLine";
+import { PACK_COUNTS, packCounts, packCountsReady } from "@/lib/packCounts";
 import { loadProductBarcode } from "@/lib/formReport";
 import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatureReview";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
@@ -251,6 +253,7 @@ export default function FormEntry() {
   // Section 3 of a CCP record (FRM-507, FRM-606) is worked out from the loads or checks on the
   // record itself and kept in step as they change - see ccpDeviations.ts. What was DONE about a
   // deviation stays a person's to fill in.
+  const packCountsOn = doc?.sop_number === PACK_COUNTS.form && packCountsReady(schema);
   const deviationCfg = useMemo(() => deviationFormFor(doc?.sop_number, schema), [doc?.sop_number, schema]);
   const withDeviations = (values: Record<string, any>): Record<string, any> =>
     deviationCfg ? (deriveDeviations(deviationCfg, values).values as Record<string, any>) : values;
@@ -341,6 +344,9 @@ export default function FormEntry() {
       // A CCP record whose Section 3 disagrees with its own loads or checks is not submitted.
       const disagree = deviationCfg ? deviationProblems(deviationCfg, values) : [];
       if (disagree.length) { toast.error(disagree[0], { duration: 12000 }); return; }
+      // A lot record whose counts do not add up says why in Notes before it is submitted (FSQM-021).
+      const counts = packCountsOn ? packCounts(values) : null;
+      if (counts?.needsNote) { toast.error(`Not submitted - ${counts.text}`, { duration: 12000 }); return; }
       setSubmitting(true);
       try {
         const updated = await submitResponse(response.id, values, response.updated_at);
@@ -1108,6 +1114,8 @@ export default function FormEntry() {
                 onPhoto={checkFirstPackPhoto}
               />
             ),
+            // ...and the three packing counts added up, under their row.
+            more: packCountsOn ? [{ afterField: PACK_COUNTS.after, node: <PackCountLine form={form} /> }] : undefined,
           } : undefined}
         />
       </DocSelfContext.Provider>

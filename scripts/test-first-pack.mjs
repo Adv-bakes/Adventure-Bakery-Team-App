@@ -64,6 +64,17 @@ check("a flavored pack on an Original day", states(T.checkFirstPack({ ...REC, pr
 check("lot codes compare without case or spaces", states(T.checkFirstPack({ ...REC, lot: "a-6283" }, { lot_code: "A 6283" }))[1], "lot:match");
 check("a date that cannot be read as one needs a look", states(T.checkFirstPack(REC, { best_by: "27283" }))[2], "best_by:check");
 
+// ---- the date must be in English (a lot was once packed with "Augusto 2027")
+const AUG = { ...REC, bakeDate: "2026-08-12" };
+const bb = (rec, text) => T.checkFirstPack(rec, { best_by: text })[2];
+check("Augusto 2027 is a mismatch", bb(AUG, "Augusto 2027").state, "mismatch");
+check("...and says why, with what it should be", [bb(AUG, "Augusto 2027").text.includes("not in English"), bb(AUG, "Augusto 2027").text.includes("August 2027")], [true, true]);
+check("Spanish months, full and short", ["Agosto 2027", "AGO 2027", "Octubre 2027", "Enero 2027", "Dic 2027", "Mayo 2027", "Best By: Septiembre 2027"].map(t => T.bestByNotEnglish(t).length > 0), [true, true, true, true, true, true, true]);
+check("English ones pass", ["August 2027", "AUG 2027", "Best By: Oct. 15th, 2027", "Sept 2027", "May 2027", "10/2027", "2027-10-15"].map(t => T.bestByNotEnglish(t).length), [0, 0, 0, 0, 0, 0, 0]);
+check("a misspelt month is wrong on a pack too", bb(REC, "Octember 2027").state, "mismatch");
+check("the right English date still matches", bb(AUG, "AUG 2027").state, "match");
+check("a Spanish date stops the one-tap answer", T.packVerdict(T.checkFirstPack(AUG, { product_name: "Pumpkin Spice Rum Cake", lot_code: "6283", best_by: "Agosto 2027", decodedBarcode: "850012345678" })), "mismatch");
+
 const digitsOnly = T.checkFirstPack(REC, { product_name: "Pumpkin Spice Rum Cake", lot_code: "6283", best_by: "OCT 2027", barcode: "850012345678" });
 check("printed digits agree but the bars were not scanned", states(digitsOnly)[3], "barcode:check");
 check("...so it is not yet a full match", T.packVerdict(digitsOnly), "incomplete");

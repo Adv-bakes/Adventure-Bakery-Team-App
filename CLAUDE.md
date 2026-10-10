@@ -1430,7 +1430,21 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
   given in this page visit (never on opening, never over a name), and offers team names (`teamPick`,
   migration `20261010000005`, no revision change). `FIRST_PACK` is the single map of field ids. Tested
   by `scripts/test-first-pack.mjs`; the on-screen flow was checked on a harness with a stubbed reader.
+  **The best-by date must be in English** (`bestByNotEnglish`, owner 2026-10-10: a lot was once packed
+  with "Augusto 2027" and it was found only after packing): any word of the date that is not an English
+  month is a mismatch, worded with what it should say. The `finished_goods` prompt tells the reader never
+  to translate or correct the date or the product name - without that a model may quietly return
+  "August" (the owner deploys the function: `npx supabase functions deploy extract-package-label`).
   **Untested from here: the camera, the real read of an ink-jet coded box, and BarcodeDetector.**
+- **The three packing counts are added up (FRM-520, 2026-10-10, `src/lib/packCounts.ts` +
+  `PackCountLine.tsx`).** A line under the counts' row says "Adds up", "3 unaccounted for" or "4 more
+  than were racked" (rack count = units packed + not packed, FSQM-021). **All three stay counted and
+  typed by a person - none is derived or suggested**, or there would be nothing to reconcile. A
+  difference with no Notes blocks Submit (`needsNote`); with a reason in Notes it is amber and allowed.
+  `units_packed` is still TEXT on purpose (the lot trace adds its units): `readCount` reads "480" or
+  "480 units" and says so when it cannot ("40 cases"), never guessing. It rides on the first-pack slot
+  through `afterSection.more` (further full-width lines inside the same section), so it shows on an
+  editable entry only. Tested by `scripts/test-pack-counts.mjs`.
 - Not built: picking the formula from the Product field itself, scaling for a part batch, and
   creating a batch sheet from an FRM-501 entry.
 - The batch sheet list page (`/team/operations/batch-sheets`) had a route but no sidebar link until
