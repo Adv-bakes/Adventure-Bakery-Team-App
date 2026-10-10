@@ -49,6 +49,7 @@ import { findTodaysDrafts, newVoiceState } from "@/lib/voiceCommandTarget";
 import { normLot } from "@/lib/releaseAssist";
 import { speechRecognitionSupported, useSpeechCommand } from "@/hooks/useSpeechCommand";
 import { useUserPref } from "@/lib/userPrefs";
+import { deriveDeviations, deviationFormFor } from "@/lib/ccpDeviations";
 import type { SealState } from "@/lib/today";
 import { VOICE_MSG } from "@/lib/voiceMessages";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
@@ -221,6 +222,9 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
         }
         // The last check of the lot is the operator saying the day's checks are complete: their line is signed.
         if (p.last === "lot") values = signed(values);
+        // Section 3 follows from the row just added, and is saved with it.
+        const section3 = deviationFormFor(doc.sop_number, schema);
+        if (section3) values = deriveDeviations(section3, values).values as Record<string, any>;
         sent = [(await saveResponseData(r.id, values, r.updated_at)).id];
         if (p.last === "lot") {
           // Each batch has its own record: the others of this lot are signed and sent too.

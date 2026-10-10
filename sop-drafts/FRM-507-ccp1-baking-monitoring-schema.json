@@ -189,7 +189,8 @@
             "None - every load met the limits",
             "Yes - each one is recorded below"
           ],
-          "required": true
+          "required": true,
+          "restingValue": "None - every load met the limits"
         },
         {
           "id": "deviation_log",

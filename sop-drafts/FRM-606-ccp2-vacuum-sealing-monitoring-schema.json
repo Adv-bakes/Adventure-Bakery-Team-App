@@ -199,7 +199,8 @@
             "None - every check passed",
             "Yes - each one is recorded below"
           ],
-          "required": true
+          "required": true,
+          "restingValue": "None - every check passed"
         },
         {
           "id": "deviation_log",

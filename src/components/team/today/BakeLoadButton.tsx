@@ -54,6 +54,7 @@ import {
 import { newVoiceState } from "@/lib/voiceCommandTarget";
 import { speechRecognitionSupported, useSpeechCommand } from "@/hooks/useSpeechCommand";
 import { useUserPref } from "@/lib/userPrefs";
+import { deriveDeviations, deviationFormFor } from "@/lib/ccpDeviations";
 import { loadBakeTargets } from "@/lib/formReport";
 import type { BakeTargets } from "@/lib/bakeTargets";
 import type { BakeState } from "@/lib/today";
@@ -214,6 +215,9 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
         if (p.last === "lot" && signer?.name && !values.monitored_by?.signed_at) {
           values.monitored_by = { user_id: signer.id, name: signer.name, signed_at: new Date().toISOString() };
         }
+        // Section 3 follows from the row just added, and is saved with it.
+        const section3 = deviationFormFor(doc.sop_number, schema);
+        if (section3) values = deriveDeviations(section3, values).values as Record<string, any>;
         savedId = (await saveResponseData(r.id, values, r.updated_at)).id;
         return "saved";
       };
