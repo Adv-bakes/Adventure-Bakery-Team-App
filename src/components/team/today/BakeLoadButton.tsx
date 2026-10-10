@@ -69,7 +69,7 @@ type Pending = { fill: VoiceFill | null; last?: LastLoad; transcript: string };
 const GOLD = "bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#C89B3C]/90";
 
 // The pop-up sits on a cream panel, where the default field looks switched off: white, with a clear edge.
-const FIELD = "bg-white border-[#2A1F0E]/40 text-[#2A1F0E] placeholder:text-[#2A1F0E]/40 focus-visible:ring-[#C89B3C]";
+const FIELD = "bg-white border-[#2A1F0E]/75 text-[#2A1F0E] font-medium placeholder:font-normal placeholder:text-[#2A1F0E]/55 focus-visible:ring-[#C89B3C]";
 
 export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled, onSaved }: {
   doc: Doc;
@@ -293,12 +293,12 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
 
   const reviewerSelect = (
     <label className="block space-y-1">
-      <span className="text-xs opacity-70">{M.sendTo}</span>
+      <span className="text-xs font-medium text-[#2A1F0E]">{M.sendTo}</span>
       {reviewers !== null && reviewers.length === 0 ? (
         <p className="text-amber-800">{M.noReviewers}</p>
       ) : (
         <select
-          className="w-full rounded-md border border-[#2A1F0E]/40 bg-white text-[#2A1F0E] px-2 py-2 text-sm"
+          className="w-full rounded-md border border-[#2A1F0E]/75 bg-white text-[#2A1F0E] font-medium px-2 py-2 text-sm"
           value={reviewerId} onChange={e => setReviewerPick(e.target.value)} disabled={reviewers === null}
         >
           <option value="">{M.choose}</option>
@@ -310,7 +310,7 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
 
   const lastChoice = (options: (LastLoad | "none")[]) => (
     <div className="space-y-2">
-      <p className="text-xs opacity-70">{M.lastLabel}</p>
+      <p className="text-xs font-medium text-[#2A1F0E]">{M.lastLabel}</p>
       <div className="flex flex-wrap gap-2">
         {options.map(o => (
           <Button
@@ -427,15 +427,15 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
             >
               <div className="grid grid-cols-3 gap-2">
                 <label className="flex flex-col justify-end gap-1">
-                  <span className="text-xs opacity-70">{M.temp}</span>
+                  <span className="text-xs font-medium text-[#2A1F0E]">{M.temp}</span>
                   <Input className={FIELD} inputMode="decimal" autoFocus value={entry.temp} onChange={e => setEntry({ ...entry, temp: e.target.value })} />
                 </label>
                 <label className="flex flex-col justify-end gap-1">
-                  <span className="text-xs opacity-70">{M.minutes}</span>
+                  <span className="text-xs font-medium text-[#2A1F0E]">{M.minutes}</span>
                   <Input className={FIELD} inputMode="decimal" value={entry.minutes} onChange={e => setEntry({ ...entry, minutes: e.target.value })} />
                 </label>
                 <label className="flex flex-col justify-end gap-1">
-                  <span className="text-xs opacity-70">{M.probe}</span>
+                  <span className="text-xs font-medium text-[#2A1F0E]">{M.probe}</span>
                   <Input className={FIELD} inputMode="decimal" placeholder={M.optional} value={entry.probe} onChange={e => setEntry({ ...entry, probe: e.target.value })} />
                 </label>
               </div>
