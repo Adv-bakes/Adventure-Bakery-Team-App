@@ -41,6 +41,9 @@ const NEEDS_RECORD = new Set(["limits_changed", "no_column", "no_initials", "pro
 /** What was heard, and whether it named a check. */
 type Heard = { transcript: string; ok: boolean };
 
+// The pop-up sits on a cream panel, where the default field looks switched off: white, with a clear edge.
+const FIELD = "bg-white border-[#2A1F0E]/40 text-[#2A1F0E] placeholder:text-[#2A1F0E]/40 focus-visible:ring-[#C89B3C]";
+
 export function SealCheckButton({ doc, lot, product, today, lang, disabled, onSaved }: {
   doc: Doc;
   lot: string;
@@ -224,7 +227,7 @@ export function SealCheckButton({ doc, lot, product, today, lang, disabled, onSa
 
             {!(reading?.ok && fill) && (
               <form className="flex items-center gap-2" onSubmit={e => { e.preventDefault(); if (typed.trim()) { speech.reset(); heard([typed]); } }}>
-                <Input value={typed} onChange={e => setTyped(e.target.value)} placeholder={M.typeHere} aria-label={M.typeHere} />
+                <Input className={FIELD} value={typed} onChange={e => setTyped(e.target.value)} placeholder={M.typeHere} aria-label={M.typeHere} />
                 <Button type="submit" size="sm" variant="outline" disabled={!typed.trim() || busy}>{M.use}</Button>
               </form>
             )}

@@ -68,6 +68,9 @@ type Pending = { fill: VoiceFill | null; last?: LastLoad; transcript: string };
 
 const GOLD = "bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#C89B3C]/90";
 
+// The pop-up sits on a cream panel, where the default field looks switched off: white, with a clear edge.
+const FIELD = "bg-white border-[#2A1F0E]/40 text-[#2A1F0E] placeholder:text-[#2A1F0E]/40 focus-visible:ring-[#C89B3C]";
+
 export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled, onSaved }: {
   doc: Doc;
   lot: string;
@@ -295,7 +298,7 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
         <p className="text-amber-800">{M.noReviewers}</p>
       ) : (
         <select
-          className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+          className="w-full rounded-md border border-[#2A1F0E]/40 bg-white text-[#2A1F0E] px-2 py-2 text-sm"
           value={reviewerId} onChange={e => setReviewerPick(e.target.value)} disabled={reviewers === null}
         >
           <option value="">{M.choose}</option>
@@ -410,7 +413,7 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
 
               {!pending && (
                 <form className="flex items-center gap-2" onSubmit={e => { e.preventDefault(); if (typed.trim()) { speech.reset(); take(parseBakeAlternatives([typed], lang, lang), false); } }}>
-                  <Input value={typed} onChange={e => setTyped(e.target.value)} placeholder={M.typeHere} aria-label={M.typeHere} />
+                  <Input className={FIELD} value={typed} onChange={e => setTyped(e.target.value)} placeholder={M.typeHere} aria-label={M.typeHere} />
                   <Button type="submit" size="sm" variant="outline" disabled={!typed.trim() || busy}>{M.use}</Button>
                 </form>
               )}
@@ -423,17 +426,17 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
               onSubmit={e => { e.preventDefault(); if (entered && !needsReviewer(entered.last) && !busy) take(entered, true); }}
             >
               <div className="grid grid-cols-3 gap-2">
-                <label className="space-y-1">
+                <label className="flex flex-col justify-end gap-1">
                   <span className="text-xs opacity-70">{M.temp}</span>
-                  <Input inputMode="decimal" autoFocus value={entry.temp} onChange={e => setEntry({ ...entry, temp: e.target.value })} />
+                  <Input className={FIELD} inputMode="decimal" autoFocus value={entry.temp} onChange={e => setEntry({ ...entry, temp: e.target.value })} />
                 </label>
-                <label className="space-y-1">
+                <label className="flex flex-col justify-end gap-1">
                   <span className="text-xs opacity-70">{M.minutes}</span>
-                  <Input inputMode="decimal" value={entry.minutes} onChange={e => setEntry({ ...entry, minutes: e.target.value })} />
+                  <Input className={FIELD} inputMode="decimal" value={entry.minutes} onChange={e => setEntry({ ...entry, minutes: e.target.value })} />
                 </label>
-                <label className="space-y-1">
+                <label className="flex flex-col justify-end gap-1">
                   <span className="text-xs opacity-70">{M.probe}</span>
-                  <Input inputMode="decimal" placeholder={M.optional} value={entry.probe} onChange={e => setEntry({ ...entry, probe: e.target.value })} />
+                  <Input className={FIELD} inputMode="decimal" placeholder={M.optional} value={entry.probe} onChange={e => setEntry({ ...entry, probe: e.target.value })} />
                 </label>
               </div>
               {canMark && lastChoice(["none", "batch", "lot"])}
