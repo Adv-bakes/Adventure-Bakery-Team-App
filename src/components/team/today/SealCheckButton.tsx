@@ -89,7 +89,8 @@ export function SealCheckButton({ doc, lot, product, today, lang, disabled, onSa
   const heard = (alternatives: string[]) => {
     const transcript = alternatives.find(a => a && a.trim()) ?? "";
     const h = parseSealButton(alternatives, lang);
-    if (!h || h.kind !== "row" || !h.row) { setReading({ transcript, ok: false }); setFill(null); return; }
+    // Not understood: what was heard goes into the box, so a small correction is enough.
+    if (!h || h.kind !== "row" || !h.row) { setReading({ transcript, ok: false }); setFill(null); setTyped(transcript); return; }
     setReading({ transcript, ok: true });
     const f = sealButtonFill({ product, lot }, h.row, new Date(), lang);
     setFill(f);

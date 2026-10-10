@@ -1521,7 +1521,7 @@ check that did not happen.
   Each lot + product in progress has a **Record bake** button before Continue, for one oven load on the
   day's FRM-507. The row supplies the product and the lot; a menu offers two ways in. **Speak the reading**:
   "Temperature 350, bake time 27", optionally "probe 180" (`parseBakeReading` / `parseBakeAlternatives`,
-  `BAKE_READING_TEXT` holds the words per language and the wall card's lines; a typed box under it is the
+  `BAKE_READING_TEXT` holds the words per language and the wall card's lines; a typed box under it, which is filled with what was heard when a line is not understood so it can be corrected, is the
   fallback). Within the limits, the row is shown and **Accept saves it without leaving the page** - the one
   path that saves with the form closed, an explicit tap on a row the operator has read. A limit missed, or
   a spoken "failed", saves nothing and opens the record with the row unsaved and Section 3 flagged.
