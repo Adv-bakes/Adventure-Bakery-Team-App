@@ -17,7 +17,7 @@
 import { format } from "date-fns";
 import {
   CHECK_OPTIONS, VOICE_COMMANDS, applyVoiceFill, normalizeTranscript, parseNumber,
-  type ApplyResult, type CheckOption, type VoiceFill, type VoiceSummaryLine, type VoiceWarning,
+  type ApplyResult, type CheckOption, type LastLoad, type VoiceFill, type VoiceSummaryLine, type VoiceWarning,
 } from "./voiceCommands";
 import type { FillContext, FormSchema } from "./formSchema";
 import { LEXICONS, type VoiceLang } from "./voiceLexicon";
@@ -395,14 +395,122 @@ export function parseSealButton(alternatives: string[], lang: VoiceLang = "en"):
   return parseHandsFree(withPending(HANDS_FREE_IMPLIED, alternatives), lang);
 }
 
+// ---------- The last check of the batch, and of the lot (FRM-606 v3) ----------
+//
+// The same two marks as baking (FRM-507's Last load), in the owner's words: a BATCH is one row of
+// the Today page (a product within the day's lot code), the LOT is the day's lot code. FRM-606 is
+// one record per batch, so "last check of this batch" finishes that record's checks and "last
+// check of this lot" finishes every record of the lot code for the day.
+
+/** FRM-606's Last check options, exactly as the form defines them. Every language maps onto these. */
+export const SEAL_LAST_VALUES: Record<LastLoad, string> = { batch: "Last check of this batch", lot: "Last check of this lot" };
+
+/** The words of the closing phrase per language: an opener, then within a few words "batch" or "lot". */
+const LAST_WORDS: Record<VoiceLang, { opener: string[]; batch: string[]; lot: string[] }> = {
+  en: { opener: ["last", "final"], batch: ["batch", "batches", "bash", "badge"], lot: ["lot", "lots"] },
+  es: { opener: ["ultima", "ultimo", "final"], batch: ["tanda", "bache", "batch"], lot: ["lote", "lotes"] },
+};
+
+const foldWord = (w: string) => w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+
+/** A sentence with its closing phrase taken out, and which one it was. No phrase: the sentence as it came. */
+export function splitLastPhrase(sentence: string, lang: VoiceLang = "en"): { rest: string; last?: LastLoad } {
+  const words = String(sentence ?? "").split(/\s+/).filter(Boolean);
+  const n = words.map(foldWord);
+  const W = LAST_WORDS[lang];
+  for (let i = 0; i < n.length; i++) {
+    if (!W.opener.includes(n[i])) continue;
+    for (let k = i + 1; k < Math.min(n.length, i + 6); k++) {
+      const which: LastLoad | undefined = W.batch.includes(n[k]) ? "batch" : W.lot.includes(n[k]) ? "lot" : undefined;
+      if (which) return { rest: [...words.slice(0, i), ...words.slice(k + 1)].join(" "), last: which };
+    }
+  }
+  return { rest: words.join(" ") };
+}
+
+export interface SealLine {
+  /** The check that was heard, when one was. */
+  row?: HandsFreeRow;
+  last?: LastLoad;
+  /** Only the closing phrase was said: it marks the check already recorded. */
+  markOnly?: boolean;
+  transcript: string;
+}
+
+/**
+ * The sentence said after the seal-check button: a check, optionally closed with "last check of
+ * this batch / lot", or the closing phrase on its own. The first alternative that gives a check
+ * wins; failing that, a bare phrase; failing that, nothing was understood (no row, no mark).
+ */
+export function parseSealLine(alternatives: string[], lang: VoiceLang = "en"): SealLine {
+  const lines = alternatives.filter(a => a && a.trim());
+  const transcript = lines[0] ?? "";
+  let bare: SealLine | null = null;
+  for (const line of lines) {
+    const { rest, last } = splitLastPhrase(line, lang);
+    const heard = rest.trim() ? parseSealButton([rest], lang) : null;
+    if (heard?.kind === "row" && heard.row) return { row: heard.row, last, transcript: line };
+    if (last && !rest.trim() && !bare) bare = { last, markOnly: true, transcript: line };
+  }
+  return bare ?? { transcript };
+}
+
+/** True when this revision of FRM-606 has the Last check column (v3). */
+export function hasLastCheckColumn(schema: FormSchema | null | undefined): boolean {
+  for (const section of schema?.sections ?? []) {
+    for (const field of section.fields ?? []) {
+      if (field.id === HANDS_FREE_GRID && field.type === "grid") {
+        return (field as { columns: { id: string }[] }).columns.some(c => c.id === "last_check");
+      }
+    }
+  }
+  return false;
+}
+
+const sealRows = (values: Record<string, unknown>): Record<string, unknown>[] =>
+  Array.isArray(values[HANDS_FREE_GRID]) ? (values[HANDS_FREE_GRID] as Record<string, unknown>[]) : [];
+
+/**
+ * Mark the check recorded LAST on a batch's record as its last check, or the lot's. The record is
+ * the batch's own, so any row with a check on it counts. Null when no check is recorded yet.
+ */
+export function markLastCheck(values: Record<string, unknown>, which: LastLoad): { values: Record<string, unknown>; rowIndex: number } | null {
+  const rows = sealRows(values);
+  let at = -1;
+  rows.forEach((r, i) => { if (String(r?.check ?? "").trim()) at = i; });
+  if (at < 0) return null;
+  const next = rows.map((r, i) => (i === at ? { ...r, last_check: SEAL_LAST_VALUES[which] } : r));
+  return { values: { ...values, [HANDS_FREE_GRID]: next }, rowIndex: at };
+}
+
+/**
+ * "Checks not finished". On the batch's OWN record (`mine`) every mark comes off; on another
+ * batch's record of the same lot a "last check of this lot" becomes "of this batch" - the lot is
+ * no longer finished, but that batch still is. `hadLot` says a lot mark was found on this record.
+ */
+export function clearLastCheck(values: Record<string, unknown>, mine: boolean): { values: Record<string, unknown>; changed: boolean; hadLot: boolean } {
+  let changed = false;
+  let hadLot = false;
+  const next = sealRows(values).map(r => {
+    const mark = String(r?.last_check ?? "");
+    if (!mark) return r;
+    if (mark === SEAL_LAST_VALUES.lot) hadLot = true;
+    if (mine) { changed = true; return { ...r, last_check: "" }; }
+    if (mark === SEAL_LAST_VALUES.lot) { changed = true; return { ...r, last_check: SEAL_LAST_VALUES.batch }; }
+    return r;
+  });
+  return { values: changed ? { ...values, [HANDS_FREE_GRID]: next } : values, changed, hadLot };
+}
+
 /** The seal-check row for a lot, as the entry page and the Today page both apply it. */
-export function sealButtonFill(lot: { product: string; lot: string }, row: HandsFreeRow, at: Date, uiLang: VoiceLang = "en"): VoiceFill {
+export function sealButtonFill(lot: { product: string; lot: string }, row: HandsFreeRow, at: Date, uiLang: VoiceLang = "en", last?: LastLoad): VoiceFill {
   const M = VOICE_MSG[uiLang];
   const time = format(at, "HH:mm");
   const cells: Record<string, string> = { time, check: row.check };
   if (row.vacuum_reading !== undefined) cells.vacuum_reading = row.vacuum_reading;
   if (row.visual) cells.visual = row.visual;
   if (row.pull_test) cells.pull_test = row.pull_test;
+  if (last) cells.last_check = SEAL_LAST_VALUES[last];
   const warnings: VoiceWarning[] = [];
   if (handsFreeFailed(row)) {
     warnings.push({ level: "fail", section: "deviation", code: "seal_fail", text: M.sealFail(row.visual === "fail", row.pull_test === "fail") });
@@ -417,6 +525,7 @@ export function sealButtonFill(lot: { product: string; lot: string }, row: Hands
   if (row.vacuum_reading !== undefined) summary.push({ key: "vacuum", label: M.summary.vacuum, value: M.summary.inches(Number(row.vacuum_reading)) });
   if (row.visual) summary.push({ key: "visual", label: M.summary.visual, value: verdict(row.visual), flag: row.visual });
   if (row.pull_test) summary.push({ key: "pull", label: M.summary.pull, value: verdict(row.pull_test), flag: row.pull_test });
+  if (last) summary.push({ key: "last_check", label: M.summary.lastCheck, value: SEAL_LAST_VALUES[last] });
   return {
     commandId: HANDS_FREE_COMMAND, formNumber: HANDS_FREE_FORM, title: "CCP 2 Vacuum Sealing Monitoring Record", gridId: HANDS_FREE_GRID,
     productionDate: format(at, "yyyy-MM-dd"), entryFields: { product: lot.product, lot: lot.lot },
@@ -436,6 +545,7 @@ export const SEAL_BUTTON_CARD: Record<VoiceLang, { heading: string; intro: strin
     lines: [],
     notes: [
       "Say \"failed\" in place of \"passed\" when a check fails. The record then opens: stop, and follow Section 3.",
+      "On the final check, end with \"last check of this batch\" when that product's checks are finished for the day, or \"last check of this lot\" when all the day's checks are finished - that sends the records for review.",
       "When a check passes, look at the row on the screen and tap Accept.",
       "Never pull test a pouch that has just been sealed: the film is still warm.",
     ],
@@ -446,6 +556,7 @@ export const SEAL_BUTTON_CARD: Record<VoiceLang, { heading: string; intro: strin
     lines: [],
     notes: [
       "Diga \"rechazada\" en lugar de \"aprobada\" cuando una revisión falle. Entonces se abre el registro: deténgase y siga la Sección 3.",
+      "En la última revisión, termine con \"última revisión de esta tanda\" cuando ese producto ya terminó por hoy, o \"última revisión del lote\" cuando terminaron todas las revisiones del día: eso envía los registros a revisión.",
       "Cuando una revisión se aprueba, revise la fila en la pantalla y toque Aceptar.",
       "Nunca haga la prueba de jalón en una bolsa recién sellada: la película sigue caliente.",
     ],

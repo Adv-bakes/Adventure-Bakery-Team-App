@@ -41,7 +41,7 @@ check("mapping: all present", T.checkTodayMapping({
   "FRM-702": ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"],
   "FRM-301": ["receiving_log"],
   "FRM-507": ["production_date", "monitored_by", "oven_loads"],
-  "FRM-606": ["production_date", "product", "lot_code"],
+  "FRM-606": ["production_date", "product", "lot_code", "monitored_by", "seal_checks"],
 }), []);
 check("mapping: renamed and missing", T.checkTodayMapping({ "FRM-903": ["inspection_date"] }).slice(0, 2),
   ['FRM-903 no longer has "shift"', 'FRM-903 no longer has "area_line"']);
@@ -172,6 +172,19 @@ const lot = (product, lot_code, status = "draft", extra = {}) => entry({ product
   check("awaiting review: last of the lot and signed", T.bakingAwaitingReview(all, TODAY), { by: "Tina P" });
   check("awaiting review: not while only a batch is finished", T.bakingAwaitingReview(one, TODAY), null);
   check("awaiting review: not without the operator's signature", T.bakingAwaitingReview(bake([{ product: PS, lot_code: "6281", last_load: L }]), TODAY), null);
+  // Seal checks: one record per batch, the same two marks in its Last check column.
+  const SB = "Last check of this batch", SL = "Last check of this lot";
+  const seal = (...entries) => { const b = rec(); for (const [product, checks, status, extra] of entries) b.sealing.push(entry({ production_date: TODAY, product, lot_code: "6281", seal_checks: checks, ...(extra ?? {}) }, status ?? "draft")); return b; };
+  const sOpen = seal([PS, [{ check: "Set-up" }, { check: "In process" }, { check: "" }]], [OR, [{ check: "Set-up" }]]);
+  check("seal state: checks counted per batch, blank rows not", [T.sealState(sOpen, TODAY, PS, "6281"), T.sealState(sOpen, TODAY, OR, "6281")], [{ loads: 2, done: "open" }, { loads: 1, done: "open" }]);
+  const sOne = seal([PS, [{ check: "End of run", last_check: SB }]], [OR, [{ check: "Set-up" }]]);
+  check("seal state: one batch finished, the other not", [T.sealState(sOne, TODAY, PS, "6281").done, T.sealState(sOne, TODAY, OR, "6281").done], ["batch", "open"]);
+  const sAll = seal([PS, [{ check: "End of run", last_check: SB }]], [OR, [{ check: "At boxing", last_check: SL }], "draft", { monitored_by: { name: "Tina P" } }]);
+  check("seal state: the last check of the lot finishes every batch of that code", [T.sealState(sAll, TODAY, PS, "6281").done, T.sealState(sAll, TODAY, OR, "6281").done], ["lot", "lot"]);
+  check("seal state: another lot code, and no record at all", [T.sealState(sAll, TODAY, PS, "6282"), T.sealState(rec(), TODAY, PS, "6281")], [{ loads: 0, done: "open" }, { loads: 0, done: "open" }]);
+  check("seal awaiting review: last of the lot and signed", T.sealingAwaitingReview(sAll, TODAY), { by: "Tina P" });
+  check("seal awaiting review: not while only a batch is finished", T.sealingAwaitingReview(sOne, TODAY), null);
+
   check("awaiting review: not once submitted", T.bakingAwaitingReview(bake([{ product: PS, lot_code: "6281", last_load: L }], "submitted", { monitored_by: { name: "Tina P" } }), TODAY), null);
 }
 

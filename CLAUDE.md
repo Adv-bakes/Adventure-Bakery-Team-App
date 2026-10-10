@@ -1554,6 +1554,20 @@ check that did not happen.
   "of this batch", and withdraws the review request; the signature is left for the operator to clear.
   Section 3's "Deviations on this day" is never answered by the app. On a revision without the column
   (`hasLastLoadColumn`) none of the marks are offered. Seal checks have no equivalent yet.
+- **Checks done: the last check of the batch, and of the lot (FRM-606 v3, 2026-10-10, migration `20261010000002`).**
+  The seal-check button's twin of the baking marks above, with the same menu (Speak the check / **Enter the
+  check** pop-up / **Checks done...** / **Checks not finished** / Open the record) and the same green
+  compact button. Seal checks gained a **Last check** pick-list (`SEAL_LAST_VALUES`); `sealState` and
+  `sealingAwaitingReview` (`today.ts`) derive everything from it. **What differs from baking is the record:**
+  FRM-606 is one record per BATCH, so "last check of this lot" signs and sends for review EVERY record
+  of that lot code the operator has open today (one `requestSignature` each), and Checks not finished
+  works across those records (`clearLastCheck(values, mine)`: the batch's own marks come off; another
+  batch's "of this lot" becomes "of this batch"). The phrase is cut out of the sentence before the
+  hands-free parser sees it (`splitLastPhrase`, `parseSealLine`), so it can follow any check - the wording
+  is "last CHECK", not "last seal", because the final check of a batch is usually the boxing check or the
+  pull test, done after sealing. `markLastCheck` marks the last row that holds a check. The Enter the
+  check pop-up takes the check type, air check and pull test (pass / fail / not done) and the gauge; a
+  fail opens the record as always. The reviewer choice is shared with baking (`bake.reviewer`).
 - **Suggested bake figures in the Enter the reading pop-up (2026-10-10, `src/lib/bakeTargets.ts`).** The oven
   temperature and bake time boxes show, in grey, what the product's formula sheet states - FRM-501's
   Process Parameters table, rows "Process / Bake temperature" and "Process / Bake time", column
