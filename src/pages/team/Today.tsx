@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords } from "@/lib/formResponses";
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
-  attentionCounts, ccpToday, lastDispatch, lastReceipt, localDay, lotsInProgress, openHolds,
+  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, lastReceipt, localDay, lotsInProgress, openHolds,
   ovenLoads, preopState, productionOpen, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
@@ -124,6 +124,7 @@ export default function Today() {
   const lots: LotSummary[] = useMemo(() => records ? lotsInProgress(records) : [], [records]);
   const holds: TodayEntry[] = useMemo(() => records ? openHolds(records.holds) : [], [records]);
   const ccp = useMemo(() => records ? ccpToday(records, today) : { baking: null, sealing: [] }, [records, today]);
+  const review = useMemo(() => records ? bakingAwaitingReview(records, today) : null, [records, today]);
   const dispatch = useMemo(() => records ? lastDispatch(records.dispatches) : null, [records]);
   const receipt = useMemo(() => records ? lastReceipt(records.receipts) : null, [records]);
   const awaitingRelease = lots.filter(l => l.stage === "awaiting_release");
@@ -290,6 +291,7 @@ export default function Today() {
                           {canVoice && docOf("baking") && l.lotCode && l.product && (
                             <BakeLoadButton
                               doc={docOf("baking")!} lot={l.lotCode} product={l.product} today={today}
+                              state={bakeState(records!, today, l.product, l.lotCode)}
                               lang={lang} disabled={!open} onSaved={load}
                             />
                           )}
@@ -334,6 +336,7 @@ export default function Today() {
                 {ccp.baking || ccp.sealing.length
                   ? [ccp.baking ? M.ccpBakingToday(ovenLoads(ccp.baking)) : null, ccp.sealing.length ? M.ccpSealingToday(ccp.sealing.length) : null].filter(Boolean).join(" ")
                   : M.ccpTodayNone}
+                {review && <span className="ml-1 font-medium text-emerald-700">{M.bake.awaitingReview(review.by)}</span>}
               </p>
             </>
           ))}

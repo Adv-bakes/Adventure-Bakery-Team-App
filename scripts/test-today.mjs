@@ -40,7 +40,7 @@ check("mapping: all present", T.checkTodayMapping({
   "FRM-801": ["dispatch_date", "customer", "loaded"],
   "FRM-702": ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"],
   "FRM-301": ["receiving_log"],
-  "FRM-507": ["production_date", "oven_loads"],
+  "FRM-507": ["production_date", "monitored_by", "oven_loads"],
   "FRM-606": ["production_date", "product", "lot_code"],
 }), []);
 check("mapping: renamed and missing", T.checkTodayMapping({ "FRM-903": ["inspection_date"] }).slice(0, 2),
@@ -150,6 +150,29 @@ const lot = (product, lot_code, status = "draft", extra = {}) => entry({ product
   check("ccp today: oven loads with a lot", T.ovenLoads(c.baking), 1);
   check("ccp today: sealing entries", c.sealing.length, 1);
   check("ccp today: none", T.ccpToday(rec(), TODAY), { baking: null, sealing: [] });
+
+  // Baking done, read from the Last load marks (FRM-507 v3). Two flavors share the day's code.
+  const PS = "Rum Cake - Pumpkin Spice", OR = "Rum Cake - Original";
+  const B = "Last load of this batch", L = "Last load of this lot";
+  const bake = (loads, status = "draft", extra = {}) => { const b = rec(); b.baking.push(entry({ production_date: TODAY, oven_loads: loads, ...extra }, status)); return b; };
+  const open = bake([{ product: PS, lot_code: "6281" }, { product: OR, lot_code: "6281" }, { product: PS, lot_code: "6281" }]);
+  check("bake state: loads counted per flavor", [T.bakeState(open, TODAY, PS, "6281"), T.bakeState(open, TODAY, OR, "6281")], [{ loads: 2, done: "open" }, { loads: 1, done: "open" }]);
+  check("bake state: nothing recorded", T.bakeState(rec(), TODAY, PS, "6281"), { loads: 0, done: "open" });
+  const one = bake([{ product: PS, lot_code: "6281", last_load: B }, { product: OR, lot_code: "6281" }]);
+  check("bake state: one flavor finished, the other not", [T.bakeState(one, TODAY, PS, "6281").done, T.bakeState(one, TODAY, OR, "6281").done], ["batch", "open"]);
+  const all = bake([{ product: PS, lot_code: "6281", last_load: B }, { product: OR, lot_code: "62-81", last_load: L }], "draft", { monitored_by: { name: "Tina P", signed_at: "x" } });
+  check("bake state: the last load of the lot finishes every flavor of that code", [T.bakeState(all, TODAY, PS, "6281").done, T.bakeState(all, TODAY, OR, "6281").done], ["lot", "lot"]);
+  check("bake state: another lot code is not finished by it", T.bakeState(all, TODAY, PS, "6282"), { loads: 0, done: "open" });
+  const yesterday = rec(); yesterday.baking.push(entry({ production_date: "2026-10-07", oven_loads: [{ product: PS, lot_code: "6281", last_load: L }] }, "draft"));
+  check("bake state: another day's record does not count", T.bakeState(yesterday, TODAY, PS, "6281"), { loads: 0, done: "open" });
+  const two = rec();
+  two.baking.push(entry({ production_date: TODAY, oven_loads: [{ product: PS, lot_code: "6281" }] }, "draft"));
+  two.baking.push(entry({ production_date: TODAY, oven_loads: [{ product: PS, lot_code: "6281", last_load: B }] }, "submitted"));
+  check("bake state: read across every record of the day", T.bakeState(two, TODAY, PS, "6281"), { loads: 2, done: "batch" });
+  check("awaiting review: last of the lot and signed", T.bakingAwaitingReview(all, TODAY), { by: "Tina P" });
+  check("awaiting review: not while only a batch is finished", T.bakingAwaitingReview(one, TODAY), null);
+  check("awaiting review: not without the operator's signature", T.bakingAwaitingReview(bake([{ product: PS, lot_code: "6281", last_load: L }]), TODAY), null);
+  check("awaiting review: not once submitted", T.bakingAwaitingReview(bake([{ product: PS, lot_code: "6281", last_load: L }], "submitted", { monitored_by: { name: "Tina P" } }), TODAY), null);
 }
 
 // ---- attention ----

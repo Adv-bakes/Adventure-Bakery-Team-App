@@ -424,7 +424,8 @@ for (const [line, want] of esLots) {
   for (const lang of ["en", "es"]) {
     for (const line of V.BAKE_READING_TEXT[lang].card.examples) {
       const r = read(line, lang);
-      check(r.ok && r.temp === 350 && r.minutes === 27 && (/180/.test(line) ? r.probe === 180 : r.probe === undefined), `card line reads back (${lang}): ${line}`, r);
+      const wantLast = /batch|tanda/.test(line) ? "batch" : /\blot\b|lote/.test(line) ? "lot" : undefined;
+      check(r.ok && r.temp === 350 && r.minutes === 27 && (/180/.test(line) ? r.probe === 180 : r.probe === undefined) && r.last === wantLast, `card line reads back (${lang}): ${line}`, r);
     }
   }
 
@@ -498,6 +499,73 @@ for (const [line, want] of esLots) {
     && !e.values.oven_loads[0].oven_temp && !e.values.oven_loads[0].within_limits && e.warnings.length === 0, "a started row carries no readings and no warnings", e.ok && [e.values.oven_loads[0], e.warnings]);
   const f = V.applyVoiceFill(JSON.parse(JSON.stringify(S507_V2).replace("At least 350°F", "At least 360°F")), fresh, started, { userInitials: "TP" });
   check(f.ok && !f.warnings.some(w => w.code === "limits_changed"), "a started row is not checked against the limits");
+}
+
+// ── The last load of the batch, and of the lot (FRM-507 v3) ────────────────────
+{
+  const PS = { product: "Rum Cake - Pumpkin Spice", lot: "6279" };
+  const OR = { product: "Rum Cake - Original", lot: "6279" };
+  const read = (line, lang = "en") => V.parseBakeReading(line, lang);
+  const BATCH = V.LAST_LOAD_VALUES.batch, LOT = V.LAST_LOAD_VALUES.lot;
+
+  const batchLines = [
+    "temperature 350 bake time 27 last load of this batch", "temperature 350, bake time 27, probe 180, last load of the batch",
+    "temperature 350 bake time 27 last load this batch", "temperature 350 bake time 27 final load of this batch",
+    "last load of this batch temperature 350 bake time 27", "temperature 350 for 27 minutes last load of this batch",
+    "temperature 350 bake time 27 last batch",
+  ];
+  for (const line of batchLines) { const r = read(line); check(r.ok && r.temp === 350 && r.minutes === 27 && r.last === "batch", `batch: ${line}`, r); }
+  const lotLines = ["temperature 350 bake time 27 last load of this lot", "temperature 350 bake time 27 last load of the lot", "temperature 350 bake time 27 passed last load of this lot", "temperature 350 bake time 27 final load of the lot"];
+  for (const line of lotLines) { const r = read(line); check(r.ok && r.temp === 350 && r.minutes === 27 && r.last === "lot", `lot: ${line}`, r); }
+  check(read("temperature 350 bake time 27 probe 180 last load of this lot").probe === 180, "the phrase does not disturb the probe reading");
+  check(read("temperature 350 bake time 27").last === undefined, "no phrase, no mark");
+  const esB = read("temperatura 350 tiempo 27 última hornada de esta tanda", "es"), esL = read("temperatura 350 tiempo 27 sonda 180 última hornada del lote", "es");
+  check(esB.ok && esB.last === "batch" && esL.ok && esL.last === "lot" && esL.probe === 180, "Spanish closing phrases", [esB, esL]);
+
+  // The phrase on its own marks the load already recorded.
+  const only = read("last load of this batch"), onlyLot = read("last load of this lot"), onlyEs = read("última hornada del lote", "es");
+  check(!only.ok && only.markOnly && only.last === "batch" && !onlyLot.ok && onlyLot.markOnly && onlyLot.last === "lot" && onlyEs.markOnly && onlyEs.last === "lot", "the phrase alone is a mark, not a reading", [only, onlyLot, onlyEs]);
+  check(V.parseBakeAlternatives(["what was that", "last load of this batch"]).markOnly, "alternatives: a mark beats nothing heard");
+  check(V.parseBakeAlternatives(["last load of this batch", "temperature 350 bake time 27 last load of this batch"]).ok, "alternatives: a whole reading beats a bare mark");
+  const half = read("temperature 350 last load of this batch");
+  check(!half.ok && !half.markOnly && half.missing.join() === "minutes", "a reading cut short is not taken for a bare mark", half);
+
+  // The row.
+  const fill = V.buildBakeFill(PS, read("temperature 350 bake time 27 last load of this batch"), AT);
+  check(fill.row.last_load === BATCH && fill.row.within_limits === "pass" && fill.summary.some(l => l.key === "last_load" && l.value === BATCH), "the mark is on the row and in the summary", fill);
+  check(!("last_load" in V.buildBakeFill(PS, read("temperature 350 bake time 27"), AT).row), "no mark, no cell");
+  const esFill = V.buildBakeFill(PS, esL, AT, "es");
+  check(esFill.row.last_load === LOT, "the record keeps the form's own English option whatever was spoken", esFill.row);
+
+  check(V.hasLastLoadColumn(S507_V2) && !V.hasLastLoadColumn(S507) === false || V.hasLastLoadColumn(S507_V2), "the form on file has the Last load column");
+  const noCol = JSON.parse(JSON.stringify(S507_V2));
+  noCol.sections.flatMap(s => s.fields).find(f => f.id === "oven_loads").columns = noCol.sections.flatMap(s => s.fields).find(f => f.id === "oven_loads").columns.filter(c => c.id !== "last_load");
+  check(!V.hasLastLoadColumn(noCol) && !V.hasLastLoadColumn(null), "an earlier revision has not");
+  const fresh = { ...F.emptyValues(S507_V2, { userInitials: "CR" }), production_date: "2026-09-11" };
+  const a = V.applyVoiceFill(S507_V2, fresh, fill, { userInitials: "TP" });
+  check(a.ok && a.values.oven_loads[0].last_load === BATCH && a.warnings.length === 0, "applied to the form with no warnings", a.ok && [a.values.oven_loads[0], a.warnings]);
+  const old = V.applyVoiceFill(noCol, { ...F.emptyValues(noCol, { userInitials: "CR" }), production_date: "2026-09-11" }, fill, { userInitials: "TP" });
+  check(old.ok && old.warnings.some(w => w.code === "no_column"), "on a revision without the column the mark is refused loudly, not dropped quietly", old.ok && old.warnings);
+
+  // Marks on loads already recorded: two flavors sharing the day's code.
+  const load = (lot, extra = {}) => ({ time_out: "09:00", product: lot.product, lot_code: lot.lot, oven_temp: "350", bake_time: "27", within_limits: "pass", ...extra });
+  const day = { oven_loads: [load(PS, { time_out: "09:00" }), load(OR, { time_out: "09:30" }), load(PS, { time_out: "10:00" })] };
+  const m = V.markLastLoad(day, PS, "batch");
+  check(m.rowIndex === 2 && m.time === "10:00" && m.values.oven_loads.map(r => r.last_load ?? "").join("|") === "||" + BATCH, "the mark goes on that batch's LAST load, not the other flavor's", m);
+  check(day.oven_loads.every(r => !("last_load" in r)), "the values passed in are not changed");
+  check(V.markLastLoad(day, { product: "Coconut Rum Cake", lot: "6279" }, "batch") === null && V.markLastLoad(day, { product: PS.product, lot: "6280" }, "batch") === null && V.markLastLoad({}, PS, "lot") === null, "no load for the batch: nothing to mark");
+  check(V.markLastLoad(day, { product: "rum cake - pumpkin spice", lot: " 62-79 " }, "lot").rowIndex === 2, "product and code are compared loosely");
+
+  const bothDone = V.markLastLoad(V.markLastLoad(day, PS, "batch").values, OR, "lot").values;
+  check(bothDone.oven_loads.map(r => r.last_load ?? "").join("|") === `|${LOT}|${BATCH}`, "one flavor finished, then the lot", bothDone.oven_loads);
+  const reopenPs = V.clearLastLoad(bothDone, PS);
+  check(reopenPs.changed && reopenPs.lotReopened && reopenPs.values.oven_loads.map(r => r.last_load ?? "").join("|") === `|${BATCH}|`, "reopening one flavor: its mark off, the lot no longer finished, the other flavor still is", reopenPs);
+  const reopenOr = V.clearLastLoad(bothDone, OR);
+  check(reopenOr.changed && reopenOr.lotReopened && reopenOr.values.oven_loads.map(r => r.last_load ?? "").join("|") === `||${BATCH}`, "reopening the flavor that closed the lot", reopenOr);
+  const onlyBatch = V.clearLastLoad(V.markLastLoad(day, PS, "batch").values, PS);
+  check(onlyBatch.changed && !onlyBatch.lotReopened, "reopening a batch that never closed the lot withdraws nothing");
+  const none = V.clearLastLoad(day, PS);
+  check(!none.changed && !none.lotReopened && none.values === day, "nothing marked: nothing changed");
 }
 
 console.log(failed ? `\n${failed} FAILED, ${passed} passed` : `\nALL ${passed} PASS`);

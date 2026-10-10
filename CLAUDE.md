@@ -1535,6 +1535,25 @@ check that did not happen.
   answer is left to the person signing. `PROBE_RANGE` starts at 100 so "one eighty" is not read as 81.
   The dialog is opened a tick after the menu item is chosen, or the two fight over focus. Checked on a
   temporary harness route with the database stubbed; the microphone itself is untested from here.
+- **Baking done: the last load of the batch, and of the lot (FRM-507 v3, 2026-10-10, migration `20261010000001`).**
+  The owner's words: a **batch** is one row of the Today page (a product within the day's lot code), the
+  **lot** is the day's lot code, which is also what one FRM-507 covers. Oven loads gained a **Last load**
+  pick-list (`LAST_LOAD_VALUES`: "Last load of this batch" / "Last load of this lot"), filled only on a
+  final load. **"Done" is read back from those marks and stored nowhere else**: `bakeState` (`today.ts`)
+  gives each row `open | batch | lot` from every FRM-507 dated today, and `bakingAwaitingReview` the
+  "finished and signed, waiting for review" line. A finished row's Record bake button is a small green
+  flame (label on hover); its menu still opens. Four ways to mark, all in `BakeLoadButton`: said with the
+  reading ("... last load of this batch" - `parseBakeReading` cuts the phrase out BEFORE reading numbers),
+  said on its own (`markOnly`: marks the load recorded last, `markLastLoad`, never creates a record),
+  chosen in the **Enter the reading** pop-up (three numbers typed, saved from the pop-up with no second
+  summary), or **Baking done...** in the menu. **Last load of this lot** also signs the operator's
+  "Monitored by" line and sends the record to a named reviewer with the existing `requestSignature`
+  (pick-list of admins and owners; the last choice is the person's `bake.reviewer` setting). If the
+  request fails the load is still saved and the toast says to use Request signature. **Baking not
+  finished** (`clearLastLoad`) takes this batch's marks off, turns another product's "of this lot" into
+  "of this batch", and withdraws the review request; the signature is left for the operator to clear.
+  Section 3's "Deviations on this day" is never answered by the app. On a revision without the column
+  (`hasLastLoadColumn`) none of the marks are offered. Seal checks have no equivalent yet.
 - **Record seal check, on a lot's row of the Today page (2026-10-09, `components/team/today/SealCheckButton.tsx`).**
   The sibling of Record bake, with the same rules (menu Speak the check / Open the record; a passed check
   is shown and **Accept** saves it; a failed check saves nothing and opens the record with the row unsaved

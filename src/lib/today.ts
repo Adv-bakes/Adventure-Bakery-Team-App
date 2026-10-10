@@ -20,7 +20,7 @@ export const TODAY_FORMS = {
   dispatches: { form: "FRM-801", fields: ["dispatch_date", "customer"], grids: { loaded: ["product", "lot_code"] } },
   holds:      { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"], grids: {} },
   receipts:   { form: "FRM-301", fields: [], grids: { receiving_log: ["supplier_name", "material_description"] } },
-  baking:     { form: "FRM-507", fields: ["production_date"], grids: { oven_loads: ["lot_code"] } },
+  baking:     { form: "FRM-507", fields: ["production_date", "monitored_by"], grids: { oven_loads: ["lot_code"] } },
   sealing:    { form: "FRM-606", fields: ["production_date", "product", "lot_code"], grids: {} },
 } as const satisfies Record<string, TodaySourceSpec>;
 
@@ -197,6 +197,54 @@ export function ccpToday(records: TodayRecords, today: string): { baking: TodayE
 /** Oven loads recorded on an FRM-507 entry (rows with a lot code). */
 export function ovenLoads(e: TodayEntry | null): number {
   return e ? rowsOf(e, "oven_loads").filter(r => str(r.lot_code)).length : 0;
+}
+
+/** FRM-507's Last load options (v3). The same two strings voiceCommands.ts writes. */
+const LAST_OF_BATCH = "Last load of this batch";
+const LAST_OF_LOT = "Last load of this lot";
+
+export interface BakeState {
+  /** Oven loads recorded today for this batch (product + lot code). */
+  loads: number;
+  /** "batch": this product's baking is finished. "lot": all the day's baking for the lot code is. */
+  done: "open" | "batch" | "lot";
+}
+
+/**
+ * How far the baking of one batch has got today, read from every FRM-507 dated today - whoever
+ * started it, draft or submitted. Derived from the Last load marks on the oven loads and stored
+ * nowhere else: a batch is done when one of its loads carries a mark, or when any load of the
+ * same lot code says it was the last of the lot.
+ */
+export function bakeState(records: TodayRecords, today: string, product: string, lot: string): BakeState {
+  let loads = 0;
+  let batch = false;
+  let whole = false;
+  for (const e of records.baking) {
+    if (day(e.data.production_date) !== today) continue;
+    for (const r of rowsOf(e, "oven_loads")) {
+      if (!normLot(lot) || normLot(r.lot_code) !== normLot(lot)) continue;
+      if (str(r.last_load) === LAST_OF_LOT) whole = true;
+      if (!sameProduct(r.product, product)) continue;
+      loads++;
+      if (str(r.last_load) === LAST_OF_BATCH || str(r.last_load) === LAST_OF_LOT) batch = true;
+    }
+  }
+  return { loads, done: whole ? "lot" : batch ? "batch" : "open" };
+}
+
+/**
+ * Who has signed today's baking record as the operator, once a load is marked the last of its lot:
+ * the record is then finished at the oven and waiting for its reviewer. Null until both are true.
+ */
+export function bakingAwaitingReview(records: TodayRecords, today: string): { by: string } | null {
+  for (const e of records.baking) {
+    if (day(e.data.production_date) !== today || isSubmitted(e)) continue;
+    if (!rowsOf(e, "oven_loads").some(r => str(r.last_load) === LAST_OF_LOT)) continue;
+    const name = str(e.data.monitored_by?.name);
+    if (name) return { by: name };
+  }
+  return null;
 }
 
 // ---------- Attention ----------
