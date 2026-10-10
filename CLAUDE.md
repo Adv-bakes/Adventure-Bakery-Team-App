@@ -1407,6 +1407,11 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
   key: the entry must stay readable after the formula is revised.
 - The same product name must be used on FRM-501, FRM-520 and the release record: the lot trace and
   the release helper match by product name ("Rum Cake - Original").
+- **FRM-501 carries the product's bar code number** (`barcode_number`, Section 1, optional; owner's
+  request 2026-10-10, migration `20261010000004`). It is what FRM-520's first-pack check is to compare
+  the bar code on the pack with, when filled in - that comparison is NOT built yet. The revision was
+  deliberately left at "New": every formula sheet is an open draft pinned to that revision, and a new
+  revision would show them the old layout without the field.
 - Not built: picking the formula from the Product field itself, scaling for a part batch, and
   creating a batch sheet from an FRM-501 entry.
 - The batch sheet list page (`/team/operations/batch-sheets`) had a route but no sidebar link until
