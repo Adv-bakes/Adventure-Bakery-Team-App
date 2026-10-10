@@ -159,7 +159,8 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
   const take = (r: BakeReading, direct: boolean) => {
     setReading(r);
     if (r.markOnly && r.last) { setPending({ fill: null, last: r.last, transcript: r.transcript }); return; }
-    if (!r.ok) { setPending(null); return; }
+    // Not understood: what was heard goes into the box, so a small correction is enough.
+    if (!r.ok) { setPending(null); setTyped(r.transcript); return; }
     const f = buildBakeFill({ product, lot }, r, new Date(), lang);
     const p: Pending = { fill: f, last: r.last, transcript: r.transcript };
     // A deviation is never accepted from a summary: it goes to the record, with Section 3.
