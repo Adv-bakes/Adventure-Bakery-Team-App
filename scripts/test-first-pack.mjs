@@ -108,6 +108,13 @@ check("the line names the approved label", said("label", { decodedBarcode: "8500
 check("...or says the label review is still a draft", said("label_draft", { decodedBarcode: "850012345999" }).includes("the label review (FRM-601, still a draft) says 850012345678"), true);
 check("...or the formula sheet, as before", said(undefined, { decodedBarcode: "850012345678" }), "Bar code matches the formula sheet: 850012345678 (scanned).");
 
+// ---- the best-by date a later record can take from the photo (FRM-703's printed date)
+check("the date as read, from a photo that matched", T.bestByFromPackNotes([T.packNote(good)]), "October 2027");
+check("with a day and a comma, word for word", T.bestByFromPackNotes([T.packNote(T.checkFirstPack(REC, { best_by: "Oct. 15, 2027" }))]), "Oct. 15, 2027");
+check("a wrong or unread date is never handed on", [T.bestByFromPackNotes([T.packNote(wrong)]), T.bestByFromPackNotes([T.packNote(blur)]), T.bestByFromPackNotes([])], ["", "", ""]);
+check("the newest matching photo, past other attachments", T.bestByFromPackNotes([T.packNote(T.checkFirstPack(REC, { best_by: "OCT 2027" })), "Label photo", T.packNote(good), "a delivery note"]), "October 2027");
+check("a newer photo with no date read falls back to the one that matched", T.bestByFromPackNotes([T.packNote(good), T.packNote(blur)]), "October 2027");
+
 // ---- the form it runs on
 const schema = { sections: [{ id: "lot", fields: [{ id: "product" }, { id: "lot_code" }, { id: "bake_date" }] },
   { id: "packing", fields: [{ id: "code_check", options: ["Matches the lot code above", "Did not match - held on FRM-702"] }, { id: "code_checked_by" }] }] };

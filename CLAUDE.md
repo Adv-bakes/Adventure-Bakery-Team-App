@@ -1541,7 +1541,16 @@ the entry starts from the **lot code** (what is printed on the pack) and looks t
   ticked when its record is submitted, amber while a draft, "none" when there is no record; choosing it
   opens the record (the first draft, else the newest). FRM-703 and FRM-701 are STARTED from the menu with
   lot and product filled in; a missing production record is never created after the fact. Wording in
-  `TODAY_MSG.releaseSteps`.
+  `TODAY_MSG.releaseSteps`. **The retention sample starts with what the records can answer**
+  (`src/lib/retentionStart.ts`, owner's request 2026-10-10): the bar code digits (the product's recorded
+  number), the customer (last release, else specification, else approved label - `releaseFill`), the
+  best-by date and the discard date. The best-by is what the lot's FIRST-PACK PHOTO read off the pack
+  and found correct, word for word (`bestByFromPackNotes`), because FSQM-014 anchors retention to the
+  date PRINTED on the pack; with no matching photo it is the month the pack must print (bake date + 12
+  months). The discard date is the form's OWN `derive` rule applied to it (`deriveDateValue`: thirty
+  days, from the last day of the month for a month-only code - "October 2027" gives 2027-11-30), never a
+  second rule. A sample already started and still a draft gets only its BLANK answers filled when it
+  is opened from the menu (saved before it opens; nothing typed is touched).
 - **`applyReleaseFill` writes a cell only if it is empty or still holds what the helper last wrote**,
   so changing the lot updates looked-up cells, clears ones with nothing behind them, and leaves
   typing alone. On a reopened entry `autoFromFill` recognises the helper's earlier cells by value.
