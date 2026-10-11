@@ -247,7 +247,7 @@ function FormSuggestInput({ spec, control, ...rest }: {
   // `match`: the list follows another answer of this form (the versions of the product chosen).
   const other = useWatch({ control, name: spec.match?.to ?? "__no_match__" });
   const options = useMemo<SuggestOption[]>(
-    () => suggestValuesFromRows(spec.field, rows, spec.match ? { field: spec.match.field, value: other } : undefined).map(value => ({ value })),
+    () => suggestValuesFromRows(spec.field, rows, spec.match ? { field: spec.match.field, value: other } : undefined, spec.template).map(value => ({ value })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows, key, other],
   );

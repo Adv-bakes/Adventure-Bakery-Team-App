@@ -88,6 +88,11 @@ export interface TextField     extends FieldBase {
   suggestFrom?: {
     form: string; field: string; drafts?: boolean; match?: { field: string; to: string };
     grid?: string; where?: { column: string; equals: string }; current?: boolean;
+    /**
+     * What is offered, built from the entry: "FRM-501 {formula_version}" offers "FRM-501 v1". Each
+     * {key} is that entry's (or row's) answer. An entry with no `field` still offers nothing.
+     */
+    template?: string;
   };
   /**
    * Offer the names in the team directory (FRM-952's employee name) - the scalar twin of

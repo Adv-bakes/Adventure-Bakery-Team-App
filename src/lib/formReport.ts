@@ -269,8 +269,8 @@ export async function loadPickOptions(spec: GridPickFrom): Promise<PickOption[]>
  * The type-ahead list of a text field fed by another form (TextField.suggestFrom). Submitted
  * entries, and drafts too when the field asks for them; practice rows are left out.
  */
-export async function loadSuggestValues(spec: { form: string; field: string; drafts?: boolean }): Promise<string[]> {
-  return suggestValuesFromRows(spec.field, await loadSuggestRows(spec));
+export async function loadSuggestValues(spec: { form: string; field: string; drafts?: boolean; template?: string }): Promise<string[]> {
+  return suggestValuesFromRows(spec.field, await loadSuggestRows(spec), undefined, spec.template);
 }
 
 /** The entries a type-ahead reads, for a list that is narrowed on screen (`suggestFrom.match`). */
