@@ -94,6 +94,20 @@ check("an empty cell with nothing to offer is left alone", T.pickFills(rum, null
   check("a product with no formula sheet", of("Rum Cake - Coconut"), []);
 }
 
+// ---------- the same list read from the rows of a table (suggestFrom.grid): customers on FRM-011 ----------
+{
+  const CUST = { grid: "contacts", where: { column: "group", equals: "Customer (brand owner)" }, current: true, drafts: true };
+  const row = (_label, group = "Customer (brand owner)") => ({ _label, group, name: "A person", phone: "1" });
+  const list = (status, ...rows) => ({ status, data: { contacts: rows } });
+  const names = entries => T.suggestValuesFromRows("_label", T.gridSuggestRows(CUST, entries));
+  check("only the customer rows, by the row's own name", names([list("submitted", row("SQFI", "SQF"), row("Bahama Rum Cakes"), row("Cookies R Us"), row("Landlord", "Utility / landlord"))]), ["Bahama Rum Cakes", "Cookies R Us"]);
+  check("the current list is the newest SUBMITTED one, even under a newer draft", names([list("draft", row("Draft Only Co")), list("submitted", row("Bahama Rum Cakes")), list("submitted", row("Old Customer"))]), ["Bahama Rum Cakes"]);
+  check("until one is submitted, the newest draft", names([list("draft", row("Bahama Rum Cakes")), list("draft", row("Older Draft Co"))]), ["Bahama Rum Cakes"]);
+  check("drafts not read unless the field says so", T.gridSuggestRows({ ...CUST, drafts: false }, [list("draft", row("Bahama Rum Cakes"))]), []);
+  check("without `current`, every entry's rows", T.suggestValuesFromRows("_label", T.gridSuggestRows({ ...CUST, current: false }, [list("draft", row("B Co")), list("submitted", row("A Co"))])), ["A Co", "B Co"]);
+  check("no list, a list with no table, a blank name", [names([]), names([{ status: "submitted", data: {} }]), names([list("submitted", row(""), row("  "))])], [[], [], []]);
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} checks failed`); process.exit(1); }
 console.log(`pick from: ${cases} checks passed`);

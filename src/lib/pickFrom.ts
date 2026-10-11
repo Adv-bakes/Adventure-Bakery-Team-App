@@ -86,3 +86,28 @@ export function suggestValuesFromRows(field: string, rows: Record<string, any>[]
   }
   return out.sort((a, b) => a.localeCompare(b));
 }
+
+/**
+ * `suggestFrom.grid`: the rows of a table inside the source form, flattened so the list is built
+ * from them exactly as it is from top-level answers. `entries` are newest first. With `current`,
+ * only the register's current entry is read: the newest submitted one, else the newest draft
+ * (when drafts are read at all). `where` keeps the rows whose column equals the value given.
+ */
+export function gridSuggestRows(
+  spec: { grid: string; drafts?: boolean; current?: boolean; where?: { column: string; equals: string } },
+  entries: { status?: string; data?: Record<string, any> | null }[],
+): Record<string, any>[] {
+  const usable = entries.filter(e => spec.drafts || e.status === "submitted");
+  const read = spec.current ? [usable.find(e => e.status === "submitted") ?? usable[0]].filter(Boolean) : usable;
+  const rows: Record<string, any>[] = [];
+  for (const e of read) {
+    const grid = e!.data?.[spec.grid];
+    if (!Array.isArray(grid)) continue;
+    for (const row of grid) {
+      if (!row || typeof row !== "object") continue;
+      if (spec.where && text(row[spec.where.column]) !== spec.where.equals) continue;
+      rows.push(row);
+    }
+  }
+  return rows;
+}

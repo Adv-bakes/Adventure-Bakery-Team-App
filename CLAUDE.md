@@ -527,6 +527,17 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   (`suggestValuesFromRows(field, rows, match)`; the rows load once, the narrowing is on screen). First
   use: FRM-601's Linked Formula Version = the Formula Version of the formula sheets of the Product Name
   entered above it (migration `20261010000008`, no revision change).
+  **`suggestFrom.grid`** reads the list from the ROWS of a table inside the source form (`field` is then
+  the row key, `_label` for a register row's own name; `where: { column, equals }` filters rows;
+  `current: true` reads only the register's current entry - newest submitted, else newest draft).
+  Pure half `gridSuggestRows` (`pickFrom.ts`), which flattens the rows so the rest is unchanged.
+  **The customer name is offered from the contact list, FRM-011** (owner, 2026-10-10, migration
+  `20261010000009`): the rows grouped "Customer (brand owner)" (`CUSTOMER_GROUP` in `lotTrace.ts` - the
+  recall trace matches dispatch customers against the same rows BY NAME, which is why this is the
+  source). On FRM-002 Customer Name, FRM-012 Customer / brand owner, FRM-601 and FRM-704 Customer /
+  Brand, FRM-701, FRM-703 and FRM-801 Customer. An offer, not a closed list; empty until FRM-011 has an
+  entry. The owner finds FRM-011 a non-obvious home and may rename it (its title is cited in FSQM-011,
+  FSQM-023, FSQM-024 and draft FSQM-025); he did not want a new form or table for customers.
   ⚠️ Not the same thing as the grid's `suggestFrom` below (a grey
   suggested NUMBER in a cell) - same word, different types, different jobs.
 - **Suggested cell values (`GridColumn.suggestFrom`):** `{ column, times? }` on a number column shows, while

@@ -10,7 +10,7 @@
 // Distinct from Records.tsx / flattenForReport(), which flatten a form's OWN
 // entries; here the report reprojects a *different* form's data.
 
-import { pickOptionsFromRows, suggestValuesFromRows, type PickOption } from "./pickFrom";
+import { gridSuggestRows, pickOptionsFromRows, suggestValuesFromRows, type PickOption } from "./pickFrom";
 import { BAKE_TARGET_SOURCE, bakeTargets, type BakeTargets } from "./bakeTargets";
 import type { GridPickFrom } from "./formSchema";
 import { supabase } from "@/integrations/supabase/client";
@@ -274,12 +274,14 @@ export async function loadSuggestValues(spec: { form: string; field: string; dra
 }
 
 /** The entries a type-ahead reads, for a list that is narrowed on screen (`suggestFrom.match`). */
-export async function loadSuggestRows(spec: { form: string; drafts?: boolean }): Promise<Record<string, any>[]> {
+export async function loadSuggestRows(spec: {
+  form: string; drafts?: boolean; grid?: string; where?: { column: string; equals: string }; current?: boolean;
+}): Promise<Record<string, any>[]> {
   const doc = await fetchSourceForm(spec.form);
   if (!doc) return [];
-  return (await fetchResponses(doc.id))
-    .filter(r => (spec.drafts || r.status === "submitted") && !(r.data && "_test_batch" in r.data))
-    .map(r => r.data ?? {});
+  const entries = (await fetchResponses(doc.id)).filter(r => !(r.data && "_test_batch" in r.data));   // newest first
+  if (spec.grid) return gridSuggestRows({ ...spec, grid: spec.grid }, entries);
+  return entries.filter(r => spec.drafts || r.status === "submitted").map(r => r.data ?? {});
 }
 
 /**
