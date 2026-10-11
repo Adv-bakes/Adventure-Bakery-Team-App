@@ -38,11 +38,10 @@ import { TemperatureReviewFill } from "@/components/team/forms/TemperatureReview
 import { isPdfFile, renderPdfPages } from "@/lib/clientDocRead";
 import { CalibrationSummary } from "@/components/team/forms/CalibrationSummary";
 import { FirstPackCheck, firstPackNotes } from "@/components/team/forms/FirstPackCheck";
-import { FIRST_PACK, checkFirstPack, firstPackReady, packNote, type PackLine } from "@/lib/firstPackCheck";
-import { decodeBarcode } from "@/lib/barcodeDecode";
+import { FIRST_PACK, firstPackReady, type PackLine } from "@/lib/firstPackCheck";
+import { photographFirstPack } from "@/lib/firstPackPhoto";
 import { PackCountLine } from "@/components/team/forms/PackCountLine";
 import { PACK_COUNTS, packCounts, packCountsReady } from "@/lib/packCounts";
-import { loadProductBarcode } from "@/lib/formReport";
 import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatureReview";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
@@ -545,28 +544,13 @@ export default function FormEntry() {
   const firstPack = canEdit && doc?.sop_number === FIRST_PACK.form && firstPackReady(schema);
   const checkFirstPackPhoto = async (file: File): Promise<PackLine[] | null> => {
     if (!response) return null;
-    let kept = false;
     try {
-      const uploaded = await uploadResponseAttachment(response.id, file);
-      const withPhoto = await saveResponseAttachments(response.id, [...(response.attachments ?? []), { ...uploaded, note: FIRST_PACK.notePrefix }]);
-      setResponse(withPhoto); // adopt the fresh updated_at, as the other scans do
-      kept = true;
-      const v = form.getValues() as Record<string, unknown>;
-      const [result, decodedBarcode, barcode] = await Promise.all([
-        getResponseAttachmentUrl(uploaded.path).then(url => extractPackageLabel([url], ["product_name", "lot_code", "best_by", "barcode"], "finished_goods")),
-        decodeBarcode(file),
-        loadProductBarcode(String(v[FIRST_PACK.product] ?? "")),
-      ]);
-      const lines = checkFirstPack(
-        { product: String(v[FIRST_PACK.product] ?? ""), lot: String(v[FIRST_PACK.lot] ?? ""), bakeDate: String(v[FIRST_PACK.bakeDate] ?? ""), barcode },
-        { ...result.facts, decodedBarcode },
-      );
-      const noted = await saveResponseAttachments(response.id, (withPhoto.attachments ?? []).map(a =>
-        a.path === uploaded.path ? { ...a, note: packNote(lines) } : a));
-      setResponse(noted);
-      return lines;
+      const res = await photographFirstPack(response, file, form.getValues() as Record<string, unknown>);
+      setResponse(res.response); // adopt the fresh updated_at, as the other scans do
+      if (res.error) toast.error(`${res.error} - the photo itself was kept on the record.`);
+      return res.lines;
     } catch (e: any) {
-      toast.error(`${e.message ?? "The photo could not be read"}${kept ? " - the photo itself was kept on the record." : ""}`);
+      toast.error(e.message ?? "The photo could not be saved");
       return null;
     }
   };

@@ -33,6 +33,7 @@ import {
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 import { BakeLoadButton } from "@/components/team/today/BakeLoadButton";
 import { SealCheckButton } from "@/components/team/today/SealCheckButton";
+import { PackingButton } from "@/components/team/today/PackingButton";
 
 const LANG_KEY = "today.lang";
 type Doc = { id: string; sop_number: string; revision: string | null; content: any };
@@ -301,6 +302,13 @@ export default function Today() {
                               doc={docOf("sealing")!} lot={l.lotCode} product={l.product} today={today}
                               state={sealState(records!, today, l.product, l.lotCode)}
                               lang={lang} disabled={!open} onSaved={load}
+                            />
+                          )}
+                          {/* Packing is on the lot's own record: the first pack from a photo, and the counts. */}
+                          {canVoice && docOf("lots") && l.lotCode && l.product && (
+                            <PackingButton
+                              doc={docOf("lots")!} entryId={l.id} lot={l.lotCode} product={l.product} today={today}
+                              state={l.packing} lang={lang} disabled={!open} onSaved={load}
                             />
                           )}
                           <Button asChild size="sm" variant="outline" disabled={!open}>
