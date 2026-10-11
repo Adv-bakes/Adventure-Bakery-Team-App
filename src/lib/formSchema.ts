@@ -78,8 +78,17 @@ export interface TextField     extends FieldBase {
    * entries whose `match.field` equals this form's top-level field `match.to` are offered, and
    * while that answer is blank nothing is offered (FRM-601's Linked Formula Version: the versions
    * of the formula sheets of the product chosen above it).
+   *
+   * `grid` reads the values from the ROWS of a table inside the source form instead of its
+   * top-level answers: `field` is then the row key (`_label` for a register row's own name),
+   * `where` keeps only the rows whose `column` equals `equals`, and `current` reads only the
+   * register's current entry - the newest submitted one, else the newest draft - for a form
+   * that is one list re-issued over time (the customers on the contact list, FRM-011).
    */
-  suggestFrom?: { form: string; field: string; drafts?: boolean; match?: { field: string; to: string } };
+  suggestFrom?: {
+    form: string; field: string; drafts?: boolean; match?: { field: string; to: string };
+    grid?: string; where?: { column: string; equals: string }; current?: boolean;
+  };
   /**
    * Offer the names in the team directory (FRM-952's employee name) - the scalar twin of
    * GridColumn.teamPick. `titleField` names another top-level text field that is filled with
