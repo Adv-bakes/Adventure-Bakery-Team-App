@@ -536,8 +536,9 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   recall trace matches dispatch customers against the same rows BY NAME, which is why this is the
   source). On FRM-002 Customer Name, FRM-012 Customer / brand owner, FRM-601 and FRM-704 Customer /
   Brand, FRM-701, FRM-703 and FRM-801 Customer. An offer, not a closed list; empty until FRM-011 has an
-  entry. The owner finds FRM-011 a non-obvious home and may rename it (its title is cited in FSQM-011,
-  FSQM-023, FSQM-024 and draft FSQM-025); he did not want a new form or table for customers.
+  entry. Because that is a non-obvious home, **FRM-011 was renamed "Customer, Recall and Crisis Contact
+  List"** (v2, migration `20261010000010`, with its title corrected in the Linked forms of FSQM-011 v3,
+  FSQM-023 v2, FSQM-024 v2 and draft FSQM-025); the owner did not want a new form or table for customers.
   ⚠️ Not the same thing as the grid's `suggestFrom` below (a grey
   suggested NUMBER in a cell) - same word, different types, different jobs.
 - **Suggested cell values (`GridColumn.suggestFrom`):** `{ column, times? }` on a number column shows, while

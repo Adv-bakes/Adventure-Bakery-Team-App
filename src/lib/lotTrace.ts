@@ -388,7 +388,7 @@ export function runTrace(records: TraceRecords, start: TraceStart): TraceResult 
   // Contacts
   const list = latestContacts(records);
   const rows = contactRows(list);
-  if (!list) gaps.push("No Recall and Crisis Contact List (FRM-011) has been filled in.");
+  if (!list) gaps.push("No Customer, Recall and Crisis Contact List (FRM-011) has been filled in.");
   else {
     result.contactList = { ...ref("contacts", list, `contact list ${str(list.data.reviewed_on) || day(list.date)}`), reviewedOn: str(list.data.reviewed_on) };
     if (isDraft(list)) gaps.push("The contact list (FRM-011) is a draft that was never submitted.");
