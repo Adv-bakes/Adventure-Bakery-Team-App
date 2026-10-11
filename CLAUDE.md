@@ -1543,7 +1543,8 @@ the entry starts from the **lot code** (what is printed on the pack) and looks t
   lot and product filled in; a missing production record is never created after the fact. Wording in
   `TODAY_MSG.releaseSteps`. **The retention sample starts with what the records can answer**
   (`src/lib/retentionStart.ts`, owner's request 2026-10-10): the bar code digits (the product's recorded
-  number), the customer (last release, else specification, else approved label - `releaseFill`), the
+  number), the customer (last release, else specification, else approved label, else a label review
+  still in DRAFT - `releaseFill`; a blank customer on an earlier record is skipped, not taken), the
   best-by date and the discard date. The best-by is what the lot's FIRST-PACK PHOTO read off the pack
   and found correct, word for word (`bestByFromPackNotes`), because FSQM-014 anchors retention to the
   date PRINTED on the pack; with no matching photo it is the month the pack must print (bake date + 12
