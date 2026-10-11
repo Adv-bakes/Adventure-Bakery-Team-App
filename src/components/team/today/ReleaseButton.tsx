@@ -7,7 +7,9 @@
 //
 // Every state is read from the records (releaseSteps in today.ts) and nothing is stored: a step is
 // ticked when its record is submitted, amber when it is still a draft to review, and "none yet"
-// when there is no record. Choosing a step opens that record. The retention sample and the release
+// when there is no record. THE RETENTION SAMPLE IS THE EXCEPTION: its record stays a draft for as
+// long as the sample is on the shelf, so it is ticked once "Sample taken by" is signed.
+// Choosing a step opens that record. The retention sample and the release
 // record are STARTED from here when there is none, with the lot and product filled in - on the
 // release record that is what lets the helper look the rest up without picking the lot again.
 // The retention sample is also started with what the records can answer (retentionStart.ts): the
@@ -83,7 +85,9 @@ export function ReleaseButton({ lot, steps, docs, lang }: {
       ? <AlertTriangle className="w-4 h-4 mr-2 text-amber-600 shrink-0" />
       : <CircleDashed className="w-4 h-4 mr-2 opacity-60 shrink-0" />;
   const startable = (k: ReleaseStepKey) => k === "retention" || k === "release";
-  const status = (s: ReleaseStep) => s.state === "done" ? R.done : s.state === "open" ? R.open : startable(s.key) ? R.start : R.none;
+  const status = (s: ReleaseStep) => s.sample
+    ? (s.sample.stage === "started" ? R.sampleStarted : s.sample.stage === "on_shelf" ? R.sampleOnShelf(s.sample.discardDue) : R.sampleDisposed)
+    : s.state === "done" ? R.done : s.state === "open" ? R.open : startable(s.key) ? R.start : R.none;
   const ready = steps.slice(0, -1).every(s => s.state === "done");
 
   return (

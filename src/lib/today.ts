@@ -22,7 +22,7 @@ export const TODAY_FORMS = {
   receipts:   { form: "FRM-301", fields: [], grids: { receiving_log: ["supplier_name", "material_description"] } },
   baking:     { form: "FRM-507", fields: ["production_date", "monitored_by"], grids: { oven_loads: ["lot_code"] } },
   sealing:    { form: "FRM-606", fields: ["production_date", "product", "lot_code", "monitored_by"], grids: { seal_checks: ["check"] } },
-  retention:  { form: "FRM-703", fields: ["product_name", "lot_code"], grids: {} },
+  retention:  { form: "FRM-703", fields: ["product_name", "lot_code", "taken_by", "discard_due"], grids: {} },
 } as const satisfies Record<string, TodaySourceSpec>;
 
 export type TodayKind = keyof typeof TODAY_FORMS;
@@ -321,7 +321,27 @@ export function attentionCounts(
 
 export type ReleaseStepKey = "lot" | "baking" | "sealing" | "retention" | "release";
 /** "done" = the record is submitted; "open" = a draft to finish or review; "none" = no record found. */
-export interface ReleaseStep { key: ReleaseStepKey; state: "done" | "open" | "none"; entryId?: string; docId?: string }
+export interface ReleaseStep {
+  key: ReleaseStepKey; state: "done" | "open" | "none"; entryId?: string; docId?: string;
+  /** The retention sample only: where it stands, and when it is due to be discarded. */
+  sample?: { stage: "started" | "on_shelf" | "disposed"; discardDue: string };
+}
+
+/**
+ * A retention sample's record (FRM-703) is KEPT AS A DRAFT for as long as the sample is on the
+ * shelf and submitted only when it is disposed of - so for this one form a draft is not "still to
+ * do". The sample is logged once its "Sample taken by" line is signed; that signature is the
+ * interim state, read from the record like everything else here.
+ */
+function retentionStep(entries: TodayEntry[]): ReleaseStep {
+  if (entries.length === 0) return { key: "retention", state: "none" };
+  const signed = (e: TodayEntry) => !!str(e.data.taken_by?.signed_at);
+  // A sample on the shelf speaks for the lot before one already disposed of, and that before one only started.
+  const rank = (e: TodayEntry) => (isSubmitted(e) ? 1 : signed(e) ? 0 : 2);
+  const e = [...entries].sort((a, b) => rank(a) - rank(b) || when(b).localeCompare(when(a)))[0];
+  const stage = isSubmitted(e) ? "disposed" : signed(e) ? "on_shelf" : "started";
+  return { key: "retention", state: stage === "started" ? "open" : "done", entryId: e.id, docId: e.docId, sample: { stage, discardDue: day(e.data.discard_due) } };
+}
 
 /**
  * What stands between a lot and its release, read from the records and stored nowhere: the lot
@@ -343,7 +363,7 @@ export function releaseSteps(records: TodayRecords, lot: LotSummary): ReleaseSte
     { key: "lot", state: lot.status === "submitted" ? "done" : "open", entryId: lot.id, docId: lot.docId },
     step("baking", baking),
     step("sealing", records.sealing.filter(e => mine(e.data.product, e.data.lot_code))),
-    step("retention", records.retention.filter(e => mine(e.data.product_name, e.data.lot_code))),
+    retentionStep(records.retention.filter(e => mine(e.data.product_name, e.data.lot_code))),
     step("release", records.releases.filter(e => mine(e.data.product_name, e.data.lot_code))),
   ];
 }

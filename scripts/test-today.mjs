@@ -42,7 +42,7 @@ check("mapping: all present", T.checkTodayMapping({
   "FRM-301": ["receiving_log"],
   "FRM-507": ["production_date", "monitored_by", "oven_loads"],
   "FRM-606": ["production_date", "product", "lot_code", "monitored_by", "seal_checks"],
-  "FRM-703": ["product_name", "lot_code"],
+  "FRM-703": ["product_name", "lot_code", "taken_by", "discard_due"],
 }), []);
 check("mapping: renamed and missing", T.checkTodayMapping({ "FRM-903": ["inspection_date"] }).slice(0, 2),
   ['FRM-903 no longer has "shift"', 'FRM-903 no longer has "area_line"']);
@@ -228,9 +228,20 @@ check("attention counts", T.attentionCounts([
   check("steps: a second seal record still a draft is the one to open", [states()[2], T.releaseSteps(r, mine())[2].entryId], ["sealing:open", r.sealing[2].id]);
   r.retention.push(entry({ product_name: O, lot_code: "6279" }));
   check("steps: another product's retention sample is not this lot's", states()[3], "retention:none");
-  r.retention.push(entry({ product_name: P, lot_code: "6279" }));
+  // FRM-703 stays a DRAFT while the sample is on the shelf: signed "Sample taken by" is what logs it.
+  const sample = () => T.releaseSteps(r, mine())[3];
+  r.retention.push(entry({ product_name: P, lot_code: "6279", taken_by: null, discard_due: "" }, "draft"));
+  check("retention: started, not signed yet", [sample().state, sample().sample], ["open", { stage: "started", discardDue: "" }]);
+  r.retention[1].data.taken_by = { name: "Diana Lopez", signed_at: "2026-10-10T15:00:00Z" };
+  r.retention[1].data.discard_due = "2027-11-30";
+  check("retention: signed draft = on the shelf, and done for the release", [sample().state, sample().sample], ["done", { stage: "on_shelf", discardDue: "2027-11-30" }]);
+  r.retention.push(entry({ product_name: P, lot_code: "6279", taken_by: null }, "draft"));
+  check("retention: a second record only started does not hide the one on the shelf", [sample().sample.stage, sample().entryId], ["on_shelf", r.retention[1].id]);
+  r.retention.pop();
   r.releases.push(entry({ product_name: P, lot_code: "6279", decision: "" }, "draft"));
   check("steps: sample logged, release started", states(), ["lot:done", "baking:done", "sealing:open", "retention:done", "release:open"]);
+  r.retention[1].status = "submitted";
+  check("retention: submitted = disposed of, still done", [sample().state, sample().sample.stage], ["done", "disposed"]);
   check("steps: a load with no product named is counted for the lot", (() => {
     const q = rec(); q.lots.push(lot(P, "6279", "submitted")); q.baking.push(entry({ production_date: "2026-10-06", oven_loads: [{ lot_code: "6279" }] }));
     return T.releaseSteps(q, T.lotSummaries(q)[0])[1].state; })(), "done");
