@@ -79,6 +79,19 @@ check("an empty cell with nothing to offer is left alone", T.pickFills(rum, null
   ];
   check("distinct product names, sorted", T.suggestValuesFromRows("product_name", sheets), ["Iker Empanada", "Rum Cake - Original", "Rum Cake - Pumpkin Spice"]);
   check("no entries, no list", T.suggestValuesFromRows("product_name", []), []);
+
+  // `match`: the versions of the formula sheets of the product chosen on the form (FRM-601).
+  const versions = [
+    { product_name: "Rum Cake - Original", formula_version: "v2" }, { product_name: "Rum Cake - Original", formula_version: "v1" },
+    { product_name: "rum cake - original ", formula_version: "V1" }, { product_name: "Rum Cake - Pumpkin Spice", formula_version: "v1" },
+    { product_name: "Rum Cake - Pumpkin Spice", formula_version: "" }, { product_name: "", formula_version: "v9" },
+  ];
+  const of = value => T.suggestValuesFromRows("formula_version", versions, { field: "product_name", value });
+  check("the chosen product's versions only", of("Rum Cake - Original"), ["v1", "v2"]);
+  check("compared without case or stray spaces", of(" rum cake - ORIGINAL"), ["v1", "v2"]);
+  check("another product", of("Rum Cake - Pumpkin Spice"), ["v1"]);
+  check("no product chosen, nothing offered", [of(""), of(undefined), of("  ")], [[], [], []]);
+  check("a product with no formula sheet", of("Rum Cake - Coconut"), []);
 }
 
 rmSync(out, { recursive: true, force: true });

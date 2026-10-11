@@ -73,8 +73,13 @@ export interface TextField     extends FieldBase {
    * text after a choice (FRM-903's Product / batch run: the product from the formula sheets,
    * FRM-501, then a batch number typed after it). `drafts` also offers entries not yet submitted,
    * for a register whose entries are kept as drafts.
+   *
+   * `match` narrows the list to the entries that agree with another answer of THIS form: only
+   * entries whose `match.field` equals this form's top-level field `match.to` are offered, and
+   * while that answer is blank nothing is offered (FRM-601's Linked Formula Version: the versions
+   * of the formula sheets of the product chosen above it).
    */
-  suggestFrom?: { form: string; field: string; drafts?: boolean };
+  suggestFrom?: { form: string; field: string; drafts?: boolean; match?: { field: string; to: string } };
   /**
    * Offer the names in the team directory (FRM-952's employee name) - the scalar twin of
    * GridColumn.teamPick. `titleField` names another top-level text field that is filled with

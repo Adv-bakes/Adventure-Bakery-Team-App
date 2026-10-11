@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useWatch, type Control } from "react-hook-form";
 import { format, parseISO } from "date-fns";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { deriveDateValue, deriveTextValue, julianLotCode, nextDerivedFill } from "@/lib/formSchema";
-import { loadSelectOptions, loadSuggestValues } from "@/lib/formReport";
+import { loadSelectOptions, loadSuggestRows } from "@/lib/formReport";
+import { suggestValuesFromRows } from "@/lib/pickFrom";
 import { fetchFormLinkTarget, type FormLinkTarget } from "@/lib/formResponses";
 import { ExternalLink } from "lucide-react";
 import { DocRefText, loadDocIndex } from "./DocRefText";
@@ -231,17 +232,25 @@ function DocPickInput({ prefixes, ...rest }: {
  * the field is first shown; until it answers, or if it cannot be read, the field is an ordinary
  * text box. Nothing is looked up from the choice - it only saves typing - so more text can follow it.
  */
-function FormSuggestInput({ spec, ...rest }: {
+function FormSuggestInput({ spec, control, ...rest }: {
   spec: NonNullable<TextField["suggestFrom"]>;
+  control: Control<any>;
   value: string; onChange: (v: string) => void; onBlur?: () => void; maxLength?: number; placeholder?: string;
 }) {
-  const [options, setOptions] = useState<SuggestOption[]>([]);
+  const [rows, setRows] = useState<Record<string, any>[]>([]);
   const key = JSON.stringify(spec);
   useEffect(() => {
     let live = true;
-    loadSuggestValues(JSON.parse(key)).then(values => { if (live) setOptions(values.map(value => ({ value }))); }).catch(() => undefined);
+    loadSuggestRows(JSON.parse(key)).then(r => { if (live) setRows(r); }).catch(() => undefined);
     return () => { live = false; };
   }, [key]);
+  // `match`: the list follows another answer of this form (the versions of the product chosen).
+  const other = useWatch({ control, name: spec.match?.to ?? "__no_match__" });
+  const options = useMemo<SuggestOption[]>(
+    () => suggestValuesFromRows(spec.field, rows, spec.match ? { field: spec.match.field, value: other } : undefined).map(value => ({ value })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, key, other],
+  );
   return <SuggestInput {...rest} options={options} />;
 }
 
@@ -317,6 +326,7 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer, sugg
               input = (
                 <FormSuggestInput
                   spec={(field as TextField).suggestFrom!}
+                  control={control}
                   value={rhf.value ?? ""}
                   onChange={rhf.onChange}
                   onBlur={rhf.onBlur}
