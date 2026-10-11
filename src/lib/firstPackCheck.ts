@@ -133,57 +133,125 @@ export function sameBarcode(a: unknown, b: unknown): boolean {
 /** Words that are on every pack and say nothing about the flavor. */
 const PLAIN = new Set(["rum", "cake", "cakes", "the", "and", "flavor", "flavour", "original", "classic"]);
 
-function flavorLine(expected: string, read: string | undefined): PackLine {
-  if (!str(read)) return { point: "flavor", state: "unread", text: "Flavor: could not be read from the photo." };
+export type PackLang = "en" | "es";
+
+/**
+ * Every sentence of the check, per language. The RECORD is always English (the photo's note is
+ * built from the English lines); Spanish is for the screen of an operator who reads it. A mismatch
+ * always carries NOT_MATCH[lang], which is how a note is recognised as one.
+ */
+const NOT_MATCH = { en: "does NOT match", es: "NO coincide" } as const;
+const MONTH_LABEL_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+/** What the pack must SAY is always the English month, in either language. */
+const TEXT = {
+  en: {
+    flavorUnread: "Flavor: could not be read from the photo.",
+    flavorNoRecord: "Flavor: the record has no product yet.",
+    flavorShown: (read: string, want: string) => `the pack says "${read}", the record says "${want}"`,
+    flavorMatch: (shown: string) => `Flavor matches: ${shown}.`,
+    flavorWrong: (shown: string) => `Flavor ${NOT_MATCH.en}: ${shown}.`,
+    flavorLook: (shown: string) => `Flavor needs a look: ${shown}.`,
+    lotNoRecord: "Lot code: the record has no lot code yet.",
+    lotUnread: "Lot code: could not be read from the photo.",
+    lotMatch: (read: string) => `Lot code matches: ${read}.`,
+    lotWrong: (read: string, want: string) => `Lot code ${NOT_MATCH.en}: the pack says ${read}, the record says ${want}.`,
+    dateNoRecord: "Best-by date: the record has no bake date yet.",
+    dateUnread: (want: string) => `Best-by date: could not be read from the photo. It should say ${want}.`,
+    dateNotEnglish: (read: string, want: string) => `Best-by date ${NOT_MATCH.en}: the pack says "${read}", which is not in English. It should say ${want}.`,
+    dateLook: (read: string, want: string) => `Best-by date needs a look: the pack says "${read}". It should say ${want}.`,
+    dateMatch: (read: string) => `Best-by date matches: ${read}.`,
+    dateWrong: (read: string, want: string) => `Best-by date ${NOT_MATCH.en}: the pack says "${read}". It should say ${want}.`,
+    scanned: "scanned",
+    notScanned: "read from the printed digits, not scanned",
+    codeNoSheet: (seen: string, how: string) => `Bar code ${seen} (${how}). The formula sheet has no bar code number to compare it with.`,
+    codeNothing: "Bar code: none read, and the formula sheet has no bar code number.",
+    codeUnread: (want: string) => `Bar code: could not be read from the photo. It should be ${want}.`,
+    codeMatch: (seen: string) => `Bar code matches the formula sheet: ${seen} (scanned).`,
+    codeDigits: (seen: string) => `Bar code digits match the formula sheet: ${seen}. The bars were not scanned from the photo - scan the pack to confirm it reads.`,
+    codeWrong: (seen: string, how: string, want: string) => `Bar code ${NOT_MATCH.en}: the pack says ${seen} (${how}), the formula sheet says ${want}.`,
+  },
+  es: {
+    flavorUnread: "Sabor: no se pudo leer en la foto.",
+    flavorNoRecord: "Sabor: el registro todavía no tiene producto.",
+    flavorShown: (read: string, want: string) => `el empaque dice "${read}", el registro dice "${want}"`,
+    flavorMatch: (shown: string) => `El sabor coincide: ${shown}.`,
+    flavorWrong: (shown: string) => `El sabor ${NOT_MATCH.es}: ${shown}.`,
+    flavorLook: (shown: string) => `Revise el sabor: ${shown}.`,
+    lotNoRecord: "Código de lote: el registro todavía no tiene código de lote.",
+    lotUnread: "Código de lote: no se pudo leer en la foto.",
+    lotMatch: (read: string) => `El código de lote coincide: ${read}.`,
+    lotWrong: (read: string, want: string) => `El código de lote ${NOT_MATCH.es}: el empaque dice ${read}, el registro dice ${want}.`,
+    dateNoRecord: "Fecha de consumo preferente: el registro todavía no tiene fecha de horneado.",
+    dateUnread: (want: string) => `Fecha de consumo preferente: no se pudo leer en la foto. Debe decir ${want}.`,
+    dateNotEnglish: (read: string, want: string) => `La fecha ${NOT_MATCH.es}: el empaque dice "${read}", que no está en inglés. Debe decir ${want}.`,
+    dateLook: (read: string, want: string) => `Revise la fecha: el empaque dice "${read}". Debe decir ${want}.`,
+    dateMatch: (read: string) => `La fecha coincide: ${read}.`,
+    dateWrong: (read: string, want: string) => `La fecha ${NOT_MATCH.es}: el empaque dice "${read}". Debe decir ${want}.`,
+    scanned: "escaneado",
+    notScanned: "leído de los dígitos impresos, no escaneado",
+    codeNoSheet: (seen: string, how: string) => `Código de barras ${seen} (${how}). La hoja de fórmula no tiene un número con el cual compararlo.`,
+    codeNothing: "Código de barras: no se leyó ninguno, y la hoja de fórmula no tiene número.",
+    codeUnread: (want: string) => `Código de barras: no se pudo leer en la foto. Debe ser ${want}.`,
+    codeMatch: (seen: string) => `El código de barras coincide con la hoja de fórmula: ${seen} (escaneado).`,
+    codeDigits: (seen: string) => `Los dígitos del código de barras coinciden con la hoja de fórmula: ${seen}. Las barras no se escanearon en la foto: escanee el empaque para confirmar que se lee.`,
+    codeWrong: (seen: string, how: string, want: string) => `El código de barras ${NOT_MATCH.es}: el empaque dice ${seen} (${how}), la hoja de fórmula dice ${want}.`,
+  },
+} as const;
+
+/** The month the pack must print, with the Spanish month beside it for a Spanish reader: "August 2027 (agosto)". */
+const wantMonth = (want: YearMonth, lang: PackLang) =>
+  lang === "es" ? `${monthLabel(want)} (${MONTH_LABEL_ES[want.month - 1]})` : monthLabel(want);
+
+function flavorLine(expected: string, read: string | undefined, lang: PackLang): PackLine {
+  const T = TEXT[lang];
+  if (!str(read)) return { point: "flavor", state: "unread", text: T.flavorUnread };
   const want = new Set(words(expected)), got = new Set(words(read));
   const extraOnPack = [...got].filter(w => !want.has(w) && !PLAIN.has(w));
   const missingOnPack = [...want].filter(w => !got.has(w) && !PLAIN.has(w));
-  const shown = `the pack says "${str(read)}", the record says "${str(expected)}"`;
-  if (!extraOnPack.length && !missingOnPack.length) return { point: "flavor", state: "match", text: `Flavor matches: ${shown}.` };
+  const shown = T.flavorShown(str(read), str(expected));
+  if (!extraOnPack.length && !missingOnPack.length) return { point: "flavor", state: "match", text: T.flavorMatch(shown) };
   // A flavor word on the pack that the record does not have is the wrong pack. One the record has
   // and the photo does not show may only be out of frame, so it is looked at by eye.
   return extraOnPack.length
-    ? { point: "flavor", state: "mismatch", text: `Flavor does NOT match: ${shown}.` }
-    : { point: "flavor", state: "check", text: `Flavor needs a look: ${shown}.` };
+    ? { point: "flavor", state: "mismatch", text: T.flavorWrong(shown) }
+    : { point: "flavor", state: "check", text: T.flavorLook(shown) };
 }
 
 /** One line per point of the check. Never throws; a blank on either side is said, not guessed. */
-export function checkFirstPack(expected: PackExpected, read: PackRead): PackLine[] {
+export function checkFirstPack(expected: PackExpected, read: PackRead, lang: PackLang = "en"): PackLine[] {
+  const T = TEXT[lang];
   const lines: PackLine[] = [];
 
   lines.push(str(expected.product)
-    ? flavorLine(expected.product, read.product_name)
-    : { point: "flavor", state: "skipped", text: "Flavor: the record has no product yet." });
+    ? flavorLine(expected.product, read.product_name, lang)
+    : { point: "flavor", state: "skipped", text: T.flavorNoRecord });
 
-  if (!normLot(expected.lot)) lines.push({ point: "lot", state: "skipped", text: "Lot code: the record has no lot code yet." });
-  else if (!normLot(read.lot_code)) lines.push({ point: "lot", state: "unread", text: "Lot code: could not be read from the photo." });
-  else if (normLot(read.lot_code) === normLot(expected.lot)) lines.push({ point: "lot", state: "match", text: `Lot code matches: ${str(read.lot_code)}.` });
-  else lines.push({ point: "lot", state: "mismatch", text: `Lot code does NOT match: the pack says ${str(read.lot_code)}, the record says ${str(expected.lot)}.` });
+  if (!normLot(expected.lot)) lines.push({ point: "lot", state: "skipped", text: T.lotNoRecord });
+  else if (!normLot(read.lot_code)) lines.push({ point: "lot", state: "unread", text: T.lotUnread });
+  else if (normLot(read.lot_code) === normLot(expected.lot)) lines.push({ point: "lot", state: "match", text: T.lotMatch(str(read.lot_code)) });
+  else lines.push({ point: "lot", state: "mismatch", text: T.lotWrong(str(read.lot_code), str(expected.lot)) });
 
   const want = expectedBestBy(expected.bakeDate);
   const got = parseBestBy(read.best_by);
-  if (!want) lines.push({ point: "best_by", state: "skipped", text: "Best-by date: the record has no bake date yet." });
-  else if (!str(read.best_by)) lines.push({ point: "best_by", state: "unread", text: `Best-by date: could not be read from the photo. It should say ${monthLabel(want)}.` });
-  else if (bestByNotEnglish(read.best_by).length) lines.push({ point: "best_by", state: "mismatch", text: `Best-by date does NOT match: the pack says "${str(read.best_by)}", which is not in English. It should say ${monthLabel(want)}.` });
-  else if (!got) lines.push({ point: "best_by", state: "check", text: `Best-by date needs a look: the pack says "${str(read.best_by)}". It should say ${monthLabel(want)}.` });
-  else if (got.year === want.year && got.month === want.month) lines.push({ point: "best_by", state: "match", text: `Best-by date matches: ${str(read.best_by)}.` });
-  else lines.push({ point: "best_by", state: "mismatch", text: `Best-by date does NOT match: the pack says "${str(read.best_by)}". It should say ${monthLabel(want)}.` });
+  const printed0 = str(read.best_by);
+  if (!want) lines.push({ point: "best_by", state: "skipped", text: T.dateNoRecord });
+  else if (!printed0) lines.push({ point: "best_by", state: "unread", text: T.dateUnread(wantMonth(want, lang)) });
+  else if (bestByNotEnglish(read.best_by).length) lines.push({ point: "best_by", state: "mismatch", text: T.dateNotEnglish(printed0, wantMonth(want, lang)) });
+  else if (!got) lines.push({ point: "best_by", state: "check", text: T.dateLook(printed0, wantMonth(want, lang)) });
+  else if (got.year === want.year && got.month === want.month) lines.push({ point: "best_by", state: "match", text: T.dateMatch(printed0) });
+  else lines.push({ point: "best_by", state: "mismatch", text: T.dateWrong(printed0, wantMonth(want, lang)) });
 
   const scanned = digits(read.decodedBarcode), printed = digits(read.barcode);
   const seen = scanned || printed;
-  const how = scanned ? "scanned" : "read from the printed digits, not scanned";
+  const how = scanned ? T.scanned : T.notScanned;
   if (!digits(expected.barcode)) {
-    lines.push(seen
-      ? { point: "barcode", state: "skipped", text: `Bar code ${seen} (${how}). The formula sheet has no bar code number to compare it with.` }
-      : { point: "barcode", state: "skipped", text: "Bar code: none read, and the formula sheet has no bar code number." });
+    lines.push({ point: "barcode", state: "skipped", text: seen ? T.codeNoSheet(seen, how) : T.codeNothing });
   } else if (!seen) {
-    lines.push({ point: "barcode", state: "unread", text: `Bar code: could not be read from the photo. It should be ${digits(expected.barcode)}.` });
+    lines.push({ point: "barcode", state: "unread", text: T.codeUnread(digits(expected.barcode)) });
   } else if (sameBarcode(seen, expected.barcode)) {
-    lines.push({ point: "barcode", state: scanned ? "match" : "check", text: scanned
-      ? `Bar code matches the formula sheet: ${seen} (scanned).`
-      : `Bar code digits match the formula sheet: ${seen}. The bars were not scanned from the photo - scan the pack to confirm it reads.` });
+    lines.push({ point: "barcode", state: scanned ? "match" : "check", text: scanned ? T.codeMatch(seen) : T.codeDigits(seen) });
   } else {
-    lines.push({ point: "barcode", state: "mismatch", text: `Bar code does NOT match: the pack says ${seen} (${how}), the formula sheet says ${digits(expected.barcode)}.` });
+    lines.push({ point: "barcode", state: "mismatch", text: T.codeWrong(seen, how, digits(expected.barcode)) });
   }
   return lines;
 }
@@ -207,7 +275,7 @@ export function isPackNote(note: unknown): boolean {
   return str(note).startsWith(FIRST_PACK.notePrefix);
 }
 export function noteHasMismatch(note: unknown): boolean {
-  return isPackNote(note) && str(note).includes("does NOT match");
+  return isPackNote(note) && str(note).includes(NOT_MATCH.en);
 }
 
 /** Does this revision of the form have the fields the check reads and writes? */

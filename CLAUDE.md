@@ -1438,6 +1438,20 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
   to translate or correct the date or the product name - without that a model may quietly return
   "August" (the owner deploys the function: `npx supabase functions deploy extract-package-label`).
   **Untested from here: the camera, the real read of an ink-jet coded box, and BarcodeDetector.**
+- **Record packing, on a lot's row of the Today page (2026-10-10, `components/team/today/PackingButton.tsx`).**
+  The third row button, after Record bake and Record seal check; it works on the row's OWN FRM-520
+  entry (nothing is looked up or created). Menu: **Photograph the first pack** (the camera opens from
+  the tap; the photo is kept on the lot record and the four points are shown; when all agree, "I
+  checked the pack - it matches" saves the answer, the person's name if the field is empty, and
+  "Packed on" if blank - a mismatch saves no answer), **Enter the counts** (the three counts, Notes when
+  they differ, the film lot; saved from the pop-up; a difference with no Notes cannot be saved), and
+  **Open the record**. The button turns small and green when `packingState` (`today.ts`) says the first
+  pack is answered and all three counts are entered - read from the record, stored nowhere else. The
+  record is opened instead when it is on an earlier revision or the save is refused. The photo routine
+  is shared with the entry page (`src/lib/firstPackPhoto.ts`, `photographFirstPack`), and the check's
+  lines exist in Spanish for the screen (`checkFirstPack(..., lang)`); **the note kept on the photo is
+  always English**. Wording in `TODAY_MSG.pack`. Checked on a harness with the database stubbed; in an
+  unpainted preview pane a closed dialog stays in the DOM (its exit animation never ends) - not a bug.
 - **The three packing counts are added up (FRM-520, 2026-10-10, `src/lib/packCounts.ts` +
   `PackCountLine.tsx`).** A line under the counts' row says "Adds up", "3 unaccounted for" or "4 more
   than were racked" (rack count = units packed + not packed, FSQM-021). **All three stay counted and

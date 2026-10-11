@@ -35,7 +35,7 @@ const TODAY = "2026-10-08";
 // ---- mapping check ----
 check("mapping: all present", T.checkTodayMapping({
   "FRM-903": ["inspection_date", "shift", "area_line", "released_by"],
-  "FRM-520": ["product", "lot_code", "bake_date", "pack_date", "units_packed", "ingredients"],
+  "FRM-520": ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check", "ingredients"],
   "FRM-701": ["product_name", "lot_code", "decision", "release_date"],
   "FRM-801": ["dispatch_date", "customer", "loaded"],
   "FRM-702": ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"],
@@ -69,6 +69,15 @@ const lot = (product, lot_code, status = "draft", extra = {}) => entry({ product
   const r = rec();
   r.lots.push(lot("Rum Cake - Pumpkin Spice", "6279"));
   check("stage: preparing (no ingredient rows)", T.lotSummaries(r)[0].stage, "preparing");
+  check("packing: nothing yet", T.lotSummaries(r)[0].packing, { checked: false, counted: false, done: false });
+}
+{
+  // Packing is read from the lot record's own answers; a count of 0 is an answer.
+  const p = extra => { const r = rec(); r.lots.push(lot("Rum Cake - Original", "6279", "draft", extra)); return T.lotSummaries(r)[0].packing; };
+  check("packing: first pack answered only", p({ code_check: "Matches the lot code above" }), { checked: true, counted: false, done: false });
+  check("packing: two counts are not three", p({ racked_count: 480, units_packed: "480" }), { checked: false, counted: false, done: false });
+  check("packing: counted, zero not packed", p({ racked_count: 480, units_packed: "480", not_packed: 0 }), { checked: false, counted: true, done: false });
+  check("packing: done", p({ racked_count: 480, units_packed: "480", not_packed: 0, code_check: "Did not match - held on FRM-702" }), { checked: true, counted: true, done: true });
 }
 {
   const r = rec();

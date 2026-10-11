@@ -60,6 +60,18 @@ export interface TodayMessages {
     reopened(lot: string, product: string): string; nothingToReopen: string; doneTip: string;
     reviewNote(date: string, lot: string, product: string): string; awaitingReview(by: string): string;
   };
+  /** The packing button on a lot's row: the first pack from a photo, and the three counts. */
+  pack: {
+    button: string; doneTip: string; photo: string; counts: string; open: string;
+    title(lot: string, product: string): string; countsTitle(lot: string, product: string): string;
+    reading: string; photoHelp: string; again: string; matches: string; saved(lot: string, product: string): string;
+    incomplete: string; mismatch: string; unreadable: string; openFailed: string; needsRecord: string; alreadyChecked: string;
+    racked: string; packed: string; notPacked: string; filmLot: string; notes: string;
+    countsHelp: string; addsUp(sum: string, racked: number): string;
+    short(n: number, sum: string, racked: number): string; over(n: number, sum: string, racked: number): string;
+    sayWhy: string; notANumber: string; savedCounts(lot: string, product: string): string;
+    firstPackDone: string; countsDone: string; optional: string;
+  };
   recordSealChecks: string;
   ccpTodayNone: string;
   ccpBakingToday(n: number): string;
@@ -209,6 +221,41 @@ const en: TodayMessages = {
     reviewNote: (date, lot, product) => `Sealing record for ${date}, lot ${lot}, ${product}: the last check is recorded. Please review and sign.`,
     awaitingReview: by => `Today's seal checks are finished and signed by ${by}. Waiting for review.`,
   },
+  pack: {
+    button: "Record packing",
+    doneTip: "Record packing - first pack checked and counts entered",
+    photo: "Photograph the first pack",
+    counts: "Enter the counts",
+    open: "Open the record",
+    title: (lot, product) => `First pack · Lot ${lot} · ${product}`,
+    countsTitle: (lot, product) => `Packing counts · Lot ${lot} · ${product}`,
+    reading: "Reading the pack...",
+    photoHelp: "One photo with the flavor, lot code, best-by date and bar code in view. The photo is kept on the lot record.",
+    again: "Take another photo",
+    matches: "I checked the pack - it matches",
+    saved: (lot, product) => `First pack recorded as matching · Lot ${lot} · ${product}`,
+    incomplete: "Look at the points marked above on the pack itself, then take a clearer photo or answer in the record.",
+    mismatch: "Stop packing. Correct the coder or the film, then photograph the next first pack. Product already packed with the wrong code is held on FRM-702.",
+    unreadable: "The photo could not be read. It was kept on the lot record.",
+    openFailed: "The lot record could not be saved. Open the record instead.",
+    needsRecord: "This lot record has to be opened to do this.",
+    alreadyChecked: "The first pack is already answered on the record. A new photo is added to it.",
+    racked: "Counted on the baking rack",
+    packed: "Units packed",
+    notPacked: "Not packed",
+    filmLot: "Film / bag lot",
+    notes: "Notes",
+    countsHelp: "Count all three. The app only adds them up: counted on the rack = units packed + not packed.",
+    addsUp: (sum, racked) => `Adds up: ${sum}, and ${racked} were counted on the rack.`,
+    short: (n, sum, racked) => `${n} unaccounted for: ${sum}, but ${racked} were counted on the rack.`,
+    over: (n, sum, racked) => `${n} more than were racked: ${sum}, but only ${racked} were counted on the rack.`,
+    sayWhy: "Recount, or say why in Notes.",
+    notANumber: "Units packed has to be a plain number of units to be added up.",
+    savedCounts: (lot, product) => `Packing counts saved · Lot ${lot} · ${product}`,
+    firstPackDone: "First pack checked",
+    countsDone: "Counts entered",
+    optional: "optional",
+  },
   recordSealChecks: "Record seal checks (FRM-606)",
   ccpTodayNone: "No CCP record started today.",
   ccpBakingToday: n => n === 0 ? "Today's baking record is open." : `Today's baking record has ${n} oven load${n === 1 ? "" : "s"}.`,
@@ -357,6 +404,41 @@ const es: TodayMessages = {
     doneTip: "Registrar sellado - revisiones terminadas",
     reviewNote: (date, lot, product) => `Sealing record for ${date}, lot ${lot}, ${product}: the last check is recorded. Please review and sign.`,
     awaitingReview: by => `Las revisiones de sellado de hoy terminaron y las firmó ${by}. En espera de revisión.`,
+  },
+  pack: {
+    button: "Registrar empaque",
+    doneTip: "Registrar empaque - primer empaque revisado y conteos anotados",
+    photo: "Fotografiar el primer empaque",
+    counts: "Anotar los conteos",
+    open: "Abrir el registro",
+    title: (lot, product) => `Primer empaque · Lote ${lot} · ${product}`,
+    countsTitle: (lot, product) => `Conteos de empaque · Lote ${lot} · ${product}`,
+    reading: "Leyendo el empaque...",
+    photoHelp: "Una foto donde se vean el sabor, el código de lote, la fecha de consumo preferente y el código de barras. La foto se guarda en el registro del lote.",
+    again: "Tomar otra foto",
+    matches: "Revisé el empaque - coincide",
+    saved: (lot, product) => `Primer empaque registrado como correcto · Lote ${lot} · ${product}`,
+    incomplete: "Revise en el empaque los puntos marcados arriba; luego tome una foto más clara o conteste en el registro.",
+    mismatch: "Detenga el empaque. Corrija el codificador o la película y fotografíe el siguiente primer empaque. El producto ya empacado con el código equivocado se retiene en FRM-702.",
+    unreadable: "No se pudo leer la foto. Se guardó en el registro del lote.",
+    openFailed: "No se pudo guardar el registro del lote. Abra el registro.",
+    needsRecord: "Para esto hay que abrir el registro del lote.",
+    alreadyChecked: "El primer empaque ya está contestado en el registro. La foto nueva se agrega.",
+    racked: "Contados en el carro de horneado",
+    packed: "Unidades empacadas",
+    notPacked: "No empacadas",
+    filmLot: "Lote de película / bolsa",
+    notes: "Notas",
+    countsHelp: "Cuente los tres. La aplicación solo los suma: contados en el carro = unidades empacadas + no empacadas.",
+    addsUp: (sum, racked) => `Cuadra: ${sum}, y se contaron ${racked} en el carro.`,
+    short: (n, sum, racked) => `Faltan ${n}: ${sum}, pero se contaron ${racked} en el carro.`,
+    over: (n, sum, racked) => `Sobran ${n}: ${sum}, pero solo se contaron ${racked} en el carro.`,
+    sayWhy: "Vuelva a contar, o explique por qué en Notas.",
+    notANumber: "Unidades empacadas debe ser un número de unidades para poder sumarse.",
+    savedCounts: (lot, product) => `Conteos de empaque guardados · Lote ${lot} · ${product}`,
+    firstPackDone: "Primer empaque revisado",
+    countsDone: "Conteos anotados",
+    optional: "opcional",
   },
   recordSealChecks: "Registrar las revisiones de sellado (FRM-606)",
   ccpTodayNone: "Hoy no se ha empezado ningún registro de PCC.",
