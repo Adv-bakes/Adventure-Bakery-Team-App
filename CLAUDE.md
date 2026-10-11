@@ -515,7 +515,14 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   follow it** - FRM-903's Product / batch run offers the FRM-501 product names and the operator types
   the batch number after one. `drafts: true` because FRM-501's entries are kept as drafts. Loader
   `loadSuggestValues` (`formReport.ts`), pure half `suggestValuesFromRows` (`pickFrom.ts`). Set by
-  migration (`20261009000005`). ⚠️ Not the same thing as the grid's `suggestFrom` below (a grey
+  migration (`20261009000005`). **The product name is offered from the formula sheets everywhere it is
+  typed** (owner, 2026-10-10, migration `20261010000006`): FRM-520 Product, FRM-601 Product Name, FRM-606
+  Product, FRM-704 Product and the Product run of FRM-909 to FRM-912 carry the same setting. The name is
+  established on FRM-501; it is an OFFER, never a closed list (owner's choice). Not yet done: the
+  lot-based forms (FRM-703, FRM-801, FRM-012) should offer the lots made on FRM-520, as FRM-701 does;
+  FRM-102, FRM-502, FRM-002 and draft FRM-916 are still typed; FRM-501 has no way to mark a product
+  discontinued, and the forms still join on the NAME, so renaming a product breaks the match with older
+  records. ⚠️ Not the same thing as the grid's `suggestFrom` below (a grey
   suggested NUMBER in a cell) - same word, different types, different jobs.
 - **Suggested cell values (`GridColumn.suggestFrom`):** `{ column, times? }` on a number column shows, while
   the cell is EMPTY, a grey placeholder (another column of the row, optionally × a top-level number field)
