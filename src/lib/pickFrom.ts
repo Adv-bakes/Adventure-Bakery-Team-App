@@ -72,10 +72,15 @@ export function pickFills(
  * values of `field`, case-insensitively, sorted. `rows` are the entries' answers, already narrowed
  * to the ones that count (submitted, or drafts too where the field says so). An entry with no
  * value offers nothing.
+ *
+ * With `match`, only the entries whose `match.field` is `match.value` are read (compared like the
+ * values themselves: without case or stray spaces); a blank `match.value` offers nothing.
  */
-export function suggestValuesFromRows(field: string, rows: Record<string, any>[]): string[] {
+export function suggestValuesFromRows(field: string, rows: Record<string, any>[], match?: { field: string; value: unknown }): string[] {
   const out: string[] = [];
+  if (match && !text(match.value)) return out;
   for (const data of rows) {
+    if (match && !same(text(data?.[match.field]), text(match.value))) continue;
     const value = text(data?.[field]);
     if (value && !out.some(v => same(v, value))) out.push(value);
   }

@@ -270,12 +270,16 @@ export async function loadPickOptions(spec: GridPickFrom): Promise<PickOption[]>
  * entries, and drafts too when the field asks for them; practice rows are left out.
  */
 export async function loadSuggestValues(spec: { form: string; field: string; drafts?: boolean }): Promise<string[]> {
+  return suggestValuesFromRows(spec.field, await loadSuggestRows(spec));
+}
+
+/** The entries a type-ahead reads, for a list that is narrowed on screen (`suggestFrom.match`). */
+export async function loadSuggestRows(spec: { form: string; drafts?: boolean }): Promise<Record<string, any>[]> {
   const doc = await fetchSourceForm(spec.form);
   if (!doc) return [];
-  const rows = (await fetchResponses(doc.id))
+  return (await fetchResponses(doc.id))
     .filter(r => (spec.drafts || r.status === "submitted") && !(r.data && "_test_batch" in r.data))
     .map(r => r.data ?? {});
-  return suggestValuesFromRows(spec.field, rows);
 }
 
 /**

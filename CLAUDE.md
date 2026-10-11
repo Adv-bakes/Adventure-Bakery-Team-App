@@ -522,7 +522,12 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   lot-based forms (FRM-703, FRM-801, FRM-012) should offer the lots made on FRM-520, as FRM-701 does;
   FRM-102, FRM-502, FRM-002 and draft FRM-916 are still typed; FRM-501 has no way to mark a product
   discontinued, and the forms still join on the NAME, so renaming a product breaks the match with older
-  records. ⚠️ Not the same thing as the grid's `suggestFrom` below (a grey
+  records. **`suggestFrom.match: { field, to }`** narrows the list to the entries whose `field` equals
+  this form's own top-level answer `to`, and offers nothing while that answer is blank
+  (`suggestValuesFromRows(field, rows, match)`; the rows load once, the narrowing is on screen). First
+  use: FRM-601's Linked Formula Version = the Formula Version of the formula sheets of the Product Name
+  entered above it (migration `20261010000008`, no revision change).
+  ⚠️ Not the same thing as the grid's `suggestFrom` below (a grey
   suggested NUMBER in a cell) - same word, different types, different jobs.
 - **Suggested cell values (`GridColumn.suggestFrom`):** `{ column, times? }` on a number column shows, while
   the cell is EMPTY, a grey placeholder (another column of the row, optionally × a top-level number field)
