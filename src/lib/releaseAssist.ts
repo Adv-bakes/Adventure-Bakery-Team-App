@@ -39,7 +39,8 @@ export const RELEASE_SOURCES = {
   holds:    { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"], grids: {} },
   preops:   { form: "FRM-903", fields: ["inspection_date", "area_line", "shift"], grids: {} },
   labels:   { form: "FRM-601", fields: ["product_name", "label_artwork_version", "controlled_label_id", "customer_brand", "approval_evidence", "approval_date"], grids: {} },
-  specs:    { form: "FRM-704", fields: ["product_name", "customer_brand", "net_weight"], grids: {} },
+  // The empty packaging weight and the unit weighed in are on the specification from its v2 (2026-10-11).
+  specs:    { form: "FRM-704", fields: ["product_name", "customer_brand", "net_weight"], optional: ["packaging_tare", "net_weight_unit"], grids: {} },
   // FRM-507 named the product once at the top until its v2 (2026-10-09) and on each oven load since.
   baking:   { form: "FRM-507", fields: ["production_date"], optional: ["product"], grids: { oven_loads: ["product", "lot_code", "within_limits"] } },
   sealing:  { form: "FRM-606", fields: ["production_date", "product"], optional: ["lot_code"], grids: { seal_checks: ["lot_code", "visual", "pull_test"] } },
@@ -243,12 +244,13 @@ export function releaseFill(records: ReleaseRecords, product: string, lot: strin
   const firstSaid = (...values: unknown[]) => values.find(v => str(v) !== "");
   put("customer", firstSaid(previous?.data.customer, spec?.data.customer_brand, approved?.data.customer_brand,
     ...labels.map(l => l.data.customer_brand)));
-  put("net_weight_declared", previous?.data.net_weight_declared ?? spec?.data.net_weight);
-  if (previous) {
-    const tare = previous.data.packaging_tare;
-    put("packaging_tare", str(tare) !== "" && Number.isFinite(Number(tare)) ? Number(tare) : undefined);
-    put("net_weight_unit", previous.data.net_weight_unit);
-  }
+  // The three figures of the net-weight check are facts about the pack: from the product's last
+  // release, else from its specification (FRM-704), each on its own - a blank on one record does
+  // not hide the figure on the other.
+  put("net_weight_declared", firstSaid(previous?.data.net_weight_declared, spec?.data.net_weight));
+  const tare = firstSaid(previous?.data.packaging_tare, spec?.data.packaging_tare);
+  put("packaging_tare", tare !== undefined && Number.isFinite(Number(tare)) ? Number(tare) : undefined);
+  put("net_weight_unit", firstSaid(previous?.data.net_weight_unit, spec?.data.net_weight_unit));
   put("approved_label_ref", previous?.data.approved_label_ref ?? approved?.data.controlled_label_id);
   put("label_version", previous?.data.label_version ?? approved?.data.label_artwork_version);
 

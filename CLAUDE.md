@@ -1511,7 +1511,10 @@ the entry starts from the **lot code** (what is printed on the pack) and looks t
   (`productOptionsForLot`) and a warning asks. **A typed product is never replaced.**
 - **`releaseFill(records, product, lot, selfId)`**: batch reference and date from the lot's FRM-520;
   customer, label reference and version, net weight on the label, empty packaging weight and unit
-  from the product's last release, else its FRM-704 specification. So the figures are right per
+  from the product's last release, else its FRM-704 specification (which holds all three from its v2, 2026-10-11, migration
+  `20261011000001`: Empty packaging weight and Unit weighed in were added after Net weight, because a
+  product's FIRST release had nothing to start from; each figure is taken on its own, so a blank on
+  one record does not hide the figure on the other). So the figures are right per
   product with no fixed defaults on the form (a fixed-default version was written and dropped).
 - **Evidence, never a Result.** For six of the nine checks the Note is filled with what the records
   show - FRM-520 submitted or draft, FRM-507 / FRM-606 rows for the lot, FRM-903 for the bake and

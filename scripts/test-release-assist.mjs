@@ -227,6 +227,25 @@ check("mapping: a renamed field and a missing form are named",
     "FRM-507": ["production_date", "oven_loads"] }),
   ['FRM-903 no longer has "inspection_date"', "FRM-606 was not found"]);
 
+// ---- the net-weight figures come from the specification when there is no earlier release
+{
+  const r = T.emptyReleaseRecords();
+  r.lots.push(entry({ product: "Rum Cake - Pumpkin Spice", lot_code: "6279", bake_date: "2026-10-06", ingredients: [] }));
+  r.specs.push(entry({ product_name: "Rum Cake - Pumpkin Spice", customer_brand: "Bahama Rum Cakes", net_weight: "16 oz", packaging_tare: 0.9, net_weight_unit: "oz" }, "draft"));
+  const f = T.releaseFill(r, "Rum Cake - Pumpkin Spice", "6279", null).fields;
+  check("a first release takes all three from the specification", [f.net_weight_declared, f.packaging_tare, f.net_weight_unit], ["16 oz", 0.9, "oz"]);
+  r.specs[0].data.packaging_tare = "0.9";
+  check("a weight stored as text is still a number on the record", T.releaseFill(r, "Rum Cake - Pumpkin Spice", "6279", null).fields.packaging_tare, 0.9);
+  r.releases.push(entry({ product_name: "Rum Cake - Pumpkin Spice", lot_code: "6272", net_weight_declared: "", packaging_tare: 1.1, net_weight_unit: "" }));
+  const g = T.releaseFill(r, "Rum Cake - Pumpkin Spice", "6279", null).fields;
+  check("the last release wins where it says something, the specification fills the rest", [g.net_weight_declared, g.packaging_tare, g.net_weight_unit], ["16 oz", 1.1, "oz"]);
+  r.specs[0].data = { product_name: "Rum Cake - Pumpkin Spice", net_weight: "16 oz" };
+  r.releases.pop();
+  const h = T.releaseFill(r, "Rum Cake - Pumpkin Spice", "6279", null).fields;
+  check("a specification filled before its v2 gives the net weight only", [h.net_weight_declared, h.packaging_tare ?? null, h.net_weight_unit ?? null], ["16 oz", null, null]);
+  check("the mapping check does not require the two new fields", T.checkReleaseMapping({ "FRM-704": ["product_name", "customer_brand", "net_weight"] }).filter(p => p.startsWith("FRM-704")), []);
+}
+
 // ---- the customer does not wait on the label being approved
 {
   const r = T.emptyReleaseRecords();
