@@ -22,6 +22,7 @@ export const TODAY_FORMS = {
   receipts:   { form: "FRM-301", fields: [], grids: { receiving_log: ["supplier_name", "material_description"] } },
   baking:     { form: "FRM-507", fields: ["production_date", "monitored_by"], grids: { oven_loads: ["lot_code"] } },
   sealing:    { form: "FRM-606", fields: ["production_date", "product", "lot_code", "monitored_by"], grids: { seal_checks: ["check"] } },
+  retention:  { form: "FRM-703", fields: ["product_name", "lot_code"], grids: {} },
 } as const satisfies Record<string, TodaySourceSpec>;
 
 export type TodayKind = keyof typeof TODAY_FORMS;
@@ -314,4 +315,35 @@ export function attentionCounts(
     else if (n.severity === "due") due++;
   }
   return { overdue, due, askedOfMe, alerts };
+}
+
+// ---------- Release: the steps before a lot is released, in order ----------
+
+export type ReleaseStepKey = "lot" | "baking" | "sealing" | "retention" | "release";
+/** "done" = the record is submitted; "open" = a draft to finish or review; "none" = no record found. */
+export interface ReleaseStep { key: ReleaseStepKey; state: "done" | "open" | "none"; entryId?: string; docId?: string }
+
+/**
+ * What stands between a lot and its release, read from the records and stored nowhere: the lot
+ * record, the baking record that carries its oven loads, its seal check records, its retention
+ * sample and the release record itself. A step links to the record to open - the first one still
+ * a draft, else the newest. A lot is product + code throughout.
+ */
+export function releaseSteps(records: TodayRecords, lot: LotSummary): ReleaseStep[] {
+  const step = (key: ReleaseStepKey, entries: TodayEntry[]): ReleaseStep => {
+    if (entries.length === 0) return { key, state: "none" };
+    const draft = entries.filter(e => !isSubmitted(e)).sort(best)[0];
+    const e = draft ?? [...entries].sort(best)[0];
+    return { key, state: draft ? "open" : "done", entryId: e.id, docId: e.docId };
+  };
+  const mine = (product: unknown, code: unknown) => sameLot(lot.product, lot.lotCode, product, code);
+  const baking = records.baking.filter(e => rowsOf(e, "oven_loads").some(r =>
+    normLot(r.lot_code) === normLot(lot.lotCode) && !!normLot(lot.lotCode) && (!str(r.product) || sameProduct(r.product, lot.product))));
+  return [
+    { key: "lot", state: lot.status === "submitted" ? "done" : "open", entryId: lot.id, docId: lot.docId },
+    step("baking", baking),
+    step("sealing", records.sealing.filter(e => mine(e.data.product, e.data.lot_code))),
+    step("retention", records.retention.filter(e => mine(e.data.product_name, e.data.lot_code))),
+    step("release", records.releases.filter(e => mine(e.data.product_name, e.data.lot_code))),
+  ];
 }

@@ -6,19 +6,28 @@
 // Production Lot Record, the customer, label and packaging figures from the product's last release,
 // and - for the checks the records can speak to - the EVIDENCE in the Note.
 //
-// It never answers a check and never enters a pack weight. FSQM-020 has the SQF Practitioner
-// confirm each check; the helper shows them what the records say and leaves the confirming to them.
-// What it fills arrives unsaved, with one Undo, the same as "Copy from a previous entry".
+// It never answers a check by itself and never enters a pack weight. FSQM-020 has the SQF
+// Practitioner confirm each check; the helper shows them what the records say and leaves the
+// confirming to them. What it fills arrives unsaved, with one Undo, the same as "Copy from a
+// previous entry".
+//
+// PROPOSED RESULTS (owner, 2026-10-10): where the records fully support a check - and, for the net
+// weight, where the three weights typed come out at or above the label - the card lists it and
+// offers ONE button that answers those checks Pass. It is the person's tap. A check the records
+// speak against is listed in red and left unanswered.
+//
+// An entry opened with the lot and product already there and nothing looked up yet (started from
+// the Today page's Release button) is filled once, without waiting for the lot to be picked again.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWatch, type UseFormReturn } from "react-hook-form";
-import { AlertTriangle, Loader2, PackageCheck, Undo2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, PackageCheck, Undo2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { loadReleaseRecords } from "@/lib/formResponses";
 import { emptyValues, valueFields, type FormSchema, type GridField } from "@/lib/formSchema";
 import {
-  RELEASE_TARGET, applyReleaseFill, autoFromFill, productOptionsForLot, productsForLot, releaseFill,
+  RELEASE_TARGET, acceptProposals, applyReleaseFill, autoFromFill, productOptionsForLot, productsForLot, proposals, releaseFill,
   sameProduct, unreleasedLots, type ReleaseRecords,
 } from "@/lib/releaseAssist";
 import type { FieldSuggest } from "@/components/team/forms/SuggestInput";
@@ -66,6 +75,12 @@ export function useReleaseAssist({ enabled, form, schema, responseId }: Args): {
   }, [enabled]);
 
   const lot = useWatch({ control: form.control, name: LOT }) as string | undefined;
+  const product = useWatch({ control: form.control, name: PRODUCT }) as string | undefined;
+  // What the proposals read: the checks as answered so far, and the figures of the net-weight sum.
+  const watched = useWatch({
+    control: form.control,
+    name: [RELEASE_TARGET.checks, "pack_weight_1", "pack_weight_2", "pack_weight_3", "packaging_tare", "net_weight_declared", "net_weight_unit"],
+  });
 
   const { checkLabels, fieldLabels } = useMemo(() => {
     const fields = schema ? valueFields(schema) : [];
@@ -141,6 +156,37 @@ export function useReleaseAssist({ enabled, form, schema, responseId }: Args): {
     setApplied({ changed, warnings, prev: { ...emptyValues(schema), ...stored, [fieldId]: value }, prevAuto: lastAuto });
   }, [records, schema, form, responseId, checkLabels, fieldLabels]);
 
+  // Started from the Today page: the lot and product are already there and nothing has been looked
+  // up yet (no batch reference). Fill once, exactly as if the lot had just been picked.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!enabled || !records || !schema || started.current) return;
+    started.current = true;
+    const v = form.getValues();
+    const haveLot = String(v[LOT] ?? "").trim(), haveProduct = String(v[PRODUCT] ?? "").trim();
+    if (haveLot && haveProduct && String(v.batch_sheet_ref ?? "").trim() === "") onPick(LOT, haveLot, { [PRODUCT]: haveProduct });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, records, schema]);
+
+  const proposed = useMemo(() => {
+    if (!enabled || !records || !String(lot ?? "").trim() || !String(product ?? "").trim()) return [];
+    const [checks, w1, w2, w3, tare, declared, unit] = watched as any[];
+    return proposals(
+      { [RELEASE_TARGET.checks]: checks, pack_weight_1: w1, pack_weight_2: w2, pack_weight_3: w3, packaging_tare: tare, net_weight_declared: declared, net_weight_unit: unit },
+      releaseFill(records, String(product), String(lot), responseId),
+      checkLabels,
+    );
+  }, [enabled, records, lot, product, watched, responseId, checkLabels]);
+  const toAccept = proposed.filter(p => p.state === "supported");
+  const against = proposed.filter(p => p.state === "against");
+
+  const accept = () => {
+    const res = acceptProposals(form.getValues(), proposed);
+    for (const i of res.accepted) {
+      form.setValue(`${RELEASE_TARGET.checks}.${i}.result`, "pass", { shouldDirty: true, shouldValidate: true });
+    }
+  };
+
   const undo = () => {
     if (!applied) return;
     form.reset(applied.prev, { keepDefaultValues: true });
@@ -173,7 +219,8 @@ export function useReleaseAssist({ enabled, form, schema, responseId }: Args): {
       <p className="text-xs text-[#2A1F0E]/70">
         Start with the lot code on the pack. The product, batch reference, date, customer, label and packaging
         figures are looked up, and each check the records can speak to gets a note saying what they show. You
-        still answer every check and enter the three pack weights.
+        still answer every check and enter the three pack weights. Where the records fully support a check, it
+        is listed below and one button answers those for you.
       </p>
       {failed && (
         <p className="text-xs text-red-700">The records could not be loaded. Fill the form in by hand, or reload the page to try again.</p>
@@ -185,6 +232,30 @@ export function useReleaseAssist({ enabled, form, schema, responseId }: Args): {
             <p>A form this reads has changed, so part of the lookup may be missing:</p>
             <ul className="list-disc pl-4">{problems.map(p => <li key={p}>{p}</li>)}</ul>
           </div>
+        </div>
+      )}
+      {proposed.length > 0 && (
+        <div className="space-y-1.5 text-xs rounded border p-2" style={{ borderColor: "rgba(200,155,60,0.4)" }}>
+          {proposed.filter(p => p.state !== "against").map(p => (
+            <p key={p.index} className="flex gap-1.5 text-[#2A1F0E]">
+              <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-green-700" />
+              <span><strong>{p.label}:</strong> {p.state === "answered" ? "answered. " : "Pass is supported. "}<span className="opacity-75">{p.text}</span></span>
+            </p>
+          ))}
+          {against.map(p => (
+            <p key={p.index} className="flex gap-1.5 text-red-700">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span><strong>{p.label}:</strong> not supported - look into it and answer it yourself. <span className="opacity-90">{p.text}</span></span>
+            </p>
+          ))}
+          {toAccept.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Button type="button" size="sm" onClick={accept} className="bg-[#2E7D32] hover:bg-[#256628] text-white">
+                Accept the {toAccept.length === 1 ? "supported result" : `${toAccept.length} supported results`}
+              </Button>
+              <span className="text-[#2A1F0E]/70">Answers {toAccept.length === 1 ? "that check" : "those checks"} Pass. The others stay yours to answer.</span>
+            </div>
+          )}
         </div>
       )}
       {applied && (

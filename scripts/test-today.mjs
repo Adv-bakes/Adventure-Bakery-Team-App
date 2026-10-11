@@ -42,6 +42,7 @@ check("mapping: all present", T.checkTodayMapping({
   "FRM-301": ["receiving_log"],
   "FRM-507": ["production_date", "monitored_by", "oven_loads"],
   "FRM-606": ["production_date", "product", "lot_code", "monitored_by", "seal_checks"],
+  "FRM-703": ["product_name", "lot_code"],
 }), []);
 check("mapping: renamed and missing", T.checkTodayMapping({ "FRM-903": ["inspection_date"] }).slice(0, 2),
   ['FRM-903 no longer has "shift"', 'FRM-903 no longer has "area_line"']);
@@ -206,6 +207,34 @@ check("attention counts", T.attentionCounts([
   { severity: "info", notification_type: "signature_requested", assigned_to: "someone" },
   { severity: "info", notification_type: "signature_signed", assigned_to: "me" },
 ], "me"), { overdue: 1, due: 1, askedOfMe: 1, alerts: 1 });
+
+// ---- the steps before a release, in order ----
+{
+  const P = "Rum Cake - Pumpkin Spice", O = "Rum Cake - Original";
+  const r = rec();
+  r.lots.push(lot(P, "6279", "submitted"));
+  const mine = () => T.lotSummaries(r).find(l => l.product === P);
+  const states = () => T.releaseSteps(r, mine()).map(s => `${s.key}:${s.state}`);
+  check("steps: only the lot record exists", states(), ["lot:done", "baking:none", "sealing:none", "retention:none", "release:none"]);
+  // The day's baking record carries both flavors; this lot's loads are the ones that count.
+  r.baking.push(entry({ production_date: "2026-10-06", oven_loads: [{ product: O, lot_code: "6279" }, { product: P, lot_code: "6279" }] }, "draft"));
+  r.baking.push(entry({ production_date: "2026-10-05", oven_loads: [{ product: P, lot_code: "6278" }] }));
+  r.sealing.push(entry({ production_date: "2026-10-06", product: P, lot_code: "6279" }));
+  r.sealing.push(entry({ production_date: "2026-10-06", product: O, lot_code: "6279" }, "draft"));
+  check("steps: the baking record is a draft, this lot's seal record is submitted", states().slice(1, 3), ["baking:open", "sealing:done"]);
+  check("steps: the baking step opens that day's record", T.releaseSteps(r, mine())[1].entryId, r.baking[0].id);
+  r.baking[0].status = "submitted";
+  r.sealing.push(entry({ production_date: "2026-10-07", product: P, lot_code: "6279" }, "draft"));
+  check("steps: a second seal record still a draft is the one to open", [states()[2], T.releaseSteps(r, mine())[2].entryId], ["sealing:open", r.sealing[2].id]);
+  r.retention.push(entry({ product_name: O, lot_code: "6279" }));
+  check("steps: another product's retention sample is not this lot's", states()[3], "retention:none");
+  r.retention.push(entry({ product_name: P, lot_code: "6279" }));
+  r.releases.push(entry({ product_name: P, lot_code: "6279", decision: "" }, "draft"));
+  check("steps: sample logged, release started", states(), ["lot:done", "baking:done", "sealing:open", "retention:done", "release:open"]);
+  check("steps: a load with no product named is counted for the lot", (() => {
+    const q = rec(); q.lots.push(lot(P, "6279", "submitted")); q.baking.push(entry({ production_date: "2026-10-06", oven_loads: [{ lot_code: "6279" }] }));
+    return T.releaseSteps(q, T.lotSummaries(q)[0])[1].state; })(), "done");
+}
 
 console.log(`${cases - failures}/${cases} passed`);
 process.exit(failures ? 1 : 0);
