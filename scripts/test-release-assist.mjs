@@ -227,6 +227,60 @@ check("mapping: a renamed field and a missing form are named",
     "FRM-507": ["production_date", "oven_loads"] }),
   ['FRM-903 no longer has "inspection_date"', "FRM-606 was not found"]);
 
+// ---- proposed results: where the records FULLY support a check, one tap answers it Pass
+{
+  const FULL = ["Batch sheet complete and signed\nx", "Line pre-operation and sanitation release recorded\nx", "No hold applies\nx",
+    "Label is the approved label\nx", "Pack, seal and package integrity correct\nx", "Date and lot code present, legible and correct",
+    "Appearance and sensory standard met\nx", "Quantity and pack configuration match", "Net weight\nThree finished packs weighed."];
+  const r = records();
+  r.preops.push(entry({ inspection_date: "2026-10-01", area_line: "Production floor" }));   // the pack date too
+  const fill = T.releaseFill(r, "Rum Cake - Original", "6273", null);
+  check("supported: the batch record with its CCP rows, the pre-op release, no hold", fill.supports, { batch: true, preop: true, hold: true });
+  const blank = { checks: FULL.map(() => ({ result: "", note: "" })) };
+  const list = T.proposals(blank, fill, FULL);
+  check("three checks proposed, in the order of the form", list.map(p => [p.index, p.state]), [[0, "supported"], [1, "supported"], [2, "supported"]]);
+  check("the label is the row's first line, the reason is the evidence", [list[0].label, list[2].text.startsWith("FRM-702: no hold")], ["Batch sheet complete and signed", true]);
+  const done = T.acceptProposals(blank, list);
+  check("accepting answers those three Pass and nothing else", done.values.checks.map(c => c.result), ["pass", "pass", "pass", "", "", "", "", "", ""]);
+  check("...and says which", done.accepted, [0, 1, 2]);
+  check("the entry handed in is not changed", blank.checks[0].result, "");
+  const mine = { checks: FULL.map((_, i) => ({ result: i === 1 ? "fail" : "", note: "" })) };
+  check("an answer already given is never replaced", T.acceptProposals(mine, T.proposals(mine, fill, FULL)).values.checks.slice(0, 3).map(c => c.result), ["pass", "fail", "pass"]);
+  check("...and is shown as answered", T.proposals(mine, fill, FULL)[1].state, "answered");
+  check("nothing to accept, nothing changed", T.acceptProposals(done.values, T.proposals(done.values, fill, FULL)).accepted, []);
+
+  // what speaks against a check is flagged, never proposed, never answered Fail for the person
+  const noPreop = T.releaseFill(records(), "Rum Cake - Original", "6273", null);
+  check("a pack date with no pre-operation record", noPreop.supports.preop, false);
+  check("...is against, with the reason", T.proposals(blank, noPreop, FULL).filter(p => p.state === "against").map(p => [p.index, p.text.includes("none found for 2026-10-01")]), [[1, true]]);
+  check("...and accepting leaves it unanswered", T.acceptProposals(blank, T.proposals(blank, noPreop, FULL)).values.checks.slice(0, 3).map(c => c.result), ["pass", "", "pass"]);
+  const held = records(); held.holds.push(entry({ hold_tag_number: "H-9", material_name_description: "Soybean oil", supplier_lot_batch_number: "OIL-1", final_disposition_decision: "" }));
+  check("an open hold on a supplier lot", T.releaseFill(held, "Rum Cake - Original", "6273", null).supports.hold, false);
+  const decided = records(); decided.holds.push(entry({ hold_tag_number: "H-9", material_name_description: "Soybean oil", supplier_lot_batch_number: "OIL-1", final_disposition_decision: "Use as is: fine" }));
+  check("a decided hold is still the person's to weigh", T.releaseFill(decided, "Rum Cake - Original", "6273", null).supports.hold, false);
+  const failedLoad = records(); failedLoad.baking[0].data.oven_loads[1].within_limits = "fail";
+  check("a failed oven load", T.releaseFill(failedLoad, "Rum Cake - Original", "6273", null).supports.batch, false);
+  const draftCcp = records(); draftCcp.sealing[0].status = "draft";
+  check("a CCP record not yet reviewed and submitted", T.releaseFill(draftCcp, "Rum Cake - Original", "6273", null).supports.batch, false);
+  const draftLot = T.releaseFill(records(), "Rum Cake - Original", "6280", null);
+  check("a lot record still a draft, with no CCP rows", [draftLot.supports.batch, draftLot.supports.hold], [false, false]);
+  check("no lot chosen: nothing is proposed", T.proposals(blank, T.releaseFill(records(), "Rum Cake - Original", "", null), FULL), []);
+
+  // net weight is arithmetic on what the person typed
+  const w = (a, b, c, extra = {}) => ({ pack_weight_1: a, pack_weight_2: b, pack_weight_3: c, packaging_tare: 21, net_weight_declared: "113 g", net_weight_unit: "g", ...extra });
+  check("average with the packaging off, at or above the label", T.netWeight(w(135, 136, 134)), { average: 114, declared: 113, unit: "g", ok: true });
+  check("exactly the label weight passes", T.netWeight(w(134, 134, 134)).ok, true);
+  check("under the label weight", T.netWeight(w(133, 133, 134)), { average: 112.33, declared: 113, unit: "g", ok: false });
+  check("a label in another unit is converted", T.netWeight(w(4.9, 4.9, 4.9, { packaging_tare: 0.8, net_weight_declared: "113 g", net_weight_unit: "oz" })), { average: 4.1, declared: 3.99, unit: "oz", ok: true });
+  check("a pound weighed in ounces", T.netWeight(w(17, 17, 17, { packaging_tare: 0.5, net_weight_declared: "1 lb", net_weight_unit: "oz" })).declared, 16);
+  check("no unit on the label reads as the unit weighed in", T.netWeight(w(135, 136, 134, { net_weight_declared: "113" })).ok, true);
+  check("not judged until everything is there, and never guessed", [T.netWeight(w(135, 136, "")), T.netWeight(w(135, 136, 134, { packaging_tare: "" })), T.netWeight(w(135, 136, 134, { net_weight_declared: "4 oz (113 g)" })), T.netWeight(w(135, 136, 134, { net_weight_unit: "" })), T.netWeight({})], [null, null, null, null, null]);
+  const weighed = { ...blank, ...w(135, 136, 134) };
+  check("a good weight is proposed with the sum", T.proposals(weighed, fill, FULL).filter(p => p.index === 8).map(p => [p.state, p.text]), [["supported", "Average net weight 114 g, at or above the 113 g on the label."]]);
+  const light = { ...blank, ...w(133, 133, 134) };
+  check("a short weight is against, and accepting does not answer it", [T.proposals(light, fill, FULL).find(p => p.index === 8).state, T.acceptProposals(light, T.proposals(light, fill, FULL)).values.checks[8].result], ["against", ""]);
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} failed`); process.exit(1); }
 console.log(`${cases} cases passed`);

@@ -8,6 +8,13 @@
 // gaps stated as plainly as the finds, and the Pass / Fail tap stays with the person. The three pack
 // weights are never filled in either - they are the measurement.
 //
+// PROPOSED RESULTS (owner, 2026-10-10, choice "A"): where the records FULLY support a check, the
+// page says so and offers one button that answers those checks Pass. It is still the person's tap,
+// so FSQM-020 is unchanged - a Pass never arrives by itself. Three checks can be supported by
+// records (the batch record with its CCP rows, the pre-operation release, no hold) and the net
+// weight by arithmetic on the three weights the person typed. A check the records speak AGAINST is
+// never proposed and never answered Fail for the person: it is flagged, and stays theirs.
+//
 // It must also never come back quietly empty. "No FRM-903 found for 2026-09-30" is evidence; a blank
 // note that could mean "all fine" or "nobody looked" is not.
 
@@ -179,10 +186,15 @@ export interface ReleaseFill {
   notes: Partial<Record<CheckKey, string>>;
   /** Things the person should know that are not an answer: no lot record, an earlier release found. */
   warnings: string[];
+  /**
+   * Whether the records FULLY support a Pass for a check: true = they do, false = they speak against
+   * it or something is missing (the Note says what). Absent = the records cannot decide this check.
+   */
+  supports: Partial<Record<CheckKey, boolean>>;
 }
 
 /** "FRM-507: 3 loads for this lot, all within limits" - or what is missing, said plainly. */
-function ccpLine(form: string, what: string, entries: ReleaseEntry[], grid: string, product: string, lot: string, passKeys: string[]): string {
+function ccpLine(form: string, what: string, entries: ReleaseEntry[], grid: string, product: string, lot: string, passKeys: string[]): { text: string; ok: boolean } {
   // A lot is product + code, so a row that names another product is not this lot's. One that
   // names no product is kept: leaving it out would hide a load that may belong here.
   // The product and the lot are on the row where the form asks for them per row, otherwise they
@@ -195,13 +207,14 @@ function ccpLine(form: string, what: string, entries: ReleaseEntry[], grid: stri
       })
       .filter(r => normLot(str(r.lot_code) ? r.lot_code : e.data.lot_code) === normLot(lot))
       .map(r => ({ r, draft: isDraft(e) })));
-  if (rows.length === 0) return `${form}: no ${what} recorded for this lot.`;
+  if (rows.length === 0) return { text: `${form}: no ${what} recorded for this lot.`, ok: false };
   const failed = rows.filter(({ r }) => passKeys.some(k => str(r[k]).toLowerCase() === "fail")).length;
   // A row may carry one check only (a pull test at boxing, a visual at sealing): unanswered means none at all.
   const unanswered = rows.filter(({ r }) => passKeys.every(k => !str(r[k]))).length;
   const drafts = rows.some(x => x.draft) ? " (record still a draft)" : "";
   const verdict = failed ? `${failed} FAILED` : unanswered ? `${unanswered} not yet answered` : "all passed";
-  return `${form}: ${plural(rows.length, what)} for this lot, ${verdict}${drafts}.`;
+  // Supported only when every row passed AND the record has been reviewed and submitted.
+  return { text: `${form}: ${plural(rows.length, what)} for this lot, ${verdict}${drafts}.`, ok: !failed && !unanswered && !drafts };
 }
 
 /**
@@ -209,7 +222,7 @@ function ccpLine(form: string, what: string, entries: ReleaseEntry[], grid: stri
  * comes from the product's last release is returned, so picking the product alone is still useful.
  */
 export function releaseFill(records: ReleaseRecords, product: string, lot: string, selfId: string | null): ReleaseFill {
-  const fill: ReleaseFill = { fields: {}, notes: {}, warnings: [] };
+  const fill: ReleaseFill = { fields: {}, notes: {}, warnings: [], supports: {} };
   if (!normName(product)) return fill;
   const put = (id: string, v: unknown) => {
     if (typeof v === "number" && Number.isFinite(v)) fill.fields[id] = v;
@@ -266,17 +279,23 @@ export function releaseFill(records: ReleaseRecords, product: string, lot: strin
       + (sameCodeOther.length ? ` The same code is on ${plural(sameCodeOther.length, "record")} for another product.` : ""));
   }
 
+  const bakingLine = ccpLine("FRM-507", "oven load", records.baking, "oven_loads", product, lot, ["within_limits"]);
+  const sealingLine = ccpLine("FRM-606", "sealing check", records.sealing, "seal_checks", product, lot, ["visual", "pull_test"]);
   fill.notes.batch = [
     lotRec
       ? `FRM-520 lot ${str(lotRec.data.lot_code)}${baked ? `, baked ${baked}` : ""}: ${isDraft(lotRec) ? "still a DRAFT - not complete" : `submitted ${day(lotRec.date)}`}.`
       : "FRM-520: no lot record found for this lot.",
-    ccpLine("FRM-507", "oven load", records.baking, "oven_loads", product, lot, ["within_limits"]),
-    ccpLine("FRM-606", "sealing check", records.sealing, "seal_checks", product, lot, ["visual", "pull_test"]),
+    bakingLine.text,
+    sealingLine.text,
   ].join(" ");
+  fill.supports.batch = !!lotRec && !isDraft(lotRec) && bakingLine.ok && sealingLine.ok;
 
   if (dates.length === 0) {
     fill.notes.preop = "FRM-903: the production date is not known, so no pre-operation record could be looked up.";
+    fill.supports.preop = false;
   } else {
+    // Supported when every production date (baking, packing) has a SUBMITTED pre-operation release.
+    fill.supports.preop = dates.every(d => records.preops.some(p => day(p.data.inspection_date) === d && !isDraft(p)));
     fill.notes.preop = dates.map(d => {
       const found = records.preops.filter(p => day(p.data.inspection_date) === d).sort(best);
       if (found.length === 0) return `FRM-903: none found for ${d}.`;
@@ -298,6 +317,11 @@ export function releaseFill(records: ReleaseRecords, product: string, lot: strin
         const decided = str(h.data.final_disposition_decision);
         return `FRM-702 hold ${tag} on ${str(h.data.material_name_description) || "a material"} lot ${str(h.data.supplier_lot_batch_number)}: ${decided ? `decided - ${decided.split(":")[0]}` : "OPEN, no decision yet"}.`;
       }).join(" ");
+
+  // No hold at all, and a lot record to know the supplier lots from. A hold that was decided is
+  // still the person's to weigh, so it is not proposed.
+  // The lot record must be submitted: a draft may not list every supplier lot yet.
+  fill.supports.hold = !!lotRec && !isDraft(lotRec) && holds.length === 0;
 
   if (lotRec && str(lotRec.data.code_check)) fill.notes.code = `FRM-520, code on the pack at packing: ${str(lotRec.data.code_check)}. Check a pack from this lot.`;
   if (lotRec && str(lotRec.data.units_packed)) fill.notes.quantity = `FRM-520: ${str(lotRec.data.units_packed)} packed.`;
@@ -450,4 +474,99 @@ export function productOptionsForLot(records: ReleaseRecords, lot: string): Sugg
     ...all.filter(o => isMade(o.value)).map(o => ({ value: o.value, hint: `lot ${str(lot)} on FRM-520` })),
     ...all.filter(o => !isMade(o.value)),
   ];
+}
+
+// ---------- Proposed results ----------
+
+/** The net-weight check is found by how its row label begins, like the others. */
+export const NET_WEIGHT_ROW = "Net weight";
+const WEIGHT_FIELDS = ["pack_weight_1", "pack_weight_2", "pack_weight_3"] as const;
+const TO_OZ: Record<string, number> = { oz: 1, g: 1 / 28.349523125, lb: 16 };
+const UNIT_WORDS: [RegExp, string][] = [[/^(oz|ounces?)\.?$/i, "oz"], [/^(g|grams?)\.?$/i, "g"], [/^(lb|lbs|pounds?)\.?$/i, "lb"]];
+
+export interface NetWeight {
+  /** The average of the three packs with the empty packaging taken off, in the unit weighed in. */
+  average: number;
+  /** The net weight on the label, in the unit weighed in. */
+  declared: number;
+  unit: string;
+  ok: boolean;
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * FSQM-020's net-weight check as arithmetic: three packs weighed, the empty packaging taken off,
+ * the average at or above the weight on the label. Null until all three weights, the empty
+ * packaging weight and a declared weight that can be read as ONE figure are there - nothing is
+ * guessed. A declared weight in another unit ("1 lb" weighed in oz) is converted.
+ */
+export function netWeight(values: Record<string, any>): NetWeight | null {
+  const weights = WEIGHT_FIELDS.map(k => (str(values[k]) === "" ? NaN : Number(values[k])));
+  const tare = str(values.packaging_tare) === "" ? NaN : Number(values.packaging_tare);
+  if (!weights.every(w => Number.isFinite(w) && w > 0) || !Number.isFinite(tare) || tare < 0) return null;
+  const m = /^(\d+(?:\.\d+)?)\s*([a-z.]*)$/i.exec(str(values.net_weight_declared));
+  if (!m) return null;
+  const unit = str(values.net_weight_unit);
+  const said = m[2] ? UNIT_WORDS.find(([re]) => re.test(m[2]))?.[1] : unit;
+  if (!said || !TO_OZ[said] || !TO_OZ[unit]) return null;
+  const declared = Number(m[1]) * TO_OZ[said] / TO_OZ[unit];
+  const average = weights.reduce((a, b) => a + b, 0) / 3 - tare;
+  // A hundredth of the unit of slack, so a conversion's rounding is not read as short weight.
+  return { average: round2(average), declared: round2(declared), unit, ok: average + 0.005 >= declared };
+}
+
+export type ProposalState = "supported" | "against" | "answered";
+export interface Proposal {
+  /** Row index in the checks table. */
+  index: number;
+  /** The check's short name (the first line of its row label). */
+  label: string;
+  state: ProposalState;
+  /** Why: what the records show, or the sum. */
+  text: string;
+}
+
+/**
+ * What the records support for the checks of an entry, once a lot is chosen. "supported" = the
+ * records fully support Pass and the check is not answered yet; "against" = they do not, with
+ * the reason; "answered" = supported and already answered by the person. Checks the records
+ * cannot decide are not listed at all.
+ */
+export function proposals(values: Record<string, any>, fill: ReleaseFill, checkLabels: string[]): Proposal[] {
+  const rows: Record<string, any>[] = Array.isArray(values[RELEASE_TARGET.checks]) ? values[RELEASE_TARGET.checks] : [];
+  const out: Proposal[] = [];
+  const add = (prefix: string, ok: boolean, text: string) => {
+    const index = checkLabels.findIndex(l => l.startsWith(prefix));
+    if (index < 0) return;
+    const answered = str(rows[index]?.result) !== "";
+    out.push({ index, label: checkLabels[index].split("\n")[0], state: !ok ? "against" : answered ? "answered" : "supported", text });
+  };
+  for (const check of ["batch", "preop", "hold"] as const) {
+    const ok = fill.supports[check];
+    if (ok === undefined) continue;
+    add(CHECK_ROWS[check], ok, fill.notes[check] ?? "");
+  }
+  const nw = netWeight(values);
+  if (nw) {
+    add(NET_WEIGHT_ROW, nw.ok, nw.ok
+      ? `Average net weight ${nw.average} ${nw.unit}, at or above the ${nw.declared} ${nw.unit} on the label.`
+      : `Average net weight ${nw.average} ${nw.unit} is BELOW the ${nw.declared} ${nw.unit} on the label.`);
+  }
+  return out.sort((a, b) => a.index - b.index);
+}
+
+/** Answer Pass for every "supported" check that is still unanswered. Nothing else is touched. */
+export function acceptProposals(values: Record<string, any>, list: Proposal[]): { values: Record<string, any>; accepted: number[] } {
+  const rows: Record<string, any>[] = Array.isArray(values[RELEASE_TARGET.checks])
+    ? values[RELEASE_TARGET.checks].map((r: any) => ({ ...(r ?? {}) })) : [];
+  const accepted: number[] = [];
+  for (const p of list) {
+    if (p.state !== "supported") continue;
+    while (rows.length <= p.index) rows.push({});
+    if (str(rows[p.index].result) !== "") continue;
+    rows[p.index].result = "pass";
+    accepted.push(p.index);
+  }
+  return accepted.length ? { values: { ...values, [RELEASE_TARGET.checks]: rows }, accepted } : { values, accepted };
 }

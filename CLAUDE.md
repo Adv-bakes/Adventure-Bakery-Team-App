@@ -1519,6 +1519,29 @@ the entry starts from the **lot code** (what is printed on the pack) and looks t
   packed. Gaps are stated ("FRM-903: none found for 2026-10-01"), never left blank. **It never answers
   a check and never fills a pack weight**: FSQM-020 has the SQF Practitioner confirm each check, and
   the owner chose evidence-plus-tap over auto-Pass (2026-10-06). The same reasoning as `aiDraft`.
+- **Proposed results, accepted in one tap (owner's choice "A", 2026-10-10).** The rule above stands - a
+  Pass never arrives by itself - but where the records FULLY support a check the helper's card lists it
+  ("Pass is supported", with the evidence) and one button, **Accept the N supported results**, answers
+  those checks Pass (`proposals` / `acceptProposals` in `releaseAssist.ts`; `ReleaseFill.supports`). Three
+  checks can be supported by records: **batch** (FRM-520 submitted AND its FRM-507 and FRM-606 rows all
+  passed on SUBMITTED records), **pre-op** (a submitted FRM-903 for every production date, bake and
+  pack), **no hold** (lot record submitted and no FRM-702 names the lot or its supplier / film lots - a
+  DECIDED hold is still the person's to weigh). **Net weight** is arithmetic on what the person typed
+  (`netWeight`: three packs, empty packaging off, average at or above the label; a label in another unit
+  is converted; null until every figure is there and the declared weight reads as one figure). A check
+  the records speak AGAINST is listed in red and left unanswered - the app never answers Fail for the
+  person. Label, date and lot code, pack integrity, appearance and quantity are never proposed. An
+  answer already given is never replaced. Option B (results filled in without a tap) was NOT chosen: it
+  would need FSQM-020 reworded. An entry opened with lot and product already there and no batch
+  reference (started from the Today page) is filled once without re-picking the lot.
+- **Release, on a lot awaiting release on the Today page (2026-10-10, `components/team/today/ReleaseButton.tsx`,
+  admins and owners only).** A menu of the steps in order, each read from the records by `releaseSteps`
+  (`today.ts`): lot record (FRM-520), the baking record carrying its oven loads (FRM-507), its seal check
+  records (FRM-606), its retention sample (FRM-703, now in `TODAY_FORMS`), the release (FRM-701). A step is
+  ticked when its record is submitted, amber while a draft, "none" when there is no record; choosing it
+  opens the record (the first draft, else the newest). FRM-703 and FRM-701 are STARTED from the menu with
+  lot and product filled in; a missing production record is never created after the fact. Wording in
+  `TODAY_MSG.releaseSteps`.
 - **`applyReleaseFill` writes a cell only if it is empty or still holds what the helper last wrote**,
   so changing the lot updates looked-up cells, clears ones with nothing behind them, and leaves
   typing alone. On a reopened entry `autoFromFill` recognises the helper's earlier cells by value.

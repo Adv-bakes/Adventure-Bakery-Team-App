@@ -27,13 +27,14 @@ import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords } 
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
   attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, lastReceipt, localDay, lotsInProgress, openHolds,
-  ovenLoads, preopState, productionOpen, sealState, sealingAwaitingReview, TODAY_FORMS,
+  ovenLoads, preopState, productionOpen, releaseSteps, sealState, sealingAwaitingReview, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 import { BakeLoadButton } from "@/components/team/today/BakeLoadButton";
 import { SealCheckButton } from "@/components/team/today/SealCheckButton";
 import { PackingButton } from "@/components/team/today/PackingButton";
+import { ReleaseButton } from "@/components/team/today/ReleaseButton";
 
 const LANG_KEY = "today.lang";
 type Doc = { id: string; sop_number: string; revision: string | null; content: any };
@@ -286,7 +287,16 @@ export default function Today() {
                         </div>
                       </div>
                       {l.stage === "awaiting_release" || l.stage === "released" ? (
-                        <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>FRM-520</Link></Button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Release is the SQF Practitioner's alone (FSQM-020): the steps, for admins and owners. */}
+                          {l.stage === "awaiting_release" && isAdmin && (
+                            <ReleaseButton
+                              lot={l} steps={releaseSteps(records!, l)} lang={lang}
+                              docs={{ retention: docOf("retention"), release: docOf("releases") }}
+                            />
+                          )}
+                          <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>FRM-520</Link></Button>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-2 flex-wrap">
                           {/* Baking comes before the lot record's next step, so its button comes first. */}

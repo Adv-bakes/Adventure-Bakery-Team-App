@@ -60,6 +60,12 @@ export interface TodayMessages {
     reopened(lot: string, product: string): string; nothingToReopen: string; doneTip: string;
     reviewNote(date: string, lot: string, product: string): string; awaitingReview(by: string): string;
   };
+  /** The Release button on a lot awaiting release: the steps before the release, in order. */
+  releaseSteps: {
+    button: string; heading: string; done: string; open: string; none: string; start: string; startFailed: string;
+    step: Record<"lot" | "baking" | "sealing" | "retention" | "release", string>;
+    noRecord: Record<"lot" | "baking" | "sealing" | "retention" | "release", string>;
+  };
   /** The packing button on a lot's row: the first pack from a photo, and the three counts. */
   pack: {
     button: string; doneTip: string; photo: string; counts: string; open: string;
@@ -220,6 +226,29 @@ const en: TodayMessages = {
     doneTip: "Record seal check - checks finished",
     reviewNote: (date, lot, product) => `Sealing record for ${date}, lot ${lot}, ${product}: the last check is recorded. Please review and sign.`,
     awaitingReview: by => `Today's seal checks are finished and signed by ${by}. Waiting for review.`,
+  },
+  releaseSteps: {
+    button: "Release",
+    heading: "Before the release, in order. Choose a step to open its record.",
+    done: "Submitted",
+    open: "Still a draft - review, sign and submit it",
+    none: "No record found for this lot",
+    start: "Not started - start it now",
+    startFailed: "The record could not be started.",
+    step: {
+      lot: "Lot record (FRM-520)",
+      baking: "Baking record reviewed and signed (FRM-507)",
+      sealing: "Seal check records reviewed and signed (FRM-606)",
+      retention: "Retention sample logged (FRM-703)",
+      release: "Release the lot (FRM-701)",
+    },
+    noRecord: {
+      lot: "The lot record could not be found.",
+      baking: "No baking record carries an oven load for this lot. Look in the SOPs Library under FRM-507.",
+      sealing: "No seal check record was found for this lot. Look in the SOPs Library under FRM-606.",
+      retention: "The Retention Sample Log (FRM-703) could not be found.",
+      release: "The release record form (FRM-701) could not be found.",
+    },
   },
   pack: {
     button: "Record packing",
@@ -404,6 +433,29 @@ const es: TodayMessages = {
     doneTip: "Registrar sellado - revisiones terminadas",
     reviewNote: (date, lot, product) => `Sealing record for ${date}, lot ${lot}, ${product}: the last check is recorded. Please review and sign.`,
     awaitingReview: by => `Las revisiones de sellado de hoy terminaron y las firmó ${by}. En espera de revisión.`,
+  },
+  releaseSteps: {
+    button: "Liberar",
+    heading: "Antes de la liberación, en orden. Elija un paso para abrir su registro.",
+    done: "Enviado",
+    open: "Aún en borrador - revíselo, fírmelo y envíelo",
+    none: "No se encontró registro para este lote",
+    start: "Sin empezar - empezarlo ahora",
+    startFailed: "No se pudo empezar el registro.",
+    step: {
+      lot: "Registro del lote (FRM-520)",
+      baking: "Registro de horneado revisado y firmado (FRM-507)",
+      sealing: "Registros de sellado revisados y firmados (FRM-606)",
+      retention: "Muestra de retención anotada (FRM-703)",
+      release: "Liberar el lote (FRM-701)",
+    },
+    noRecord: {
+      lot: "No se encontró el registro del lote.",
+      baking: "Ningún registro de horneado tiene una carga de horno de este lote. Búsquelo en la biblioteca, en FRM-507.",
+      sealing: "No se encontró registro de sellado para este lote. Búsquelo en la biblioteca, en FRM-606.",
+      retention: "No se encontró el registro de muestras de retención (FRM-703).",
+      release: "No se encontró el formulario de liberación (FRM-701).",
+    },
   },
   pack: {
     button: "Registrar empaque",
