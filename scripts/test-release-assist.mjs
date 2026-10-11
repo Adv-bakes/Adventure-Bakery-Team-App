@@ -227,6 +227,20 @@ check("mapping: a renamed field and a missing form are named",
     "FRM-507": ["production_date", "oven_loads"] }),
   ['FRM-903 no longer has "inspection_date"', "FRM-606 was not found"]);
 
+// ---- the customer does not wait on the label being approved
+{
+  const r = T.emptyReleaseRecords();
+  r.lots.push(entry({ product: "Rum Cake - Pumpkin Spice", lot_code: "6279", bake_date: "2026-10-06", ingredients: [] }));
+  r.labels.push(entry({ product_name: "Rum Cake - Pumpkin Spice", customer_brand: "Bahama Rum Cakes", approval_evidence: "Archived email confirmation", label_artwork_version: "v1", controlled_label_id: "LBL-9" }, "draft"));
+  const f = T.releaseFill(r, "Rum Cake - Pumpkin Spice", "6279", null);
+  check("a label review still in draft names the customer", f.fields.customer, "Bahama Rum Cakes");
+  check("...but its label reference and version are not taken as approved", [f.fields.approved_label_ref ?? null, f.fields.label_version ?? null], [null, null]);
+  check("with no lot chosen either (the retention sample's lookup)", T.releaseFill(r, "Rum Cake - Pumpkin Spice", "", null).fields.customer, "Bahama Rum Cakes");
+  r.releases.push(entry({ product_name: "Rum Cake - Pumpkin Spice", lot_code: "6272", customer: "" }));
+  check("a last release with a blank customer does not hide it", T.releaseFill(r, "Rum Cake - Pumpkin Spice", "6279", null).fields.customer, "Bahama Rum Cakes");
+  check("another product's label review is never borrowed", T.releaseFill(r, "Rum Cake - Original", "", null).fields.customer ?? null, null);
+}
+
 // ---- proposed results: where the records FULLY support a check, one tap answers it Pass
 {
   const FULL = ["Batch sheet complete and signed\nx", "Line pre-operation and sanitation release recorded\nx", "No hold applies\nx",

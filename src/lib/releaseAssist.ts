@@ -237,7 +237,12 @@ export function releaseFill(records: ReleaseRecords, product: string, lot: strin
   const labels = records.labels.filter(l => sameProduct(l.data.product_name, product)).sort(best);
   const approved = labels.find(l => !isDraft(l) && str(l.data.approval_evidence));
 
-  put("customer", previous?.data.customer ?? spec?.data.customer_brand ?? approved?.data.customer_brand);
+  // Who the product is made for does not wait on the label being approved: a label review still
+  // in draft names the customer too, and is read last. (The label REFERENCE and VERSION below are
+  // taken from an approved review only - an unapproved label is not the approved label.)
+  const firstSaid = (...values: unknown[]) => values.find(v => str(v) !== "");
+  put("customer", firstSaid(previous?.data.customer, spec?.data.customer_brand, approved?.data.customer_brand,
+    ...labels.map(l => l.data.customer_brand)));
   put("net_weight_declared", previous?.data.net_weight_declared ?? spec?.data.net_weight);
   if (previous) {
     const tare = previous.data.packaging_tare;
