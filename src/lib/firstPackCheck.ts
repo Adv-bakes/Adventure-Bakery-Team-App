@@ -2,14 +2,18 @@
 //
 // FSQM-021: the first pack is checked against the lot record before packing carries on - the
 // flavor, the lot code, the best-by date, and that any bar code scans. This compares what was READ
-// off a photograph of the pack with what the record and the product's formula sheet say it should
+// off a photograph of the pack with what the record and the product's approved label say it should
 // be, one line per point.
 //
 // It is evidence, never the answer: the person who checked still answers "Code on the pack"
 // (FSQM-021 has a trained person approve the first pack). A point that could not be read is said
 // to be unread - it is never counted as a match.
 //
-// Pure: no imports, so it can be tested in Node. The loader for the formula sheet's bar code
+// The bar code number belongs to the LABEL (one formula can be sold in two packs), so it is read
+// from the product's newest Label Review (FRM-601); the formula sheet's number is the fallback
+// for a product with no label review yet.
+//
+// Pure: no imports, so it can be tested in Node. The loader for the product's bar code
 // number is loadProductBarcode in formReport.ts.
 
 /** Where the pieces live. Rename a field on either form, update this. */
@@ -23,6 +27,8 @@ export const FIRST_PACK = {
   checkedBy: "code_checked_by",
   /** The option of `answer` that says the pack is right. */
   matches: "Matches the lot code above",
+  /** Where the bar code number is looked up, in order: the label review, then the formula sheet. */
+  barcodeLabel: { form: "FRM-601", productField: "product_name", field: "barcode_number" },
   barcodeSource: { form: "FRM-501", productField: "product_name", field: "barcode_number" },
   /** How an attachment that is a first-pack photo is recognised, and where its result is kept. */
   notePrefix: "First pack photo",
@@ -40,13 +46,17 @@ export interface PackLine {
   text: string;
 }
 
+export type BarcodeFrom = "label" | "label_draft" | "formula";
+
 export interface PackExpected {
   product: string;
   lot: string;
   /** yyyy-mm-dd, the lot's manufacturing (bake) date. */
   bakeDate: string;
-  /** The formula sheet's bar code number; blank when it has none. */
+  /** The product's bar code number; blank when none is recorded. */
   barcode?: string;
+  /** Where that number came from. Absent reads as the formula sheet. */
+  barcodeFrom?: BarcodeFrom;
 }
 
 export interface PackRead {
@@ -161,14 +171,15 @@ const TEXT = {
     dateLook: (read: string, want: string) => `Best-by date needs a look: the pack says "${read}". It should say ${want}.`,
     dateMatch: (read: string) => `Best-by date matches: ${read}.`,
     dateWrong: (read: string, want: string) => `Best-by date ${NOT_MATCH.en}: the pack says "${read}". It should say ${want}.`,
+    from: { label: "the approved label (FRM-601)", label_draft: "the label review (FRM-601, still a draft)", formula: "the formula sheet" },
     scanned: "scanned",
     notScanned: "read from the printed digits, not scanned",
-    codeNoSheet: (seen: string, how: string) => `Bar code ${seen} (${how}). The formula sheet has no bar code number to compare it with.`,
-    codeNothing: "Bar code: none read, and the formula sheet has no bar code number.",
+    codeNoSheet: (seen: string, how: string) => `Bar code ${seen} (${how}). No bar code number is recorded for this product on its label review (FRM-601) or formula sheet to compare it with.`,
+    codeNothing: "Bar code: none read, and no bar code number is recorded for this product.",
     codeUnread: (want: string) => `Bar code: could not be read from the photo. It should be ${want}.`,
-    codeMatch: (seen: string) => `Bar code matches the formula sheet: ${seen} (scanned).`,
-    codeDigits: (seen: string) => `Bar code digits match the formula sheet: ${seen}. The bars were not scanned from the photo - scan the pack to confirm it reads.`,
-    codeWrong: (seen: string, how: string, want: string) => `Bar code ${NOT_MATCH.en}: the pack says ${seen} (${how}), the formula sheet says ${want}.`,
+    codeMatch: (seen: string, src: string) => `Bar code matches ${src}: ${seen} (scanned).`,
+    codeDigits: (seen: string, src: string) => `Bar code digits match ${src}: ${seen}. The bars were not scanned from the photo - scan the pack to confirm it reads.`,
+    codeWrong: (seen: string, how: string, want: string, src: string) => `Bar code ${NOT_MATCH.en}: the pack says ${seen} (${how}), ${src} says ${want}.`,
   },
   es: {
     flavorUnread: "Sabor: no se pudo leer en la foto.",
@@ -187,14 +198,15 @@ const TEXT = {
     dateLook: (read: string, want: string) => `Revise la fecha: el empaque dice "${read}". Debe decir ${want}.`,
     dateMatch: (read: string) => `La fecha coincide: ${read}.`,
     dateWrong: (read: string, want: string) => `La fecha ${NOT_MATCH.es}: el empaque dice "${read}". Debe decir ${want}.`,
+    from: { label: "la etiqueta aprobada (FRM-601)", label_draft: "la revisión de etiqueta (FRM-601, aún en borrador)", formula: "la hoja de fórmula" },
     scanned: "escaneado",
     notScanned: "leído de los dígitos impresos, no escaneado",
-    codeNoSheet: (seen: string, how: string) => `Código de barras ${seen} (${how}). La hoja de fórmula no tiene un número con el cual compararlo.`,
-    codeNothing: "Código de barras: no se leyó ninguno, y la hoja de fórmula no tiene número.",
+    codeNoSheet: (seen: string, how: string) => `Código de barras ${seen} (${how}). Este producto no tiene un número de código de barras en su revisión de etiqueta (FRM-601) ni en su hoja de fórmula con el cual compararlo.`,
+    codeNothing: "Código de barras: no se leyó ninguno, y este producto no tiene un número registrado.",
     codeUnread: (want: string) => `Código de barras: no se pudo leer en la foto. Debe ser ${want}.`,
-    codeMatch: (seen: string) => `El código de barras coincide con la hoja de fórmula: ${seen} (escaneado).`,
-    codeDigits: (seen: string) => `Los dígitos del código de barras coinciden con la hoja de fórmula: ${seen}. Las barras no se escanearon en la foto: escanee el empaque para confirmar que se lee.`,
-    codeWrong: (seen: string, how: string, want: string) => `El código de barras ${NOT_MATCH.es}: el empaque dice ${seen} (${how}), la hoja de fórmula dice ${want}.`,
+    codeMatch: (seen: string, src: string) => `El código de barras coincide con ${src}: ${seen} (escaneado).`,
+    codeDigits: (seen: string, src: string) => `Los dígitos del código de barras coinciden con ${src}: ${seen}. Las barras no se escanearon en la foto: escanee el empaque para confirmar que se lee.`,
+    codeWrong: (seen: string, how: string, want: string, src: string) => `El código de barras ${NOT_MATCH.es}: el empaque dice ${seen} (${how}), ${src} dice ${want}.`,
   },
 } as const;
 
@@ -244,14 +256,15 @@ export function checkFirstPack(expected: PackExpected, read: PackRead, lang: Pac
   const scanned = digits(read.decodedBarcode), printed = digits(read.barcode);
   const seen = scanned || printed;
   const how = scanned ? T.scanned : T.notScanned;
+  const src = T.from[expected.barcodeFrom ?? "formula"];
   if (!digits(expected.barcode)) {
     lines.push({ point: "barcode", state: "skipped", text: seen ? T.codeNoSheet(seen, how) : T.codeNothing });
   } else if (!seen) {
     lines.push({ point: "barcode", state: "unread", text: T.codeUnread(digits(expected.barcode)) });
   } else if (sameBarcode(seen, expected.barcode)) {
-    lines.push({ point: "barcode", state: scanned ? "match" : "check", text: scanned ? T.codeMatch(seen) : T.codeDigits(seen) });
+    lines.push({ point: "barcode", state: scanned ? "match" : "check", text: scanned ? T.codeMatch(seen, src) : T.codeDigits(seen, src) });
   } else {
-    lines.push({ point: "barcode", state: "mismatch", text: T.codeWrong(seen, how, digits(expected.barcode)) });
+    lines.push({ point: "barcode", state: "mismatch", text: T.codeWrong(seen, how, digits(expected.barcode), src) });
   }
   return lines;
 }
@@ -261,7 +274,7 @@ export type PackVerdict = "match" | "mismatch" | "incomplete";
 /** All four agree, something is wrong, or something still has to be looked at by eye. */
 export function packVerdict(lines: PackLine[]): PackVerdict {
   if (lines.some(l => l.state === "mismatch")) return "mismatch";
-  // A bar code the formula sheet cannot judge is not a reason to hold the answer back.
+  // A bar code with no recorded number to judge it by is not a reason to hold the answer back.
   return lines.every(l => l.state === "match" || (l.point === "barcode" && l.state === "skipped")) ? "match" : "incomplete";
 }
 
@@ -298,4 +311,27 @@ export function productBarcode(entries: Record<string, unknown>[], product: unkn
     if (code) return code;
   }
   return "";
+}
+
+/** A label review as the loader hands it over: its answers and whether it is submitted. Newest first. */
+export interface LabelEntry { status?: string; data?: Record<string, unknown> | null }
+
+/**
+ * The product's bar code number and where it came from: the newest SUBMITTED label review of the
+ * product that states one, else its newest draft label review, else the formula sheet. Another
+ * product's number is never borrowed.
+ */
+export function productBarcodeFrom(
+  labels: LabelEntry[],
+  formulas: Record<string, unknown>[],
+  product: unknown,
+): { barcode: string; from?: BarcodeFrom } {
+  const want = words(product).join(" ");
+  if (!want) return { barcode: "" };
+  const mine = labels.filter(l => words(l.data?.[FIRST_PACK.barcodeLabel.productField]).join(" ") === want
+    && digits(l.data?.[FIRST_PACK.barcodeLabel.field]) !== "");
+  const label = mine.find(l => l.status === "submitted") ?? mine[0];
+  if (label) return { barcode: digits(label.data?.[FIRST_PACK.barcodeLabel.field]), from: label.status === "submitted" ? "label" : "label_draft" };
+  const formula = productBarcode(formulas, product);
+  return formula ? { barcode: formula, from: "formula" } : { barcode: "" };
 }

@@ -1425,8 +1425,14 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
   point (`checkFirstPack`): flavor against the record's Product (a flavor word on the pack the record
   lacks is a mismatch; one only the record has "needs a look"), lot code (`normLot`), best-by **month**
   = bake date + 12 months (`expectedBestBy`, owner's rule: made 10 Oct 2026 says October 2027;
-  `parseBestBy` reads only a plain date), and the bar code against the formula sheet's number
-  (`loadProductBarcode` in `formReport.ts`; skipped when the sheet has none). The bar code is decoded
+  `parseBestBy` reads only a plain date), and the bar code against the product's recorded number.
+  **That number belongs to the LABEL** (owner, 2026-10-10: one formula can be sold in two packs): FRM-601
+  v2 (migration `20261010000007`, GJM) has a Bar code number field, and `productBarcodeFrom` takes the
+  product's newest SUBMITTED label review that states one, else its newest draft, else the formula
+  sheet's number as the fallback - the line says which ("the approved label (FRM-601)", "the label
+  review (FRM-601, still a draft)", "the formula sheet"). Loader `loadProductBarcode` in
+  `formReport.ts`; skipped when nothing is recorded. FRM-501's field is to be REMOVED once every flavor
+  has its FRM-601 (owner agreed), so there is one home. The bar code is decoded
   from the picture (`barcodeDecode.ts`): the browser's `BarcodeDetector` where there is one (Android
   Chrome), else the ZXing library (`@zxing/library`, loaded only then) - Chrome on Windows has no
   detector, and the owner's first try on a laptop came back "not scanned" (2026-10-10). A decode is a

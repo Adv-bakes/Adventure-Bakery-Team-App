@@ -94,6 +94,20 @@ const sheets = [
 check("the newest sheet of the product that states one", T.productBarcode(sheets, "Rum Cake - Pumpkin Spice"), "850012345678");
 check("another product's number is never borrowed", [T.productBarcode(sheets, "Rum Cake - Coconut"), T.productBarcode(sheets, "")], ["", ""]);
 
+// ---- the number belongs to the label: FRM-601 first, the formula sheet as the fallback
+const label = (product_name, barcode_number, status = "draft") => ({ status, data: { product_name, barcode_number } });
+const from = (labels, product = "Rum Cake - Pumpkin Spice") => T.productBarcodeFrom(labels, sheets, product);
+check("no label review: the formula sheet's number", from([]), { barcode: "850012345678", from: "formula" });
+check("a draft label review wins over the formula sheet", from([label("Rum Cake - Pumpkin Spice", "8 10075 00106 8")]), { barcode: "810075001068", from: "label_draft" });
+check("an approved one wins over a newer draft", from([label("Rum Cake - Pumpkin Spice", "111111111111"), label("Rum Cake - Pumpkin Spice", "810075001068", "submitted")]), { barcode: "810075001068", from: "label" });
+check("the newest approved one of several", from([label("Rum Cake - Pumpkin Spice", "222222222222", "submitted"), label("Rum Cake - Pumpkin Spice", "810075001068", "submitted")]).barcode, "222222222222");
+check("a label review with no number is passed over", from([label("Rum Cake - Pumpkin Spice", ""), label("Rum Cake - Original", "999999999999", "submitted")]), { barcode: "850012345678", from: "formula" });
+check("nothing anywhere", T.productBarcodeFrom([], [], "Rum Cake - Coconut"), { barcode: "" });
+const said = (barcodeFrom, read) => T.checkFirstPack({ ...REC, barcodeFrom }, read)[3].text;
+check("the line names the approved label", said("label", { decodedBarcode: "850012345678" }), "Bar code matches the approved label (FRM-601): 850012345678 (scanned).");
+check("...or says the label review is still a draft", said("label_draft", { decodedBarcode: "850012345999" }).includes("the label review (FRM-601, still a draft) says 850012345678"), true);
+check("...or the formula sheet, as before", said(undefined, { decodedBarcode: "850012345678" }), "Bar code matches the formula sheet: 850012345678 (scanned).");
+
 // ---- the form it runs on
 const schema = { sections: [{ id: "lot", fields: [{ id: "product" }, { id: "lot_code" }, { id: "bake_date" }] },
   { id: "packing", fields: [{ id: "code_check", options: ["Matches the lot code above", "Did not match - held on FRM-702"] }, { id: "code_checked_by" }] }] };

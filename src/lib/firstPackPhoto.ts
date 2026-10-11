@@ -33,14 +33,14 @@ export async function photographFirstPack(
   const uploaded = await uploadResponseAttachment(response.id, file);
   const withPhoto = await saveResponseAttachments(response.id, [...(response.attachments ?? []), { ...uploaded, note: FIRST_PACK.notePrefix }]);
   try {
-    const [result, decodedBarcode, barcode] = await Promise.all([
+    const [result, decodedBarcode, code] = await Promise.all([
       getResponseAttachmentUrl(uploaded.path).then(url => extractPackageLabel([url], ["product_name", "lot_code", "best_by", "barcode"], "finished_goods")),
       decodeBarcode(file),
       loadProductBarcode(String(values[FIRST_PACK.product] ?? "")),
     ]);
     const expected = {
       product: String(values[FIRST_PACK.product] ?? ""), lot: String(values[FIRST_PACK.lot] ?? ""),
-      bakeDate: String(values[FIRST_PACK.bakeDate] ?? ""), barcode,
+      bakeDate: String(values[FIRST_PACK.bakeDate] ?? ""), barcode: code.barcode, barcodeFrom: code.from,
     };
     const read = { ...result.facts, decodedBarcode };
     const noted = await saveResponseAttachments(response.id, (withPhoto.attachments ?? []).map(a =>

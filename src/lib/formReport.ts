@@ -16,7 +16,7 @@ import type { GridPickFrom } from "./formSchema";
 import { supabase } from "@/integrations/supabase/client";
 import { formatFieldValue, getFormSchema, valueFields, type FormField, type FormSchema, type SelectOptionsFrom } from "@/lib/formSchema";
 import { fetchResponses, type FormResponse } from "@/lib/formResponses";
-import { FIRST_PACK, productBarcode } from "./firstPackCheck";
+import { FIRST_PACK, productBarcodeFrom, type BarcodeFrom } from "./firstPackCheck";
 
 export const REPORT_SCHEMA_VERSION = 1;
 
@@ -300,20 +300,22 @@ export async function loadBakeTargets(product: string): Promise<BakeTargets> {
 }
 
 /**
- * The bar code number on the product's formula sheet (FRM-501), for the first-pack check on the
- * lot record. Blank when the sheet states none. Never throws - the check then skips the bar code.
+ * The product's bar code number for the first-pack check: from its newest label review (FRM-601),
+ * else its formula sheet (FRM-501). Blank when neither states one. Never throws - the check then
+ * skips the bar code.
  */
-export async function loadProductBarcode(product: string): Promise<string> {
-  try {
-    const doc = await fetchSourceForm(FIRST_PACK.barcodeSource.form);
-    if (!doc) return "";
-    const entries = (await fetchResponses(doc.id))   // newest first
-      .filter(r => !(r.data && "_test_batch" in r.data))
-      .map(r => r.data ?? {});
-    return productBarcode(entries, product);
-  } catch {
-    return "";
-  }
+export async function loadProductBarcode(product: string): Promise<{ barcode: string; from?: BarcodeFrom }> {
+  const entriesOf = async (form: string) => {
+    try {
+      const doc = await fetchSourceForm(form);
+      if (!doc) return [];
+      return (await fetchResponses(doc.id)).filter(r => !(r.data && "_test_batch" in r.data));   // newest first
+    } catch {
+      return [];
+    }
+  };
+  const [labels, formulas] = await Promise.all([entriesOf(FIRST_PACK.barcodeLabel.form), entriesOf(FIRST_PACK.barcodeSource.form)]);
+  return productBarcodeFrom(labels, formulas.map(r => r.data ?? {}), product);
 }
 
 export async function loadSelectOptions(spec: SelectOptionsFrom): Promise<string[]> {
