@@ -76,12 +76,19 @@ export function pickFills(
  * With `match`, only the entries whose `match.field` is `match.value` are read (compared like the
  * values themselves: without case or stray spaces); a blank `match.value` offers nothing.
  */
-export function suggestValuesFromRows(field: string, rows: Record<string, any>[], match?: { field: string; value: unknown }): string[] {
+export function suggestValuesFromRows(
+  field: string,
+  rows: Record<string, any>[],
+  match?: { field: string; value: unknown },
+  /** "FRM-501 {formula_version}": what is offered, with each {key} taken from the entry. */
+  template?: string,
+): string[] {
   const out: string[] = [];
   if (match && !text(match.value)) return out;
   for (const data of rows) {
     if (match && !same(text(data?.[match.field]), text(match.value))) continue;
-    const value = text(data?.[field]);
+    const own = text(data?.[field]);
+    const value = own && template ? text(template.replace(/[{]([a-z0-9_]+)[}]/gi, (_, key) => text(data?.[key]))) : own;
     if (value && !out.some(v => same(v, value))) out.push(value);
   }
   return out.sort((a, b) => a.localeCompare(b));

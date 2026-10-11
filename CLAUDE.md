@@ -527,6 +527,9 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   (`suggestValuesFromRows(field, rows, match)`; the rows load once, the narrowing is on screen). First
   use: FRM-601's Linked Formula Version = the Formula Version of the formula sheets of the Product Name
   entered above it (migration `20261010000008`, no revision change).
+  **`suggestFrom.template`** builds what is offered from the entry ("FRM-501 {formula_version}" offers
+  "FRM-501 v1"; an entry with no `field` still offers nothing). First use: FRM-704's Formula reference,
+  narrowed to the Product entered above it (migration `20261011000002`, no revision change).
   **`suggestFrom.grid`** reads the list from the ROWS of a table inside the source form (`field` is then
   the row key, `_label` for a register row's own name; `where: { column, equals }` filters rows;
   `current: true` reads only the register's current entry - newest submitted, else newest draft).

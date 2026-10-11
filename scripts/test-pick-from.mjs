@@ -92,6 +92,13 @@ check("an empty cell with nothing to offer is left alone", T.pickFills(rum, null
   check("another product", of("Rum Cake - Pumpkin Spice"), ["v1"]);
   check("no product chosen, nothing offered", [of(""), of(undefined), of("  ")], [[], [], []]);
   check("a product with no formula sheet", of("Rum Cake - Coconut"), []);
+
+  // `template`: what is offered is built from the entry (FRM-704's Formula reference).
+  const ref = value => T.suggestValuesFromRows("formula_version", versions, { field: "product_name", value }, "FRM-501 {formula_version}");
+  check("the form number with each version", ref("Rum Cake - Original"), ["FRM-501 v1", "FRM-501 v2"]);
+  check("an entry with no version offers nothing, not a bare form number", ref("Rum Cake - Pumpkin Spice"), ["FRM-501 v1"]);
+  check("several answers in one line", T.suggestValuesFromRows("formula_version", versions.slice(0, 1), undefined, "{product_name} ({formula_version})"), ["Rum Cake - Original (v2)"]);
+  check("a key the entry does not have is left out", T.suggestValuesFromRows("formula_version", versions.slice(0, 1), undefined, "FRM-501 {formula_version} {nothing}"), ["FRM-501 v2"]);
 }
 
 // ---------- the same list read from the rows of a table (suggestFrom.grid): customers on FRM-011 ----------
