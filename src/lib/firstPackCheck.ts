@@ -291,6 +291,25 @@ export function noteHasMismatch(note: unknown): boolean {
   return isPackNote(note) && str(note).includes(NOT_MATCH.en);
 }
 
+/**
+ * The best-by date as the newest first-pack photo read it off the pack AND found it correct -
+ * word for word ("October 2027"). Empty when no photo matched: a date that was wrong or unread is
+ * never handed on. `notes` are the lot record's attachment notes, oldest first.
+ */
+export function bestByFromPackNotes(notes: unknown[]): string {
+  const lead = "Best-by date matches: ";
+  for (const note of [...notes].reverse()) {
+    const text = str(note);
+    if (!isPackNote(text)) continue;
+    const at = text.indexOf(lead);
+    if (at < 0) continue;
+    const rest = text.slice(at + lead.length);
+    const end = rest.search(/[.] (?:Bar code|Lot code|Flavor)|[.]$/);
+    return (end < 0 ? rest : rest.slice(0, end)).trim();
+  }
+  return "";
+}
+
 /** Does this revision of the form have the fields the check reads and writes? */
 export function firstPackReady(schema: { sections?: { id?: string; fields?: { id?: string; options?: unknown }[] }[] } | null | undefined): boolean {
   const all = (schema?.sections ?? []).flatMap(s => s.fields ?? []);

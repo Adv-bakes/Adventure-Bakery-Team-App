@@ -10,6 +10,8 @@
 // when there is no record. Choosing a step opens that record. The retention sample and the release
 // record are STARTED from here when there is none, with the lot and product filled in - on the
 // release record that is what lets the helper look the rest up without picking the lot again.
+// The retention sample is also started with what the records can answer (retentionStart.ts): the
+// bar code digits, the customer, the best-by date and the discard date.
 //
 // Shown to admins and owners only: FSQM-020 has the SQF Practitioner alone release product.
 
@@ -19,7 +21,9 @@ import { AlertTriangle, CheckCircle2, ChevronDown, CircleDashed, Loader2, Packag
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { createResponse } from "@/lib/formResponses";
+import { createResponse, fetchResponse, saveResponseData } from "@/lib/formResponses";
+import { getFormSchema } from "@/lib/formSchema";
+import { blanksFilled, retentionDefaults } from "@/lib/retentionStart";
 import type { LotSummary, ReleaseStep, ReleaseStepKey } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 
@@ -39,6 +43,22 @@ export function ReleaseButton({ lot, steps, docs, lang }: {
   const href = (docId: string, id: string) => `/team/compliance/forms/${docId}/entries/${id}?from=today`;
 
   const go = async (step: ReleaseStep) => {
+    // A retention sample already started but not finished: what the records can now answer is put
+    // into its BLANK answers before it opens. Nothing typed is touched.
+    if (step.key === "retention" && step.state === "open" && step.entryId && step.docId) {
+      setBusy(true);
+      try {
+        const r = await fetchResponse(step.entryId);
+        if (r && r.status === "draft") {
+          const add = blanksFilled(r.data, await retentionDefaults(lot, getFormSchema(docs.retention?.content)));
+          if (Object.keys(add).length) await saveResponseData(r.id, { ...(r.data ?? {}), ...add }, r.updated_at);
+        }
+      } catch (e) {
+        console.error(e);   // the record still opens; it is only missing the looked-up answers
+      }
+      navigate(href(step.docId, step.entryId));
+      return;
+    }
     if (step.entryId && step.docId) { navigate(href(step.docId, step.entryId)); return; }
     // Only the last two are started from here; a missing production record is not made up after the fact.
     const doc = step.key === "retention" ? docs.retention : step.key === "release" ? docs.release : undefined;
@@ -46,7 +66,7 @@ export function ReleaseButton({ lot, steps, docs, lang }: {
     setBusy(true);
     try {
       const prefill = step.key === "retention"
-        ? { product_name: lot.product, lot_code: lot.lotCode, date_produced: lot.bakeDate }
+        ? await retentionDefaults(lot, getFormSchema(doc.content))
         : { product_name: lot.product, lot_code: lot.lotCode };
       const r = await createResponse(doc, prefill);
       navigate(href(doc.id, r.id));
