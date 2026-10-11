@@ -1538,7 +1538,11 @@ the entry starts from the **lot code** (what is printed on the pack) and looks t
   admins and owners only).** A menu of the steps in order, each read from the records by `releaseSteps`
   (`today.ts`): lot record (FRM-520), the baking record carrying its oven loads (FRM-507), its seal check
   records (FRM-606), its retention sample (FRM-703, now in `TODAY_FORMS`), the release (FRM-701). A step is
-  ticked when its record is submitted, amber while a draft, "none" when there is no record; choosing it
+  ticked when its record is submitted, amber while a draft, "none" when there is no record. **The
+  retention sample is the exception** (owner, 2026-10-11): FRM-703 is KEPT AS A DRAFT while the sample is
+  on the shelf and submitted only at disposal, so its step is ticked once "Sample taken by" is signed
+  (`retentionStep`: started / on the shelf with its discard date / disposed). No interim status is
+  stored - the signature is the interim state. Choosing a step
   opens the record (the first draft, else the newest). FRM-703 and FRM-701 are STARTED from the menu with
   lot and product filled in; a missing production record is never created after the fact. Wording in
   `TODAY_MSG.releaseSteps`. **The retention sample starts with what the records can answer**

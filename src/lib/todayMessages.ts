@@ -64,6 +64,8 @@ export interface TodayMessages {
   releaseSteps: {
     button: string; heading: string; done: string; open: string; none: string; start: string; startFailed: string;
     step: Record<"lot" | "baking" | "sealing" | "retention" | "release", string>;
+    /** The retention sample's record stays a draft while the sample is on the shelf. */
+    sampleStarted: string; sampleOnShelf(due: string): string; sampleDisposed: string;
     noRecord: Record<"lot" | "baking" | "sealing" | "retention" | "release", string>;
   };
   /** The packing button on a lot's row: the first pack from a photo, and the three counts. */
@@ -235,6 +237,9 @@ const en: TodayMessages = {
     none: "No record found for this lot",
     start: "Not started - start it now",
     startFailed: "The record could not be started.",
+    sampleStarted: "Started - complete it and sign \"Sample taken by\"",
+    sampleOnShelf: due => `Logged - on the shelf${due ? `, discard due ${due}` : ""}`,
+    sampleDisposed: "Logged - since disposed of",
     step: {
       lot: "Lot record (FRM-520)",
       baking: "Baking record reviewed and signed (FRM-507)",
@@ -442,6 +447,9 @@ const es: TodayMessages = {
     none: "No se encontró registro para este lote",
     start: "Sin empezar - empezarlo ahora",
     startFailed: "No se pudo empezar el registro.",
+    sampleStarted: "Empezada - complétela y firme \"Muestra tomada por\"",
+    sampleOnShelf: due => `Anotada - en el estante${due ? `, desechar el ${due}` : ""}`,
+    sampleDisposed: "Anotada - ya desechada",
     step: {
       lot: "Registro del lote (FRM-520)",
       baking: "Registro de horneado revisado y firmado (FRM-507)",
