@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { DocRefLinks } from "./DocRefText";
 
 // Browser speech recognition (prefixed in Chrome/Edge) — same detection as
 // SlideContentEditor's narration dictation.
@@ -189,7 +190,8 @@ export function DictationTextarea({ value, onChange, onBlur, disabled, rows, cla
   const display = interim ? `${(value ?? "").trimEnd()} ${interim}`.trimStart() : value ?? "";
 
   return (
-    <div className="relative">
+    <div className="flex items-start gap-1.5">
+    <div className="relative flex-1 min-w-0">
       <Textarea
         ref={textareaRef}
         value={display}
@@ -253,6 +255,8 @@ export function DictationTextarea({ value, onChange, onBlur, disabled, rows, cla
           </button>
         </div>
       )}
+    </div>
+    <DocRefLinks text={value ?? ""} compact={compact} />
     </div>
   );
 }
