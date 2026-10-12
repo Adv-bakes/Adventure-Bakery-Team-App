@@ -1284,6 +1284,9 @@ starting from `profiles.preferred_language` and remembered in `localStorage` (`t
 - **The two general CCP buttons are gone** (owner, 2026-10-11): "Record an oven load (FRM-507)" and
   "Record seal checks (FRM-606)" under the lot list were removed once every lot's row had its own Record
   bake and Record seal check. A CCP record for a lot with no row is opened from the SOPs Library.
+- **The Receiving card links its logs** (owner, 2026-10-12): `recentReceipts(records, today)` gives the
+  newest FRM-301 entry whenever it was made, plus every other one made today or yesterday; each line
+  opens that entry, and a draft is tagged.
 - Entries opened from here carry `?from=today`; `FormEntry` turns that into "Back to Today" (same
   mechanism as `from=notifications`). `loadTodayRecords()` is the loader, same shape as
   `loadReleaseRecords` (mapped keys only, paged, `_test_batch` rows skipped) plus `created_by` /

@@ -190,14 +190,28 @@ export function lastDispatch(dispatches: TodayEntry[]): DispatchSummary | null {
   return { date: day(e.data.dispatch_date), customer: str(e.data.customer), lots: seen.size, status: e.status };
 }
 
-export interface ReceiptSummary { date: string; lines: number; suppliers: string[]; status: string }
+export interface ReceiptSummary { id: string; docId: string; date: string; lines: number; suppliers: string[]; status: string }
+
+function receiptSummary(e: TodayEntry): ReceiptSummary {
+  const rows = rowsOf(e, "receiving_log").filter(r => str(r.supplier_name) || str(r.material_description));
+  return { id: e.id, docId: e.docId, date: day(when(e)), lines: rows.length, suppliers: [...new Set(rows.map(r => str(r.supplier_name)).filter(Boolean))], status: e.status };
+}
 
 /** The newest receiving log, by the day it was created (FRM-301 has no date field of its own). */
 export function lastReceipt(receipts: TodayEntry[]): ReceiptSummary | null {
   const e = [...receipts].sort((a, b) => when(b).localeCompare(when(a)))[0];
-  if (!e) return null;
-  const rows = rowsOf(e, "receiving_log").filter(r => str(r.supplier_name) || str(r.material_description));
-  return { date: day(when(e)), lines: rows.length, suppliers: [...new Set(rows.map(r => str(r.supplier_name)).filter(Boolean))], status: e.status };
+  return e ? receiptSummary(e) : null;
+}
+
+/**
+ * The receiving logs the Today page links to (owner, 2026-10-12): the newest one whenever it was
+ * made, and every other log made today or yesterday. Newest first.
+ */
+export function recentReceipts(receipts: TodayEntry[], today: string): ReceiptSummary[] {
+  const [y, m, d] = today.split("-").map(Number);
+  const yesterday = new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
+  const sorted = [...receipts].sort((a, b) => when(b).localeCompare(when(a)));
+  return sorted.filter((e, i) => i === 0 || day(when(e)) >= yesterday).map(receiptSummary);
 }
 
 /** Today's CCP records: the FRM-507 for the day (one per day) and the FRM-606 entries (one per lot). */

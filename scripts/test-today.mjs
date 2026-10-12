@@ -148,7 +148,17 @@ const lot = (product, lot_code, status = "draft", extra = {}) => entry({ product
     entry({ receiving_log: [{ supplier_name: "Sysco", material_description: "Oil" }, { supplier_name: "Sysco", material_description: "Eggs" }, { supplier_name: "", material_description: "" }] }, "submitted", "2026-10-08T09:00:00Z"),
     entry({ receiving_log: [{ supplier_name: "RD", material_description: "Mix" }] }, "submitted", "2026-10-02T09:00:00Z"),
   ];
-  check("last receipt", T.lastReceipt(rcp), { date: "2026-10-08", lines: 2, suppliers: ["Sysco"], status: "submitted" });
+  check("last receipt", (({ id, docId, ...r }) => r)(T.lastReceipt(rcp)), { date: "2026-10-08", lines: 2, suppliers: ["Sysco"], status: "submitted" });
+  {
+    const R = (id, createdAt, status = "submitted") => ({ id, docId: "d301", status, createdAt, submittedAt: null, createdBy: null, submittedBy: null, data: { receiving_log: [{ supplier_name: "Sysco" }] } });
+    const ids = (list, today) => T.recentReceipts(list, today).map(r => r.id);
+    const list = [R("old", "2026-10-01T12:00:00Z"), R("yday", "2026-10-11T12:00:00Z"), R("am", "2026-10-12T12:00:00Z"), R("pm", "2026-10-12T16:00:00Z", "draft")];
+    check("receipts of today and yesterday, newest first", ids(list, "2026-10-12"), ["pm", "am", "yday"]);
+    check("with nothing recent, the last one is still linked", ids([R("old", "2026-10-01T12:00:00Z"), R("older", "2026-09-20T12:00:00Z")], "2026-10-12"), ["old"]);
+    check("none yet", ids([], "2026-10-12"), []);
+    check("a link carries the entry and its status", (({ id, docId, status }) => [id, docId, status])(T.recentReceipts(list, "2026-10-12")[0]), ["pm", "d301", "draft"]);
+    check("yesterday across a month end", ids([R("a", "2026-09-30T12:00:00Z"), R("b", "2026-10-01T12:00:00Z")], "2026-10-01"), ["b", "a"]);
+  }
 }
 {
   const r = rec();
