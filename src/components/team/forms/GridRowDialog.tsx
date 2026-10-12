@@ -49,8 +49,13 @@ export interface GridRowDialogProps {
    * than reaching for the grid's: that one lives outside the modal, and driving a
    * hidden input across a focus-trapped portal is a needless thing to depend on.
    */
-  onScanFile?: (file: File) => void;
+  onScanFile?: (file: File, add?: boolean) => void;
   scanning?: boolean;
+  /**
+   * How many photos of this row's pack have been read in this page visit. Above zero, a further
+   * photo of the SAME pack can be added: it is read together with the earlier ones.
+   */
+  packShots?: number;
   /** Grey suggestion for a cell (column.suggestFrom), computed by the grid that owns the row. */
   suggestionFor?: (column: GridColumn, rowIndex: number) => string | null;
   /** "Draft from records" for columns with `aiDraft` (FRM-010 evidence). Absent = no button. */
@@ -58,11 +63,12 @@ export interface GridRowDialogProps {
 }
 
 export function GridRowDialog({
-  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning, suggestionFor, onDraftCell,
+  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning, packShots = 0, suggestionFor, onDraftCell,
 }: GridRowDialogProps) {
   const open = rowIndex != null;
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const addRef = useRef(false); // the picker was opened by "another photo of this pack"
 
   return (
     <Dialog open={open} onOpenChange={o => { if (!o) onClose(); }}>
@@ -89,11 +95,13 @@ export function GridRowDialog({
               `capture` entirely, so there both buttons land on the file picker —
               harmless, and honest about what the machine can do. */}
           {onScanFile && (() => {
-            const take = (input: HTMLInputElement | null) => input?.click();
+            const take = (input: HTMLInputElement | null, add = false) => { addRef.current = add; input?.click(); };
             const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
               const file = e.target.files?.[0];
               e.target.value = "";            // so the same photo can be retaken
-              if (file) onScanFile(file);
+              const add = addRef.current;
+              addRef.current = false;
+              if (file) onScanFile(file, add);
             };
             return (
               <>
@@ -115,6 +123,19 @@ export function GridRowDialog({
                             onClick={() => take(fileRef.current)}>
                       <ImageIcon className="w-4 h-4 mr-2 text-[#9A6F1E]" />Choose photo
                     </Button>
+                    {packShots > 0 && packShots < 4 && !disabled && (
+                      <p className="col-span-2 text-xs text-[#2A1F0E]/70">
+                        Something missing? Add another side of the SAME pack - it is read together with the first:{" "}
+                        <button type="button" className="font-medium text-[#9A6F1E] hover:underline" onClick={() => take(cameraRef.current, true)}>
+                          Take another photo
+                        </button>
+                        {" or "}
+                        <button type="button" className="font-medium text-[#9A6F1E] hover:underline" onClick={() => take(fileRef.current, true)}>
+                          choose one
+                        </button>
+                        . The two buttons above start again from a new photo.
+                      </p>
+                    )}
                   </div>
                 )}
               </>

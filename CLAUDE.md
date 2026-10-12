@@ -388,6 +388,15 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   `deleteResponse` — an orphaned object is harmless, a failed scan is not). Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
   `onScanLabel` ← `FormEntry.tsx` (upload → attach → signed URL → invoke); admin toggle + per-column
   mapping live in `GridColumnsEditor`.
+- **A further photo of the same pack, on a grid row (owner at receiving, 2026-10-12).** After a row scan,
+  "Add another photo of this pack" (the result strip, and the row pop-up's "Take another photo / choose
+  one") sends the new photo TOGETHER with the row's earlier ones (`ScanRequest.earlier`, kept as `File`s
+  for the page visit only, four at most; the page uploads them again as transient objects). The result
+  goes through `applyAddedLabelScan`: a cell is written only if empty or still holding what the earlier
+  scan of this pack wrote; a cell corrected since is kept and named ("Left as you had it"). Undo goes
+  back to the row before the FIRST photo. The camera button on the row still starts afresh and replaces,
+  as before. The remembered pack is dropped when a row is added or removed. `applyLabelScan` no longer
+  writes a notes line that is already there. Tested in `scripts/test-label-scan-merge.mjs`.
 - **Specification scan (FRM-207): one photo fills the whole entry, declarations included.** A third
   `ScanMode`, `"specification"`, reads the identity facts **plus** `DECLARATION_FACTS` (`ingredients`,
   `contains_statement`, `allergens`, `may_contain`, `storage`). The receiving modes keep their rule and
