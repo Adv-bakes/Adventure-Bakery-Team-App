@@ -119,3 +119,9 @@ export function useUserPref<T>(key: string | null, fallback: T): [T, (value: T) 
   const value = (key && stored !== undefined ? stored : local !== undefined ? local : fallback) as T;
   return [value, set];
 }
+
+/**
+ * "Do not show this again" on the Submit confirmation of a form entry: true = submit straight
+ * away. The person's own choice, on any device; it can be switched back on My Account.
+ */
+export const SKIP_SUBMIT_CONFIRM = "form.skipSubmitConfirm";
