@@ -1076,6 +1076,12 @@ is **retired**, never removed. SELECT is `is_compliance_viewer`, so the auditor 
   The job takes the **maximum** covers-until across submitted entries, not the newest entry's value,
   so a correction filed to an earlier period cannot walk the due date backwards and re-raise
   something already discharged.
+- **A row's evidence form must be one whose SUBMISSION shows the activity was done** (owner, 2026-10-12).
+  `complaint_review` was evidenced by FRM-002, the report of ONE complaint, so its reminder said "no
+  record has ever been made" and could never be discharged. The monthly review is done at the monthly
+  SQF update, so the row now points at FRM-009 (migration `20261012000001`, FSQM-017 v15, SOP-2.1.3 v2).
+  Two rows share that record on purpose (owner chose this over retiring the row): one FRM-009 submission
+  discharges both. A per-event form (a complaint, a hold, a CAPA) is never schedule evidence.
 - **`status='planned'`** means scheduled but *not being performed* — the governing program has not
   been issued. Three of the twenty-five rows are planned (critical-limit re-validation, backflow, water - as of 2026-10-07; calibration, the internal audit and the mock recall were activated when their programs were issued, and a crisis plan review row was added with FSQM-024); compressed air is **retired** (D-32 determined
   11.5.5 is not engaged). A CHECK forces each planned row to name its deliverable, and `assessDue()`
