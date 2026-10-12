@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   AppNotification, dismissNotification, fetchClearedNotifications,
-  fetchOpenNotifications, isDismissable,
+  clearOrphanSignatureRequest, fetchOpenNotifications, isDismissable, orphanSignatureRequests,
 } from "@/lib/notifications";
 import { fetchProfileNames } from "@/lib/formResponses";
 import StaffNotices from "@/components/team/StaffNotices";
@@ -42,8 +42,12 @@ function ResponsiblePill({ position }: { position: string }) {
 }
 
 function NotificationCard({
-  n, onDismiss,
-}: { n: AppNotification; onDismiss: (n: AppNotification) => void }) {
+  n, onDismiss, orphan, onClearOrphan,
+}: {
+  n: AppNotification; onDismiss: (n: AppNotification) => void;
+  /** A signature request whose form entry no longer exists: its link leads nowhere, so it can be cleared. */
+  orphan?: boolean; onClearOrphan?: (n: AppNotification) => void;
+}) {
   const isTemp = n.notification_type === "temperature_alert";
   const isSignature = n.notification_type === "signature_requested" || n.notification_type === "signature_signed";
   const overdue = n.severity === "overdue";
@@ -74,7 +78,12 @@ function NotificationCard({
               )}
             </div>
 
-            {n.links.length > 0 && (
+            {orphan && (
+              <p className="mt-3 text-sm text-amber-800">
+                The entry this asks you to sign no longer exists - it was deleted. There is nothing left to sign.
+              </p>
+            )}
+            {n.links.length > 0 && !orphan && (
               <ul className="mt-3 space-y-1">
                 {n.links.map((l) => (
                   <li key={l.href}>
@@ -102,6 +111,11 @@ function NotificationCard({
               Clear
             </Button>
           )}
+          {orphan && onClearOrphan && (
+            <Button variant="outline" size="sm" className="shrink-0" onClick={() => onClearOrphan(n)}>
+              Clear
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -117,6 +131,7 @@ export default function Notifications() {
   const [target, setTarget] = useState<AppNotification | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [orphans, setOrphans] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -124,6 +139,8 @@ export default function Notifications() {
       const [o, c] = await Promise.all([fetchOpenNotifications(), fetchClearedNotifications()]);
       setOpen(o);
       setCleared(c);
+      // Not awaited: the page shows at once, and a request found without its entry gains a Clear button.
+      void orphanSignatureRequests(o).then(setOrphans);
       const ids = [...new Set(c.map((n) => n.dismissed_by).filter((v): v is string => !!v))];
       setNames(ids.length ? await fetchProfileNames(ids) : new Map());
     } catch (e) {
@@ -151,6 +168,17 @@ export default function Notifications() {
     }
   };
 
+  const clearOrphan = async (n: AppNotification) => {
+    try {
+      const done = await clearOrphanSignatureRequest(n.id);
+      if (done) toast.success("Cleared - the entry no longer exists");
+      else toast.message("The entry exists after all, so the request stays.");
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not clear it");
+    }
+  };
+
   const signatures = open.filter((n) => n.notification_type === "signature_requested");
   const signed = open.filter((n) => n.notification_type === "signature_signed");
   const overdue = open.filter((n) => n.severity === "overdue"
@@ -162,7 +190,9 @@ export default function Notifications() {
     items.length > 0 && (
       <section className="space-y-2">
         <h2 className="text-sm font-semibold tp-on-bg-dim">{title} ({items.length})</h2>
-        {items.map((n) => <NotificationCard key={n.id} n={n} onDismiss={setTarget} />)}
+        {items.map((n) => (
+          <NotificationCard key={n.id} n={n} onDismiss={setTarget} orphan={orphans.has(n.id)} onClearOrphan={clearOrphan} />
+        ))}
       </section>
     );
 
