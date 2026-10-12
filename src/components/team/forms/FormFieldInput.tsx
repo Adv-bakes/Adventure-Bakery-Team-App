@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { deriveDateValue, deriveTextValue, julianLotCode, nextDerivedFill } from "@/lib/formSchema";
+import { deriveDateValue, deriveTextValue, nextDerivedFill } from "@/lib/formSchema";
 import { loadSelectOptions, loadSuggestRows } from "@/lib/formReport";
 import { suggestValuesFromRows } from "@/lib/pickFrom";
 import { fetchFormLinkTarget, type FormLinkTarget } from "@/lib/formResponses";
@@ -115,16 +115,16 @@ function DerivedText({ derive, control, value, onChange }: {
       </button>
     );
   }
-  const today = derive.as === "julian_lot" ? julianLotCode(format(new Date(), "yyyy-MM-dd")) : undefined;
+  const today = deriveTextValue(derive, format(new Date(), "yyyy-MM-dd"));
   if (!today || value) return null;
   return (
     <button
       type="button"
       onClick={() => onChange(today)}
       className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0 whitespace-nowrap"
-      title={`Today's code - set the ${from} and this follows it`}
+      title={`Today's value - set the ${from} and this follows it`}
     >
-      Today {today}
+      {derive.as === "julian_lot" ? "Today" : "Use"} {today}
     </button>
   );
 }

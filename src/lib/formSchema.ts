@@ -111,10 +111,23 @@ export interface TextField     extends FieldBase {
  *
  * `julian_lot`: last digit of the year + three-digit day of the year -
  * Adventure Bakery's lot code (SOP-2.2.3, FSQM-021). 2026-09-30 -> "6273".
+ *
+ * `month_year`: the month the date falls in, in English - FRM-009's Month covered
+ * from the date of the update (owner, 2026-10-12). 2026-10-12 -> "October 2026".
  */
 export interface TextDerivation {
   fromField: string;
-  as: "julian_lot";
+  as: "julian_lot" | "month_year";
+}
+
+const MONTHS_IN_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "October 2026" for a yyyy-MM-dd date, or undefined when it cannot be read. Always English. */
+export function monthYear(date: unknown): string | undefined {
+  if (typeof date !== "string") return undefined;
+  const m = /^(\d{4})-(\d{2})-\d{2}/.exec(date.trim());
+  const name = m ? MONTHS_IN_FULL[Number(m[2]) - 1] : undefined;
+  return name ? `${name} ${m![1]}` : undefined;
 }
 
 /** The Julian lot code of a yyyy-MM-dd date, or undefined when it cannot be read. */
@@ -131,7 +144,7 @@ export function julianLotCode(date: unknown): string | undefined {
 }
 
 export function deriveTextValue(derive: TextDerivation, source: unknown): string | undefined {
-  return derive.as === "julian_lot" ? julianLotCode(source) : undefined;
+  return derive.as === "julian_lot" ? julianLotCode(source) : derive.as === "month_year" ? monthYear(source) : undefined;
 }
 export interface TextareaField extends FieldBase { type: "textarea"; rows?: number; }
 export interface NumberField   extends FieldBase { type: "number";   min?: number; max?: number; step?: number; unit?: string; }
