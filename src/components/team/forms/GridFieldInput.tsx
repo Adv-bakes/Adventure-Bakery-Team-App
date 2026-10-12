@@ -233,8 +233,8 @@ export interface ScanRequest {
   keepPhoto: boolean;
   mode: ScanMode;
   /**
-   * Earlier photos of the SAME pack, taken in this page visit, to be read together with the
-   * new one ("Add another photo"). Row scans only; the section scan finds its own.
+   * Further photos to be read together with this one - only when several pictures are chosen
+   * at once. Row scans only; the section scan finds its own.
    */
   earlier?: File[];
 }
@@ -246,7 +246,7 @@ interface ScanOutcome {
   filled: string[];
   /** Cells a further photo read differently but left alone, because they were changed by hand. */
   kept: string[];
-  /** How many photos of this pack were read together. */
+  /** How many photos of this pack have been read, each on its own. */
   shots: number;
   alternates: string[];
   warnings: string[];
@@ -354,12 +354,13 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   const packRef = useRef<ScannedPack | null>(null);
   packRef.current = pack;
   const scanAddRef = useRef(false);                     // the hidden input was opened by "Add another photo"
-  // The read in flight. A further photo taken while it is still being read starts a second read
-  // of all the photos together, but the first read is NEVER thrown away: its answer fills the row
-  // when it arrives, and the fuller read is applied after it, as an addition. (The first cut
+  // The read in flight. A further photo of the same pack is read ON ITS OWN (owner, 2026-10-12:
+  // why read the first photo twice?) and only fills what is still blank; it may be taken while the
+  // first is still being read. The first read is never thrown away: its answer fills the row when
+  // it arrives, and the further photo's is applied after it. (The first cut
   // dropped the first answer, and when the second read gave nothing the row stayed empty - the
   // owner's first try on the tablet, 2026-10-12.) scanGen only says which read is the newest.
-  const pendingRef = useRef<{ rowIndex: number; files: File[]; done: Promise<void> } | null>(null);
+  const pendingRef = useRef<{ rowIndex: number; files: File[]; done: Promise<GridRowValue | null> } | null>(null);
   const scanGen = useRef(0);
   const [pendingShots, setPendingShots] = useState(0);
   // With scanKeepPhoto each photo is saved onto the entry as it is read, and two saves at once
@@ -386,44 +387,44 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
     if (rowIndex == null || !onScanLabel || picked.length === 0) return;
     const pending = add && pendingRef.current?.rowIndex === rowIndex ? pendingRef.current : null;
     const known = add && packRef.current?.rowIndex === rowIndex ? packRef.current.files : [];
-    const files = [...(pending?.files ?? known), ...picked].slice(-4); // the reader takes four
+    const files = [...(pending?.files ?? known), ...picked]; // every photo of this pack so far
     const gen = ++scanGen.current;
-    const done = readAndApply(files, rowIndex, add, pending?.done ?? null, gen);
+    const done = readAndApply(files, picked.slice(-4), rowIndex, add, pending?.done ?? null, gen);
     pendingRef.current = { rowIndex, files, done };
     setPendingShots(files.length);
     setScanningRow(rowIndex);
     if (!pending) setScan(null);
   };
 
-  const readAndApply = async (files: File[], rowIndex: number, add: boolean, after: Promise<void> | null, gen: number) => {
+  const readAndApply = async (files: File[], picked: File[], rowIndex: number, add: boolean, after: Promise<GridRowValue | null> | null, gen: number): Promise<GridRowValue | null> => {
+    // The row as the read before this one left it. It is HANDED ON rather than read back from the
+    // form: the form's own copy (rowsRef) is not yet updated a moment after a write, and building
+    // on that stale copy wiped the first photo's cells (caught on the test page, 2026-10-12).
+    let base: GridRowValue | null = null;
     try {
-      const result = await onScanLabel!(files[files.length - 1], {
+      const result = await onScanLabel!(picked[picked.length - 1], {
         label: field.label,
         rowIndex,
         wanted: scanWantedFacts(field), // only ask for facts a column (or the notes overflow) can hold
         keepPhoto: !!field.scanKeepPhoto,
         mode: field.scanMode ?? "ingredient",
-        earlier: files.slice(0, -1),
+        earlier: picked.slice(0, -1), // several pictures chosen at once are one read
       });
-      // The read this one adds to goes into the row first; then a moment for the form to show it,
-      // so this read builds on the row as it now stands.
-      if (after) {
-        await after;
-        await new Promise(resolve => window.setTimeout(resolve, 0));
-      }
+      // The read this one adds to goes into the row first.
+      if (after) base = await after;
       if (!result) {
         // The caller already said why. The row keeps whatever the earlier photo gave.
         if (files.length > 1) {
           setScan(s => s && s.rowIndex === rowIndex
-            ? { ...s, warnings: [...s.warnings, `The photos could not be read together - row ${rowIndex + 1} keeps what the first photo gave.`] }
+            ? { ...s, warnings: [...s.warnings, `The extra photo could not be read - row ${rowIndex + 1} keeps what the first photo gave.`] }
             : s);
         }
-        return;
+        return base;
       }
       const earlier = add && packRef.current?.rowIndex === rowIndex ? packRef.current : null;
-      const prev = rowsRef.current[rowIndex] ?? {};
+      const prev = base ?? rowsRef.current[rowIndex] ?? {};
       const { next, filled, kept } = earlier
-        ? applyAddedLabelScan(field, prev, result, earlier.written)
+        ? applyAddedLabelScan(field, prev, result, {}) // blank cells only: the first photo's answers stand
         : { ...applyLabelScan(field, prev, result), kept: [] as string[] };
       if (filled.length) update(rowIndex, next);
       const wrote: GridRowValue = { ...(earlier?.written ?? {}) };
@@ -437,15 +438,21 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
         filled,
         kept,
         shots: files.length,
-        alternates: result.alternates?.lot_code ?? [],
+        // A lot code this photo read differently is not written over the first one; it is offered.
+        alternates: [...new Set([
+          ...(lotColumn && kept.includes(lotColumn.label) && result.facts?.lot_code ? [String(result.facts.lot_code)] : []),
+          ...(result.alternates?.lot_code ?? []),
+        ])],
         warnings: result.warnings ?? [],
       });
       // A scan fills three or four cells and leaves the rest — quantity, temperature, the
       // pass/fail checks — to the person. Opening the vertical view lands them exactly where
       // that work is, and puts what the model guessed in front of a human before it is saved.
       if (rowDialogEnabled) setDialogRow(rowIndex);
+      return filled.length ? next : base;
     } catch {
       /* the caller owns error messaging; just drop the spinner */
+      return base;
     } finally {
       if (gen === scanGen.current) {
         setScanningRow(null);
@@ -736,7 +743,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
             >
               <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9A6F1E]" />
               <span className="text-[#2A1F0E]">
-                {pendingShots > 1 ? `Reading ${pendingShots} photos together for row ${scanningRow + 1}…` : `Reading the label for row ${scanningRow + 1}…`}
+                {pendingShots > 1 ? `Reading photo ${pendingShots} for row ${scanningRow + 1}…` : `Reading the label for row ${scanningRow + 1}…`}
               </span>
               {addWhileReading && pendingShots < 4 && (
                 <button
@@ -765,7 +772,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                 {scan.filled.length > 0 ? (
                   <>
                     <span className="text-[#2A1F0E]">
-                      {scan.shots > 1 ? `${scan.shots} photos read together filled` : "Label scan filled"}{" "}
+                      {scan.shots > 1 ? `Photo ${scan.shots} filled` : "Label scan filled"}{" "}
                       <strong>{scan.filled.join(", ")}</strong> in row {scan.rowIndex + 1} — check it against the pack.
                     </span>
                     <button
@@ -803,7 +810,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                 )}
               </div>
               {scan.kept.length > 0 && (
-                <p className="text-[#2A1F0E]/70">Left as you had it: {scan.kept.join(", ")}.</p>
+                <p className="text-[#2A1F0E]/70">Already filled, so left as it was: {scan.kept.join(", ")}.</p>
               )}
 
               {/* The pack usually carries several numbers; if the wrong one was
