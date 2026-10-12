@@ -129,6 +129,10 @@ export function periodPhrase(p: UpdatePeriod): string {
   return p.previous ? `since the last update on ${p.previous}` : `in the 31 days to ${p.until} (no earlier update on record)`;
 }
 
+/** A heading, then each item on its own line with a leading bullet (owner's request, 2026-10-12). */
+const BULLET = "\u2022 ";
+const list = (head: string, items: string[]) => [`${head}:`, ...items.map(i => BULLET + i)].join("\n");
+
 /** What the records say about each matter. Every line names the form it read. */
 export function monthlyUpdateLines(records: UpdateRecords, p: UpdatePeriod): Record<UpdateRow, string> {
   const E = records.entries;
@@ -138,10 +142,10 @@ export function monthlyUpdateLines(records: UpdateRecords, p: UpdatePeriod): Rec
   const name = (t: string) => t.replace(/\s+is\s+(over)?due$/i, "");
   const overdue = records.reminders.filter(r => r.severity === "overdue");
   const due = records.reminders.filter(r => r.severity !== "overdue");
-  const listed = (rs: typeof records.reminders) => rs.map(r => `${name(r.title)}${r.dueOn ? ` (due ${r.dueOn})` : ""}`).join("; ");
+  const listed = (rs: typeof records.reminders) => rs.map(r => `${name(r.title)}${r.dueOn ? ` (due ${r.dueOn})` : ""}`);
   const verification = records.reminders.length === 0
     ? `Nothing on the verification schedule is due or overdue as of ${p.until}.`
-    : [overdue.length ? `Overdue: ${listed(overdue)}.` : "", due.length ? `Due: ${listed(due)}.` : ""].filter(Boolean).join(" ");
+    : [overdue.length ? list("Overdue", listed(overdue)) : "", due.length ? list("Due", listed(due)) : ""].filter(Boolean).join("\n");
 
   // --- corrective actions still open, whenever they were raised
   const open = E.capas
@@ -149,60 +153,60 @@ export function monthlyUpdateLines(records: UpdateRecords, p: UpdatePeriod): Rec
     .sort((a, b) => dated(a, "date_raised").localeCompare(dated(b, "date_raised")));
   const capa = open.length === 0
     ? `No corrective action is open on FRM-007 as of ${p.until}.`
-    : `${plural(open.length, "corrective action")} open on FRM-007: ` + open.map(e => {
+    : list(`${plural(open.length, "corrective action")} open on FRM-007`, open.map(e => {
         const target = day(e.data.target_close_date);
         const late = target && target < p.until ? " - PAST DUE" : "";
         const raised = day(e.data.date_raised);
         return `${str(e.data.capa_no) || "(no number)"} (${[str(e.data.severity), raised ? `raised ${raised}` : "", target ? `target ${target}` : "no target date"].filter(Boolean).join(", ")}${late})`;
-      }).join("; ") + ".";
+      }));
 
   // --- complaints, incidents and recalls in the period
   const complaints = inPeriod(E.complaints, "date_received", ["complaint_ref_no", "date_received", "classification", "product_name"], p);
   const critical = complaints.filter(e => str(e.data.classification).startsWith("Critical")).length;
   const complaintLine = complaints.length === 0
     ? `No complaint reported on FRM-002 ${when}.`
-    : `${plural(complaints.length, "complaint")} on FRM-002 ${when} (${critical} Critical, ${complaints.length - critical} other): `
-      + complaints.map(e => `${str(e.data.complaint_ref_no) || "(no number)"} ${dated(e, "date_received")}${str(e.data.product_name) ? `, ${str(e.data.product_name)}` : ""}${str(e.data.classification) ? `, ${str(e.data.classification).split(" (")[0]}` : ", not yet classified"}${draft(e)}`).join("; ") + ".";
+    : list(`${plural(complaints.length, "complaint")} on FRM-002 ${when} (${critical} Critical, ${complaints.length - critical} other)`,
+      complaints.map(e => `${str(e.data.complaint_ref_no) || "(no number)"} ${dated(e, "date_received")}${str(e.data.product_name) ? `, ${str(e.data.product_name)}` : ""}${str(e.data.classification) ? `, ${str(e.data.classification).split(" (")[0]}` : ", not yet classified"}${draft(e)}`));
   const breakages = inPeriod(E.breakages, "date_time_3", ["incident_ref_no", "date_time_3", "location_area"], p);
   const breakLine = breakages.length === 0
     ? "No glass or brittle plastic breakage on FRM-908."
-    : `${plural(breakages.length, "breakage")} on FRM-908: ` + breakages.map(e => `${str(e.data.incident_ref_no) || "(no number)"} ${dated(e, "date_time_3")}${str(e.data.location_area) ? `, ${str(e.data.location_area)}` : ""}${draft(e)}`).join("; ") + ".";
+    : list(`${plural(breakages.length, "breakage")} on FRM-908`, breakages.map(e => `${str(e.data.incident_ref_no) || "(no number)"} ${dated(e, "date_time_3")}${str(e.data.location_area) ? `, ${str(e.data.location_area)}` : ""}${draft(e)}`));
   const holds = inPeriod(E.holds, "date_time_placed_on_hold", ["hold_tag_number", "date_time_placed_on_hold", "material_name_description"], p);
   const holdLine = holds.length === 0
     ? "Nothing put on hold on FRM-702."
-    : `${plural(holds.length, "hold")} on FRM-702: ` + holds.map(e => `tag ${str(e.data.hold_tag_number) || "(no number)"} ${dated(e, "date_time_placed_on_hold")}${str(e.data.material_name_description) ? `, ${str(e.data.material_name_description)}` : ""}, ${str(e.data.final_disposition_decision) ? "decided" : "STILL OPEN"}`).join("; ") + ".";
+    : list(`${plural(holds.length, "hold")} on FRM-702`, holds.map(e => `tag ${str(e.data.hold_tag_number) || "(no number)"} ${dated(e, "date_time_placed_on_hold")}${str(e.data.material_name_description) ? `, ${str(e.data.material_name_description)}` : ""}, ${str(e.data.final_disposition_decision) ? "decided" : "STILL OPEN"}`));
   const recalls = inPeriod(E.recalls, "started", ["record_type", "started", "product"], p);
   const recallLine = recalls.length === 0
     ? "No withdrawal, recall or mock recall on FRM-012."
-    : recalls.map(e => `${str(e.data.record_type) || "Recall record"} started ${dated(e, "started")}${str(e.data.product) ? `, ${str(e.data.product)}` : ""}${draft(e)}`).join("; ") + " (FRM-012).";
-  const events = [complaintLine, breakLine, holdLine, recallLine].join(" ");
+    : list(`${plural(recalls.length, "record")} on FRM-012`, recalls.map(e => `${str(e.data.record_type) || "Recall record"} started ${dated(e, "started")}${str(e.data.product) ? `, ${str(e.data.product)}` : ""}${draft(e)}`));
+  const events = [complaintLine, breakLine, holdLine, recallLine].join("\n");
 
   // --- audits and inspections in the period
   const audits = inPeriod(E.audits, "audit_date", ["audit_date", "quarter"], p);
   const auditLine = audits.length === 0
     ? `No internal audit recorded on FRM-010 ${when}.`
-    : audits.map(e => `Internal audit ${dated(e, "audit_date")}${str(e.data.quarter) ? ` (${str(e.data.quarter).split(" (")[0]})` : ""}: ${str(e.data.capa_raised) || "outcome not yet recorded"}${draft(e)}`).join("; ") + " (FRM-010).";
+    : list(`${plural(audits.length, "internal audit")} on FRM-010`, audits.map(e => `${dated(e, "audit_date")}${str(e.data.quarter) ? ` (${str(e.data.quarter).split(" (")[0]})` : ""}: ${str(e.data.capa_raised) || "outcome not yet recorded"}${draft(e)}`));
   const inspections = inPeriod(E.inspections, "inspection_date", ["inspection_date", "inspection_type"], p);
   const inspectionLine = inspections.length === 0
     ? "No GMP inspection recorded on FRM-913."
-    : inspections.map(e => {
+    : list(`${plural(inspections.length, "GMP inspection")} on FRM-913`, inspections.map(e => {
         const n = fails(e.data);
-        return `GMP inspection ${dated(e, "inspection_date")}${str(e.data.inspection_type) ? ` (${str(e.data.inspection_type)})` : ""}: ${n === 0 ? "no item failed" : `${plural(n, "item")} failed`}${draft(e)}`;
-      }).join("; ") + " (FRM-913).";
-  const auditsText = `${auditLine} ${inspectionLine} Customer, certification body and regulatory visits are not on a form - add any here.`;
+        return `${dated(e, "inspection_date")}${str(e.data.inspection_type) ? ` (${str(e.data.inspection_type)})` : ""}: ${n === 0 ? "no item failed" : `${plural(n, "item")} failed`}${draft(e)}`;
+      }));
+  const auditsText = [auditLine, inspectionLine, "Customer, certification body and regulatory visits are not on a form - add any here."].join("\n");
 
   // --- changes in the period
   const changed = inPeriod(E.changes, "raised_on", ["change_type", "raised_on"], p);
   const changeLine = changed.length === 0
     ? `No change assessed on FRM-015 ${when}.`
-    : `${plural(changed.length, "change")} assessed on FRM-015: ` + changed.map(e => `${str(e.data.change_type) || "change"} ${dated(e, "raised_on")}, ${str(e.data.decision) || "not yet decided"}${draft(e)}`).join("; ") + ".";
+    : list(`${plural(changed.length, "change")} assessed on FRM-015`, changed.map(e => `${str(e.data.change_type) || "change"} ${dated(e, "raised_on")}, ${str(e.data.decision) || "not yet decided"}${draft(e)}`));
   const docs = records.documents.filter(d => within(day(d.effective), p)).sort((a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }));
   const SHOWN = 15;
   const docLine = docs.length === 0
     ? "No controlled document issued or revised."
-    : `${plural(docs.length, "controlled document")} issued or revised: ` + docs.slice(0, SHOWN).map(d => `${d.number} ${d.revision}`.trim()).join(", ")
-      + (docs.length > SHOWN ? `, and ${docs.length - SHOWN} more` : "") + ".";
-  const changes = `${changeLine} ${docLine} Changes in food law or guidance (FSQM-011) are not on a form - add any here.`;
+    : list(`${plural(docs.length, "controlled document")} issued or revised`,
+      [...docs.slice(0, SHOWN).map(d => `${d.number} ${d.revision}`.trim()), ...(docs.length > SHOWN ? [`and ${docs.length - SHOWN} more`] : [])]);
+  const changes = [changeLine, docLine, "Changes in food law or guidance (FSQM-011) are not on a form - add any here."].join("\n");
 
   return { verification, capa, events, audits: auditsText, changes };
 }
