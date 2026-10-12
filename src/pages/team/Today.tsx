@@ -15,8 +15,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  AlertTriangle, Bell, CheckCircle2, ClipboardCheck, Factory, Flame, Loader2, PackageCheck,
-  PackageOpen, Play, ShieldAlert, Sun, Truck, Wind,
+  AlertTriangle, Bell, CheckCircle2, ClipboardCheck, Factory, Loader2, PackageCheck,
+  PackageOpen, Play, ShieldAlert, Sun, Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,7 +155,7 @@ export default function Today() {
    * which on the first tablet trial reopened the FRM-903 left from 2026-10-06, so the day's record
    * got submitted with the wrong date and the gate stayed shut.
    */
-  const openDayRecord = async (kind: "baking" | "sealing" | "preops") => {
+  const openDayRecord = async (kind: "preops") => {
     const doc = docOf(kind);
     if (!doc) return;
     const dateField = kind === "preops" ? "inspection_date" : "production_date";
@@ -339,18 +339,6 @@ export default function Today() {
                   {busy === "lot" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Play className="w-4 h-4 mr-1" />}
                   {M.startLot}
                 </Button>
-                {canVoice && (
-                  <>
-                    <Button onClick={() => openDayRecord("baking")} disabled={!open || !docOf("baking") || busy === "baking"} size="sm" variant="outline">
-                      {busy === "baking" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Flame className="w-4 h-4 mr-1" />}
-                      {M.recordOvenLoad}
-                    </Button>
-                    <Button onClick={() => openDayRecord("sealing")} disabled={!open || !docOf("sealing") || busy === "sealing"} size="sm" variant="outline">
-                      {busy === "sealing" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Wind className="w-4 h-4 mr-1" />}
-                      {M.recordSealChecks}
-                    </Button>
-                  </>
-                )}
               </div>
               <p className="text-xs tp-card-dim">
                 {ccp.baking || ccp.sealing.length
