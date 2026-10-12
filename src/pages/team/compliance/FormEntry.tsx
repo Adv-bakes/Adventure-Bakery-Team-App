@@ -46,6 +46,7 @@ import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatu
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
 import { useReleaseAssist } from "@/components/team/release/useReleaseAssist";
+import { SKIP_SUBMIT_CONFIRM, useUserPref } from "@/lib/userPrefs";
 import type { Signer } from "@/components/team/forms/SignatureFieldInput";
 import { generateFormResponsePdf } from "@/lib/formPdf";
 import { applyVoiceFill, type VoiceWarning } from "@/lib/voiceCommands";
@@ -116,6 +117,10 @@ export default function FormEntry() {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  // "Do not show this again": the person's own setting. The tick in the dialog takes effect when
+  // they go on to submit, not if they cancel.
+  const [skipConfirm, setSkipConfirm] = useUserPref<boolean>(SKIP_SUBMIT_CONFIRM, false);
+  const [dontAskAgain, setDontAskAgain] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -1182,7 +1187,7 @@ export default function FormEntry() {
             </Button>
             <Button
               type="button"
-              onClick={() => setConfirmSubmit(true)}
+              onClick={() => { if (skipConfirm) void doSubmit(); else { setDontAskAgain(false); setConfirmSubmit(true); } }}
               disabled={saving || submitting}
               className="bg-[#C89B3C] hover:bg-[#B8892C]"
             >
@@ -1300,9 +1305,19 @@ export default function FormEntry() {
               Required fields are checked before it is recorded.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <label className="flex items-start gap-2 text-sm text-[#2A1F0E] cursor-pointer">
+            <input
+              type="checkbox" className="mt-0.5 h-4 w-4 accent-[#C89B3C]"
+              checked={dontAskAgain} onChange={e => setDontAskAgain(e.target.checked)}
+            />
+            <span>
+              Do not show this again
+              <span className="block text-xs opacity-70">Submit will then record the entry straight away. You can turn the question back on in My Account.</span>
+            </span>
+          </label>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => doSubmit()} className="bg-[#C89B3C] hover:bg-[#B8892C]">
+            <AlertDialogAction onClick={() => { if (dontAskAgain) setSkipConfirm(true); void doSubmit(); }} className="bg-[#C89B3C] hover:bg-[#B8892C]">
               Submit
             </AlertDialogAction>
           </AlertDialogFooter>

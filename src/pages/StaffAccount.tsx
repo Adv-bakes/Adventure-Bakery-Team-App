@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { LogOut, User, Shield, Building2, Phone, FileCheck, Briefcase, Save, KeyRound, Eye, EyeOff } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DEPARTMENTS } from "@/lib/training";
+import { SKIP_SUBMIT_CONFIRM, useUserPref } from "@/lib/userPrefs";
 
 interface StaffProfile {
   full_name: string;
@@ -28,6 +29,7 @@ export default function StaffAccount() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [skipSubmitConfirm, setSkipSubmitConfirm] = useUserPref<boolean>(SKIP_SUBMIT_CONFIRM, false);
   const [profile, setProfile] = useState<StaffProfile>({
     full_name: "",
     employee_id: "",
@@ -305,6 +307,29 @@ export default function StaffAccount() {
           {saving ? "Saving…" : "Save Changes"}
         </Button>
       </div>
+
+      {/* Form entries: the person's own settings (user_preferences) */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileCheck className="h-5 w-5 text-accent" />
+            Form entries
+          </CardTitle>
+          <CardDescription>Your own settings. They follow you to any device.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox" className="mt-0.5 h-4 w-4"
+              checked={!skipSubmitConfirm} onChange={e => setSkipSubmitConfirm(!e.target.checked)}
+            />
+            <span>
+              Ask "Submit this entry?" before a form entry is submitted
+              <span className="block text-xs text-muted-foreground">Unticked, Submit records the entry straight away. Required fields are still checked.</span>
+            </span>
+          </label>
+        </CardContent>
+      </Card>
 
       {/* Change Password */}
       <Card className="mb-6">
