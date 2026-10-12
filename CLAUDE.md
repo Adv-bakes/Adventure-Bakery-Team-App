@@ -395,7 +395,12 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   goes through `applyAddedLabelScan`: a cell is written only if empty or still holding what the earlier
   scan of this pack wrote; a cell corrected since is kept and named ("Left as you had it"). Undo goes
   back to the row before the FIRST photo. The camera button on the row still starts afresh and replaces,
-  as before. The remembered pack is dropped when a row is added or removed. `applyLabelScan` no longer
+  as before. The remembered pack is dropped when a row is added or removed. **The further photo does not
+  wait for the first answer** (owner, same day): while a label is being read, a line under the table
+  (and the row pop-up) offers "Take another photo of this pack"; the photos are then read together and
+  the first read's answer is dropped when it arrives (`scanGen`, `pendingRef` in `GridFieldInput`). Not
+  offered on a `scanKeepPhoto` grid, where two attachment saves at once could lose one. The pop-up's
+  "Choose photo" takes several pictures at once. `applyLabelScan` no longer
   writes a notes line that is already there. Tested in `scripts/test-label-scan-merge.mjs`.
 - **Specification scan (FRM-207): one photo fills the whole entry, declarations included.** A third
   `ScanMode`, `"specification"`, reads the identity facts **plus** `DECLARATION_FACTS` (`ingredients`,
