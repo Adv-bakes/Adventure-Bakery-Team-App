@@ -55,7 +55,7 @@ export interface GridRowDialogProps {
   addWhileReading?: boolean;
   /**
    * How many photos of this row's pack have been read in this page visit. Above zero, a further
-   * photo of the SAME pack can be added: it is read together with the earlier ones.
+   * photo of the SAME pack can be added: it is read on its own and fills what is still blank.
    */
   packShots?: number;
   /** Grey suggestion for a cell (column.suggestFrom), computed by the grid that owns the row. */
@@ -122,7 +122,7 @@ export function GridRowDialog({
                         <button type="button" className="font-medium text-[#9A6F1E] hover:underline" onClick={() => take(cameraRef.current, true)}>
                           Take another photo
                         </button>
-                        {" "}now - the photos are read together.
+                        {" "}now - it fills in what the first one leaves blank.
                       </p>
                     )}
                   </div>
@@ -138,7 +138,7 @@ export function GridRowDialog({
                     </Button>
                     {packShots > 0 && packShots < 4 && !disabled && (
                       <p className="col-span-2 text-xs text-[#2A1F0E]/70">
-                        Something missing? Add another side of the SAME pack - it is read together with the first:{" "}
+                        Something missing? Add another side of the SAME pack - it fills in what is still blank:{" "}
                         <button type="button" className="font-medium text-[#9A6F1E] hover:underline" onClick={() => take(cameraRef.current, true)}>
                           Take another photo
                         </button>

@@ -390,21 +390,21 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   mapping live in `GridColumnsEditor`.
 - **A further photo of the same pack, on a grid row (owner at receiving, 2026-10-12).** After a row scan,
   "Add another photo of this pack" (the result strip, and the row pop-up's "Take another photo / choose
-  one") sends the new photo TOGETHER with the row's earlier ones (`ScanRequest.earlier`, kept as `File`s
-  for the page visit only, four at most; the page uploads them again as transient objects). The result
-  goes through `applyAddedLabelScan`: a cell is written only if empty or still holding what the earlier
-  scan of this pack wrote; a cell corrected since is kept and named ("Left as you had it"). Undo goes
-  back to the row before the FIRST photo. The camera button on the row still starts afresh and replaces,
-  as before. The remembered pack is dropped when a row is added or removed. **The further photo does not
-  wait for the first answer** (owner, same day): while a label is being read, a line under the table
-  (and the row pop-up) offers "Take another photo of this pack"; the photos are then read together. **The
-  first read is never thrown away**: its answer fills the row when it arrives and the fuller read is
-  applied after it as an addition (`pendingRef.done` in `GridFieldInput`). The first cut dropped the
-  first answer, and on the owner's tablet the row then stayed empty when the second read gave nothing
-  (2026-10-12, cause of the empty second read not found). A failed second read says so on the strip. Not
-  offered on a `scanKeepPhoto` grid, where two attachment saves at once could lose one. The pop-up's
-  "Choose photo" takes several pictures at once. `applyLabelScan` no longer
-  writes a notes line that is already there. Tested in `scripts/test-label-scan-merge.mjs`.
+  one") reads the new photo **on its own** and fills only the cells that are still BLANK
+  (`applyAddedLabelScan` with nothing counted as scan-written); a cell already filled is left and named,
+  and a lot code read differently is offered as a chip, never written over. Undo goes back to the row
+  before the FIRST photo. The camera button on the row still starts afresh and replaces. The remembered
+  pack is dropped when a row is added or removed. **The further photo does not wait for the first
+  answer**: while a label is being read, a line under the table (and the pop-up) offers "Take another
+  photo of this pack". Each read's result is applied in the order the photos were taken
+  (`pendingRef.done`), and **the row is handed from one read to the next** - `rowsRef` is not yet
+  updated a moment after a write, and building on it wiped the first photo's cells. History, same day:
+  the photos were first read TOGETHER, and the first answer dropped when a second photo arrived; on the
+  owner's tablet the row then stayed empty, and the owner asked why the first photo was read twice at
+  all. Not offered while reading on a `scanKeepPhoto` grid (two attachment saves at once could lose one).
+  Several pictures CHOSEN at once in the pop-up are still one read (`ScanRequest.earlier`).
+  `applyLabelScan` no longer writes a notes line that is already there. Tested in
+  `scripts/test-label-scan-merge.mjs`.
 - **Specification scan (FRM-207): one photo fills the whole entry, declarations included.** A third
   `ScanMode`, `"specification"`, reads the identity facts **plus** `DECLARATION_FACTS` (`ingredients`,
   `contains_statement`, `allergens`, `may_contain`, `storage`). The receiving modes keep their rule and
