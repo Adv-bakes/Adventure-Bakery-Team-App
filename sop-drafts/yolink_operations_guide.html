@@ -258,16 +258,21 @@
                 <div class="meta-cell"><span class="meta-label">Database Backend:</span> Supabase (PostgreSQL)</div>
                 <div class="meta-cell"><span class="meta-label">Service Architecture:</span> Permanent Python MQTT Daemon</div>
             </div>
+            <div class="meta-row">
+                <div class="meta-cell"><span class="meta-label">Last revised:</span> 2026-10-12 (walk-in freezer out of service; page guide added)</div>
+                <div class="meta-cell"><span class="meta-label">Source:</span> <code>sop-drafts/yolink_operations_guide.html</code> in the repository</div>
+            </div>
         </div>
     </div>
 
     <h2>System Overview</h2>
     <p>This deployment establishes a permanent, secure data-collection pipeline mapping telemetry from physical YoLink wireless environment sensors directly into a central Supabase relational table. An asynchronous background process runs under systemd supervision on a dedicated Hostinger Virtual Private Server. The captured readings power the Team Portal <strong>Temperature Monitoring</strong> report (Compliance &rarr; Temperature Logs).</p>
 
-    <p>The system has <strong>two halves</strong>, and this document covers both:</p>
+    <p>The system has <strong>three parts</strong>, and this document covers all of them:</p>
     <ol>
-        <li><strong>Ingestion</strong> &mdash; the VPS daemon that receives sensor telemetry and writes it to <code>temperature_logs</code>. Everything up to the cheat sheet below.</li>
+        <li><strong>Ingestion</strong> &mdash; the VPS daemon that receives sensor telemetry and writes it to <code>temperature_logs</code>. Everything up to <em>Automatic Alerting</em> below.</li>
         <li><strong>Alerting</strong> &mdash; a scheduled check that reads those rows every fifteen minutes, judges each in-service unit against a written limit, and emails somebody when a unit is out of range, has stopped reporting, or has a flat battery. See <em>Automatic Alerting &amp; Escalation</em>.</li>
+        <li><strong>The Temperature Monitoring page</strong> in the Team Portal &mdash; where the readings are read, alerts are answered, limits and service state are set, and the monthly review is started. See <em>Using the Temperature Monitoring page</em>: that section is written for the person at the screen, not the person at the server.</li>
     </ol>
     <p>Collecting readings is not the same as monitoring them. Until the alerting was added, a walk-in could sit warm &mdash; or a sensor could stop reporting entirely &mdash; and nothing would say so until somebody happened to open the report. In the first ten weeks of logging, transmission stopped three times, once for more than three days, and nobody noticed.</p>
 
@@ -434,18 +439,169 @@ WantedBy=multi-user.target</pre>
             <li><strong>Unacknowledged alerts are re-sent every 24 hours</strong> until somebody responds, so one missed email does not mean a warm walk-in goes unnoticed indefinitely.</li>
             <li><strong>A stale sensor is not also judged against its limit.</strong> Its last reading may be three days old; treating that as current would raise a second, misleading alert and send the responder to the wrong problem.</li>
             <li><strong>Out-of-service units and the Bakery Floor raise nothing.</strong> The Bakery Floor is ambient monitoring, not a storage unit, and has no limit by design. A unit is placed out of service when it is switched off, not when it merely happens to be empty.</li>
+            <li><strong>Taking a unit out of service also closes whatever it had open.</strong> At the next run, any alert still open for that unit is closed with the reason <em>Unit placed out of service</em> &mdash; no &ldquo;Resolved&rdquo; email, because the unit is not within limits, it is switched off &mdash; and its card on the Notifications page is resolved. Added 2026-10-12, when the walk-in freezer was switched off with its out-of-range alert open: before this the job simply stopped looking at the unit, so the alert would have stayed open for good, and the one-open-alert-per-unit rule would then have blocked a fresh alert after a return to service.</li>
             <li><strong>Alerts close themselves</strong> when readings return within limits, and send a short "Resolved" email.</li>
         </ul>
     </div>
 
     <h3>Configuring limits and recipients</h3>
-    <p>In the Team Portal: <strong>Compliance &rarr; Temperature Monitoring &rarr; Temperature Alerts &rarr; Limits</strong>. The editor is visible to <strong>admin and owner accounts only</strong>; staff see the limits as a read-only table, deliberately &mdash; a limit is what compliance <em>means</em>, so changing one is not a floor-level action. Each storage unit carries its own limit, staleness tolerance and recipient list.</p>
+    <p>In the Team Portal: <strong>Compliance &rarr; Temperature Monitoring &rarr; Temperature Alerts &rarr; Limits</strong>. The editor is visible to <strong>admin and owner accounts only</strong>; staff see the limits as a read-only table, deliberately &mdash; a limit is what compliance <em>means</em>, so changing one is not a floor-level action. Each storage unit carries its own limit, staleness tolerance, recipient list and <strong>In service</strong> switch; moving the switch asks for a reason, which is recorded (SOP-401 Part 7). Field by field, and what each one does, is in <em>Using the Temperature Monitoring page</em> below.</p>
     <p><strong>Leaving the recipient list blank falls back to every admin and owner account's email address.</strong> That default exists so alerting works from the moment it is deployed rather than after somebody remembers to fill in a column &mdash; but it tracks whoever currently holds an admin role, so it drifts: grant somebody admin next year for an unrelated reason and they begin receiving walk-in temperature alerts. <strong>Set recipients explicitly per unit</strong> once the system is in routine use.</p>
     <p class="note">Testing tip: before deliberately tripping an alert, pin the unit's recipients to a single address &mdash; and leave the pin in place until the alert has <em>cleared</em>. The resolution email uses whatever the list says at the moment it closes, not what it said when it opened.</p>
 
     <h3>Responding to an alert</h3>
     <p>Open the alert on the Temperature Monitoring page and <strong>acknowledge it with what you found and what you did</strong>. That sentence is the corrective-action record; it is written once and <strong>cannot be edited afterwards</strong>, so record the actual time and the probe reading. An alert nobody acknowledged is only a notification &mdash; the acknowledgement is what makes it evidence.</p>
-    <p>The procedure governing the response, the limits and the monthly review is <strong>SOP-401 Temperature-Controlled Storage</strong>, recorded on <strong>FRM-401 Temperature Monitoring Review</strong>. <span class="note">(Both are drafts at the time of writing and not yet in force; this guide describes the system they will govern.)</span> Product whose safety is in doubt after an excursion is placed on Hold under <strong>FSQM-018</strong> and recorded on <strong>FRM-702</strong> &mdash; that decision belongs to the SQF Practitioner, not to whoever happens to answer the email.</p>
+    <p>The procedure governing the response, the limits and the monthly review is <strong>SOP-401 Temperature-Controlled Storage</strong>, recorded on <strong>FRM-401 Temperature Monitoring Review</strong>. <span class="note">(Both issued and in force since 2026-09-08; SOP-401 is at v4, 2026-10-12.)</span> Product whose safety is in doubt after an excursion is placed on Hold under <strong>FSQM-018</strong> and recorded on <strong>FRM-702</strong> &mdash; that decision belongs to the SQF Practitioner, not to whoever happens to answer the email.</p>
+
+
+    <h2 class="page-break">Using the Temperature Monitoring page</h2>
+    <p>Everything above is for whoever maintains the server and the alerting. This section is for whoever <em>uses</em> the page: what each part of it is, what each button does, and what is recorded when it is pressed. The page is <strong>Compliance &rarr; Temperature Monitoring</strong> in the Team Portal (<code>/team/compliance/temperature</code>). Everyone with a team account can open it; two things on it are for admin and owner accounts only, and are marked below.</p>
+
+    <h3>The page, top to bottom</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 26%;">What you see</th>
+                <th style="width: 74%;">What it is and what it does</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Daily / Weekly / Monthly</strong> tabs, and <strong>From / To</strong> dates</td>
+                <td>The window the page reads. The tabs set it to the last 24 hours, 7 days or 30 days; typing dates in From and To overrides them. Everything below the controls &mdash; summary, battery, chart, exports &mdash; follows this window. The window is <em>rolling</em>: &ldquo;Monthly&rdquo; means the last thirty days, not the calendar month, which is why the monthly review has its own month picker (below).</td>
+            </tr>
+            <tr>
+                <td>An amber <strong>stale-data</strong> banner</td>
+                <td>Shown when the newest reading is more than six hours old, or when the window holds no readings at all. It links to this guide. It means the sensors or the daemon have stopped, not that a unit is warm; a <code>no_data</code> alert will have been raised for each in-service unit (see <em>Automatic Alerting</em>).</td>
+            </tr>
+            <tr>
+                <td><strong>Start FRM-401 Review</strong> (gold button)</td>
+                <td>Opens a small month picker and starts, or continues, that month&rsquo;s FRM-401 Temperature Monitoring Review with the figures filled in. See <em>The monthly review</em> below. Staff, admin and owner accounts see it.</td>
+            </tr>
+            <tr>
+                <td><strong>Export</strong> &rarr; PDF report / Spreadsheet (CSV)</td>
+                <td>The window&rsquo;s readings as a file. The PDF carries the per-unit summary; the CSV carries every reading with its timestamp, timezone, unit, device id, both temperatures, humidity and battery columns. This is the export an auditor is handed when they ask for the temperature record.</td>
+            </tr>
+            <tr>
+                <td><strong>Temperature Alerts</strong> card</td>
+                <td>The part of the page SQF 11.6.2.3 asks for: what the limits are and what was done when a reading broke one. Described piece by piece in the next table.</td>
+            </tr>
+            <tr>
+                <td><strong>Summary by Equipment</strong></td>
+                <td>One row per sensor for the window: number of readings, minimum, maximum and average &deg;F, average humidity. <strong>Click a row</strong> to open the drill-down: every individual reading for that unit in the window, with its timestamp, and its own Export (PDF or CSV). The Avg Humidity column always reads 0 &mdash; the sensors do not report humidity.</td>
+            </tr>
+            <tr>
+                <td><strong>Battery Status</strong></td>
+                <td>A gauge per sensor of its last reported battery level, 1 (low) to 4 (full). A red banner lists any sensor reporting a low battery or level 1 &mdash; replace that battery before the sensor stops reporting (troubleshooting item D).</td>
+            </tr>
+            <tr>
+                <td><strong>Average Temperature &deg;F</strong> chart</td>
+                <td>Average &deg;F per time bucket, one line per sensor, over the window. A picture of the same readings the summary counts; useful for seeing a door left open or a defrost cycle.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>The Temperature Alerts card</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 26%;">What you see</th>
+                <th style="width: 74%;">What it is and what it does</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>A green line, <em>No open alerts</em></td>
+                <td>Every in-service unit is reporting and within its limit. The check runs every fifteen minutes; nobody has to look at the page for the monitoring to be happening.</td>
+            </tr>
+            <tr>
+                <td>A grey line, <em>&hellip;is out of service since&hellip;</em></td>
+                <td>Shown for each storage unit that has been switched off and placed out of service, with the date and the reason recorded. That unit&rsquo;s readings are not judged and it raises no alert; no food may be stored in it. (The walk-in freezer, since 2026-10-12.)</td>
+            </tr>
+            <tr>
+                <td>A red line, <em>N alerts awaiting a recorded response</em>, and the <strong>open alerts</strong> table</td>
+                <td>One row per open alert: unit, kind (Out of range, No data, Low battery), the worst value seen, when it opened, and the response. The same alerts are emailed to the unit&rsquo;s recipients, re-sent every 24 hours until acknowledged, and appear as cards on the Notifications page.</td>
+            </tr>
+            <tr>
+                <td><strong>Acknowledge</strong> button on an open alert</td>
+                <td>Opens <em>Acknowledge alert</em> with one box, <strong>What did you do?</strong>, and a <strong>Record</strong> button. Write what you found and what you did, with the time and the probe reading. <strong>This sentence is the corrective-action record SOP-401 Part 4 requires. It is written once and cannot be edited afterwards</strong>, and the alert shows it from then on. Acknowledging does not close the alert; it closes itself when the readings are back within the limit (or the unit is taken out of service). If product is in doubt, place it on Hold under FSQM-018 and say so in the sentence. Any team account can acknowledge.</td>
+            </tr>
+            <tr>
+                <td><strong>Limits</strong> button (top right of the card) &mdash; <em>admin and owner only</em></td>
+                <td>Opens one editor per sensor under the heading <em>Unit limits</em>; press it again (<em>Hide limits</em>) to put them away. Staff accounts see the same limits as a read-only table instead. The fields are in the next table.</td>
+            </tr>
+            <tr>
+                <td><strong>Recently closed</strong></td>
+                <td>The last ten closed alerts: when each opened and closed, and how it ended &mdash; the acknowledgement that was recorded, <em>Not acknowledged</em> in amber if none was, or <em>Closed by the system: unit placed out of service</em> when the unit was switched off while the alert was open. This table and the open one are what the monthly review reads.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>The unit limits editor (Limits button; admin and owner)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 26%;">Field</th>
+                <th style="width: 74%;">What it does</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>In service</strong> switch</td>
+                <td>Storage units only; the Bakery Floor sensor has no switch because it is never judged. On: the unit&rsquo;s readings are judged against its limit every fifteen minutes. Off: the unit is out of service &mdash; readings are not judged, no alert is raised, and any alert still open for it is closed at the next check. <strong>Moving the switch opens a box, Reason for the change, and the save refuses without it</strong>: the reason and the date are recorded against the unit (SOP-401 Part 7, &ldquo;recording the reason&rdquo;) and carried onto that month&rsquo;s FRM-401. The procedure gives this decision to the SQF Practitioner.</td>
+            </tr>
+            <tr>
+                <td><strong>Min &deg;F</strong> / <strong>Max &deg;F</strong></td>
+                <td>The limit. A reading exactly at the limit passes; beyond it fails. An in-service storage unit must have a Max, or the save is refused &mdash; a unit with no upper limit would be &ldquo;monitored&rdquo; by a check that never fires. The limits in force are stated in SOP-401 Part 2 (refrigerator at or below 41 &deg;F; freezer, while in service, at or below 10 &deg;F); a change here takes effect for all later readings and is not applied backwards.</td>
+            </tr>
+            <tr>
+                <td><strong>No-data after (h)</strong></td>
+                <td>How many hours of silence before a <code>no_data</code> alert opens. Default 6. Sensors report roughly hourly, and short gaps are normal.</td>
+            </tr>
+            <tr>
+                <td><strong>Notify emails</strong></td>
+                <td>Who is emailed for this unit, comma-separated. <strong>Blank means every admin and owner account</strong>, which drifts as roles change &mdash; set it explicitly (see <em>Configuring limits and recipients</em> above).</td>
+            </tr>
+            <tr>
+                <td><strong>Notes</strong></td>
+                <td>Free text shown beside the unit in the read-only table &mdash; what the unit holds, where the sensor sits.</td>
+            </tr>
+            <tr>
+                <td><strong>Save</strong></td>
+                <td>Writes the row. Nothing changes until it is pressed; a changed switch with no reason, or an in-service unit with no Max, is refused with a message rather than saved.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Placing a unit out of service (a unit is being switched off)</h3>
+    <ol>
+        <li>Make sure the unit holds no food. Nothing may be stored in an out-of-service unit (SOP-401 Part 7).</li>
+        <li>On the page, press <strong>Limits</strong>, find the unit, and turn <strong>In service</strong> off. Write the reason in the box that appears (e.g. &ldquo;Switched off 2026-10-12 &mdash; holds no product since the vegan burger line was discontinued&rdquo;) and press <strong>Save</strong>. The decision belongs to the SQF Practitioner; an admin doing it on her say-so records that in the reason.</li>
+        <li>If the unit has an alert open &mdash; a unit that has been switched off will usually have an <em>Out of range</em> alert within a couple of hours &mdash; <strong>acknowledge it</strong> with what was done (&ldquo;Unit switched off deliberately on &hellip;, holds no product, placed out of service&rdquo;). That is still the response record for that alert; the closing is separate and automatic.</li>
+    </ol>
+    <p>What then happens, without anyone doing anything: within fifteen minutes the job closes the unit&rsquo;s open alerts with the reason <em>Unit placed out of service</em> (no &ldquo;Resolved&rdquo; email), resolves their cards on the Notifications page, and stops judging the unit. The 24-hour re-send stops with it. The sensor keeps reporting &mdash; it runs on its own battery &mdash; so the unit&rsquo;s readings go on appearing in the summary and the chart at whatever temperature the switched-off box is; they are not a monitored temperature and the review treats them as such. The grey <em>out of service</em> line appears on the Temperature Alerts card. When that month&rsquo;s FRM-401 is filled from the logs, the change appears in <em>Units placed in or out of service this month</em> with its date and reason, and the unit&rsquo;s <em>State this month</em> reads <em>Changed during the month</em> (or <em>Out of service</em> in later months, with its temperatures left blank). On FRM-705 the unit&rsquo;s sensor row is marked <em>Not checked this month &mdash; reason recorded</em> while it is off.</p>
+
+    <h3>Returning a unit to service</h3>
+    <p>SOP-401 Part 7 sets four conditions before any food goes in: the unit has been cleaned and sanitized; it has been inspected and found in good repair, with door seals intact; its sensor is reporting; and it has held at or below its limit continuously for twenty-four hours. The page supports that order:</p>
+    <ol>
+        <li>Switch the unit on and let it pull down. Watch it on the Summary and the chart (set From to the day it was switched on) &mdash; the readings are arriving whether or not the unit is in service.</li>
+        <li>Once it is holding at or below its limit, press <strong>Limits</strong>, turn <strong>In service</strong> on, write the reason (e.g. &ldquo;Frozen ingredients ordered again; cleaned and inspected 2026-11-03&rdquo;) and <strong>Save</strong>. From the next check the unit is judged and alerted on. The amber note under the switch repeats the four conditions.</li>
+        <li>Place no food in it until it has held its limit for twenty-four hours. Record the return on that month&rsquo;s FRM-401: the fill from the logs writes the <em>Returned to service</em> row with its date and reason; the reviewer ticks <em>Return conditions met</em> and enters <em>Food first placed in unit</em> &mdash; those two are never filled by the app, because they are the SQF Practitioner&rsquo;s attestation.</li>
+    </ol>
+
+    <h3>Where an alert reaches people</h3>
+    <ul>
+        <li><strong>Email</strong>, to the unit&rsquo;s recipients, when the alert opens; again every 24 hours while it is unacknowledged; and a short &ldquo;Resolved&rdquo; email when it closes because the readings recovered (not when the unit was taken out of service).</li>
+        <li><strong>The Notifications page</strong> (Home &rarr; Notifications), as a red-edged card with the alert&rsquo;s wording and a link <em>Open temperature alerts to acknowledge and record what was done</em>. Temperature cards have <strong>no Clear button</strong> on purpose: clearing one would make the badge go away without the corrective-action sentence ever being written. The card resolves itself once the alert is acknowledged or closed &mdash; at the next twice-daily notifications run (about 07:00 and 15:00 Eastern), or within fifteen minutes when the unit was placed out of service. The open count feeds the Notifications badge in the sidebar, and admins see it in the Today page&rsquo;s Attention card.</li>
+    </ul>
+
+    <h3>The monthly review (FRM-401)</h3>
+    <p>Once a month the SQF Practitioner reviews the month on FRM-401 and signs it (SOP-401 Part 6). The form is filled from the logs in either of two places, and both write the same figures:</p>
+    <ul>
+        <li><strong>Start FRM-401 Review</strong> on this page: pick the month (the current month is month-to-date, a past month is the whole month), press <strong>Start review</strong>, and the entry opens with the figures in. Each person can have one open FRM-401 draft; if yours is already open the figures are filled into its blanks, and a draft for a <em>different</em> month is reported rather than overwritten.</li>
+        <li><strong>Populate from temperature logs</strong>, the card at the top of an FRM-401 entry that was opened from the SOPs Library instead. Same month picker, same fill, with an Undo; it fills blanks only and refuses a month different from the entry&rsquo;s <em>Month reviewed</em>.</li>
+    </ul>
+    <p><strong>What is filled:</strong> the month and today&rsquo;s date; each unit&rsquo;s <em>State this month</em>, Min, Max and Avg &deg;F (temperatures are left blank for a unit out of service all month); one row per alert raised in the month with its kind, date, worst value, whether it was acknowledged and the action recorded; and one row per unit placed in or out of service in the month, with the date and reason. <strong>What is never filled:</strong> whether each unit held its limit, gaps in logging and why, whether each action was appropriate, the FRM-705 calibration confirmation (the entry shows each sensor&rsquo;s last FRM-705 check under <em>Device accuracy</em> to help), manual readings taken while a sensor was down, the return-to-service conditions, findings, the CAPA reference and the signature. Those are the review.</p>
 
     <!-- Quick Reference Cheat Sheet Section -->
     <div class="cheat-sheet-box">
@@ -525,7 +681,7 @@ select status, recipient_email, error_message, created_at
 select equipment_name, kind, in_service, min_f, max_f, stale_hours, notify_emails
   from public.temperature_limits order by equipment_name;</pre>
                 A row in (c) reading <code>not_configured</code> means either <code>RESEND_API_KEY</code> is missing from the Edge Function secrets, or the unit has no recipients <em>and</em> no admin/owner account has an email on file. If (d) shows the unit missing entirely, see the join-key warning under <em>Hardware &amp; Database Mapping</em>. The function's own response reports <code>checked</code> and <code>skipped</code> counts, which is the quickest way to confirm coverage.</li>
-            <li><strong>An alert is stuck open</strong> Alerts close on their own once readings are back inside the limit &mdash; confirm the unit is genuinely within range and that readings are still arriving. A <code>no_data</code> alert necessarily stays open while the sensor is silent, because a sensor that is not reporting cannot demonstrate recovery. Alerts are <strong>never</strong> closed by editing the table: it has no UPDATE policy at all, and acknowledging an alert is not the same as closing it.</li>
+            <li><strong>An alert is stuck open</strong> Alerts close on their own once readings are back inside the limit &mdash; confirm the unit is genuinely within range and that readings are still arriving. An alert on a unit that has been <em>placed out of service</em> closes at the next run with the reason &ldquo;Unit placed out of service&rdquo;; if it has not within fifteen minutes, the <code>temperature-alert</code> function has not been redeployed since 2026-10-12 (<code>npx supabase functions deploy temperature-alert</code>). A <code>no_data</code> alert necessarily stays open while the sensor is silent, because a sensor that is not reporting cannot demonstrate recovery. Alerts are <strong>never</strong> closed by editing the table: it has no UPDATE policy at all, and acknowledging an alert is not the same as closing it.</li>
         </ol>
 
         <h3>First-Response Quick Guide</h3>
@@ -571,7 +727,11 @@ select equipment_name, kind, in_service, min_f, max_f, stale_hours, notify_email
                 </tr>
                 <tr>
                     <td>Alerts for a unit stopped entirely</td>
-                    <td>Check its <code>temperature_limits</code> row still exists and its <code>equipment_name</code> matches <code>DEVICE_MAPPING</code> exactly</td>
+                    <td>Check its <code>temperature_limits</code> row still exists and its <code>equipment_name</code> matches <code>DEVICE_MAPPING</code> exactly &mdash; and that the unit is <strong>In service</strong> (the grey line on the Temperature Alerts card says if it is not)</td>
+                </tr>
+                <tr>
+                    <td>A unit is being switched off (or on again)</td>
+                    <td>Limits &rarr; In service switch, with the reason; see <em>Placing a unit out of service</em> and <em>Returning a unit to service</em> above</td>
                 </tr>
             </tbody>
         </table>

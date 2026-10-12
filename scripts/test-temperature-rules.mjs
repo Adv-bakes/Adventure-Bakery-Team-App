@@ -27,7 +27,8 @@ execFileSync(
           "--bundle", "--format=esm", `--outfile=${bundle}`],
   { stdio: ["ignore", "ignore", "inherit"], shell: true },
 );
-const { assess, degF, outOfRange } = await import("file://" + bundle.replace(/\\/g, "/"));
+const { assess, degF, outOfRange, unitIsJudged, OUT_OF_SERVICE_CLOSE_REASON } =
+  await import("file://" + bundle.replace(/\\/g, "/"));
 
 const NOW = Date.parse("2026-09-08T12:00:00Z");
 const hoursAgo = h => new Date(NOW - h * 3_600_000).toISOString();
@@ -112,6 +113,17 @@ check("battery level 2 is not low",
 check("warm AND flat battery raises both",
   kinds(assess(FRIDGE, [reading(0.5, 50, { battery_level: 1 }), reading(1.5, 50)], NOW)),
   ["low_battery", "out_of_range"]);
+
+console.log("unitIsJudged — which units the job looks at (and which it closes instead)");
+check("an in-service storage unit is judged", unitIsJudged(FRIDGE), true);
+check("an out-of-service storage unit is not", unitIsJudged({ ...FREEZER, in_service: false }), false);
+check("the ambient sensor is never judged, in service or not",
+  [unitIsJudged({ kind: "ambient", in_service: true }), unitIsJudged({ kind: "ambient", in_service: false })],
+  [false, false]);
+check("the out-of-service close reason is the sentence the alert log shows",
+  OUT_OF_SERVICE_CLOSE_REASON, "Unit placed out of service");
+check("an out-of-service unit's readings are still assessable in isolation (the caller must not ask)",
+  kinds(assess({ ...FREEZER, in_service: false }, [reading(0.5, 60), reading(1.5, 58)], NOW)), ["out_of_range"]);
 
 console.log("assess — freezer, whose limit is different and whose readings run negative");
 check("-6 °F against a 10 °F max passes",

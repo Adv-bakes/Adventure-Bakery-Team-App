@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useUserRole } from "@/hooks/useUserRole";
 import {
-  ALERT_KIND_LABEL, acknowledgeTemperatureAlert, fetchTemperatureAlerts,
+  ALERT_KIND_LABEL, acknowledgeTemperatureAlert, closedHow, fetchTemperatureAlerts,
   fetchTemperatureLimits, formatWorstValue, limitText, updateTemperatureLimit,
   type TemperatureAlert, type TemperatureLimit,
 } from "@/lib/temperatureAlerts";
@@ -106,7 +106,10 @@ function LimitEditor({
 }: { limit: TemperatureLimit; onSaved: (l: TemperatureLimit) => void }) {
   const [draft, setDraft] = useState(limit);
   const [saving, setSaving] = useState(false);
-  useEffect(() => { setDraft(limit); }, [limit]);
+  // SOP-401 Part 7: a change of service state is "a recorded decision", with its reason. The
+  // reason is asked for only when the switch has been moved, and the save refuses without it.
+  const [reason, setReason] = useState("");
+  useEffect(() => { setDraft(limit); setReason(""); }, [limit]);
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(limit);
   const stateChanged = draft.in_service !== limit.in_service;
@@ -115,6 +118,10 @@ function LimitEditor({
     // Mirrors the database CHECK, so the failure is a sentence rather than a constraint name.
     if (draft.kind === "storage" && draft.in_service && draft.max_f === null) {
       toast.error("An in-service unit needs an upper limit — otherwise nothing is alerted on.");
+      return;
+    }
+    if (stateChanged && !reason.trim()) {
+      toast.error("Say why the unit is being placed " + (draft.in_service ? "in" : "out of") + " service — SOP-401 Part 7 records the reason.");
       return;
     }
     setSaving(true);
@@ -126,9 +133,15 @@ function LimitEditor({
         stale_hours: draft.stale_hours,
         notify_emails: draft.notify_emails,
         notes: draft.notes,
+        ...(stateChanged ? { in_service_reason: reason.trim() } : {}),
       }, { markInServiceChange: stateChanged });
       onSaved(saved);
-      toast.success(`${limit.equipment_name} updated`);
+      toast.success(
+        stateChanged
+          ? `${limit.equipment_name} placed ${saved.in_service ? "in" : "out of"} service`
+            + (saved.in_service ? "" : " — any open alert for it closes at the next check, within 15 minutes")
+          : `${limit.equipment_name} updated`,
+      );
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message ?? "Could not save the limits");
@@ -214,11 +227,44 @@ function LimitEditor({
         />
       </div>
 
-      {stateChanged && draft.in_service && (
-        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-          Returning a unit to service: SOP-401 Part 7 requires it to be clean, inspected,
-          reporting, and holding at or below its limit for 24 hours before food goes in.
+      {limit.kind === "storage" && !limit.in_service && !stateChanged && (
+        <p className="text-xs text-muted-foreground">
+          Out of service{limit.in_service_changed_at ? ` since ${when(limit.in_service_changed_at)}` : ""}
+          {limit.in_service_reason ? ` — ${limit.in_service_reason}` : ""}. Its readings are not judged
+          and it raises no alert.
         </p>
+      )}
+
+      {stateChanged && (
+        <div className="space-y-2">
+          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            {draft.in_service ? (
+              <>Returning a unit to service: SOP-401 Part 7 requires it to be clean, inspected,
+              reporting, and holding at or below its limit for 24 hours before food goes in.
+              Record the return, with that 24-hour hold, on the month's FRM-401.</>
+            ) : (
+              <>Placing a unit out of service: SOP-401 Part 7. Only the SQF Practitioner does
+              this. No food may be stored in the unit while it is out of service. Its readings
+              are no longer judged, and any alert still open for it is closed at the next
+              15-minute check as "Unit placed out of service". The change is carried onto the
+              month's FRM-401.</>
+            )}
+          </p>
+          <div>
+            <Label htmlFor={`svc-reason-${limit.id}`} className="text-xs text-muted-foreground">
+              Reason for the change (required)
+            </Label>
+            <Textarea
+              id={`svc-reason-${limit.id}`}
+              rows={2}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={draft.in_service
+                ? "e.g. Frozen ingredients ordered again; unit cleaned and inspected 2026-11-03, held at -2 °F for 24 h"
+                : "e.g. Switched off 2026-10-12 — holds no product since the vegan burger line was discontinued"}
+            />
+          </div>
+        </div>
       )}
 
       <div className="flex justify-end">
@@ -265,6 +311,10 @@ export default function TemperatureAlertsPanel() {
   const open = alerts.filter(a => !a.cleared_at);
   const history = alerts.filter(a => a.cleared_at).slice(0, 10);
   const unacked = open.filter(a => !a.acknowledged_at);
+  // A storage unit switched off: said on the card itself, not only inside the Limits editor,
+  // so anyone reading the page knows why that unit raises nothing (SOP-401 Part 7).
+  const retired = limits.filter(l => l.kind === "storage" && !l.in_service);
+  const isRetired = (name: string) => retired.some(l => l.equipment_name === name);
 
   return (
     <>
@@ -288,6 +338,20 @@ export default function TemperatureAlertsPanel() {
             </Button>
           )}
         </div>
+
+        {!loading && retired.length > 0 && (
+          <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 mb-3 space-y-1">
+            {retired.map(l => (
+              <p key={l.id}>
+                <span className="font-medium">{l.equipment_name}</span> is out of service
+                {l.in_service_changed_at ? ` since ${format(new Date(l.in_service_changed_at), "MMM d, yyyy")}` : ""}
+                {l.in_service_reason ? ` — ${l.in_service_reason}` : ""}. Its readings are not judged and it
+                raises no alert. No food may be stored in it; see SOP-401 Part 7 before it is returned to service
+                {isAdmin ? " (Limits → In service)" : ""}.
+              </p>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <p className="text-sm text-muted-foreground py-4">Loading…</p>
@@ -338,6 +402,11 @@ export default function TemperatureAlertsPanel() {
                         <Button size="sm" variant="outline" onClick={() => setAcking(a)}>
                           Acknowledge
                         </Button>
+                      )}
+                      {isRetired(a.equipment_name) && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Unit now out of service — this alert closes at the next check, within 15 minutes.
+                        </p>
                       )}
                     </TableCell>
                   </TableRow>
@@ -410,9 +479,15 @@ export default function TemperatureAlertsPanel() {
                     <TableCell className="text-muted-foreground">{when(a.opened_at)}</TableCell>
                     <TableCell className="text-muted-foreground">{when(a.cleared_at)}</TableCell>
                     <TableCell className="text-xs">
-                      {a.action_taken ?? (
-                        <span className="text-amber-700">Not acknowledged</span>
-                      )}
+                      {(() => {
+                        const how = closedHow(a);
+                        if (!how) return <span className="text-amber-700">Not acknowledged</span>;
+                        // The job's reason, not a person's: say so, since an acknowledgement is a
+                        // corrective-action record and this is not one.
+                        return how.byPerson
+                          ? how.text
+                          : <span className="text-muted-foreground italic">Closed by the system: {how.text.toLowerCase()}</span>;
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))}

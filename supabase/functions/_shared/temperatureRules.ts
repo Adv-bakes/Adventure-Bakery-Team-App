@@ -29,6 +29,27 @@ export type Reading = {
 
 export type AlertKind = "out_of_range" | "no_data" | "low_battery";
 
+/**
+ * Whether a unit's readings are judged at all: a storage unit that is in service. The Bakery
+ * Floor (ambient) and an out-of-service unit are skipped. One function because the filter
+ * used to be written inline, and the two halves of "skipped" (raise nothing, AND close what
+ * is still open) have to agree on what it means.
+ */
+export function unitIsJudged(lim: Pick<Limit, "kind" | "in_service">): boolean {
+  return lim.kind === "storage" && lim.in_service === true;
+}
+
+/**
+ * Why an alert was closed when its unit was taken out of service, rather than because the
+ * unit came back within limits. Written into `temperature_alerts.details.closed_reason` and
+ * shown in the alert log in place of an acknowledgement. It exists because the freezer was
+ * switched off on 2026-10-12 with its out-of-range alert OPEN: the job stopped looking at the
+ * unit the moment it left service, so the alert would have sat open for good - and the
+ * one-open-alert-per-unit index would then have blocked a fresh alert after a return to
+ * service, so a warm freezer could have gone unannounced.
+ */
+export const OUT_OF_SERVICE_CLOSE_REASON = "Unit placed out of service";
+
 export type Finding = {
   kind: AlertKind;
   summary: string;      // one line; becomes the alert title and the email subject

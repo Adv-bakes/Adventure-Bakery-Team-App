@@ -7,12 +7,17 @@
 
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { ALERT_KIND_LABEL, formatWorstValue, type TemperatureAlert } from "@/lib/temperatureAlerts";
+import {
+  ALERT_KIND_LABEL, fetchTemperatureLimits, formatWorstValue, type TemperatureAlert,
+} from "@/lib/temperatureAlerts";
+import { deriveFrm401Prefill, type SummaryRow, type UnitState } from "@/lib/temperatureReviewFill";
+
+// The pure half (derive + merge, and the service-state rules added 2026-10-12) lives in
+// temperatureReviewFill.ts so scripts/test-temperature-review.mjs can bundle it without supabase.
+export { deriveFrm401Prefill, mergeFrm401Prefill } from "@/lib/temperatureReviewFill";
+export type { SummaryRow, UnitState } from "@/lib/temperatureReviewFill";
 
 export const TEMPERATURE_REVIEW_FORM = "FRM-401";
-
-
-export type SummaryRow = { name: string; count: number; min: number | null; max: number | null; avg: number | null; humidity: number | null };
 
 export type TempRow = {
   id: number;
@@ -25,99 +30,6 @@ export type TempRow = {
   battery_level: number | null;
   low_battery_alarm: boolean | null;
 };
-
-// Build the FRM-401 (monthly temperature review) prefill from the page's own
-// per-unit summary: the objective figures a reviewer would otherwise copy by
-// hand — month, date, and each unit's Min/Max/Avg °F. Everything that is a
-// judgement or needs off-system evidence (held-limit pass/fail, logging gaps,
-// the alert log, the probe accuracy check, findings, signature) is left blank.
-// Unit rows are read from the form's own grid definition so they stay in sync
-// with the schema, matched to a summary row by unit name (== equipment_name).
-export function deriveFrm401Prefill(
-  schema: any,
-  summary: SummaryRow[],
-  alertRows: Record<string, any>[],
-  monthLabel: string,
-  todayStr: string,
-): Record<string, any> {
-  const fmt1 = (n: number | null) => (n == null ? "" : n.toFixed(1));
-  const byName = new Map(summary.map((s) => [s.name, s]));
-
-  let grid: any = null;
-  for (const sec of schema?.sections ?? []) {
-    for (const f of sec.fields ?? []) if (f.id === "unit_summary") grid = f;
-  }
-
-  const prefill: Record<string, any> = { review_month: monthLabel, review_date: todayStr };
-  if (grid?.rows?.mode === "fixed") {
-    const { labels = [], defaultValues, deletable } = grid.rows;
-    prefill.unit_summary = labels.map((label: string, i: number) => {
-      const row: Record<string, any> = {
-        ...(deletable ? { _label: label } : {}),
-        ...(defaultValues?.[i] ?? {}),
-      };
-      const s = byName.get(label);
-      if (s && s.count) {
-        row.min_f = fmt1(s.min);
-        row.max_f = fmt1(s.max);
-        row.avg_f = fmt1(s.avg);
-      }
-      return row;
-    });
-  }
-
-  // Alerts raised this month, one grid row each (the objective columns only —
-  // whether the response was adequate stays the reviewer's call). A month with
-  // no alerts gets the single "No alerts raised" row the form asks for, so a
-  // quiet month reads differently from an unreviewed one.
-  prefill.alert_log = alertRows.length ? alertRows : [{ kind: "No alerts raised" }];
-  return prefill;
-}
-
-// FRM-401 allows one open draft per person, so createResponse hands back an existing draft
-// UNTOUCHED and the prefill never lands. That was a real bug: a draft opened from the SOPs
-// Library (no month, no figures) made every "Start FRM-401 Review" click reopen it blank.
-// This fills the blanks of whatever came back and never overwrites a value somebody entered.
-// A draft already for a DIFFERENT month is left alone and reported, not re-pointed.
-const isBlankValue = (v: unknown) => v == null || v === "";
-const rowIsBlank = (r: Record<string, any> | null | undefined) =>
-  !r || Object.entries(r).every(([k, v]) => k === "_label" || isBlankValue(v));
-
-export function mergeFrm401Prefill(
-  existing: Record<string, any>,
-  prefill: Record<string, any>,
-): { data: Record<string, any>; changed: boolean; otherMonth?: string } {
-  const month = existing?.review_month;
-  if (!isBlankValue(month) && month !== prefill.review_month) {
-    return { data: existing, changed: false, otherMonth: String(month) };
-  }
-  const data: Record<string, any> = { ...existing };
-  let changed = false;
-
-  for (const key of ["review_month", "review_date"]) {
-    if (isBlankValue(data[key]) && !isBlankValue(prefill[key])) { data[key] = prefill[key]; changed = true; }
-  }
-
-  if (Array.isArray(prefill.unit_summary)) {
-    const rows: Record<string, any>[] = Array.isArray(data.unit_summary) ? data.unit_summary.map((r: any) => ({ ...r })) : [];
-    for (const [i, p] of prefill.unit_summary.entries()) {
-      // registers key rows by _label; fall back to position for a plain fixed grid
-      const idx = p._label != null ? rows.findIndex(r => r?._label === p._label) : i;
-      if (idx < 0 || !rows[idx]) { rows.push({ ...p }); changed = true; continue; }
-      for (const col of ["min_f", "max_f", "avg_f"]) {
-        if (isBlankValue(rows[idx][col]) && !isBlankValue(p[col])) { rows[idx][col] = p[col]; changed = true; }
-      }
-    }
-    data.unit_summary = rows;
-  }
-
-  const alerts = data.alert_log;
-  if (Array.isArray(prefill.alert_log) && (!Array.isArray(alerts) || alerts.every(rowIsBlank))) {
-    data.alert_log = prefill.alert_log;
-    changed = true;
-  }
-  return { data, changed };
-}
 
 // Per-unit min/max/avg °F (+ humidity) over a set of readings. Shared by the
 // on-screen Summary table and the FRM-401 derivation so the two never drift.
@@ -222,6 +134,25 @@ export async function loadFrm401Prefill(schema: any, ym: string): Promise<{
     product_affected: a.action_taken ?? "",
   }));
 
-  const prefill = deriveFrm401Prefill(schema, monthSummary, alertRows, label, format(new Date(), "yyyy-MM-dd"));
+  // Each unit's service state, for the "State this month" column and the SOP-401 Part 7
+  // "placed in or out of service" row. Best effort: a review must still be fillable if the
+  // limits cannot be read, it just carries no state.
+  let units: UnitState[] | undefined;
+  try {
+    units = (await fetchTemperatureLimits()).map((l) => ({
+      name: l.equipment_name,
+      kind: l.kind,
+      in_service: l.in_service,
+      changed_at: l.in_service_changed_at,
+      reason: l.in_service_reason ?? null,
+    }));
+  } catch (e) {
+    console.error("FRM-401 fill: could not read the unit states", e);
+  }
+
+  const prefill = deriveFrm401Prefill(
+    schema, monthSummary, alertRows, label, format(new Date(), "yyyy-MM-dd"),
+    units ? { units, start, end } : {},
+  );
   return { prefill, label, start, end };
 }

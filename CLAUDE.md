@@ -871,6 +871,31 @@ no DB view/RPC yet (a later phase will roll up summaries + purge old rows). Disp
   those FRM-705 rows means updating it. It is a reading of the records, never the answer to the
   confirmation, and is not shown on a submitted review (it would show today's check, not that month's).
 
+- **Out of service (2026-10-12, the walk-in freezer switched off).** A storage unit is placed out of
+  service with the **In service** switch in the Limits editor (`TemperatureAlertsPanel.tsx`, admin/owner);
+  moving the switch asks for a **reason** and refuses to save without one (`temperature_limits.in_service_reason`,
+  migration `20261012000003`; before it is pushed the reason is folded into Notes - 42703 fallback in
+  `temperatureAlerts.ts`). The card shows a grey "out of service since ... - reason" line for everyone.
+  **The job closes what a retired unit still has open:** `temperature-alert` used to filter out-of-service
+  units out entirely, so an alert open at the moment of the switch stayed open for good, and the
+  one-open-alert-per-unit index would then block a fresh alert after a return to service. Now
+  `unitIsJudged` (`_shared/temperatureRules.ts`) decides the filter, and a second pass closes each
+  retired unit's open alerts with `details.closed_reason = "Unit placed out of service"` (no Resolved
+  email, the unit is off, not within limits) and resolves their `internal_notifications` rows. The log
+  shows "Closed by the system: unit placed out of service" (`closedHow`). **The FRM-401 fill carries the
+  state:** the pure half moved to `src/lib/temperatureReviewFill.ts` (tested by
+  `scripts/test-temperature-review.mjs`); `loadFrm401Prefill` reads `temperature_limits` and
+  `unitStateForMonth` / `serviceChangesInMonth` fill "State this month" (In service / Out of service /
+  Changed during the month; temperatures left blank for a unit off all month) and the Part 7
+  "placed in or out of service" row with date + reason. `mergeFrm401Prefill` overwrites a state only on a
+  row whose other cells are all blank (the grid default "In service" is not a person's answer). Return
+  conditions and "Food first placed" are never filled. SOP-401 v4 (migration `20261012000004`) records
+  the freezer as out of service in Part 1. **The user-facing guide for the page** is
+  `sop-drafts/yolink_operations_guide.html` -> `.pdf` (printed with headless Chrome:
+  `chrome --headless=new --no-pdf-header-footer --print-to-pdf=<out> file:///<html>`), attached to the
+  internal "YoLink" document in the SOPs Library; `TemperatureReport` finds it by the attachment filename,
+  so the file must stay `yolink_operations_guide.pdf`. Re-attach the PDF in the drawer after regenerating.
+
 ---
 
 ## Tolling Inventory — `pages/sales/SalesClientFolder.tsx` + `components/sales/TollingInventoryTools.tsx`
@@ -1020,6 +1045,7 @@ Module 1 (EN + ES) is imported as draft `sop_documents` rows under Core Onboardi
 | `team-coach` | Accepts `{messages:[{role,content}]}`; returns `{reply, sources:[{id,number,title}]}`. The Team Portal Coach chat (see "Team Coach chat" below). Caller must pass `is_staff_or_admin`; reads active `sop_documents` with the caller's JWT (RLS). Two passes: Gemini picks up to 8 documents from a one-line catalog, merged with any document number typed and the top 3 keyword hits (a failed selection degrades to keywords), then answers from those bodies with `[FRM-509]`-style citations. |
 | `draft-audit-evidence` | Accepts `{clause, requirements[], asOf}`; returns `{evidence, window, sources[]}`. FRM-010's "Draft from records" (see "AI evidence draft"). Caller must pass `is_staff_or_admin`; reads with the caller's JWT. Facts computed in `_shared/auditEvidence.ts`, prose by `aiJSON`. `verify_jwt = true`. |
 | `translate-notice` | Accepts `{title, body}` written in English or Spanish; returns `{source: "en"\|"es", title, body}` in the OTHER language. For the Post a notice dialog (see "Staff notices"). Caller must pass `is_staff_or_admin`; writes nothing. `verify_jwt = true`. |
+| `temperature-alert` | pg_cron every 15 minutes (`temperature-alert-check`). For each in-service storage unit (`unitIsJudged`) assesses the tail of `temperature_logs` (`_shared/temperatureRules.ts`, tested by `scripts/test-temperature-rules.mjs`): opens/re-notifies/clears `temperature_alerts` rows, emails via Resend, writes `internal_notifications`. A storage unit OUT of service gets its open alerts closed as "Unit placed out of service" (no email) and their notifications resolved. See "Temperature Monitoring Report". |
 | `tts-elevenlabs` | Accepts `{text, voiceId?, lang?}`; calls ElevenLabs (`eleven_multilingual_v2`) and returns the MP3 bytes. **Returns `Content-Type: application/octet-stream`** (not `audio/mpeg`) so `supabase.functions.invoke` hands back a real `Blob` — any other type makes invoke run `response.text()` and corrupt the binary. Multilingual model auto-detects language, so one voice covers EN + ES. |
 
 **Required secrets (set via Supabase dashboard → Settings → Edge Functions):**
