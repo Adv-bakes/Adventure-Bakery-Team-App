@@ -87,6 +87,9 @@ export interface TodayMessages {
   receiving: string;
   receiveDelivery: string;
   lastReceipt(date: string, lines: number, suppliers: string): string;
+  /** A further receiving log of the last day, and the tag for one not yet submitted. */
+  otherReceipt(date: string, lines: number, suppliers: string): string;
+  receiptDraft: string;
   noReceipts: string;
   holdsOpen(n: number): string;
   finished: string;
@@ -297,6 +300,8 @@ const en: TodayMessages = {
   receiving: "Receiving",
   receiveDelivery: "Receive a delivery (FRM-301)",
   lastReceipt: (date, lines, suppliers) => `Last receiving log ${date}: ${lines} line${lines === 1 ? "" : "s"}${suppliers ? ` from ${suppliers}` : ""}.`,
+  otherReceipt: (date, lines, suppliers) => `Receiving log ${date}: ${lines} line${lines === 1 ? "" : "s"}${suppliers ? ` from ${suppliers}` : ""}.`,
+  receiptDraft: "draft",
   noReceipts: "No receiving log yet.",
   holdsOpen: n => n === 0 ? "No material on hold." : `${n} hold${n === 1 ? "" : "s"} open without a disposition.`,
   finished: "Finished product",
@@ -507,6 +512,8 @@ const es: TodayMessages = {
   receiving: "Recepción",
   receiveDelivery: "Recibir una entrega (FRM-301)",
   lastReceipt: (date, lines, suppliers) => `Última recepción ${date}: ${lines} línea${lines === 1 ? "" : "s"}${suppliers ? ` de ${suppliers}` : ""}.`,
+  otherReceipt: (date, lines, suppliers) => `Recepción ${date}: ${lines} línea${lines === 1 ? "" : "s"}${suppliers ? ` de ${suppliers}` : ""}.`,
+  receiptDraft: "borrador",
   noReceipts: "Todavía no hay registro de recepción.",
   holdsOpen: n => n === 0 ? "No hay material retenido." : `${n} retención${n === 1 ? "" : "es"} sin disposición final.`,
   finished: "Producto terminado",

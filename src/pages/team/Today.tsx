@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords } from "@/lib/formResponses";
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
-  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, lastReceipt, localDay, lotsInProgress, openHolds,
+  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, localDay, lotsInProgress, openHolds, recentReceipts,
   ovenLoads, preopState, productionOpen, releaseSteps, sealState, sealingAwaitingReview, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
@@ -129,7 +129,7 @@ export default function Today() {
   const review = useMemo(() => records ? bakingAwaitingReview(records, today) : null, [records, today]);
   const sealReview = useMemo(() => records ? sealingAwaitingReview(records, today) : null, [records, today]);
   const dispatch = useMemo(() => records ? lastDispatch(records.dispatches) : null, [records]);
-  const receipt = useMemo(() => records ? lastReceipt(records.receipts) : null, [records]);
+  const receipts = useMemo(() => records ? recentReceipts(records.receipts, today) : [], [records, today]);
   const awaitingRelease = lots.filter(l => l.stage === "awaiting_release");
   const awaitingCollection = lots.filter(l => l.stage === "released");
 
@@ -354,7 +354,15 @@ export default function Today() {
           {section(M.receiving, <PackageOpen className="w-4 h-4 text-[hsl(var(--tp-gold))]" />, (
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="text-sm space-y-1">
-                <div className="tp-card-dim">{receipt ? M.lastReceipt(receipt.date, receipt.lines, receipt.suppliers.join(", ")) : M.noReceipts}</div>
+                {receipts.length === 0 && <div className="tp-card-dim">{M.noReceipts}</div>}
+                {receipts.map((r, i) => (
+                  <div key={r.id}>
+                    <Link className="text-[hsl(var(--tp-gold))] hover:underline" to={entryHref(r.docId, r.id)}>
+                      {(i === 0 ? M.lastReceipt : M.otherReceipt)(r.date, r.lines, r.suppliers.join(", "))}
+                    </Link>
+                    {r.status !== "submitted" && <span className="tp-card-dim"> ({M.receiptDraft})</span>}
+                  </div>
+                ))}
                 <div className={holds.length ? "text-destructive font-medium" : "tp-card-dim"}>{M.holdsOpen(holds.length)}</div>
                 {holds.length > 0 && (
                   <ul className="text-xs space-y-0.5">
