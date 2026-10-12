@@ -86,6 +86,9 @@ type DocRow = {
   content: any;
 };
 
+/** How long a submit with no question waits, with its Undo, before it is recorded. */
+const SUBMIT_HOLD_MS = 6000;
+
 export default function FormEntry() {
   const { docId, responseId } = useParams<{ docId: string; responseId: string }>();
   const navigate = useNavigate();
@@ -121,6 +124,14 @@ export default function FormEntry() {
   // they go on to submit, not if they cancel.
   const [skipConfirm, setSkipConfirm] = useUserPref<boolean>(SKIP_SUBMIT_CONFIRM, false);
   const [dontAskAgain, setDontAskAgain] = useState(false);
+  // UNDO FOR A SUBMIT WITH NO QUESTION (owner, 2026-10-12). With the question switched off, Submit
+  // does not record the entry at once: it saves the answers as a draft, waits SUBMIT_HOLD_MS with an
+  // Undo beside it, and only then submits. Nothing has been submitted during the wait, so Undo has
+  // nothing to reverse - no notification was closed, no lock applied. Leaving the page during the
+  // wait submits straight away; closing the browser leaves a saved draft, never a lost entry.
+  const [held, setHeld] = useState(false);
+  const hold = useRef<{ timer: ReturnType<typeof setTimeout>; fire: () => void } | null>(null);
+  const holdNext = useRef(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -351,24 +362,13 @@ export default function FormEntry() {
       // A lot record whose counts do not add up says why in Notes before it is submitted (FSQM-021).
       const counts = packCountsOn ? packCounts(values) : null;
       if (counts?.needsNote) { toast.error(`Not submitted - ${counts.text}`, { duration: 12000 }); return; }
-      setSubmitting(true);
-      try {
-        const updated = await submitResponse(response.id, values, response.updated_at);
-        applyResult(updated);
-        // A submitted entry can no longer be signed, so an outstanding request is finished either
-        // way — satisfied if the lines were signed, moot if they were not.
-        try { await resolveSignatureRequest(response.id, "Entry submitted"); } catch { /* prompt only */ }
-        try { await withdrawFieldSignatureRequests(response.id, null, "Entry submitted"); } catch { /* prompt only */ }
-        setRequest(null);
-        toast.success("Entry submitted");
-      } catch (e: any) {
-        if (e instanceof StaleResponseError) toast.error(e.message);
-        else toast.error(e.message ?? "Failed to submit");
-      } finally {
-        setSubmitting(false);
-      }
+      const wait = holdNext.current;
+      holdNext.current = false;
+      if (wait) { await holdSubmit(values); return; }
+      await commitSubmit(response.id, values, response.updated_at);
     },
     errors => {
+      holdNext.current = false;
       setConfirmSubmit(false);
       const lines = schema ? describeFormErrors(schema, errors as Record<string, any>) : [];
       setMissing(lines.length ? lines : ["An answer on this form"]);
@@ -378,6 +378,61 @@ export default function FormEntry() {
       );
     },
   );
+
+  /** The write itself. Takes what it needs as arguments so it can also run as the page is left. */
+  const commitSubmit = async (id: string, values: Record<string, any>, updatedAt: string) => {
+      setSubmitting(true);
+      try {
+        const updated = await submitResponse(id, values, updatedAt);
+        applyResult(updated);
+        // A submitted entry can no longer be signed, so an outstanding request is finished either
+        // way — satisfied if the lines were signed, moot if they were not.
+        try { await resolveSignatureRequest(id, "Entry submitted"); } catch { /* prompt only */ }
+        try { await withdrawFieldSignatureRequests(id, null, "Entry submitted"); } catch { /* prompt only */ }
+        setRequest(null);
+        toast.success("Entry submitted");
+      } catch (e: any) {
+        if (e instanceof StaleResponseError) toast.error(e.message);
+        else toast.error(e.message ?? "Failed to submit");
+      } finally {
+        setSubmitting(false);
+      }
+  };
+
+  /** Save the answers as a draft, then wait before submitting, with an Undo. */
+  const holdSubmit = async (values: Record<string, any>) => {
+    if (!response) return;
+    setSubmitting(true);
+    let saved: FormResponse;
+    try {
+      // Saved first, so that whatever happens during the wait nothing typed is lost.
+      saved = await saveResponseData(response.id, values, response.updated_at);
+      applyResult(saved);
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to submit");
+      setSubmitting(false);
+      return;
+    }
+    setSubmitting(false);
+    const fire = () => { hold.current = null; setHeld(false); void commitSubmit(saved.id, values, saved.updated_at); };
+    hold.current = { timer: setTimeout(fire, SUBMIT_HOLD_MS), fire };
+    setHeld(true);
+  };
+
+  const undoSubmit = () => {
+    if (!hold.current) return;
+    clearTimeout(hold.current.timer);
+    hold.current = null;
+    setHeld(false);
+    toast.message("Not submitted - the entry is still a draft");
+  };
+
+  // Leaving the page during the wait is not an Undo: the entry is submitted at once.
+  useEffect(() => () => {
+    if (!hold.current) return;
+    clearTimeout(hold.current.timer);
+    hold.current.fire();
+  }, []);
 
   // Copy the settings.copyFrom fields from an earlier entry. Like the voice fill, the result is
   // unsaved and dirty (keepDefaultValues): nothing is written until Save Draft, and Undo restores
@@ -1066,7 +1121,7 @@ export default function FormEntry() {
         <FormRenderer
           schema={schema}
           form={form}
-          readOnly={readOnly}
+          readOnly={readOnly || held}
           isAdmin={isAdmin}
           signer={signer}
           onScanLabel={canEdit ? scanLabelIntoRow : undefined}
@@ -1182,17 +1237,28 @@ export default function FormEntry() {
         </Link>
         {canEdit && (
           <>
-            <Button type="button" onClick={saveDraft} disabled={saving || submitting} variant="outline">
+            <Button type="button" onClick={saveDraft} disabled={saving || submitting || held} variant="outline">
               <Save className="w-4 h-4 mr-1.5" />{saving ? "Saving…" : "Save Draft"}
             </Button>
-            <Button
-              type="button"
-              onClick={() => { if (skipConfirm) void doSubmit(); else { setDontAskAgain(false); setConfirmSubmit(true); } }}
-              disabled={saving || submitting}
-              className="bg-[#C89B3C] hover:bg-[#B8892C]"
-            >
-              <Send className="w-4 h-4 mr-1.5" />{submitting ? "Submitting…" : "Submit"}
-            </Button>
+            {held ? (
+              // The wait before a submit with no question: nothing is submitted yet, so this is a true undo.
+              <span className="inline-flex items-center gap-2 rounded-md border border-[#C89B3C] bg-[#C89B3C]/10 pl-3 pr-1 py-1 text-sm text-[#2A1F0E]">
+                <Loader2 className="w-4 h-4 animate-spin text-[#9A6F1E]" />
+                Submitting in a moment…
+                <Button type="button" size="sm" variant="outline" onClick={undoSubmit}>
+                  <Undo2 className="w-3.5 h-3.5 mr-1.5" />Undo
+                </Button>
+              </span>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => { if (skipConfirm) { holdNext.current = true; void doSubmit(); } else { setDontAskAgain(false); setConfirmSubmit(true); } }}
+                disabled={saving || submitting}
+                className="bg-[#C89B3C] hover:bg-[#B8892C]"
+              >
+                <Send className="w-4 h-4 mr-1.5" />{submitting ? "Submitting…" : "Submit"}
+              </Button>
+            )}
           </>
         )}
         {/*

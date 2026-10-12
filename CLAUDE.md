@@ -607,7 +607,13 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, and `form.skipSubmitConfirm`
   (`SKIP_SUBMIT_CONFIRM`, owner 2026-10-12: a "Do not show this again" tick on FormEntry's "Submit this
   entry?" dialog, taking effect when the person goes on to submit; switched back on My Account, "Form
-  entries"). **Conveniences, never records**: nothing in the lib throws, and with the table missing or the
+  entries"). **With the question off, Submit waits six seconds with an Undo** (`SUBMIT_HOLD_MS`,
+  `holdSubmit` in `FormEntry`, owner 2026-10-12): the answers are saved as a draft first, the form is
+  read-only during the wait, and only then is the entry submitted - so Undo has NOTHING to reverse (no
+  signature request closed, no lock). This was chosen over un-submitting a submitted entry, which would
+  need a server function and a rule for who may reverse a record. Leaving the page during the wait
+  submits at once; closing the browser leaves a saved draft. The dialog path submits at once, as before.
+  **Conveniences, never records**: nothing in the lib throws, and with the table missing or the
   network down a setting is simply kept on the device. Do not put anything here that a record relies on.
 - **Link to another form under a field (`FieldBase.linkTo`):** `{ form, latestEntry? }` renders a link
   under the field (`FormLink` in `FormFieldInput.tsx`, target from `fetchFormLinkTarget`): with
