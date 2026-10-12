@@ -44,10 +44,10 @@ const P = { since: "2026-10-07", until: "2026-10-12", previous: "2026-10-07" };
 const quiet = T.monthlyUpdateLines(T.emptyUpdateRecords(), P);
 check("verification", quiet.verification, "Nothing on the verification schedule is due or overdue as of 2026-10-12.");
 check("corrective actions", quiet.capa, "No corrective action is open on FRM-007 as of 2026-10-12.");
-check("complaints, incidents and recalls", quiet.events, "No complaint reported on FRM-002 since the last update on 2026-10-07. No glass or brittle plastic breakage on FRM-908. Nothing put on hold on FRM-702. No withdrawal, recall or mock recall on FRM-012.");
-has("audits name both forms", quiet.audits, "No internal audit recorded on FRM-010 since the last update on 2026-10-07. No GMP inspection recorded on FRM-913.");
+check("complaints, incidents and recalls", quiet.events, "No complaint reported on FRM-002 since the last update on 2026-10-07.\nNo glass or brittle plastic breakage on FRM-908.\nNothing put on hold on FRM-702.\nNo withdrawal, recall or mock recall on FRM-012.");
+has("audits name both forms", quiet.audits, "No internal audit recorded on FRM-010 since the last update on 2026-10-07.\nNo GMP inspection recorded on FRM-913.\n");
 has("...and say what no form holds", quiet.audits, "Customer, certification body and regulatory visits are not on a form");
-has("changes name the form and the documents", quiet.changes, "No change assessed on FRM-015 since the last update on 2026-10-07. No controlled document issued or revised.");
+has("changes name the form and the documents", quiet.changes, "No change assessed on FRM-015 since the last update on 2026-10-07.\nNo controlled document issued or revised.\n");
 
 // ---- a busy month
 const r = T.emptyUpdateRecords();
@@ -77,22 +77,22 @@ r.entries.changes = [entry({ change_type: "Equipment", raised_on: "2026-10-08", 
 r.documents = [{ number: "FSQM-017", revision: "v15", effective: "2026-10-12" }, { number: "FRM-011", revision: "v2", effective: "2026-10-10" },
   { number: "FRM-601", revision: "v2", effective: "2026-10-10" }, { number: "FSQM-009", revision: "New", effective: "2026-09-02" }];
 const busy = T.monthlyUpdateLines(r, P);
-check("overdue before due, without the trailing verb", busy.verification, "Overdue: Calibration check (due 2026-09-21). Due: Monthly SQF update to senior site management (due 2026-10-07).");
+check("overdue before due, without the trailing verb", busy.verification, "Overdue:\n\u2022 Calibration check (due 2026-09-21)\nDue:\n\u2022 Monthly SQF update to senior site management (due 2026-10-07)");
 check("open actions oldest first, the late one flagged, the closed and the blank left out", busy.capa,
-  "2 corrective actions open on FRM-007: CAPA-001 (Major, raised 2026-08-01, target 2026-09-30 - PAST DUE); CAPA-002 (Minor, raised 2026-10-08, target 2026-11-01).");
+  "2 corrective actions open on FRM-007:\n\u2022 CAPA-001 (Major, raised 2026-08-01, target 2026-09-30 - PAST DUE)\n\u2022 CAPA-002 (Minor, raised 2026-10-08, target 2026-11-01)");
 has("complaints of the period only, the day of the last update included", busy.events,
-  "3 complaints on FRM-002 since the last update on 2026-10-07 (1 Critical, 2 other): C-13 2026-10-07, Non-Critical; C-14 2026-10-09, Rum Cake - Original, Critical (draft); C-15 2026-10-11, not yet classified (draft).");
-has("a breakage", busy.events, "1 breakage on FRM-908: G-3 2026-10-10, Packing room (draft).");
-has("a hold, still open", busy.events, "1 hold on FRM-702: tag H-9 2026-10-08, Soybean oil, STILL OPEN.");
-has("a mock recall", busy.events, "Mock recall test started 2026-10-11, Rum Cake - Original (draft) (FRM-012).");
-has("an audit with its outcome", busy.audits, "Internal audit 2026-10-09 (Q4): No non-conformances found (FRM-010).");
-has("an inspection with its failed items counted, last month's left out", busy.audits, "GMP inspection 2026-10-08 (Routine (monthly)): 2 items failed (FRM-913).");
-has("a change not yet decided", busy.changes, "1 change assessed on FRM-015: Equipment 2026-10-08, not yet decided (draft).");
-has("documents of the period, in number order", busy.changes, "3 controlled documents issued or revised: FRM-011 v2, FRM-601 v2, FSQM-017 v15.");
+  "3 complaints on FRM-002 since the last update on 2026-10-07 (1 Critical, 2 other):\n\u2022 C-13 2026-10-07, Non-Critical\n\u2022 C-14 2026-10-09, Rum Cake - Original, Critical (draft)\n\u2022 C-15 2026-10-11, not yet classified (draft)\n");
+has("a breakage", busy.events, "\n1 breakage on FRM-908:\n\u2022 G-3 2026-10-10, Packing room (draft)\n");
+has("a hold, still open", busy.events, "1 hold on FRM-702:\n\u2022 tag H-9 2026-10-08, Soybean oil, STILL OPEN\n");
+has("a mock recall", busy.events, "1 record on FRM-012:\n\u2022 Mock recall test started 2026-10-11, Rum Cake - Original (draft)");
+has("an audit with its outcome", busy.audits, "1 internal audit on FRM-010:\n\u2022 2026-10-09 (Q4): No non-conformances found\n");
+has("an inspection with its failed items counted, last month's left out", busy.audits, "1 GMP inspection on FRM-913:\n\u2022 2026-10-08 (Routine (monthly)): 2 items failed\n");
+has("a change not yet decided", busy.changes, "1 change assessed on FRM-015:\n\u2022 Equipment 2026-10-08, not yet decided (draft)\n");
+has("documents of the period, in number order", busy.changes, "3 controlled documents issued or revised:\n\u2022 FRM-011 v2\n\u2022 FRM-601 v2\n\u2022 FSQM-017 v15\n");
 {
   const many = T.emptyUpdateRecords();
   many.documents = Array.from({ length: 18 }, (_, i) => ({ number: `FRM-${100 + i}`, revision: "v2", effective: "2026-10-10" }));
-  has("a long list is cut and counted", T.monthlyUpdateLines(many, P).changes, "FRM-114 v2, and 3 more.");
+  has("a long list is cut and counted", T.monthlyUpdateLines(many, P).changes, "\u2022 FRM-114 v2\n\u2022 and 3 more\n");
 }
 
 // ---- into the entry: blank cells only, the last row never

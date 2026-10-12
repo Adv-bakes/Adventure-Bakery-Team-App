@@ -1535,6 +1535,9 @@ raised" cell, what the records show since the last update:
 - **Audits and inspections** - FRM-010 with its outcome, FRM-913 with its failed items counted.
 - **Changes** - FRM-015, and every controlled document whose effective date falls in the period.
 
+**Each list is a heading line, then one item per line with a leading bullet** (`list` in
+`monthlyUpdate.ts`; owner, 2026-10-12); a statement with nothing to list is one plain line.
+
 Rules, the release helper's again: **evidence into blank cells only** (a typed answer is kept and
 named as kept); "Anything needing a decision or a resource" is never filled; a quiet matter says
 what was looked at ("No complaint reported on FRM-002 since ..."), never a bare "None"; drafts are
