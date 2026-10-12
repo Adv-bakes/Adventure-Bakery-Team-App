@@ -354,6 +354,15 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   const packRef = useRef<ScannedPack | null>(null);
   packRef.current = pack;
   const scanAddRef = useRef(false);                     // the hidden input was opened by "Add another photo"
+  // The read in flight: its photos and the pack it builds on. A further photo taken while it is
+  // still being read replaces it - the photos are then read together and the earlier answer,
+  // when it arrives, is dropped (scanGen).
+  const pendingRef = useRef<{ rowIndex: number; files: File[]; pack: ScannedPack | null } | null>(null);
+  const scanGen = useRef(0);
+  const [pendingShots, setPendingShots] = useState(0);
+  // With scanKeepPhoto each photo is saved onto the entry as it is read, and two saves at once
+  // could lose one; there a further photo waits for the first read.
+  const addWhileReading = !field.scanKeepPhoto;
   // useFieldArray's `fields` holds mount-time defaults, so read the row being
   // scanned off the live watched values instead. Mirrored into a ref because
   // the async handler would otherwise close over a stale render's copy.
@@ -369,21 +378,28 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
 
   // `add`: a further photo of the pack this row was just scanned from. It is read TOGETHER with
   // the earlier photos (the function takes four) and only fills what is still empty or untouched.
-  const runScan = async (file: File, add = false) => {
-    const rowIndex = scanTargetRef.current;
-    if (rowIndex == null || !onScanLabel) return;
-    const earlier = add && packRef.current?.rowIndex === rowIndex ? packRef.current : null;
+  // It may arrive while the first photo is still being read (owner, 2026-10-12: the second photo
+  // should not have to wait for the first answer); several photos can also be chosen at once.
+  const runScan = async (picked: File[], rowIndex: number | null, add = false) => {
+    if (rowIndex == null || !onScanLabel || picked.length === 0) return;
+    const pending = add && pendingRef.current?.rowIndex === rowIndex ? pendingRef.current : null;
+    const earlier = pending ? pending.pack : add && packRef.current?.rowIndex === rowIndex ? packRef.current : null;
+    const files = [...(pending?.files ?? earlier?.files ?? []), ...picked].slice(-4); // the reader takes four
+    const gen = ++scanGen.current;
+    pendingRef.current = { rowIndex, files, pack: earlier };
+    setPendingShots(files.length);
     setScanningRow(rowIndex);
     setScan(null);
     try {
-      const result = await onScanLabel(file, {
+      const result = await onScanLabel(files[files.length - 1], {
         label: field.label,
         rowIndex,
         wanted: scanWantedFacts(field), // only ask for facts a column (or the notes overflow) can hold
         keepPhoto: !!field.scanKeepPhoto,
         mode: field.scanMode ?? "ingredient",
-        earlier: earlier?.files.slice(-3),
+        earlier: files.slice(0, -1),
       });
+      if (gen !== scanGen.current) return; // a further photo was added meanwhile: that read answers for all
       if (!result) return; // the caller already surfaced the failure
       const prev = rowsRef.current[rowIndex] ?? {};
       const { next, filled, kept } = earlier
@@ -392,7 +408,6 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
       if (filled.length) update(rowIndex, next);
       const wrote: GridRowValue = { ...(earlier?.written ?? {}) };
       for (const col of field.columns) if (next[col.id] !== prev[col.id]) wrote[col.id] = next[col.id];
-      const files = [...(earlier?.files ?? []), file];
       setPack({ rowIndex, files, prev: earlier?.prev ?? prev, written: wrote });
       setScan({
         rowIndex,
@@ -410,9 +425,10 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
     } catch {
       /* the caller owns error messaging; just drop the spinner */
     } finally {
-      setScanningRow(null);
-      scanTargetRef.current = null;
-      if (scanInputRef.current) scanInputRef.current.value = "";
+      if (gen === scanGen.current) {
+        setScanningRow(null);
+        pendingRef.current = null;
+      }
     }
   };
 
@@ -551,7 +567,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                           className="h-7 w-7"
                           disabled={scanningRow != null}
                           onClick={() => {
-                            scanTargetRef.current = rowIdx;
+                            scanTargetRef.current = rowIdx; scanAddRef.current = false;
                             scanInputRef.current?.click();
                           }}
                           title="Photograph the package label to fill this row"
@@ -664,10 +680,11 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
               capture="environment"
               className="hidden"
               onChange={e => {
-                const file = e.target.files?.[0];
+                const files = Array.from(e.target.files ?? []);
+                e.target.value = "";            // so the same photo can be retaken
                 const add = scanAddRef.current;
                 scanAddRef.current = false;
-                if (file) runScan(file, add);
+                runScan(files, scanTargetRef.current, add);
               }}
             />
           )}
@@ -685,6 +702,32 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                 </>
               ) : (
                 <span className="text-amber-800">{share.problem}</span>
+              )}
+            </div>
+          )}
+
+          {/* While a label is being read, a further photo of the same pack can already be taken. */}
+          {scanningRow != null && (
+            <div
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-2.5 py-2 text-xs"
+              style={{ borderColor: "rgba(200,155,60,0.45)", background: "rgba(200,155,60,0.1)" }}
+            >
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9A6F1E]" />
+              <span className="text-[#2A1F0E]">
+                {pendingShots > 1 ? `Reading ${pendingShots} photos together for row ${scanningRow + 1}…` : `Reading the label for row ${scanningRow + 1}…`}
+              </span>
+              {addWhileReading && pendingShots < 4 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    scanTargetRef.current = scanningRow;
+                    scanAddRef.current = true;
+                    scanInputRef.current?.click();
+                  }}
+                  className="font-medium text-[#9A6F1E] hover:underline"
+                >
+                  Take another photo of this pack
+                </button>
               )}
             </div>
           )}
@@ -795,10 +838,8 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                 : undefined
             }
             rowKey={dialogRow != null ? rows[dialogRow]?.id : undefined}
-            onScanFile={scanEnabled && !disabled ? (file, add) => {
-              scanTargetRef.current = dialogRow;
-              runScan(file, add);
-            } : undefined}
+            onScanFile={scanEnabled && !disabled ? (files, add) => { runScan(files, dialogRow, add); } : undefined}
+            addWhileReading={addWhileReading && pendingShots < 4}
             packShots={dialogRow != null && pack?.rowIndex === dialogRow ? pack.files.length : 0}
             scanning={dialogRow != null && scanningRow === dialogRow}
             suggestionFor={suggestionFor}

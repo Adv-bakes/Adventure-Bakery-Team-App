@@ -49,8 +49,10 @@ export interface GridRowDialogProps {
    * than reaching for the grid's: that one lives outside the modal, and driving a
    * hidden input across a focus-trapped portal is a needless thing to depend on.
    */
-  onScanFile?: (file: File, add?: boolean) => void;
+  onScanFile?: (files: File[], add?: boolean) => void;
   scanning?: boolean;
+  /** A further photo of the same pack may be taken while the first is still being read. */
+  addWhileReading?: boolean;
   /**
    * How many photos of this row's pack have been read in this page visit. Above zero, a further
    * photo of the SAME pack can be added: it is read together with the earlier ones.
@@ -63,7 +65,7 @@ export interface GridRowDialogProps {
 }
 
 export function GridRowDialog({
-  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning, packShots = 0, suggestionFor, onDraftCell,
+  field, control, rowIndex, onClose, disabled, rowLabel, guidance, rowKey, onScanFile, scanning, addWhileReading, packShots = 0, suggestionFor, onDraftCell,
 }: GridRowDialogProps) {
   const open = rowIndex != null;
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -97,22 +99,33 @@ export function GridRowDialog({
           {onScanFile && (() => {
             const take = (input: HTMLInputElement | null, add = false) => { addRef.current = add; input?.click(); };
             const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-              const file = e.target.files?.[0];
+              const files = Array.from(e.target.files ?? []);
               e.target.value = "";            // so the same photo can be retaken
               const add = addRef.current;
               addRef.current = false;
-              if (file) onScanFile(file, add);
+              if (files.length) onScanFile(files, add);
             };
             return (
               <>
                 <input ref={cameraRef} type="file" accept="image/*" capture="environment"
                        className="hidden" onChange={onPick} />
-                <input ref={fileRef} type="file" accept="image/*"
+                <input ref={fileRef} type="file" accept="image/*" multiple
                        className="hidden" onChange={onPick} />
                 {scanning ? (
-                  <Button type="button" variant="outline" className="w-full" disabled>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />Reading the label…
-                  </Button>
+                  <div className="space-y-1.5">
+                    <Button type="button" variant="outline" className="w-full" disabled>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />Reading the label…
+                    </Button>
+                    {addWhileReading && !disabled && (
+                      <p className="text-xs text-[#2A1F0E]/70">
+                        Need another side of the same pack?{" "}
+                        <button type="button" className="font-medium text-[#9A6F1E] hover:underline" onClick={() => take(cameraRef.current, true)}>
+                          Take another photo
+                        </button>
+                        {" "}now - the photos are read together.
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <Button type="button" variant="outline" disabled={disabled}
