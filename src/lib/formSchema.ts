@@ -1176,14 +1176,47 @@ export function applyLabelScan(
         .filter(e => e?.value)
         .map(e => (e.label ? `${e.label}: ${e.value}` : String(e.value))),
     ];
-    if (leftovers.length) {
-      const prior = typeof next[notes.id] === "string" ? next[notes.id].trim() : "";
-      next[notes.id] = [prior, ...leftovers].filter(Boolean).join("\n");
+    // A line already in the notes is not written twice: a second photo of the same pack is read
+    // together with the first, so the first photo's leftovers come back.
+    const prior = typeof next[notes.id] === "string" ? next[notes.id].trim() : "";
+    const have = new Set(prior.split("\n").map((l: string) => l.trim()));
+    const fresh = leftovers.filter(l => !have.has(l.trim()));
+    if (fresh.length) {
+      next[notes.id] = [prior, ...fresh].filter(Boolean).join("\n");
       filled.push(notes.label);
     }
   }
 
   return { next, filled };
+}
+
+/**
+ * A FURTHER photo of the same pack, read together with the earlier ones (owner's request at
+ * receiving, 2026-10-12: one photo does not always show the name, the lot and the date).
+ * Unlike a first scan this never replaces an answer: a cell is written only if it is empty or
+ * still holds what the earlier scan of this pack wrote (`written`). A cell changed since - a lot
+ * corrected from the "other codes" chips, a name retyped - is kept and named in `kept`.
+ * Notes are only ever added to.
+ */
+export function applyAddedLabelScan(
+  grid: GridField,
+  row: GridRowValue,
+  result: LabelScanResult,
+  written: GridRowValue,
+): { next: GridRowValue; filled: string[]; kept: string[] } {
+  const full = applyLabelScan(grid, row, result);
+  const notes = notesColumn(grid);
+  const next: GridRowValue = { ...full.next };
+  const filled: string[] = [];
+  const kept: string[] = [];
+  const blank = (v: unknown) => v == null || v === "";
+  for (const col of grid.columns) {
+    const cur = row[col.id];
+    if (full.next[col.id] === cur) continue;
+    if (col.id === notes?.id || blank(cur) || cur === written[col.id]) filled.push(col.label);
+    else { next[col.id] = cur; kept.push(col.label); }
+  }
+  return { next, filled, kept };
 }
 
 // ---------- Package-label scan into SCALAR fields (one photo → one section) ----------

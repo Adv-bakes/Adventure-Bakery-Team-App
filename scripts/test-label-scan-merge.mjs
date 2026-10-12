@@ -136,6 +136,44 @@ check("a fact missing from a later read does not empty its field", s3.next.mater
   check("mixed: only the answered one goes", W(s3.next, NO_CONTAINS, MISMATCH), [MISMATCH]);
 }
 
+// ---- a delivery ROW scanned from two photos of the same pack (applyAddedLabelScan, FRM-301)
+{
+  const GRID = { id: "receiving_log", type: "grid", label: "Receiving log", scanLabel: true, columns: [
+    { id: "ingredient", type: "text", label: "Ingredient" },
+    { id: "supplier", type: "text", label: "Supplier" },
+    { id: "lot", type: "text", label: "Lot / Batch #" },
+    { id: "best_by", type: "date", label: "Best by" },
+    { id: "qty", type: "text", label: "Quantity", scanFact: "none" },
+    { id: "notes", type: "text", label: "Notes" },
+  ], rows: { mode: "dynamic" } };
+  const blankRow = { ingredient: "", supplier: "", lot: "", best_by: "", qty: "", notes: "" };
+  const shot1 = { facts: { product_name: "Soybean Oil", brand: "Admiration", lot_code: "0451", item_code: "A-77" }, alternates: { lot_code: [] }, extras: [], warnings: [] };
+  const first = T.applyLabelScan(GRID, blankRow, shot1);
+  check("first photo: the name, the brand and a lot", [first.next.ingredient, first.next.supplier, first.next.lot, first.next.best_by], ["Soybean Oil", "Admiration", "0451", ""]);
+  const written = Object.fromEntries(Object.keys(first.next).filter(k => first.next[k] !== blankRow[k]).map(k => [k, first.next[k]]));
+
+  // Both photos read together: the date is now seen, and the lot reads fuller.
+  const both = { facts: { product_name: "Soybean Oil", brand: "Admiration", lot_code: "L0451B", best_by: "2027-03-01", item_code: "A-77" }, alternates: { lot_code: [] }, extras: [], warnings: [] };
+  const typed = { ...first.next, qty: "4 cases" };
+  const second = T.applyAddedLabelScan(GRID, typed, both, written);
+  check("second photo fills what was empty and updates what the scan wrote", [second.next.best_by, second.next.lot, second.filled, second.kept], ["2027-03-01", "L0451B", ["Lot / Batch #", "Best by"], []]);
+  check("what the person typed is untouched", second.next.qty, "4 cases");
+  check("the first photo's leftover is not written into the notes twice", second.next.notes, first.next.notes);
+
+  // The person corrected the lot between the photos: it is kept and named.
+  const corrected = { ...first.next, lot: "B-2291" };
+  const third = T.applyAddedLabelScan(GRID, corrected, both, written);
+  check("a corrected cell is kept", [third.next.lot, third.kept, third.filled], ["B-2291", ["Lot / Batch #"], ["Best by"]]);
+
+  // A second photo that shows nothing new changes nothing.
+  const same = T.applyAddedLabelScan(GRID, first.next, shot1, written);
+  check("nothing new, nothing changed", [same.filled, same.kept, same.next], [[], [], first.next]);
+
+  // A first scan run twice still replaces (unchanged behaviour), but does not repeat its note.
+  const again = T.applyLabelScan(GRID, first.next, shot1);
+  check("a repeated scan does not repeat the note", again.next.notes, first.next.notes);
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} checks failed`); process.exit(1); }
 console.log(`label scan merge: ${cases} checks passed`);

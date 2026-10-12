@@ -506,7 +506,11 @@ export default function FormEntry() {
   ): Promise<LabelScanResult | null> => {
     if (!response) return null;
     let transientPath: string | null = null;
+    // Earlier photos of the same pack on a ROW scan ("Add another photo"): uploaded again only
+    // so the reader can fetch them, and always removed afterwards.
+    const extraPaths: string[] = [];
     try {
+      for (const f of ctx.earlier ?? []) extraPaths.push((await uploadResponseAttachment(response.id, f)).path);
       const uploaded = await uploadResponseAttachment(response.id, file);
       transientPath = uploaded.path;
 
@@ -529,9 +533,9 @@ export default function FormEntry() {
         transientPath = null; // now part of the record — must survive the finally
       }
 
-      const urls = await Promise.all([...earlier.map(a => a.path), uploaded.path].map(getResponseAttachmentUrl));
+      const urls = await Promise.all([...earlier.map(a => a.path), ...extraPaths, uploaded.path].map(getResponseAttachmentUrl));
       const result = await extractPackageLabel(urls, ctx.wanted, ctx.mode);
-      if (Object.keys(result.facts).length === 0 && earlier.length === 0) {
+      if (Object.keys(result.facts).length === 0 && earlier.length === 0 && extraPaths.length === 0) {
         toast.warning("Nothing readable on that label photo — the row was left as it was.");
       }
       return result;
@@ -542,6 +546,7 @@ export default function FormEntry() {
       // Best-effort, like deleteResponse: an orphaned file is harmless, and
       // failing the scan over a stray object would not be.
       if (transientPath) await removeResponseAttachment(transientPath).catch(() => { /* orphan */ });
+      for (const p of extraPaths) await removeResponseAttachment(p).catch(() => { /* orphan */ });
     }
   };
 

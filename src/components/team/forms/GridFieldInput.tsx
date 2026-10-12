@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Camera, Check, Loader2, Maximize2, Plus, Trash2 } from "lucide-react";
 import {
-  applyLabelScan, gridRowDialogEnabled, gridRowGuidance, newGridRow, resolveScanFact, scanWantedFacts, suggestedCellValue,
+  applyAddedLabelScan, applyLabelScan, gridRowDialogEnabled, gridRowGuidance, newGridRow, resolveScanFact, scanWantedFacts, suggestedCellValue,
   type AiCellDraft, type FillContext, type GridColumn, type GridField, type GridRowValue,
   type LabelScanResult, type ScanFact, type ScanMode,
 } from "@/lib/formSchema";
@@ -22,7 +22,7 @@ import { TeamNameInput } from "./TeamNameInput";
 import { LinkedPickInput } from "./LinkedPickInput";
 
 /** How long the "label scan filled …" chip stays up before fading out. */
-const SCAN_UNDO_MS = 12000;
+const SCAN_UNDO_MS = 20000;
 
 /** Numeric-aware compare with blanks sorted last, for click-to-sort grid columns. */
 function compareCellValues(a: any, b: any): number {
@@ -232,6 +232,11 @@ export interface ScanRequest {
   wanted: ScanFact[];
   keepPhoto: boolean;
   mode: ScanMode;
+  /**
+   * Earlier photos of the SAME pack, taken in this page visit, to be read together with the
+   * new one ("Add another photo"). Row scans only; the section scan finds its own.
+   */
+  earlier?: File[];
 }
 
 /** State of the most recent scan, kept so it can be undone in one tap. */
@@ -239,8 +244,24 @@ interface ScanOutcome {
   rowIndex: number;
   prev: GridRowValue;
   filled: string[];
+  /** Cells a further photo read differently but left alone, because they were changed by hand. */
+  kept: string[];
+  /** How many photos of this pack were read together. */
+  shots: number;
   alternates: string[];
   warnings: string[];
+}
+
+/**
+ * The pack a row was last scanned from, for this page visit: its photos (so a further one can
+ * be read together with them), the row before the first photo (what Undo goes back to) and
+ * what the scans wrote (so a further photo never replaces a correction).
+ */
+interface ScannedPack {
+  rowIndex: number;
+  files: File[];
+  prev: GridRowValue;
+  written: GridRowValue;
 }
 
 /**
@@ -329,6 +350,10 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   const scanTargetRef = useRef<number | null>(null);   // which row opened the camera
   const [scanningRow, setScanningRow] = useState<number | null>(null);
   const [scan, setScan] = useState<ScanOutcome | null>(null);
+  const [pack, setPack] = useState<ScannedPack | null>(null);
+  const packRef = useRef<ScannedPack | null>(null);
+  packRef.current = pack;
+  const scanAddRef = useRef(false);                     // the hidden input was opened by "Add another photo"
   // useFieldArray's `fields` holds mount-time defaults, so read the row being
   // scanned off the live watched values instead. Mirrored into a ref because
   // the async handler would otherwise close over a stale render's copy.
@@ -342,9 +367,12 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
     return () => window.clearTimeout(timer);
   }, [scan]);
 
-  const runScan = async (file: File) => {
+  // `add`: a further photo of the pack this row was just scanned from. It is read TOGETHER with
+  // the earlier photos (the function takes four) and only fills what is still empty or untouched.
+  const runScan = async (file: File, add = false) => {
     const rowIndex = scanTargetRef.current;
     if (rowIndex == null || !onScanLabel) return;
+    const earlier = add && packRef.current?.rowIndex === rowIndex ? packRef.current : null;
     setScanningRow(rowIndex);
     setScan(null);
     try {
@@ -354,15 +382,24 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
         wanted: scanWantedFacts(field), // only ask for facts a column (or the notes overflow) can hold
         keepPhoto: !!field.scanKeepPhoto,
         mode: field.scanMode ?? "ingredient",
+        earlier: earlier?.files.slice(-3),
       });
       if (!result) return; // the caller already surfaced the failure
       const prev = rowsRef.current[rowIndex] ?? {};
-      const { next, filled } = applyLabelScan(field, prev, result);
+      const { next, filled, kept } = earlier
+        ? applyAddedLabelScan(field, prev, result, earlier.written)
+        : { ...applyLabelScan(field, prev, result), kept: [] as string[] };
       if (filled.length) update(rowIndex, next);
+      const wrote: GridRowValue = { ...(earlier?.written ?? {}) };
+      for (const col of field.columns) if (next[col.id] !== prev[col.id]) wrote[col.id] = next[col.id];
+      const files = [...(earlier?.files ?? []), file];
+      setPack({ rowIndex, files, prev: earlier?.prev ?? prev, written: wrote });
       setScan({
         rowIndex,
-        prev,
+        prev: earlier?.prev ?? prev, // Undo goes back to the row before the FIRST photo
         filled,
+        kept,
+        shots: files.length,
         alternates: result.alternates?.lot_code ?? [],
         warnings: result.warnings ?? [],
       });
@@ -383,7 +420,12 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
     if (!scan) return;
     update(scan.rowIndex, scan.prev);
     setScan(null);
+    setPack(null);
   };
+
+  // Rows are addressed by position: once one is added or removed the remembered pack may point
+  // at another row, so it is forgotten and the next photo starts afresh.
+  useEffect(() => { setPack(null); }, [rows.length]);
 
   // ---- "Recalculate" on a share column (column.shareOf): % of Formula from the quantities ----
   const [share, setShare] = useState<
@@ -621,7 +663,12 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
               accept="image/*"
               capture="environment"
               className="hidden"
-              onChange={e => { const file = e.target.files?.[0]; if (file) runScan(file); }}
+              onChange={e => {
+                const file = e.target.files?.[0];
+                const add = scanAddRef.current;
+                scanAddRef.current = false;
+                if (file) runScan(file, add);
+              }}
             />
           )}
 
@@ -653,7 +700,8 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                 {scan.filled.length > 0 ? (
                   <>
                     <span className="text-[#2A1F0E]">
-                      Label scan filled <strong>{scan.filled.join(", ")}</strong> in row {scan.rowIndex + 1} — check it against the pack.
+                      {scan.shots > 1 ? `${scan.shots} photos read together filled` : "Label scan filled"}{" "}
+                      <strong>{scan.filled.join(", ")}</strong> in row {scan.rowIndex + 1} — check it against the pack.
                     </span>
                     <button
                       type="button"
@@ -665,10 +713,28 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                   </>
                 ) : (
                   <span className="text-[#2A1F0E]">
-                    Nothing readable on that photo — row {scan.rowIndex + 1} is unchanged. Try again in better light, or type it in.
+                    {scan.shots > 1
+                      ? `Nothing new on that photo — row ${scan.rowIndex + 1} is unchanged.`
+                      : `Nothing readable on that photo — row ${scan.rowIndex + 1} is unchanged. Try again in better light, or type it in.`}
                   </span>
                 )}
+                {pack?.rowIndex === scan.rowIndex && pack.files.length < 4 && scanningRow == null && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      scanTargetRef.current = scan.rowIndex;
+                      scanAddRef.current = true;
+                      scanInputRef.current?.click();
+                    }}
+                    className="font-medium text-[#9A6F1E] hover:underline"
+                  >
+                    Add another photo of this pack
+                  </button>
+                )}
               </div>
+              {scan.kept.length > 0 && (
+                <p className="text-[#2A1F0E]/70">Left as you had it: {scan.kept.join(", ")}.</p>
+              )}
 
               {/* The pack usually carries several numbers; if the wrong one was
                   picked as the lot, swapping it should not mean retyping it. */}
@@ -729,10 +795,11 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                 : undefined
             }
             rowKey={dialogRow != null ? rows[dialogRow]?.id : undefined}
-            onScanFile={scanEnabled && !disabled ? file => {
+            onScanFile={scanEnabled && !disabled ? (file, add) => {
               scanTargetRef.current = dialogRow;
-              runScan(file);
+              runScan(file, add);
             } : undefined}
+            packShots={dialogRow != null && pack?.rowIndex === dialogRow ? pack.files.length : 0}
             scanning={dialogRow != null && scanningRow === dialogRow}
             suggestionFor={suggestionFor}
             onDraftCell={onDraftCell && !disabled
