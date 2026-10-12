@@ -289,3 +289,38 @@ export async function openFieldSignatureRequests(responseId: string): Promise<Re
   }
   return out;
 }
+
+// ---------- A signature request whose entry is gone ----------
+
+/** The form entry a signature request asks about, read from its key (`signature:<entry>[:<field>]`). */
+export function signatureEntryId(n: Pick<AppNotification, "notification_type" | "dedupe_key">): string | null {
+  if (n.notification_type !== "signature_requested") return null;
+  const m = /^signature:([0-9a-f-]{36})(?::|$)/i.exec(n.dedupe_key ?? "");
+  return m ? m[1] : null;
+}
+
+/**
+ * Which of these signature requests ask about an entry that no longer exists. Deleting an entry
+ * closes its requests (a database trigger), so this finds only what slipped past - but a request
+ * cannot be dismissed, so one left behind would otherwise sit under "Asked of you" for good.
+ * Never throws: if the entries cannot be read, nothing is reported as missing.
+ */
+export async function orphanSignatureRequests(list: AppNotification[]): Promise<Set<string>> {
+  const byEntry = list.map(n => ({ id: n.id, entry: signatureEntryId(n) })).filter((x): x is { id: string; entry: string } => !!x.entry);
+  if (byEntry.length === 0) return new Set();
+  try {
+    const { data, error } = await (supabase as any).from("sop_document_responses").select("id").in("id", [...new Set(byEntry.map(x => x.entry))]);
+    if (error) return new Set();
+    const found = new Set(((data ?? []) as { id: string }[]).map(r => r.id));
+    return new Set(byEntry.filter(x => !found.has(x.entry)).map(x => x.id));
+  } catch {
+    return new Set();
+  }
+}
+
+/** Close a signature request whose entry no longer exists. The server refuses if the entry does exist. */
+export async function clearOrphanSignatureRequest(notificationId: string): Promise<boolean> {
+  const { data, error } = await (supabase as any).rpc("clear_orphan_signature_request", { _notification_id: notificationId });
+  if (error) throw error;
+  return data === true;
+}

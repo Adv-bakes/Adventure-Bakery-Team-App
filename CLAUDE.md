@@ -1144,6 +1144,15 @@ withdraw instead. The request lands in that person's feed with the note and a de
 - **It closes itself.** Saving or submitting with every verifier line signed calls
   `resolve_signature_request`, checked in `FormEntry` where the schema and the saved answers are both
   in hand. Submitting closes it either way — a submitted entry cannot be signed.
+- **A request does not outlive its entry** (owner, 2026-10-11, migration `20261011000003`). Deleting an
+  entry left its request under "Asked of you" with a link to "Entry not found" and - since a request
+  cannot be dismissed - no way to close it. Now an AFTER DELETE trigger on `sop_document_responses`
+  (`close_signature_requests_of_deleted_entry`, `SECURITY DEFINER`) resolves the entry's open requests
+  with the reason "Entry deleted" (both key shapes: `signature:<entry>` and `signature:<entry>:<field>`),
+  and never stamps a name. As a second line, the Notifications page checks whether each request's
+  entry still exists (`orphanSignatureRequests`, never throws) and gives one that does not a note and a
+  **Clear** button -> `clear_orphan_signature_request(notification)`, which the server refuses while the
+  entry exists, so it is not a way round signing.
 - **Two `SECURITY DEFINER` RPCs** (`request_signature`, `resolve_signature_request`) because the
   table has no UPDATE policy at all, and because asking twice must upsert on the unique `dedupe_key`
   (`signature:<response_id>`) rather than fail. Same shape as `dismiss_notification`.
