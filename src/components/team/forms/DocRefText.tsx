@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { buildDocIndex, splitDocRefs, type DocIndex } from "@/lib/docRefs";
+import { buildDocIndex, docRefsIn, splitDocRefs, type DocIndex } from "@/lib/docRefs";
 import { fetchDocIndexRows } from "@/lib/formResponses";
 
 /**
@@ -62,5 +62,43 @@ export function DocRefText({ text }: { text: string }) {
         );
       })}
     </>
+  );
+}
+
+/**
+ * The documents a typed answer mentions, as a short column of links beside its box (owner's
+ * request, 2026-10-12): a number cannot be a link inside an edit box. Each document once, in the
+ * order first mentioned. A number with no active or draft document behind it, and the form on
+ * screen, are left out; with nothing to link it renders nothing, so the box keeps its width.
+ */
+export function DocRefLinks({ text, compact }: { text: string; compact?: boolean }) {
+  const self = useContext(DocSelfContext);
+  const refs = useMemo(() => docRefsIn(text ?? ""), [text]);
+  const [index, setIndex] = useState<DocIndex | null>(cached);
+  useEffect(() => {
+    if (refs.length === 0 || index) return;
+    let live = true;
+    loadDocIndex().then(i => { if (live) setIndex(i); });
+    return () => { live = false; };
+  }, [refs.length, index]);
+
+  const docs = index ? refs.filter(r => index[r] && index[r].id !== self) : [];
+  if (docs.length === 0) return null;
+  return (
+    <div className={`flex shrink-0 flex-col items-start gap-0.5 ${compact ? "pt-1 text-[11px]" : "pt-2 text-xs"}`}>
+      {docs.map(ref => (
+        <a
+          key={ref}
+          href={`/team/compliance/sops?doc=${index![ref].id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={index![ref].draft ? `${index![ref].title} (draft)` : index![ref].title}
+          onClick={e => e.stopPropagation()}
+          className="whitespace-nowrap text-[#9A6F1E] underline decoration-[#C89B3C]/50 underline-offset-2 hover:decoration-[#9A6F1E]"
+        >
+          {ref}
+        </a>
+      ))}
+    </div>
   );
 }

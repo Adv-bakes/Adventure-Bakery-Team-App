@@ -626,7 +626,10 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   every label, help line, info block, section title and description, fixed row label, column header and
   signature statement of a form; and the read-only document body in `SopBodyEditor`. An admin sees the
   body as edit boxes, where a number cannot be a link, so the documents mentioned are listed as links
-  above the boxes (`docRefsIn`). `DocSelfContext` (optional) carries the id of the document on screen so
+  above the boxes (`docRefsIn`). **A typed answer gets the same beside its box** (owner, 2026-10-12):
+  `DocRefLinks`, rendered by `DictationTextarea` to the right of every free-text box (grid cell, textarea
+  field, attachment note) - each document mentioned once, unknown numbers and the form on screen left
+  out, nothing rendered (and the box at full width) when there is nothing to link. `DocSelfContext` (optional) carries the id of the document on screen so
   its own number stays plain text; a number with no active or draft document also stays plain. One number,
   one document: issued beats draft, and an English training module beats its "(ES)" variant. Pure half in
   `src/lib/docRefs.ts`, tested by `scripts/test-doc-refs.mjs`. Not linked: a sortable column header (it
