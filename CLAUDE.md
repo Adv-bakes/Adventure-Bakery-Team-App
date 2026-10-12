@@ -1249,6 +1249,9 @@ starting from `profiles.preferred_language` and remembered in `localStorage` (`t
   `/start` route, whose `resumeAnyDraft` would reopen the newest draft, i.e. another lot. The CCP
   buttons use `findDraftForDay(docId, "production_date", today)` (`formResponses.ts`): today's draft
   if there is one, else a new entry dated today - the voice panel's "today's record" rule, now shared.
+- **The two general CCP buttons are gone** (owner, 2026-10-11): "Record an oven load (FRM-507)" and
+  "Record seal checks (FRM-606)" under the lot list were removed once every lot's row had its own Record
+  bake and Record seal check. A CCP record for a lot with no row is opened from the SOPs Library.
 - Entries opened from here carry `?from=today`; `FormEntry` turns that into "Back to Today" (same
   mechanism as `from=notifications`). `loadTodayRecords()` is the loader, same shape as
   `loadReleaseRecords` (mapped keys only, paged, `_test_batch` rows skipped) plus `created_by` /
