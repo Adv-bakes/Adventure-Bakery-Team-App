@@ -179,7 +179,8 @@ export default function Today() {
     <div className="flex items-center gap-1 text-xs">
       {(["en", "es"] as TodayLang[]).map(l => (
         <button key={l} type="button" onClick={() => switchLang(l)}
-          className={`px-2 py-1 rounded border ${lang === l ? "border-[hsl(var(--tp-gold))] text-[hsl(var(--tp-gold))]" : "border-transparent tp-on-bg-dim hover:text-[#F5F1E6]"}`}>
+          aria-pressed={lang === l}
+          className={`px-2.5 py-1 rounded border font-medium ${lang === l ? "border-[hsl(var(--tp-gold))] bg-[hsl(var(--tp-gold))] text-[#2A1F0E]" : "border-[#F5F1E6]/60 bg-black/35 text-[#F5F1E6] hover:bg-black/55"}`}>
           {l === "en" ? "English" : "Español"}
         </button>
       ))}
