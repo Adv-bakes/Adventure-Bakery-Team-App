@@ -35,6 +35,8 @@ import { ResponseAttachments } from "@/components/team/forms/ResponseAttachments
 import { CopyFromEntryDialog } from "@/components/team/forms/CopyFromEntryDialog";
 import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
 import { TemperatureReviewFill } from "@/components/team/forms/TemperatureReviewFill";
+import { MonthlyUpdateFill } from "@/components/team/forms/MonthlyUpdateFill";
+import { UPDATE_FORM, monthlyUpdateReady } from "@/lib/monthlyUpdate";
 import { isPdfFile, renderPdfPages } from "@/lib/clientDocRead";
 import { CalibrationSummary } from "@/components/team/forms/CalibrationSummary";
 import { FirstPackCheck, firstPackNotes } from "@/components/team/forms/FirstPackCheck";
@@ -928,6 +930,11 @@ export default function FormEntry() {
           on the entry's own schema still having the fields the fill writes. */}
       {canEdit && doc.sop_number === TEMPERATURE_REVIEW_FORM && temperatureReviewReady(schema) && (
         <TemperatureReviewFill form={form} schema={schema} />
+      )}
+
+      {/* Monthly SQF Update (FRM-009): what the records show since the last update, into the blank matters. */}
+      {canEdit && doc.sop_number === UPDATE_FORM && monthlyUpdateReady(schema) && (
+        <MonthlyUpdateFill form={form} schema={schema} responseId={response.id} />
       )}
 
       {/* Start from the batch sheet (forms that opt in via settings.batchSheet) */}
