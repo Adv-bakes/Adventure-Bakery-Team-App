@@ -1522,6 +1522,33 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
 - Tested by `scripts/test-batch-sheet-fill.mjs`, which reads the rum cake FRM-501 entry out of its
   migration. `batchSheetFill.ts` has no imports.
 
+## Monthly SQF Update, filled from the records (FRM-009) — `lib/monthlyUpdate.ts`
+
+An editable FRM-009 entry shows a **Fill from the records** card (`MonthlyUpdateFill`, when
+`monthlyUpdateReady(schema)`; owner's request, 2026-10-12). One tap writes, into each BLANK "What was
+raised" cell, what the records show since the last update:
+
+- **Verification** - the schedule's open reminders as the feed holds them now (overdue first).
+- **Open corrective actions** - FRM-007 drafts with no closure date, whenever raised; a target date
+  before the update's date is flagged PAST DUE.
+- **Complaints, incidents and recalls** - FRM-002 (counted Critical / other), FRM-908, FRM-702, FRM-012.
+- **Audits and inspections** - FRM-010 with its outcome, FRM-913 with its failed items counted.
+- **Changes** - FRM-015, and every controlled document whose effective date falls in the period.
+
+Rules, the release helper's again: **evidence into blank cells only** (a typed answer is kept and
+named as kept); "Anything needing a decision or a resource" is never filled; a quiet matter says
+what was looked at ("No complaint reported on FRM-002 since ..."), never a bare "None"; drafts are
+read and flagged; the result is unsaved and dirty (`keepDefaultValues`) with one Undo. Two lines end
+by saying what no form holds (outside audits, changes in food law) so the person adds it.
+
+**The period** (`updatePeriod`) runs from the newest SUBMITTED update dated before this one to this
+update's own date, both days included - a draft update is not "the last update"; with none on
+record it is the 31 days before, and the line says so. `UPDATE_SOURCES` is the single map of form
+numbers to field ids, `checkUpdateMapping` reports a renamed field on the card. Loader
+`loadMonthlyUpdateRecords` (`monthlyUpdateLoad.ts`, one load per tap, practice rows skipped). Tested by
+`scripts/test-monthly-update.mjs`; the lines were also run read-only against production's records.
+The on-screen card itself was not opened from the preview.
+
 ## Release helper (FRM-701) — `lib/releaseAssist.ts` + `components/team/release/`
 
 A release record repeats what the site's records already hold. With `settings.releaseAssist` set,
