@@ -22,7 +22,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logEmailSend } from "../_shared/emailLog.ts";
 import {
-  assess, limitText,
+  assess, limitText, unitIsJudged, OUT_OF_SERVICE_CLOSE_REASON,
   type AlertKind, type Limit, type Reading,
 } from "../_shared/temperatureRules.ts";
 
@@ -88,7 +88,10 @@ serve(async (req) => {
   });
 
   const now = Date.now();
-  const summary = { checked: 0, opened: 0, cleared: 0, notified: 0, skipped: 0, errors: [] as string[] };
+  const summary = {
+    checked: 0, opened: 0, cleared: 0, notified: 0, skipped: 0,
+    closedOutOfService: 0, errors: [] as string[],
+  };
 
   try {
     const { data: limitRows, error: limErr } = await admin
@@ -96,9 +99,45 @@ serve(async (req) => {
       .select("id, equipment_name, kind, in_service, min_f, max_f, stale_hours, notify_emails");
     if (limErr) throw limErr;
 
-    const limits = ((limitRows ?? []) as Limit[])
-      .filter(l => l.kind === "storage" && l.in_service);
+    const limits = ((limitRows ?? []) as Limit[]).filter(unitIsJudged);
     summary.skipped = (limitRows?.length ?? 0) - limits.length;
+
+    // --- a storage unit taken OUT of service closes whatever it had open.
+    // Skipping the unit is only half of "out of service": an alert open at the moment the
+    // switch was flipped would otherwise never close (nothing looks at the unit again), and
+    // the one-open-alert-per-unit index would then block a fresh alert after the unit came
+    // back. Closed with a reason rather than cleared "back within limits", and without the
+    // Resolved email - the unit is not within limits, it is switched off. The feed row is
+    // resolved here too, so the badge goes at the next 15-minute run rather than the next
+    // twice-daily one.
+    const retired = ((limitRows ?? []) as Limit[])
+      .filter(l => l.kind === "storage" && !unitIsJudged(l));
+    for (const lim of retired) {
+      const { data: openRows, error: openErr } = await admin
+        .from("temperature_alerts")
+        .select("id, kind, details")
+        .eq("equipment_name", lim.equipment_name)
+        .is("cleared_at", null);
+      if (openErr) { summary.errors.push(`${lim.equipment_name}: ${openErr.message}`); continue; }
+      for (const row of (openRows ?? []) as { id: string; kind: string; details: Record<string, unknown> | null }[]) {
+        const closedAt = new Date().toISOString();
+        const { error: clrErr } = await admin
+          .from("temperature_alerts")
+          .update({
+            cleared_at: closedAt,
+            details: { ...(row.details ?? {}), closed_reason: OUT_OF_SERVICE_CLOSE_REASON, closed_at: closedAt },
+          })
+          .eq("id", row.id);
+        if (clrErr) { summary.errors.push(`${lim.equipment_name}: ${clrErr.message}`); continue; }
+        summary.closedOutOfService++;
+        await admin.from("internal_notifications")
+          .update({ resolved_at: closedAt, resolved_reason: OUT_OF_SERVICE_CLOSE_REASON })
+          .eq("notification_type", "temperature_alert")
+          .eq("reference_id", row.id)
+          .is("resolved_at", null)
+          .is("dismissed_at", null);
+      }
+    }
 
     // Fallback recipients: every admin/owner account. Falling back to the people who run
     // the site means alerting works the moment this is deployed, rather than after

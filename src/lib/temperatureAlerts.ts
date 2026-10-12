@@ -22,6 +22,8 @@ export type TemperatureLimit = {
   notify_emails: string[] | null;
   notes: string | null;
   in_service_changed_at: string | null;
+  /** Why the unit was last placed in or out of service (SOP-401 Part 7: "recording the reason"). */
+  in_service_reason?: string | null;
   updated_at: string;
 };
 
@@ -38,8 +40,19 @@ export type TemperatureAlert = {
   acknowledged_by: string | null;
   acknowledged_at: string | null;
   action_taken: string | null;
-  details: { summary?: string; detail?: string; limits?: string } | null;
+  details: {
+    summary?: string; detail?: string; limits?: string;
+    /** Set when the job closed the alert because the unit was taken out of service, not because it recovered. */
+    closed_reason?: string; closed_at?: string;
+  } | null;
 };
+
+/** How a closed alert ended, for the log: the person's action, else the job's reason, else nothing. */
+export function closedHow(a: TemperatureAlert): { text: string; byPerson: boolean } | null {
+  if (a.action_taken) return { text: a.action_taken, byPerson: true };
+  if (a.details?.closed_reason) return { text: a.details.closed_reason, byPerson: false };
+  return null;
+}
 
 export const ALERT_KIND_LABEL: Record<AlertKind, string> = {
   out_of_range: "Out of range",
@@ -92,7 +105,7 @@ export async function fetchTemperatureAlerts(limit = 50): Promise<TemperatureAle
 }
 
 export type LimitPatch = Partial<
-  Pick<TemperatureLimit, "in_service" | "min_f" | "max_f" | "stale_hours" | "notify_emails" | "notes">
+  Pick<TemperatureLimit, "in_service" | "min_f" | "max_f" | "stale_hours" | "notify_emails" | "notes" | "in_service_reason">
 >;
 
 export async function updateTemperatureLimit(
@@ -111,12 +124,31 @@ export async function updateTemperatureLimit(
   // start somewhere readable.
   if (opts.markInServiceChange) payload.in_service_changed_at = new Date().toISOString();
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("temperature_limits" as any)
     .update(payload)
     .eq("id", id)
     .select("*")
     .single();
+  // The reason column lands with migration 20261012000003. Until it is pushed, a state change
+  // must still be recordable, so the reason is folded into Notes instead of failing the save
+  // (42703 = undefined column). The FRM-401 fill then has no reason to carry, which is the
+  // only difference.
+  if (error && (error as any).code === "42703" && "in_service_reason" in payload) {
+    const { in_service_reason, ...rest } = payload;
+    const reason = typeof in_service_reason === "string" ? in_service_reason.trim() : "";
+    if (reason) {
+      const stamp = new Date().toISOString().slice(0, 10);
+      const notes = typeof rest.notes === "string" ? rest.notes : "";
+      rest.notes = `${stamp}: ${reason}${notes ? `\n${notes}` : ""}`;
+    }
+    ({ data, error } = await supabase
+      .from("temperature_limits" as any)
+      .update(rest)
+      .eq("id", id)
+      .select("*")
+      .single());
+  }
   if (error) throw error;
   return data as unknown as TemperatureLimit;
 }
