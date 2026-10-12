@@ -295,7 +295,7 @@ export default function Today() {
                               docs={{ retention: docOf("retention"), release: docOf("releases") }}
                             />
                           )}
-                          <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>FRM-520</Link></Button>
+                          <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>{M.releaseSteps.step.lot}</Link></Button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 flex-wrap">
