@@ -397,8 +397,11 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   back to the row before the FIRST photo. The camera button on the row still starts afresh and replaces,
   as before. The remembered pack is dropped when a row is added or removed. **The further photo does not
   wait for the first answer** (owner, same day): while a label is being read, a line under the table
-  (and the row pop-up) offers "Take another photo of this pack"; the photos are then read together and
-  the first read's answer is dropped when it arrives (`scanGen`, `pendingRef` in `GridFieldInput`). Not
+  (and the row pop-up) offers "Take another photo of this pack"; the photos are then read together. **The
+  first read is never thrown away**: its answer fills the row when it arrives and the fuller read is
+  applied after it as an addition (`pendingRef.done` in `GridFieldInput`). The first cut dropped the
+  first answer, and on the owner's tablet the row then stayed empty when the second read gave nothing
+  (2026-10-12, cause of the empty second read not found). A failed second read says so on the strip. Not
   offered on a `scanKeepPhoto` grid, where two attachment saves at once could lose one. The pop-up's
   "Choose photo" takes several pictures at once. `applyLabelScan` no longer
   writes a notes line that is already there. Tested in `scripts/test-label-scan-merge.mjs`.

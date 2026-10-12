@@ -354,10 +354,12 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   const packRef = useRef<ScannedPack | null>(null);
   packRef.current = pack;
   const scanAddRef = useRef(false);                     // the hidden input was opened by "Add another photo"
-  // The read in flight: its photos and the pack it builds on. A further photo taken while it is
-  // still being read replaces it - the photos are then read together and the earlier answer,
-  // when it arrives, is dropped (scanGen).
-  const pendingRef = useRef<{ rowIndex: number; files: File[]; pack: ScannedPack | null } | null>(null);
+  // The read in flight. A further photo taken while it is still being read starts a second read
+  // of all the photos together, but the first read is NEVER thrown away: its answer fills the row
+  // when it arrives, and the fuller read is applied after it, as an addition. (The first cut
+  // dropped the first answer, and when the second read gave nothing the row stayed empty - the
+  // owner's first try on the tablet, 2026-10-12.) scanGen only says which read is the newest.
+  const pendingRef = useRef<{ rowIndex: number; files: File[]; done: Promise<void> } | null>(null);
   const scanGen = useRef(0);
   const [pendingShots, setPendingShots] = useState(0);
   // With scanKeepPhoto each photo is saved onto the entry as it is read, and two saves at once
@@ -380,18 +382,22 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   // the earlier photos (the function takes four) and only fills what is still empty or untouched.
   // It may arrive while the first photo is still being read (owner, 2026-10-12: the second photo
   // should not have to wait for the first answer); several photos can also be chosen at once.
-  const runScan = async (picked: File[], rowIndex: number | null, add = false) => {
+  const runScan = (picked: File[], rowIndex: number | null, add = false) => {
     if (rowIndex == null || !onScanLabel || picked.length === 0) return;
     const pending = add && pendingRef.current?.rowIndex === rowIndex ? pendingRef.current : null;
-    const earlier = pending ? pending.pack : add && packRef.current?.rowIndex === rowIndex ? packRef.current : null;
-    const files = [...(pending?.files ?? earlier?.files ?? []), ...picked].slice(-4); // the reader takes four
+    const known = add && packRef.current?.rowIndex === rowIndex ? packRef.current.files : [];
+    const files = [...(pending?.files ?? known), ...picked].slice(-4); // the reader takes four
     const gen = ++scanGen.current;
-    pendingRef.current = { rowIndex, files, pack: earlier };
+    const done = readAndApply(files, rowIndex, add, pending?.done ?? null, gen);
+    pendingRef.current = { rowIndex, files, done };
     setPendingShots(files.length);
     setScanningRow(rowIndex);
-    setScan(null);
+    if (!pending) setScan(null);
+  };
+
+  const readAndApply = async (files: File[], rowIndex: number, add: boolean, after: Promise<void> | null, gen: number) => {
     try {
-      const result = await onScanLabel(files[files.length - 1], {
+      const result = await onScanLabel!(files[files.length - 1], {
         label: field.label,
         rowIndex,
         wanted: scanWantedFacts(field), // only ask for facts a column (or the notes overflow) can hold
@@ -399,8 +405,22 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
         mode: field.scanMode ?? "ingredient",
         earlier: files.slice(0, -1),
       });
-      if (gen !== scanGen.current) return; // a further photo was added meanwhile: that read answers for all
-      if (!result) return; // the caller already surfaced the failure
+      // The read this one adds to goes into the row first; then a moment for the form to show it,
+      // so this read builds on the row as it now stands.
+      if (after) {
+        await after;
+        await new Promise(resolve => window.setTimeout(resolve, 0));
+      }
+      if (!result) {
+        // The caller already said why. The row keeps whatever the earlier photo gave.
+        if (files.length > 1) {
+          setScan(s => s && s.rowIndex === rowIndex
+            ? { ...s, warnings: [...s.warnings, `The photos could not be read together - row ${rowIndex + 1} keeps what the first photo gave.`] }
+            : s);
+        }
+        return;
+      }
+      const earlier = add && packRef.current?.rowIndex === rowIndex ? packRef.current : null;
       const prev = rowsRef.current[rowIndex] ?? {};
       const { next, filled, kept } = earlier
         ? applyAddedLabelScan(field, prev, result, earlier.written)
@@ -408,7 +428,9 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
       if (filled.length) update(rowIndex, next);
       const wrote: GridRowValue = { ...(earlier?.written ?? {}) };
       for (const col of field.columns) if (next[col.id] !== prev[col.id]) wrote[col.id] = next[col.id];
-      setPack({ rowIndex, files, prev: earlier?.prev ?? prev, written: wrote });
+      const nextPack = { rowIndex, files, prev: earlier?.prev ?? prev, written: wrote };
+      packRef.current = nextPack; // a read waiting on this one looks before the next render
+      setPack(nextPack);
       setScan({
         rowIndex,
         prev: earlier?.prev ?? prev, // Undo goes back to the row before the FIRST photo
@@ -760,6 +782,11 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                       ? `Nothing new on that photo — row ${scan.rowIndex + 1} is unchanged.`
                       : `Nothing readable on that photo — row ${scan.rowIndex + 1} is unchanged. Try again in better light, or type it in.`}
                   </span>
+                )}
+                {scan.filled.length === 0 && scan.shots > 1 && (
+                  <button type="button" onClick={undoScan} className="font-medium text-[#9A6F1E] hover:underline">
+                    Undo the scan
+                  </button>
                 )}
                 {pack?.rowIndex === scan.rowIndex && pack.files.length < 4 && scanningRow == null && (
                   <button
