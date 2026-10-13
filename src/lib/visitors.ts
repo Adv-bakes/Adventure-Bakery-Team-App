@@ -74,6 +74,20 @@ export function normalizeName(s: string | null | undefined): string {
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+const TITLES = new Set(["mr", "mrs", "ms", "miss", "mx", "dr", "prof", "sr", "sra", "srta"]);
+
+/**
+ * What to call a visitor when speaking to them: the first word of the name they gave. A title is
+ * kept with the word after it ("Dr. Lopez"), since "Have a nice day, Dr." is worse than no name.
+ * Empty when there is nothing usable, and the greeting is then said without a name.
+ */
+export function firstName(name: string | null | undefined): string {
+  const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "";
+  const isTitle = TITLES.has(words[0].toLowerCase().replace(/\./g, ""));
+  return isTitle ? words.slice(0, 2).join(" ") : words[0];
+}
+
 /**
  * A name as it is typed at the door: the first letter, and the letter after every space or hyphen,
  * in capitals ("mary-jo o'brien smith" -> "Mary-Jo O'brien Smith"). Nothing is ever lowered, so

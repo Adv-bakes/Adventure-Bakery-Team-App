@@ -43,14 +43,15 @@ import {
   type VisitorDesk, type VisitorOnSite,
 } from "@/lib/formResponses";
 import {
-  HOST_UNKNOWN, ackState, buildAckData, buildSignInData, capitalizeName, findVisitorMatches, isRefused, localDate, localTime,
+  HOST_UNKNOWN, ackState, buildAckData, buildSignInData, capitalizeName, findVisitorMatches, firstName, isRefused, localDate, localTime,
   type AckRecord, type VisitAnswers, type VisitorMatch,
 } from "@/lib/visitors";
 import { SignaturePad } from "@/components/team/forms/SignaturePad";
+import { RumCakeWave } from "@/components/team/RumCakeWave";
 
 const cardStyle = { background: "#FFFFFF", borderColor: "rgba(200,155,60,0.25)" };
 
-type Step = "home" | "lookup" | "details" | "health" | "rules" | "sign" | "done";
+type Step = "home" | "lookup" | "details" | "health" | "rules" | "sign" | "done" | "bye";
 
 const BLANK: VisitAnswers = {
   name: "", company: "", phone: "", purpose: "", host: "",
@@ -59,6 +60,8 @@ const BLANK: VisitAnswers = {
 
 // How long the "you are signed in" screen stays before the tablet is ready for the next person.
 const DONE_MS = 8000;
+// How long the goodbye stays after a visitor signs out on the kiosk.
+const BYE_MS = 7000;
 // How long a sign-out button stays armed before it stands down.
 const ARMED_MS = 10000;
 
@@ -294,6 +297,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
   const [rulesRead, setRulesRead] = useState(false);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<{ name: string; time: string; refused: boolean } | null>(null);
+  const [bye, setBye] = useState<{ name: string; time: string } | null>(null);
   // Signing somebody out is not undoable, and on the kiosk the list is other people's names:
   // the first tap arms the button, the second signs out.
   const [armed, setArmed] = useState<string | null>(null);
@@ -359,6 +363,13 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
   useEffect(() => {
     if (step !== "done") return;
     const timer = setTimeout(() => setStep("home"), DONE_MS);
+    return () => clearTimeout(timer);
+  }, [step]);
+
+  // So does the goodbye after a sign-out.
+  useEffect(() => {
+    if (step !== "bye") return;
+    const timer = setTimeout(() => setStep("home"), BYE_MS);
     return () => clearTimeout(timer);
   }, [step]);
 
@@ -428,7 +439,10 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
     try {
       const time = localTime(new Date());
       await signOutVisitor(v.id, time);
-      toast.success(`${v.name} signed out at ${time}.`);
+      // On the kiosk the person signing out is the visitor, standing at the tablet: they get a
+      // goodbye by name. In the portal it is a member of staff signing somebody else out.
+      if (kiosk) { setBye({ name: firstName(v.name), time }); setStep("bye"); }
+      else toast.success(`${v.name} signed out at ${time}.`);
       await refresh();
     } catch (e) {
       toast.error(messageOf(e, "Could not sign the visitor out"));
@@ -453,7 +467,7 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
 
   // On the kiosk the welcome is large on the home screen and shrinks to one line during a sign-in,
   // so the questions - and the on-screen keyboard - have the room.
-  const welcome = kiosk && (step === "home" || step === "done");
+  const welcome = kiosk && (step === "home" || step === "done" || step === "bye");
   const header = (
     <div className="flex flex-wrap items-start gap-x-8 gap-y-2">
       <div className="flex-1 min-w-[18rem]">
@@ -632,7 +646,25 @@ export default function VisitorSignIn({ kiosk = false }: { kiosk?: boolean }) {
         </Card>
       )}
 
-      {step !== "home" && step !== "done" && (
+      {step === "bye" && bye && (
+        <Card className="border" style={cardStyle}>
+          <CardContent className="p-8 text-[#2A1F0E]">
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+              <RumCakeWave className="w-[15rem] h-[15rem] shrink-0" />
+              <div className="text-center sm:text-left space-y-3" aria-live="polite">
+                <h2 className="text-4xl font-semibold leading-tight">
+                  Have a nice day{bye.name ? "," : "!"}
+                  {bye.name && <><br />{bye.name}!</>}
+                </h2>
+                <p className="text-lg text-[#2A1F0E]/70">You are signed out at {bye.time}. Thank you for visiting.</p>
+                <Button type="button" variant="outline" className="min-h-12 px-8 text-base" onClick={() => setStep("home")}>Done</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {step !== "home" && step !== "done" && step !== "bye" && (
         <Card className="border" style={cardStyle}>
           <CardContent className="p-6 space-y-5 text-[#2A1F0E]">
             <p className="text-sm text-[#2A1F0E]/55">Step {steps.indexOf(step) + 1} of {steps.length}</p>
