@@ -144,8 +144,10 @@ function SealStep({ doc, lot, today, lang, records, back, onSaved }: {
 
 // ---------- Packing ----------
 
-function PackStep({ doc, lot, today, lang, back, onSaved }: {
-  doc: Doc; lot: LotSummary; today: string; lang: TodayLang; back: string; onSaved: (s: Saved) => void;
+function PackStep({ doc, lot, today, lang, back, older, onSaved }: {
+  doc: Doc; lot: LotSummary; today: string; lang: TodayLang; back: string;
+  /** The lot record was started on an earlier revision of the form: its packing is finished on the record. */
+  older: boolean; onSaved: (s: Saved) => void;
 }) {
   const P = TODAY_MSG[lang].pack;
   const F = TODAY_MSG[lang].flow;
@@ -156,7 +158,9 @@ function PackStep({ doc, lot, today, lang, back, onSaved }: {
   // Then the three packs to weigh. Each is opened once, so putting one away does not bring it back.
   const opened = useRef<"" | "counts" | "weights">("");
   useEffect(() => {
-    if (h.showing) return;
+    // Nothing is opened for a record on an earlier revision: the input would only hand over to the
+    // record, and the page must never leave by itself.
+    if (h.showing || older) return;
     const answered = state.checked || !h.canPhoto;
     if (h.canCount && answered && !state.counted) {
       if (opened.current === "") { opened.current = "counts"; void h.openCounts(); }
@@ -174,11 +178,16 @@ function PackStep({ doc, lot, today, lang, back, onSaved }: {
         {state.weighed && <Status done>{P.weighDone}.</Status>}
         {state.counted && !state.checked && <p className="flex items-center gap-1.5 text-sm font-medium text-amber-800"><AlertTriangle className="w-4 h-4" />{F.firstPackNeeded}</p>}
       </div>
+      {older && <p className="flex items-start gap-1.5 text-sm text-amber-800"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />{F.olderRecord}</p>}
       <div className="flex flex-wrap gap-2">
-        {h.canPhoto && <Choice icon={<Camera className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "photo"} disabled={h.busy} onClick={h.pickPhoto}>{P.photo}</Choice>}
-        {h.canAnswer && <Choice icon={<ClipboardCheck className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "answer"} disabled={h.busy} onClick={() => { void h.openAnswer(); }}>{P.answer}</Choice>}
-        {h.canCount && <Choice icon={<Calculator className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "counts"} disabled={h.busy} onClick={() => { void h.openCounts(); }}>{P.counts}</Choice>}
-        {h.canWeigh && <Choice icon={<Scale className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "weights"} disabled={h.busy} onClick={() => { void h.openWeights(); }}>{P.weigh}</Choice>}
+        {!older && (
+          <>
+            {h.canPhoto && <Choice icon={<Camera className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "photo"} disabled={h.busy} onClick={h.pickPhoto}>{P.photo}</Choice>}
+            {h.canAnswer && <Choice icon={<ClipboardCheck className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "answer"} disabled={h.busy} onClick={() => { void h.openAnswer(); }}>{P.answer}</Choice>}
+            {h.canCount && <Choice icon={<Calculator className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "counts"} disabled={h.busy} onClick={() => { void h.openCounts(); }}>{P.counts}</Choice>}
+            {h.canWeigh && <Choice icon={<Scale className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "weights"} disabled={h.busy} onClick={() => { void h.openWeights(); }}>{P.weigh}</Choice>}
+          </>
+        )}
         <Choice icon={<FilePenLine className="w-4 h-4 mr-1.5" />} disabled={h.busy} onClick={h.openRecord}>{P.open}</Choice>
       </div>
       {h.showing && (
@@ -593,7 +602,7 @@ export default function LotFlow() {
   }, []);
 
   const lot = useMemo(() => records ? lotSummaries(records).find(l => l.id === entryId) ?? null : null, [records, entryId]);
-  const steps = useMemo(() => records && lot ? flowSteps(records, lot, today, isAdmin) : [], [records, lot, today, isAdmin]);
+  const steps = useMemo(() => records && lot ? flowSteps(records, lot, today, isAdmin, docs[TODAY_FORMS.lots.form]?.revision) : [], [records, lot, today, isAdmin, docs]);
   const asked = params.get("step");
   const stepKey: FlowStepKey | null = steps.length === 0 ? null
     : isFlowStep(asked) && steps.some(s => s.key === asked) ? asked : nextOpenStep(steps);
@@ -611,7 +620,7 @@ export default function LotFlow() {
     const fresh = await load();
     const now = fresh ? lotSummaries(fresh).find(l => l.id === entryId) : null;
     if (!fresh || !now) return;
-    const after = flowSteps(fresh, now, today, isAdmin);
+    const after = flowSteps(fresh, now, today, isAdmin, docs[TODAY_FORMS.lots.form]?.revision);
     if (advancesAfter(key, what, after)) go(stepAfter(after, key), after);
   };
 
@@ -649,7 +658,12 @@ export default function LotFlow() {
       case "mixing": return <MixStep lot={lot} lang={lang} records={records} back={back} />;
       case "baking": return docOf("baking") ? <BakeStep doc={docOf("baking")!} lot={lot} today={today} lang={lang} records={records} back={back} onSaved={saved("baking")} /> : null;
       case "sealing": return docOf("sealing") ? <SealStep doc={docOf("sealing")!} lot={lot} today={today} lang={lang} records={records} back={back} onSaved={saved("sealing")} /> : null;
-      case "packing": return lots ? <PackStep doc={lots} lot={lot} today={today} lang={lang} back={back} onSaved={saved("packing")} /> : null;
+      case "packing": return lots ? (
+        <PackStep
+          doc={lots} lot={lot} today={today} lang={lang} back={back} onSaved={saved("packing")}
+          older={(() => { const rev = records.lots.find(e => e.id === lot.id)?.revision; return rev != null && rev !== lots.revision; })()}
+        />
+      ) : null;
       case "submit": return lots ? <SubmitStep doc={lots} lot={lot} lang={lang} isAdmin={isAdmin} back={back} version={version} onSaved={saved("submit")} /> : null;
       default: {
         const step = steps.find(s => s.key === stepKey);

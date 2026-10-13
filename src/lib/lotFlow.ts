@@ -102,16 +102,20 @@ const ccpStep = (key: "baking" | "sealing", s: BakeState): FlowStep =>
 
 /**
  * The steps of one lot, in order, each with how far it has got. Retention and release are the SQF
- * Practitioner's (FSQM-020), so they are listed for admins and owners only.
+ * Practitioner's (FSQM-020), so they are listed for admins and owners only. `formRevision` is the
+ * lot record form's current revision, when the caller knows it.
  */
-export function flowSteps(records: TodayRecords, lot: LotSummary, today: string, isAdmin: boolean): FlowStep[] {
+export function flowSteps(records: TodayRecords, lot: LotSummary, today: string, isAdmin: boolean, formRevision?: string | null): FlowStep[] {
   const entry = records.lots.find(e => e.id === lot.id);
   const submitted = lot.status === "submitted";
+  // A lot record started on an earlier revision of the form has no pack weights to wait for.
+  const older = formRevision != null && entry?.revision != null && entry.revision !== formRevision;
+  const packed = lot.packing.done || (older && lot.packing.checked && lot.packing.counted);
   const steps: FlowStep[] = [
     { key: "mixing", state: submitted ? "done" : mixProgress(entry?.data).state },
     ccpStep("baking", lotBakeState(records, lot, today)),
     ccpStep("sealing", lotSealState(records, lot, today)),
-    { key: "packing", state: lot.packing.done || submitted ? "done" : lot.packing.checked || lot.packing.counted || lot.packing.weighed ? "open" : "none" },
+    { key: "packing", state: packed || submitted ? "done" : lot.packing.checked || lot.packing.counted || lot.packing.weighed ? "open" : "none" },
     { key: "submit", state: submitted ? "done" : "none" },
   ];
   if (isAdmin) {
