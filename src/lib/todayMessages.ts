@@ -80,6 +80,19 @@ export interface TodayMessages {
     sayWhy: string; notANumber: string; savedCounts(lot: string, product: string): string;
     firstPackDone: string; countsDone: string; optional: string;
   };
+  /** "Follow this lot": one lot + product, step by step (LotFlow.tsx). */
+  flow: {
+    follow: string; followTip: string; backToToday: string; notFound: string; previous: string; next: string;
+    step: Record<"mixing" | "baking" | "sealing" | "packing" | "submit" | "retention" | "release", string>;
+    state: Record<"done" | "open" | "none", string>;
+    loads(n: number): string; checks(n: number): string;
+    bakeDone: string; sealDone: string;
+    mixingLater: string; mixingProgress(done: number, lines: number): string; openLotRecord: string;
+    firstPackDone: string; countsDone: string;
+    submitLead: string; submitReady: string; missing: string; missingLine(table: string, line: number, column: string): string; statement: string; signAndSubmit(name: string): string;
+    submitted(lot: string, product: string): string; submitFailed: string; needsRecord: string; alreadySubmitted: string;
+    finished: string; adminNext: string; openStep: string; startStep: string;
+  };
   recordSealChecks: string;
   ccpTodayNone: string;
   ccpBakingToday(n: number): string;
@@ -293,6 +306,39 @@ const en: TodayMessages = {
     countsDone: "Counts entered",
     optional: "optional",
   },
+  flow: {
+    follow: "Follow this lot",
+    followTip: "One step at a time, from mixing to packing",
+    backToToday: "Back to Today",
+    notFound: "This lot could not be found. It may have been deleted.",
+    previous: "Previous step",
+    next: "Next step",
+    step: { mixing: "Mixing", baking: "Baking", sealing: "Seal checks", packing: "Packing", submit: "Sign and submit", retention: "Retention sample", release: "Release" },
+    state: { done: "Done", open: "In progress", none: "Not started" },
+    loads: n => n === 0 ? "No oven load recorded yet." : n === 1 ? "1 oven load recorded." : `${n} oven loads recorded.`,
+    checks: n => n === 0 ? "No seal check recorded yet." : n === 1 ? "1 seal check recorded." : `${n} seal checks recorded.`,
+    bakeDone: "Baking is marked finished for this batch.",
+    sealDone: "The checks are marked finished for this batch.",
+    mixingLater: "The ingredients, their lots and the weights are recorded on the lot record.",
+    mixingProgress: (done, lines) => `${done} of ${lines} ingredients complete.`,
+    openLotRecord: "Open the lot record",
+    firstPackDone: "First pack checked.",
+    countsDone: "Counts entered.",
+    submitLead: "The lot record (FRM-520) is finished when it is signed and submitted.",
+    submitReady: "Everything the lot record needs is there.",
+    missing: "Still needed before it can be submitted:",
+    missingLine: (table, line, column) => `${table}, line ${line}: ${column}`,
+    statement: "The lots and quantities in this entry are the ones used.",
+    signAndSubmit: name => `Sign as ${name} and submit`,
+    submitted: (lot, product) => `Lot record submitted · Lot ${lot} · ${product}`,
+    submitFailed: "The lot record could not be submitted.",
+    needsRecord: "This lot record has to be finished on the record itself.",
+    alreadySubmitted: "The lot record is submitted.",
+    finished: "This lot is finished on the floor. It now waits for its release.",
+    adminNext: "Next: the retention sample and the release.",
+    openStep: "Open the record",
+    startStep: "Start the record",
+  },
   recordSealChecks: "Record seal checks (FRM-606)",
   ccpTodayNone: "No CCP record started today.",
   ccpBakingToday: n => n === 0 ? "Today's baking record is open." : `Today's baking record has ${n} oven load${n === 1 ? "" : "s"}.`,
@@ -504,6 +550,39 @@ const es: TodayMessages = {
     firstPackDone: "Primer empaque revisado",
     countsDone: "Conteos anotados",
     optional: "opcional",
+  },
+  flow: {
+    follow: "Seguir este lote",
+    followTip: "Un paso a la vez, del mezclado al empaque",
+    backToToday: "Volver a Hoy",
+    notFound: "No se encontró este lote. Puede que se haya eliminado.",
+    previous: "Paso anterior",
+    next: "Paso siguiente",
+    step: { mixing: "Mezclado", baking: "Horneado", sealing: "Revisiones de sellado", packing: "Empaque", submit: "Firmar y enviar", retention: "Muestra de retención", release: "Liberación" },
+    state: { done: "Hecho", open: "En curso", none: "Sin empezar" },
+    loads: n => n === 0 ? "Aún no hay cargas de horno registradas." : n === 1 ? "1 carga de horno registrada." : `${n} cargas de horno registradas.`,
+    checks: n => n === 0 ? "Aún no hay revisiones de sellado registradas." : n === 1 ? "1 revisión de sellado registrada." : `${n} revisiones de sellado registradas.`,
+    bakeDone: "El horneado está marcado como terminado para este lote de producto.",
+    sealDone: "Las revisiones están marcadas como terminadas para este lote de producto.",
+    mixingLater: "Los ingredientes, sus lotes y los pesos se anotan en el registro del lote.",
+    mixingProgress: (done, lines) => `${done} de ${lines} ingredientes completos.`,
+    openLotRecord: "Abrir el registro del lote",
+    firstPackDone: "Primer paquete revisado.",
+    countsDone: "Conteos anotados.",
+    submitLead: "El registro del lote (FRM-520) queda terminado cuando se firma y se envía.",
+    submitReady: "El registro del lote tiene todo lo que necesita.",
+    missing: "Falta antes de poder enviarlo:",
+    missingLine: (table, line, column) => `${table}, línea ${line}: ${column}`,
+    statement: "Los lotes y las cantidades de este registro son los que se usaron.",
+    signAndSubmit: name => `Firmar como ${name} y enviar`,
+    submitted: (lot, product) => `Registro del lote enviado · Lote ${lot} · ${product}`,
+    submitFailed: "No se pudo enviar el registro del lote.",
+    needsRecord: "Este registro del lote debe terminarse en el propio registro.",
+    alreadySubmitted: "El registro del lote está enviado.",
+    finished: "Este lote está terminado en planta. Ahora espera su liberación.",
+    adminNext: "Sigue: la muestra de retención y la liberación.",
+    openStep: "Abrir el registro",
+    startStep: "Empezar el registro",
   },
   recordSealChecks: "Registrar las revisiones de sellado (FRM-606)",
   ccpTodayNone: "Hoy no se ha empezado ningún registro de PCC.",

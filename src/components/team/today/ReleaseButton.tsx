@@ -23,9 +23,7 @@ import { AlertTriangle, CheckCircle2, ChevronDown, CircleDashed, Loader2, Packag
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { createResponse, fetchResponse, saveResponseData } from "@/lib/formResponses";
-import { getFormSchema } from "@/lib/formSchema";
-import { blanksFilled, retentionDefaults } from "@/lib/retentionStart";
+import { releaseStepHref } from "@/lib/releaseStart";
 import type { LotSummary, ReleaseStep, ReleaseStepKey } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 
@@ -42,41 +40,17 @@ export function ReleaseButton({ lot, steps, docs, lang }: {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
-  const href = (docId: string, id: string) => `/team/compliance/forms/${docId}/entries/${id}?from=today`;
-
   const go = async (step: ReleaseStep) => {
-    // A retention sample already started but not finished: what the records can now answer is put
-    // into its BLANK answers before it opens. Nothing typed is touched.
-    if (step.key === "retention" && step.state === "open" && step.entryId && step.docId) {
-      setBusy(true);
-      try {
-        const r = await fetchResponse(step.entryId);
-        if (r && r.status === "draft") {
-          const add = blanksFilled(r.data, await retentionDefaults(lot, getFormSchema(docs.retention?.content)));
-          if (Object.keys(add).length) await saveResponseData(r.id, { ...(r.data ?? {}), ...add }, r.updated_at);
-        }
-      } catch (e) {
-        console.error(e);   // the record still opens; it is only missing the looked-up answers
-      }
-      navigate(href(step.docId, step.entryId));
-      return;
-    }
-    if (step.entryId && step.docId) { navigate(href(step.docId, step.entryId)); return; }
-    // Only the last two are started from here; a missing production record is not made up after the fact.
-    const doc = step.key === "retention" ? docs.retention : step.key === "release" ? docs.release : undefined;
-    if (!doc) { toast.message(R.noRecord[step.key]); return; }
     setBusy(true);
     try {
-      const prefill = step.key === "retention"
-        ? await retentionDefaults(lot, getFormSchema(doc.content))
-        : { product_name: lot.product, lot_code: lot.lotCode };
-      const r = await createResponse(doc, prefill);
-      navigate(href(doc.id, r.id));
+      const href = await releaseStepHref(step, lot, docs);
+      if (href) { navigate(href); return; }
+      toast.message(R.noRecord[step.key]);
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : R.startFailed);
-      setBusy(false);
     }
+    setBusy(false);
   };
 
   const icon = (s: ReleaseStep) => s.state === "done"

@@ -15,7 +15,7 @@ export interface TodaySourceSpec { form: string; fields: readonly string[]; grid
 /** The single map of form numbers to the answer keys the Today page reads. Rename a field, update this. */
 export const TODAY_FORMS = {
   preops:     { form: "FRM-903", fields: ["inspection_date", "shift", "area_line", "released_by"], grids: {} },
-  lots:       { form: "FRM-520", fields: ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check"], grids: { ingredients: ["ingredient"] } },
+  lots:       { form: "FRM-520", fields: ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check", "batches", "rework"], grids: { ingredients: ["ingredient"] } },
   releases:   { form: "FRM-701", fields: ["product_name", "lot_code", "decision", "release_date"], grids: {} },
   dispatches: { form: "FRM-801", fields: ["dispatch_date", "customer"], grids: { loaded: ["product", "lot_code"] } },
   holds:      { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"], grids: {} },

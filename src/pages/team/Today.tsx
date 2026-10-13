@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  AlertTriangle, Bell, CheckCircle2, ClipboardCheck, Factory, Loader2, PackageCheck,
+  AlertTriangle, Bell, CheckCircle2, ClipboardCheck, Factory, Footprints, Loader2, PackageCheck,
   PackageOpen, Play, ShieldAlert, Sun, Truck,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ import {
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
+import { lotFlowHref } from "@/lib/lotFlow";
 import { BakeLoadButton } from "@/components/team/today/BakeLoadButton";
 import { SealCheckButton } from "@/components/team/today/SealCheckButton";
 import { PackingButton } from "@/components/team/today/PackingButton";
@@ -327,6 +328,12 @@ export default function Today() {
                               {M.continueLot}
                             </Link>
                           </Button>
+                          {/* The same work one step at a time: the page becomes this lot only. */}
+                          {canVoice && (
+                            <Button asChild size="sm" title={M.flow.followTip} className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+                              <Link to={lotFlowHref(l.id)}><Footprints className="w-4 h-4 mr-1" />{M.flow.follow}</Link>
+                            </Button>
+                          )}
                         </div>
                       )}
                     </li>

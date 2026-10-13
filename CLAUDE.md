@@ -1328,6 +1328,56 @@ starting from `profiles.preferred_language` and remembered in `localStorage` (`t
 - Not built in Phase 1 (see the document's phases): the lot page with its stage rail, prefilled
   per-lot records, the exception panel, per-product stage profiles, and `production_lots`.
 
+## Follow one lot — `pages/team/production/LotFlow.tsx` + `lib/lotFlow.ts`
+
+An optional second way of working (owner's request, 2026-10-12; plan approved the same day): **Follow
+this lot** on a row of the Today page opens `/team/today/lot/:entryId?step=...`, where the page is that
+lot + product only and always shows the next piece of information the records need. The Today page
+itself is unchanged. Built in three pull requests; **the first two are in: the inputs lifted out of
+their pop-ups, and the page. Mixing one ingredient at a time and "Start a lot step by step" are the
+third and NOT yet built** - the Mixing step links to the lot record.
+
+- **Steps, in order:** Mixing, Baking, Seal checks, Packing, Sign and submit; then Retention sample and
+  Release for admins and owners only (FSQM-020). A step strip shows done / in progress / not started
+  and jumps; large previous / next arrows at the edges; the arrow keys work when nothing is being typed.
+  **No step is locked** (owner): sealing often starts while later loads bake. No finger swipe (owner).
+- **Nothing is stored for the flow.** `flowSteps(records, lot, today, isAdmin)` reads every state from
+  the records, reusing `bakeState`, `sealState`, `packingState`, `releaseSteps` (`today.ts`) plus
+  `mixProgress` (lots and weights on FRM-520, through the `LOT_FLOW` map). Baking and seal checks are
+  read over EVERY production date on record, not only today's, so a lot baked yesterday is still
+  "baked". The step in view is in the address, so Back from a full record returns to the same step:
+  `FormEntry` reads `?from=lot&lot=<id>&step=<key>` (`lotBackQuery`) and says "Back to the lot".
+- **The page moves on by itself only when the person says a step is finished** (`advancesAfter`): the
+  last load / last check of the batch or the lot, the counts once the first pack is also answered, the
+  lot record submitted. `nextOpenStep` decides where the page opens: the first step not finished - but
+  once the lot record is submitted it opens AFTER it, so a load never marked "last" does not pull the
+  page back to Baking.
+- **The inputs are the Today buttons' own.** Each of Record bake, Record seal check and Record packing
+  keeps its state and saves in a hook (`useBakeLoad`, `useSealCheck`, `usePacking`, in the button's
+  file) that hands back `body` and `footer`; the button shows them in its pop-up, the page shows them
+  on the page (`inline: true`: nothing to cancel, the input is cleared after a save). **Change an
+  input in the hook and both places change** - never copy it. `onSaved` says what was saved
+  (`{ last }` / `{ step }`), `backTo` sets the Back link of a record opened from the input, form ids
+  come from `useId`. The microphone and the camera still start only from a tap, never when a step
+  slides in.
+- **Sign and submit** lists what the lot record still needs in the form's own words
+  (`buildZodSchema` + the pack counts rule, as the entry page checks), and with nothing missing one
+  button signs "Recorded by" in the person's name and submits. A draft on an earlier revision is
+  finished on the record itself. Retention and release open or start their records through
+  `releaseStepHref` (`src/lib/releaseStart.ts`), shared with the Today page's Release menu.
+- **Outside the team layout on purpose** (no sidebar, no Coach orb): the page is the lot and nothing
+  else, and it sets the root font size (`clamp(16px, 1.5vw, 22px)`) like the visitor kiosk, restored
+  on leaving. After the first load it refreshes without a spinner, because swapping the page out
+  would drop the step in hand (the Today page's `load` does swap).
+- The day's FRM-903 gates the first five steps, as on the Today page. One person per lot is assumed
+  (owner: "we might change that later"): the quick saves go into the signed-in person's own records.
+- Wording in `TODAY_MSG.flow`, English and Spanish. Tested by `scripts/test-lot-flow.mjs`.
+- **Checking it without signing in:** run the whole app on an in-memory database - a temporary module
+  imported first in `src/main.tsx` that replaces `supabase.from` / `rpc` / `auth` / `storage` /
+  `functions` with fakes seeded from the live form schemas (never committed). Every real page then
+  works, including the hand-over to `FormEntry` and Back. An insert must be given the database's
+  defaults (`status: "draft"`), or "today's draft" is never found and a second record is created.
+
 ## Visitor Sign-In — `pages/team/compliance/VisitorSignIn.tsx` + `lib/visitors.ts`
 
 One short screen the visitor completes **alone**; nobody from the site takes part. It replaces

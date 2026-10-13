@@ -67,10 +67,12 @@ export interface PackingProps {
   onSaved: (saved?: { step?: "checked" | "counted" }) => void;
   /** The query that brings "Back" on the full record to where the person was. */
   backTo?: string;
+  /** Shown on a page, not in a pop-up: nothing to cancel, and the input is cleared after a save. */
+  inline?: boolean;
 }
 
 /** The packing input of one lot record: the first-pack photo, the counts, and the pop-up's body and buttons. */
-export function usePacking({ doc, entryId, lot, product, today, state, lang, onSaved, backTo = "from=today" }: PackingProps) {
+export function usePacking({ doc, entryId, lot, product, today, state, lang, onSaved, backTo = "from=today", inline }: PackingProps) {
   const formId = useId();
   const M = TODAY_MSG[lang].bake;   // the dialogs' common wording (Save, Cancel)
   const P = TODAY_MSG[lang].pack;
@@ -295,7 +297,7 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
             )}
             {mode === "counts" && (
               <>
-                <Button variant="ghost" size="sm" disabled={busy} onClick={() => setShowing(false)}>{M.cancel}</Button>
+                {!inline && <Button variant="ghost" size="sm" disabled={busy} onClick={() => setShowing(false)}>{M.cancel}</Button>}
                 <Button type="submit" form={formId} size="sm" disabled={busy || !countsReady} className={GOLD}>
                   {busy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{M.save}
                 </Button>
