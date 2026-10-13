@@ -153,9 +153,11 @@ export function GridCell({ column, value, onChange, disabled, stacked, suggestio
       return (
         <DictationTextarea
           className={stacked
-            ? "min-h-[72px] text-sm leading-normal break-words"
+            // One line tall in the row pop-up too, like the other fields: the box still grows with
+            // what is written, so a long note is never clipped (owner, 2026-10-12).
+            ? "min-h-[40px] text-sm leading-normal break-words"
             : "min-h-[32px] text-xs py-1.5 px-2 leading-snug break-words"}
-          rows={stacked ? 3 : 1}
+          rows={1}
           value={value}
           disabled={disabled}
           onChange={onChange}
