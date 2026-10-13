@@ -101,9 +101,10 @@ const ccpStep = (key: "baking" | "sealing", s: BakeState): FlowStep =>
   ({ key, state: s.done !== "open" ? "done" : s.loads > 0 ? "open" : "none", count: s.loads });
 
 /**
- * The steps of one lot, in order, each with how far it has got. Retention and release are the SQF
- * Practitioner's (FSQM-020), so they are listed for admins and owners only. `formRevision` is the
- * lot record form's current revision, when the caller knows it.
+ * The steps of one lot, in order, each with how far it has got. The retention sample is taken at
+ * packing by the person packing (FSQM-014 v2, 2026-10-12), so it comes before the lot record is
+ * signed, for everyone. Release is the SQF Practitioner's alone (FSQM-020): admins and owners only.
+ * `formRevision` is the lot record form's current revision, when the caller knows it.
  */
 export function flowSteps(records: TodayRecords, lot: LotSummary, today: string, isAdmin: boolean, formRevision?: string | null): FlowStep[] {
   const entry = records.lots.find(e => e.id === lot.id);
@@ -116,26 +117,25 @@ export function flowSteps(records: TodayRecords, lot: LotSummary, today: string,
     ccpStep("baking", lotBakeState(records, lot, today)),
     ccpStep("sealing", lotSealState(records, lot, today)),
     { key: "packing", state: packed || submitted ? "done" : lot.packing.checked || lot.packing.counted || lot.packing.weighed ? "open" : "none" },
-    { key: "submit", state: submitted ? "done" : "none" },
   ];
-  if (isAdmin) {
-    const release = releaseSteps(records, lot);
-    for (const key of ["retention", "release"] as const) {
-      const r = release.find(s => s.key === key);
-      if (r) steps.push({ key, state: r.state, release: r });
-    }
-  }
+  const release = releaseSteps(records, lot);
+  const sample = release.find(s => s.key === "retention");
+  if (sample) steps.push({ key: "retention", state: sample.state, release: sample });
+  steps.push({ key: "submit", state: submitted ? "done" : "none" });
+  const decision = release.find(s => s.key === "release");
+  if (isAdmin && decision) steps.push({ key: "release", state: decision.state, release: decision });
   return steps;
 }
 
 /**
  * Where the page opens: the first step that is not finished, else the last one. Once the lot
  * record is submitted the floor's work is over, so a load or a check that was never marked as the
- * last one does not pull the page back to it - it opens on what comes after the lot record.
+ * last one does not pull the page back to it - it opens on what comes after the lot record, or
+ * on the retention sample if that is still not on the shelf.
  */
 export function nextOpenStep(steps: FlowStep[]): FlowStepKey {
   const submit = steps.findIndex(s => s.key === "submit" && s.state === "done");
-  const from = submit >= 0 ? steps.slice(submit + 1) : steps;
+  const from = submit >= 0 ? steps.filter((s, i) => i > submit || s.key === "retention") : steps;
   return (from.find(s => s.state !== "done") ?? steps[steps.length - 1]).key;
 }
 
@@ -174,5 +174,5 @@ export function lotFlowHref(entryId: string, step?: FlowStepKey): string {
   return `/team/today/lot/${encodeURIComponent(entryId)}${step ? `?step=${step}` : ""}`;
 }
 
-export const FLOW_STEP_KEYS: readonly FlowStepKey[] = ["mixing", "baking", "sealing", "packing", "submit", "retention", "release"];
+export const FLOW_STEP_KEYS: readonly FlowStepKey[] = ["mixing", "baking", "sealing", "packing", "retention", "submit", "release"];
 export const isFlowStep = (v: unknown): v is FlowStepKey => typeof v === "string" && (FLOW_STEP_KEYS as readonly string[]).includes(v);
