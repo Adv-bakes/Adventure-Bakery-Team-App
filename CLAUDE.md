@@ -1363,9 +1363,37 @@ starting from `profiles.preferred_language` and remembered in `localStorage` (`t
 An optional second way of working (owner's request, 2026-10-12; plan approved the same day): **Follow
 this lot** on a row of the Today page opens `/team/today/lot/:entryId?step=...`, where the page is that
 lot + product only and always shows the next piece of information the records need. The Today page
-itself is unchanged. Built in three pull requests; **the first two are in: the inputs lifted out of
-their pop-ups, and the page. Mixing one ingredient at a time and "Start a lot step by step" are the
-third and NOT yet built** - the Mixing step links to the lot record.
+itself is unchanged. Built in three pull requests, all in: the inputs lifted out of their pop-ups,
+the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot step by step".
+
+- **Mixing is one screen at a time** (`components/team/today/MixStep.tsx`; rules in `lotFlow.ts`:
+  `mixScreens`, `mixScreenDone`, `nextMixScreen`, `applyMixEntry`, `checkMixMapping`): how many
+  batches (1 / 2 / 3, one per weighed column of FRM-520), then batch by batch each ingredient - its
+  lot on the container with the first batch, its weight with every batch - then the rework question.
+  Each Save writes that ONE answer onto the lot record as it is now (read again first, one retry on
+  `StaleResponseError`) and moves to the next screen; Back and Skip for now move without saving, and
+  the rework screen says how many screens were skipped. No form or document changed.
+  - **A weight is never filled in**: the formula's figure is the box's grey placeholder and a
+    "Use 17.49 lb" link. A line the formula gives NO quantity (pan spray; on the real sheets also
+    Flavor) has an optional weight, and is asked again in batches 2 and 3 only if it was weighed with
+    the first. `mixProgress` still counts such a line complete on its lot alone.
+  - **The table's rows have no id**, so a line is addressed by position + ingredient + brand;
+    `applyMixEntry` returns null when the row has moved or been renamed, and the screen reads the
+    record again and says so, writing nothing.
+  - **Scan the label gives the lot code only** (`src/lib/mixScan.ts`, `extract-package-label` in
+    `ingredient` mode; the photo is always removed). The ingredient and brand are the formula's and are
+    never written over; what the label says it is is shown as text, other numbers as chips. A box that
+    holds something typed is never replaced - the reading is offered beside it.
+  - **Rework used** opens the record: rework is a line of its own with its original lot code.
+    Two lots of one ingredient are likewise a second line, added on the record.
+  - A lot record with no ingredient lines offers **Start from the formula sheet** on the step
+    (`batchSheetFill` onto the record; today as bake date and its lot code when both are blank).
+  - **Start a lot step by step**, beside Start a lot on the Today page (`startLotFrom`): pick the
+    product's formula sheet, a new FRM-520 is created with its lines, today's bake date and lot code,
+    and the lot page opens on Mixing. If that product already has a draft lot of today's code, that
+    one is opened instead of a second record.
+  - Not built: a fourth batch, a line added from the page, offering received lots (FRM-301) for an
+    ingredient. **Untested from here: the camera and the real read of an ingredient label.**
 
 - **Steps, in order:** Mixing, Baking, Seal checks, Packing, Retention sample, Sign and submit; then
   Release for admins and owners only (FSQM-020). **The retention sample is step 5 for everyone**

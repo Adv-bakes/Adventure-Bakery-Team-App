@@ -31,7 +31,11 @@ import {
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
-import { lotFlowHref } from "@/lib/lotFlow";
+import { LOT_FLOW, lotFlowHref } from "@/lib/lotFlow";
+import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
+import { getFormSchema, julianLotCode, valueFields, type GridField } from "@/lib/formSchema";
+import { normLot, sameProduct } from "@/lib/releaseAssist";
+import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
 import { LotRecordsButton } from "@/components/team/today/LotRecordsButton";
 import { BakeLoadButton } from "@/components/team/today/BakeLoadButton";
 import { SealCheckButton } from "@/components/team/today/SealCheckButton";
@@ -72,6 +76,7 @@ export default function Today() {
   const [userId, setUserId] = useState<string | null>(null);
   const [attention, setAttention] = useState({ overdue: 0, due: 0, askedOfMe: 0, alerts: 0 });
   const [busy, setBusy] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
 
   const today = localDay();
 
@@ -149,6 +154,40 @@ export default function Today() {
     try {
       const r = await createResponse(doc);
       navigate(entryHref(doc.id, r.id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not start a lot");
+      setBusy(null);
+    }
+  };
+
+  /**
+   * A new lot started from the product's formula sheet and taken straight to the step-by-step
+   * page: the ingredient lines and expected quantities come from the formula, today is the bake
+   * date and gives the lot code. The lots on the containers and the weights are left for the
+   * person. If this product already has a lot of today's code still open, that one is opened
+   * instead - a second record for the same lot would split its mixing over two entries.
+   */
+  const lotBatchSheet = getFormSchema(docOf("lots")?.content)?.settings?.batchSheet;
+  const startLotFrom = async (source: FormulaSource) => {
+    setPicking(false);
+    const doc = docOf("lots");
+    const schema = getFormSchema(doc?.content);
+    const cfg = schema?.settings?.batchSheet;
+    if (!doc || !schema || !cfg) return;
+    const code = julianLotCode(today) ?? "";
+    const existing = lots.find(l => l.status === "draft" && sameProduct(l.product, source.product) && normLot(l.lotCode) === normLot(code));
+    if (existing) {
+      toast.message(M.lotExists(code, existing.product));
+      navigate(lotFlowHref(existing.id));
+      return;
+    }
+    setBusy("lotSteps");
+    try {
+      const grid = valueFields(schema).find(f => f.id === cfg.grid) as GridField | undefined;
+      const { values, warnings } = batchSheetFill(cfg, (grid?.columns ?? []).map(c => c.id), {}, source);
+      const r = await createResponse(doc, { ...values, [LOT_FLOW.bakeDate]: today, [LOT_FLOW.lotCode]: code });
+      for (const w of warnings) toast.message(w);
+      navigate(lotFlowHref(r.id, "mixing"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not start a lot");
       setBusy(null);
@@ -384,12 +423,25 @@ export default function Today() {
             </>
           ), (
             // Above the lots, on the card's own line: starting a lot is the first thing done here (owner, 2026-10-13).
-            <Button onClick={startLot} disabled={!open || !docOf("lots") || busy === "lot"} size="sm"
-              className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
-              {busy === "lot" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Play className="w-4 h-4 mr-1" />}
-              {M.startLot}
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <Button onClick={startLot} disabled={!open || !docOf("lots") || busy === "lot"} size="sm"
+                className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+                {busy === "lot" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Play className="w-4 h-4 mr-1" />}
+                {M.startLot}
+              </Button>
+              {/* The same new lot, from its formula sheet, on the step-by-step page. */}
+              {lotBatchSheet && (
+                <Button onClick={() => setPicking(true)} disabled={!open || busy === "lotSteps"} size="sm" variant="outline" title={M.startLotStepsTip}>
+                  {busy === "lotSteps" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Footprints className="w-4 h-4 mr-1" />}
+                  {M.startLotSteps}
+                </Button>
+              )}
+            </div>
           ))}
+          {lotBatchSheet && (
+            <BatchSheetPickDialog open={picking} onOpenChange={setPicking} formNumber={lotBatchSheet.source} onPick={startLotFrom}
+              title={M.pickFormulaTitle} description={M.pickFormula} />
+          )}
 
           {/* ---- Receiving ---- */}
           {section(M.receiving, <PackageOpen className="w-4 h-4 text-[hsl(var(--tp-gold))]" />, (

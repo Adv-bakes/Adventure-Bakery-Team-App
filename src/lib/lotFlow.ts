@@ -15,6 +15,9 @@ import {
 /** The single map of the lot record's (FRM-520) answer keys the mixing step reads. Rename a field, update this. */
 export const LOT_FLOW = {
   form: "FRM-520",
+  /** Filled in when a lot is started step by step: today, and the lot code that day gives. */
+  bakeDate: "bake_date",
+  lotCode: "lot_code",
   batches: "batches",
   grid: "ingredients",
   ingredient: "ingredient",
@@ -70,6 +73,131 @@ export function mixProgress(data: Record<string, any> | null | undefined): MixPr
     || rows.some(r => str(r[LOT_FLOW.lot]) !== "" || LOT_FLOW.weighed.some(k => str(r[k]) !== ""));
   const done = rows.length > 0 && batches > 0 && linesDone === rows.length && str(d[LOT_FLOW.rework]) !== "";
   return { state: done ? "done" : touched ? "open" : "none", lines: rows.length, linesDone, batches };
+}
+
+// ---------- Mixing, one screen at a time ----------
+
+/** One screen of the mixing step: the number of batches, one ingredient of one batch, or the rework question. */
+export type MixScreen =
+  | { kind: "batches" }
+  | {
+      kind: "line";
+      /** 1, 2 or 3. */
+      batch: number;
+      /** The line's position in the record's table - blank lines included, so it addresses the row. */
+      index: number;
+      ingredient: string;
+      brand: string;
+      unit: string;
+      /** The formula's quantity per batch, as text; blank when the formula gives none. */
+      expected: string;
+      /** The lot on the container is asked with the first batch only. */
+      asksLot: boolean;
+      /**
+       * The weight has to be entered: the formula gives this line a quantity. Without one (pan
+       * spray, or a line the formula sheet has no figure for) a weight can be entered, and need not be.
+       */
+      needsWeight: boolean;
+      lot: string;
+      weight: string;
+      /** Which ingredient of this batch this is, and of how many. */
+      position: number;
+      of: number;
+    }
+  | { kind: "rework" };
+
+const gridRows = (d: Record<string, any>): Record<string, unknown>[] => (Array.isArray(d[LOT_FLOW.grid]) ? d[LOT_FLOW.grid] : []);
+
+/**
+ * The screens, in order: how many batches, then batch by batch each named ingredient, then the
+ * rework question. Until the number of batches is answered there is nothing to walk through, so
+ * that is the only screen. Batches 2 and 3 ask the weight only, so a line the formula gives no
+ * quantity is asked again only if it was weighed with the first batch.
+ */
+export function mixScreens(data: Record<string, any> | null | undefined): MixScreen[] {
+  const d = data ?? {};
+  const batches = mixProgress(d).batches;
+  const out: MixScreen[] = [{ kind: "batches" }];
+  if (!batches) return out;
+  const named = gridRows(d).map((r, index) => ({ r, index })).filter(x => str(x.r?.[LOT_FLOW.ingredient]) !== "");
+  for (let b = 1; b <= batches; b++) {
+    const here = named.filter(x => b === 1 || str(x.r[LOT_FLOW.expected]) !== "" || str(x.r[LOT_FLOW.weighed[0]]) !== "");
+    here.forEach((x, i) => out.push({
+      kind: "line", batch: b, index: x.index,
+      ingredient: str(x.r[LOT_FLOW.ingredient]), brand: str(x.r[LOT_FLOW.brand]), unit: str(x.r[LOT_FLOW.unit]),
+      expected: str(x.r[LOT_FLOW.expected]),
+      asksLot: b === 1, needsWeight: str(x.r[LOT_FLOW.expected]) !== "",
+      lot: str(x.r[LOT_FLOW.lot]), weight: str(x.r[LOT_FLOW.weighed[b - 1]]),
+      position: i + 1, of: here.length,
+    }));
+  }
+  out.push({ kind: "rework" });
+  return out;
+}
+
+/** Is this screen answered on the record? */
+export function mixScreenDone(data: Record<string, any> | null | undefined, s: MixScreen): boolean {
+  const d = data ?? {};
+  if (s.kind === "batches") return mixProgress(d).batches > 0;
+  if (s.kind === "rework") return str(d[LOT_FLOW.rework]) !== "";
+  return (!s.asksLot || s.lot !== "") && (!s.needsWeight || s.weight !== "");
+}
+
+/** Where the mixing step opens: the first screen not yet answered, else the last one. */
+export function nextMixScreen(data: Record<string, any> | null | undefined): number {
+  const screens = mixScreens(data);
+  const i = screens.findIndex(s => !mixScreenDone(data, s));
+  return i >= 0 ? i : screens.length - 1;
+}
+
+/** The number of batches the page offers: one per weighed column of the form. */
+export const MIX_BATCH_CHOICES: readonly number[] = LOT_FLOW.weighed.map((_, i) => i + 1);
+
+/**
+ * Write one screen's answer onto the record's answers. The table's rows have no id of their own,
+ * so a line is addressed by its position AND its ingredient and brand: if somebody has since
+ * moved or renamed the row, nothing is written and null comes back (the page then reads the
+ * record again). Only what the change names is written - a lot or a weight left out is untouched.
+ */
+export function applyMixEntry(
+  values: Record<string, any>,
+  ref: { index: number; ingredient: string; brand: string },
+  change: { lot?: string; batch?: number; weight?: number | "" },
+): Record<string, any> | null {
+  const rows = gridRows(values);
+  const row = rows[ref.index];
+  if (!row || str(row[LOT_FLOW.ingredient]) !== ref.ingredient || str(row[LOT_FLOW.brand]) !== ref.brand) return null;
+  const next: Record<string, unknown> = { ...row };
+  if (change.lot !== undefined) next[LOT_FLOW.lot] = change.lot.trim();
+  if (change.batch !== undefined && change.weight !== undefined) {
+    const key = LOT_FLOW.weighed[change.batch - 1];
+    if (!key) return null;
+    next[key] = change.weight;
+  }
+  return { ...values, [LOT_FLOW.grid]: rows.map((r, i) => (i === ref.index ? next : r)) };
+}
+
+/** Field and column ids LOT_FLOW names that the lot record form no longer has. Empty = the mixing step can write. */
+export function checkMixMapping(schema: { sections?: { fields?: any[] }[] } | null | undefined): string[] {
+  const fields = (schema?.sections ?? []).flatMap(s => s.fields ?? []);
+  const byId = new Map(fields.map(f => [f.id, f]));
+  const missing: string[] = [];
+  for (const id of [LOT_FLOW.batches, LOT_FLOW.grid, LOT_FLOW.rework]) if (!byId.has(id)) missing.push(id);
+  const cols = new Set<string>((byId.get(LOT_FLOW.grid)?.columns ?? []).map((c: any) => c.id));
+  if (byId.has(LOT_FLOW.grid)) {
+    for (const id of [LOT_FLOW.ingredient, LOT_FLOW.brand, LOT_FLOW.lot, LOT_FLOW.expected, LOT_FLOW.unit, ...LOT_FLOW.weighed]) {
+      if (!cols.has(id)) missing.push(`${LOT_FLOW.grid}.${id}`);
+    }
+  }
+  return missing;
+}
+
+/** The rework answer that needs no line of its own ("No rework used"), in the form's own words. */
+export function noReworkOption(schema: { sections?: { fields?: any[] }[] } | null | undefined): string {
+  const f = (schema?.sections ?? []).flatMap(s => s.fields ?? []).find(x => x.id === LOT_FLOW.rework);
+  const options: unknown[] = Array.isArray(f?.options) ? f.options : [];
+  const no = options.find(o => /^no\b/i.test(String(o)));
+  return no == null ? "" : String(no);
 }
 
 const RANK: Record<BakeState["done"], number> = { open: 0, batch: 1, lot: 2 };

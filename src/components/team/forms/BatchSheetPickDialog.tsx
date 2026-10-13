@@ -16,11 +16,14 @@ import { fetchCurrentBatchSheets, fetchFormulaEntries } from "@/lib/formResponse
  * with no quantities is still offered, and says so, because its ingredient lines are worth having.
  */
 export function BatchSheetPickDialog({
-  open, onOpenChange, formNumber, onPick,
+  open, onOpenChange, formNumber, onPick, title, description,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formNumber?: string;
+  /** Wording for a caller that is not filling a table on the page (the Today page starting a lot). */
+  title?: string;
+  description?: string;
   onPick: (source: FormulaSource) => void;
 }) {
   const [sources, setSources] = useState<FormulaSource[] | null>(null);
@@ -54,9 +57,9 @@ export function BatchSheetPickDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Start from the {what}</DialogTitle>
+          <DialogTitle>{title ?? `Start from the ${what}`}</DialogTitle>
           <DialogDescription>
-            Pick the product. Its ingredient lines and expected quantities replace the table below; the lots and the weights are left blank for today.
+            {description ?? "Pick the product. Its ingredient lines and expected quantities replace the table below; the lots and the weights are left blank for today."}
           </DialogDescription>
         </DialogHeader>
         {problem && (
