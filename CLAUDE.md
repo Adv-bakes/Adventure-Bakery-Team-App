@@ -1633,6 +1633,22 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
   "480 units" and says so when it cannot ("40 cases"), never guessing. It rides on the first-pack slot
   through `afterSection.more` (further full-width lines inside the same section), so it shows on an
   editable entry only. Tested by `scripts/test-pack-counts.mjs`.
+- **The net-weight check is weighed at packing (FRM-520 v2, FSQM-020 v4, FSQM-021 v2; owner, 2026-10-12,
+  migration `20261012000005`, GJM).** Until then the SQF Practitioner weighed three packs at release and
+  wrote them only on FRM-701. Now the person packing weighs them and the lot record holds six required
+  answers before Notes: Net weight on the label, Empty packaging weight, Unit weighed in, Pack 1 / 2 / 3
+  weight - **the same field ids as FRM-701**, so `netWeight` (`releaseAssist.ts`) does the sum on either
+  record. `src/lib/packWeights.ts` (`PACK_WEIGHTS`, `packWeights`, `packsWeighed`, `packWeightsReady`;
+  tested by `scripts/test-pack-weights.mjs`) says the result at once: the entry page shows it under the
+  weights (`PackWeightLine`), and **Weigh three packs** is the fourth mode of `usePacking` (the Today row's
+  Record packing menu and the lot page's Packing step). The three figures about the pack are looked up
+  where the record is blank (last release, else FRM-704) for the person to check; **a pack weight is
+  never looked up or suggested**. **A short weight is saved, never refused** (owner): the person is told
+  to stop, hold the lot on FRM-702 and tell the SQF Practitioner. `packingState` gained `weighed`, and
+  packing is done only with the first pack answered, the counts in AND the packs weighed. A label that
+  states its weight twice ("4 oz (113g)") is read in the unit weighed in (`declaredIn`) - before this it
+  was not read at all, so the owner's real label never got a net-weight result. **FRM-701 was not
+  revised**: it keeps its weight fields, which the release helper now fills from the lot record.
 - Not built: picking the formula from the Product field itself, scaling for a part batch, and
   creating a batch sheet from an FRM-501 entry.
 - The batch sheet list page (`/team/operations/batch-sheets`) had a route but no sidebar link until
@@ -1692,7 +1708,9 @@ the entry starts from the **lot code** (what is printed on the pack) and looks t
   show - FRM-520 submitted or draft, FRM-507 / FRM-606 rows for the lot, FRM-903 for the bake and
   pack dates, FRM-702 holds on the lot or any supplier / film lot in it, FRM-601 approval, units
   packed. Gaps are stated ("FRM-903: none found for 2026-10-01"), never left blank. **It never answers
-  a check and never fills a pack weight**: FSQM-020 has the SQF Practitioner confirm each check, and
+  a check and never suggests a pack weight** (from 2026-10-12 it COPIES the three weights a person
+  measured at packing and recorded on the lot record, with a note on the net-weight check saying so; a
+  weight typed on the release record is never replaced, and a lot not weighed at packing says so): FSQM-020 has the SQF Practitioner confirm each check, and
   the owner chose evidence-plus-tap over auto-Pass (2026-10-06). The same reasoning as `aiDraft`.
 - **Proposed results, accepted in one tap (owner's choice "A", 2026-10-10).** The rule above stands - a
   Pass never arrives by itself - but where the records FULLY support a check the helper's card lists it

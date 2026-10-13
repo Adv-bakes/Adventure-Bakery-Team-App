@@ -176,9 +176,10 @@ const a1 = T.applyReleaseFill(blank(), f, {}, LABELS);
 check("fields are filled", [a1.values.customer, a1.values.packaging_tare, a1.values.date_produced], ["Brand A", 21, "2026-09-30"]);
 check("NO result is ever answered", a1.values.checks.map(r => r.result), LABELS.map(() => ""));
 check("NO pack weight is ever filled", [a1.values.pack_weight_1, a1.values.pack_weight_2, a1.values.pack_weight_3], ["", "", ""]);
-check("physical checks get no note", [a1.values.checks[4].note, a1.values.checks[6].note, a1.values.checks[8].note], ["", "", ""]);
-check("the six record-backed checks get a note", a1.values.checks.map(r => r.note !== ""), [true, true, true, true, false, true, false, true, false]);
-check("the banner lists what changed", a1.changed.length, 14);
+check("physical checks get no note", [a1.values.checks[4].note, a1.values.checks[6].note], ["", ""]);
+check("a lot not weighed at packing says so on the net weight check", a1.values.checks[8].note, "FRM-520: no pack weights were recorded at packing for this lot. Weigh three packs and enter them below.");
+check("the record-backed checks get a note", a1.values.checks.map(r => r.note !== ""), [true, true, true, true, false, true, false, true, true]);
+check("the banner lists what changed", a1.changed.length, 15);
 
 {
   const typed = blank();
@@ -307,7 +308,25 @@ check("mapping: a renamed field and a missing form are named",
   check("a label in another unit is converted", T.netWeight(w(4.9, 4.9, 4.9, { packaging_tare: 0.8, net_weight_declared: "113 g", net_weight_unit: "oz" })), { average: 4.1, declared: 3.99, unit: "oz", ok: true });
   check("a pound weighed in ounces", T.netWeight(w(17, 17, 17, { packaging_tare: 0.5, net_weight_declared: "1 lb", net_weight_unit: "oz" })).declared, 16);
   check("no unit on the label reads as the unit weighed in", T.netWeight(w(135, 136, 134, { net_weight_declared: "113" })).ok, true);
-  check("not judged until everything is there, and never guessed", [T.netWeight(w(135, 136, "")), T.netWeight(w(135, 136, 134, { packaging_tare: "" })), T.netWeight(w(135, 136, 134, { net_weight_declared: "4 oz (113 g)" })), T.netWeight(w(135, 136, 134, { net_weight_unit: "" })), T.netWeight({})], [null, null, null, null, null]);
+  check("not judged until everything is there, and never guessed", [T.netWeight(w(135, 136, "")), T.netWeight(w(135, 136, 134, { packaging_tare: "" })), T.netWeight(w(135, 136, 134, { net_weight_declared: "about 113 g" })), T.netWeight(w(135, 136, 134, { net_weight_declared: "110-115 g" })), T.netWeight(w(135, 136, 134, { net_weight_unit: "" })), T.netWeight({})], [null, null, null, null, null, null]);
+  check("a label stating the weight twice is read in the unit weighed in", [T.netWeight(w(135, 136, 134, { net_weight_declared: "4 oz (113g)" })).declared, T.netWeight(w(135, 136, 134, { net_weight_declared: "4 oz (113 g)" })).declared, T.netWeight(w(135, 136, 134, { net_weight_declared: "113 g / 4 oz" })).declared], [113, 113, 113]);
+  check("...and weighed in ounces, the ounce figure is the one taken", T.netWeight(w(4.9, 4.9, 4.9, { packaging_tare: 0.8, net_weight_declared: "4 oz (113g)", net_weight_unit: "oz" })).declared, 4);
+  {
+    // Weighed at packing: the lot record carries the weights and the release takes them.
+    const r = records();
+    const lotRec = r.lots.find(e => T.normLot(e.data.lot_code) === "6273");
+    Object.assign(lotRec.data, { net_weight_declared: "4 oz (113g)", packaging_tare: 21, net_weight_unit: "g", pack_weight_1: 162, pack_weight_2: 163, pack_weight_3: 170 });
+    const fw = T.releaseFill(r, "Rum Cake - Original", "6273", null);
+    check("the three weights and their figures come from the lot record", [fw.fields.pack_weight_1, fw.fields.pack_weight_2, fw.fields.pack_weight_3, fw.fields.packaging_tare, fw.fields.net_weight_unit, fw.fields.net_weight_declared], [162, 163, 170, 21, "g", "4 oz (113g)"]);
+    check("the note says where they were weighed", fw.notes.weight.startsWith("FRM-520: three packs weighed at packing"), true);
+    const applied = T.applyReleaseFill(blank, fw, {}, FULL);
+    check("they are carried onto the release record", [applied.values.pack_weight_1, applied.values.pack_weight_2, applied.values.pack_weight_3], [162, 163, 170]);
+    check("...and the net weight is then supported", T.proposals(applied.values, fw, FULL).find(p => p.index === 8).state, "supported");
+    const typed = T.applyReleaseFill({ ...blank, pack_weight_1: 150 }, fw, {}, FULL);
+    check("a weight typed on the release record is never replaced", typed.values.pack_weight_1, 150);
+    lotRec.data.pack_weight_3 = "";
+    check("two weights are not carried", T.releaseFill(r, "Rum Cake - Original", "6273", null).fields.pack_weight_1 ?? null, null);
+  }
   const weighed = { ...blank, ...w(135, 136, 134) };
   check("a good weight is proposed with the sum", T.proposals(weighed, fill, FULL).filter(p => p.index === 8).map(p => [p.state, p.text]), [["supported", "Average net weight 114 g, at or above the 113 g on the label."]]);
   const light = { ...blank, ...w(133, 133, 134) };

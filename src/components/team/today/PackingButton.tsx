@@ -21,23 +21,25 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Calculator, Camera, CheckCircle2, ChevronDown, Eye, FilePenLine, Loader2, MinusCircle, Package } from "lucide-react";
+import { AlertTriangle, Calculator, Camera, CheckCircle2, ChevronDown, Eye, FilePenLine, Loader2, MinusCircle, Package, Scale } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { fetchProfileNames, fetchResponse, loadTeamDirectoryNames, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
+import { fetchProfileNames, fetchResponse, loadReleaseRecords, loadTeamDirectoryNames, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
 import { getFormSchema, valueFields } from "@/lib/formSchema";
 import { FIRST_PACK, firstPackReady, isPackNote, noteHasMismatch, packVerdict, type PackLine, type PackState } from "@/lib/firstPackCheck";
 import { photographFirstPack } from "@/lib/firstPackPhoto";
 import { PACK_COUNTS, packCounts, packCountsReady } from "@/lib/packCounts";
+import { PACK_WEIGHTS, packWeights, packWeightsReady } from "@/lib/packWeights";
+import { releaseFill } from "@/lib/releaseAssist";
 import type { PackingState } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 
 type Doc = { id: string; sop_number: string; revision: string | null; content: any };
-type Mode = "photo" | "counts" | "answer";
+type Mode = "photo" | "counts" | "answer" | "weights";
 
 const FIELD = "bg-white border-[#2A1F0E]/75 text-[#2A1F0E] font-medium placeholder:font-normal placeholder:text-[#2A1F0E]/55 focus-visible:ring-[#C89B3C]";
 const LABEL = "text-xs font-medium text-[#2A1F0E]";
@@ -64,7 +66,7 @@ export interface PackingProps {
   lang: TodayLang;
   disabled?: boolean;
   /** Told what was saved, so a page that follows one lot knows when to move on. */
-  onSaved: (saved?: { step?: "checked" | "counted" }) => void;
+  onSaved: (saved?: { step?: "checked" | "counted" | "weighed" }) => void;
   /** The query that brings "Back" on the full record to where the person was. */
   backTo?: string;
   /** Shown on a page, not in a pop-up: nothing to cancel, and the input is cleared after a save. */
@@ -261,14 +263,76 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
     } catch (e) { fail(e); }
   };
 
+  // ---- the three packs of the net-weight check, weighed at packing (FRM-520 v2)
+
+  const canWeigh = packWeightsReady(schema);
+  const unitOptions = (fields.find(f => f.id === PACK_WEIGHTS.unit) as { options?: string[] } | undefined)?.options ?? [];
+  const blankWeights = { declared: "", tare: "", unit: "", w: ["", "", ""] };
+  const [weights, setWeights] = useState(blankWeights);
+
+  const openWeights = async () => {
+    setMode("weights"); setWeights(blankWeights); setLoaded(false);
+    setTimeout(() => { if (live.current) setShowing(true); }, 0);   // after the menu has closed
+    try {
+      const r = await record();
+      if (!live.current) return;
+      if (!r) { toast.message(P.needsRecord); setShowing(false); openRecord(); return; }
+      const d = r.data ?? {};
+      const got = { declared: text(d[PACK_WEIGHTS.declared]), tare: text(d[PACK_WEIGHTS.tare]), unit: text(d[PACK_WEIGHTS.unit]), w: PACK_WEIGHTS.weights.map(k => text(d[k])) };
+      // The three figures about the pack are the same for every lot: where the record has none, they
+      // are looked up (the product's last release, else its specification) for the person to check.
+      // A pack weight is never looked up or suggested.
+      if (!got.declared || !got.tare || !got.unit) {
+        const known = await loadReleaseRecords().then(x => releaseFill(x.records, product, "", null).fields).catch(() => ({} as Record<string, string | number>));
+        if (!live.current) return;
+        got.declared = got.declared || text(known.net_weight_declared);
+        got.tare = got.tare || text(known.packaging_tare);
+        got.unit = got.unit || text(known.net_weight_unit);
+      }
+      setWeights(got);
+      setLoaded(true);
+    } catch (e) { setShowing(false); fail(e); }
+  };
+
+  const weighing = packWeights({
+    [PACK_WEIGHTS.declared]: weights.declared, [PACK_WEIGHTS.tare]: weights.tare, [PACK_WEIGHTS.unit]: weights.unit,
+    ...Object.fromEntries(PACK_WEIGHTS.weights.map((k, i) => [k, weights.w[i]])),
+  });
+  // A short weight is still a true record: it is saved, and the person is told to hold the lot.
+  const weightsReady = loaded && (weighing.state === "ok" || weighing.state === "below");
+  const weightText = weighing.state === "incomplete" ? ""
+    : !weighing.net ? P.weightUnreadable
+    : weighing.state === "ok" ? P.weightOk(weighing.net.average, weighing.net.declared, weighing.net.unit)
+    : P.weightBelow(weighing.net.average, weighing.net.declared, weighing.net.unit);
+
+  const saveWeights = async () => {
+    if (!weightsReady || busy) return;
+    setBusy(true);
+    try {
+      const ok = await save(d => ({
+        ...d,
+        [PACK_WEIGHTS.declared]: weights.declared.trim(),
+        [PACK_WEIGHTS.tare]: Number(weights.tare),
+        [PACK_WEIGHTS.unit]: weights.unit,
+        ...Object.fromEntries(PACK_WEIGHTS.weights.map((k, i) => [k, Number(weights.w[i])])),
+        pack_date: text(d.pack_date) || today,
+      }));
+      if (!ok) { toast.message(P.needsRecord); setShowing(false); setBusy(false); openRecord(); return; }
+      if (weighing.state === "below") toast.warning(P.savedBelow, { duration: 15000 });
+      else toast.success(P.savedWeights(lot, product));
+      setShowing(false); setBusy(false);
+      onSaved({ step: "weighed" });
+    } catch (e) { fail(e); }
+  };
+
   const verdict = lines ? packVerdict(lines) : null;
   // The file picker has to be opened inside a tap, or a browser refuses the camera.
   const pickPhoto = () => input.current?.click();
   const dismiss = () => { if (!busy) setShowing(false); };
   const fileInput = <input ref={input} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => takePhoto(e.target.files?.[0])} />;
 
-  const title = mode === "counts" ? P.countsTitle(lot, product) : P.title(lot, product);
-  const description = mode === "photo" ? P.photoHelp : mode === "answer" ? P.answerHelp : P.countsHelp;
+  const title = mode === "counts" ? P.countsTitle(lot, product) : mode === "weights" ? P.weighTitle(lot, product) : P.title(lot, product);
+  const description = mode === "photo" ? P.photoHelp : mode === "answer" ? P.answerHelp : mode === "weights" ? P.weighHelp : P.countsHelp;
   // The same input, for the pop-up of the row's button and for a page that follows one lot.
   const body = (
     <>
@@ -289,6 +353,48 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
               {verdict === "mismatch" && <p className="text-xs text-red-700">{P.mismatch}</p>}
               {verdict === "match" && state.checked && <p className="text-xs opacity-80">{P.alreadyChecked}</p>}
             </div>
+          )}
+
+          {mode === "weights" && (
+            <form id={formId} className="space-y-3 text-sm" onSubmit={e => { e.preventDefault(); void saveWeights(); }}>
+              {!loaded ? <Loader2 className="w-4 h-4 animate-spin text-[#C89B3C]" /> : (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <label className="flex flex-col justify-end gap-1">
+                      <span className={LABEL}>{P.declared}</span>
+                      <Input className={FIELD} value={weights.declared} onChange={e => setWeights({ ...weights, declared: e.target.value })} />
+                    </label>
+                    <label className="flex flex-col justify-end gap-1">
+                      <span className={LABEL}>{P.tare}</span>
+                      <Input className={FIELD} inputMode="decimal" value={weights.tare} onChange={e => setWeights({ ...weights, tare: e.target.value })} />
+                    </label>
+                    <label className="flex flex-col justify-end gap-1">
+                      <span className={LABEL}>{P.unit}</span>
+                      <select
+                        className="w-full rounded-md border border-[#2A1F0E]/75 bg-white text-[#2A1F0E] font-medium px-2 py-2 text-sm"
+                        value={weights.unit} onChange={e => setWeights({ ...weights, unit: e.target.value })}
+                      >
+                        <option value="">{M.choose}</option>
+                        {unitOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </label>
+                    {weights.w.map((v, i) => (
+                      <label key={i} className="flex flex-col justify-end gap-1">
+                        <span className={LABEL}>{P.packWeight(i + 1)}</span>
+                        <Input
+                          className={FIELD} inputMode="decimal" value={v} autoFocus={i === 0}
+                          onChange={e => setWeights({ ...weights, w: weights.w.map((x, n) => (n === i ? e.target.value : x)) })}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  {weightText && <p className={`flex items-start gap-1.5 ${weighing.state === "ok" ? "text-[#2A1F0E]" : "text-red-700 font-medium"}`}>
+                    {weighing.state === "ok" ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-green-700" /> : <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />}
+                    <span>{weightText}</span>
+                  </p>}
+                </>
+              )}
+            </form>
           )}
 
           {mode === "answer" && (
@@ -379,6 +485,14 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
                 )}
               </>
             )}
+            {mode === "weights" && (
+              <>
+                {!inline && <Button variant="ghost" size="sm" disabled={busy} onClick={() => setShowing(false)}>{M.cancel}</Button>}
+                <Button type="submit" form={formId} size="sm" disabled={busy || !weightsReady} className={GOLD}>
+                  {busy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{M.save}
+                </Button>
+              </>
+            )}
             {mode === "answer" && (
               <>
                 {!inline && <Button variant="ghost" size="sm" disabled={busy} onClick={() => setShowing(false)}>{M.cancel}</Button>}
@@ -398,14 +512,14 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
     </>
   );
 
-  return { busy, mode, showing, canPhoto, canCount, canAnswer, openAnswer, lines, failed, verdict, fileInput, pickPhoto, openCounts, openRecord, dismiss, title, description, body, footer };
+  return { busy, mode, showing, canPhoto, canCount, canAnswer, openAnswer, canWeigh, openWeights, lines, failed, verdict, fileInput, pickPhoto, openCounts, openRecord, dismiss, title, description, body, footer };
 }
 
 export function PackingButton(props: PackingProps) {
   const { lang, state, disabled } = props;
   const P = TODAY_MSG[lang].pack;
   const h = usePacking(props);
-  const { busy, canPhoto, canCount } = h;
+  const { busy, canPhoto, canCount, canWeigh } = h;
   const tick = (done: boolean) => done ? <CheckCircle2 className="w-3.5 h-3.5 ml-2 text-emerald-700" aria-hidden /> : null;
   return (
     <>
@@ -440,7 +554,12 @@ export function PackingButton(props: PackingProps) {
               <Calculator className="w-4 h-4 mr-2" />{P.counts}{tick(state.counted)}
             </DropdownMenuItem>
           )}
-          {(canPhoto || canCount) && <DropdownMenuSeparator />}
+          {canWeigh && (
+            <DropdownMenuItem onSelect={h.openWeights} title={state.weighed ? P.weighDone : undefined}>
+              <Scale className="w-4 h-4 mr-2" />{P.weigh}{tick(state.weighed)}
+            </DropdownMenuItem>
+          )}
+          {(canPhoto || canCount || canWeigh) && <DropdownMenuSeparator />}
           <DropdownMenuItem onSelect={h.openRecord}><FilePenLine className="w-4 h-4 mr-2" />{P.open}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

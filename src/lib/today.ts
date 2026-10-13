@@ -15,7 +15,7 @@ export interface TodaySourceSpec { form: string; fields: readonly string[]; grid
 /** The single map of form numbers to the answer keys the Today page reads. Rename a field, update this. */
 export const TODAY_FORMS = {
   preops:     { form: "FRM-903", fields: ["inspection_date", "shift", "area_line", "released_by"], grids: {} },
-  lots:       { form: "FRM-520", fields: ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check", "batches", "rework"], grids: { ingredients: ["ingredient"] } },
+  lots:       { form: "FRM-520", fields: ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check", "batches", "rework", "pack_weight_1", "pack_weight_2", "pack_weight_3"], grids: { ingredients: ["ingredient"] } },
   releases:   { form: "FRM-701", fields: ["product_name", "lot_code", "decision", "release_date"], grids: {} },
   dispatches: { form: "FRM-801", fields: ["dispatch_date", "customer"], grids: { loaded: ["product", "lot_code"] } },
   holds:      { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"], grids: {} },
@@ -115,12 +115,14 @@ export interface LotSummary {
 }
 
 /** Derived, like every state here: nothing is stored for "packing done". */
-export interface PackingState { checked: boolean; counted: boolean; done: boolean }
+/** `weighed`: the three packs of the net-weight check are on the lot record (FRM-520 from its v2). */
+export interface PackingState { checked: boolean; counted: boolean; weighed: boolean; done: boolean }
 
 export function packingState(lot: TodayEntry): PackingState {
   const checked = str(lot.data.code_check) !== "";
   const counted = [lot.data.racked_count, lot.data.units_packed, lot.data.not_packed].every(v => str(v) !== "");
-  return { checked, counted, done: checked && counted };
+  const weighed = [lot.data.pack_weight_1, lot.data.pack_weight_2, lot.data.pack_weight_3].every(v => str(v) !== "");
+  return { checked, counted, weighed, done: checked && counted && weighed };
 }
 
 function sameLot(product: unknown, lot: unknown, otherProduct: unknown, otherLot: unknown): boolean {

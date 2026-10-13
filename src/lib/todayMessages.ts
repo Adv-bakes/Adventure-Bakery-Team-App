@@ -80,6 +80,11 @@ export interface TodayMessages {
     sayWhy: string; notANumber: string; savedCounts(lot: string, product: string): string;
     firstPackDone: string; countsDone: string; optional: string;
     answer: string; answerHelp: string; answerDisagrees: string; savedAnswer(lot: string, product: string): string;
+    /** The three packs of the net-weight check, weighed at packing (FRM-520 v2). */
+    weigh: string; weighDone: string; weighTitle(lot: string, product: string): string; weighHelp: string;
+    declared: string; tare: string; unit: string; packWeight(n: number): string;
+    weightOk(average: number, declared: number, unit: string): string; weightBelow(average: number, declared: number, unit: string): string;
+    weightUnreadable: string; savedWeights(lot: string, product: string): string; savedBelow: string;
   };
   /** "Follow this lot": one lot + product, step by step (LotFlow.tsx). */
   flow: {
@@ -276,7 +281,7 @@ const en: TodayMessages = {
   },
   pack: {
     button: "Record packing",
-    doneTip: "Record packing - first pack checked and counts entered",
+    doneTip: "Record packing - first pack checked, counts entered and packs weighed",
     photo: "Photograph the first pack",
     counts: "Enter the counts",
     open: "Open the record",
@@ -312,6 +317,19 @@ const en: TodayMessages = {
     answerHelp: "What the code on the first pack shows, and who checked it. Use this when there is no photo, or to record a pack that did not match.",
     answerDisagrees: "The last photo did not agree with this answer. Photograph the corrected pack, or change the answer.",
     savedAnswer: (lot, product) => `First pack answered · Lot ${lot} · ${product}`,
+    weigh: "Weigh three packs",
+    weighDone: "Three packs weighed",
+    weighTitle: (lot, product) => `Net weight · Lot ${lot} · ${product}`,
+    weighHelp: "Weigh three finished packs from this lot, each one whole, on the calibrated scale. The app takes the empty packaging off and averages them.",
+    declared: "Net weight on the label",
+    tare: "Empty packaging weight",
+    unit: "Unit weighed in",
+    packWeight: n => `Pack ${n} weight`,
+    weightOk: (average, declared, unit) => `Average net weight ${average} ${unit}, at or above the ${declared} ${unit} on the label.`,
+    weightBelow: (average, declared, unit) => `Average net weight ${average} ${unit} is BELOW the ${declared} ${unit} on the label. Stop packing, hold the lot on FRM-702 and tell the SQF Practitioner. The weights are still saved.`,
+    weightUnreadable: "The net weight cannot be worked out. Write the label weight as one figure with its unit (for example 4 oz), choose the unit, and enter each weight as a number above zero.",
+    savedWeights: (lot, product) => `Pack weights saved · Lot ${lot} · ${product}`,
+    savedBelow: "Pack weights saved. The average is BELOW the label: stop packing, hold the lot on FRM-702 and tell the SQF Practitioner.",
   },
   flow: {
     follow: "Follow this lot",
@@ -532,7 +550,7 @@ const es: TodayMessages = {
   },
   pack: {
     button: "Registrar empaque",
-    doneTip: "Registrar empaque - primer empaque revisado y conteos anotados",
+    doneTip: "Registrar empaque - primer empaque revisado, conteos anotados y empaques pesados",
     photo: "Fotografiar el primer empaque",
     counts: "Anotar los conteos",
     open: "Abrir el registro",
@@ -568,6 +586,19 @@ const es: TodayMessages = {
     answerHelp: "Lo que muestra el código del primer empaque, y quién lo revisó. Úselo cuando no hay foto, o para anotar un empaque que no coincidió.",
     answerDisagrees: "La última foto no coincidió con esta respuesta. Fotografíe el empaque corregido, o cambie la respuesta.",
     savedAnswer: (lot, product) => `Primer empaque contestado · Lote ${lot} · ${product}`,
+    weigh: "Pesar tres empaques",
+    weighDone: "Tres empaques pesados",
+    weighTitle: (lot, product) => `Peso neto · Lote ${lot} · ${product}`,
+    weighHelp: "Pese tres empaques terminados de este lote, cada uno entero, en la báscula calibrada. La aplicación resta el empaque vacío y saca el promedio.",
+    declared: "Peso neto en la etiqueta",
+    tare: "Peso del empaque vacío",
+    unit: "Unidad de pesado",
+    packWeight: n => `Peso del empaque ${n}`,
+    weightOk: (average, declared, unit) => `Peso neto promedio ${average} ${unit}, igual o mayor que los ${declared} ${unit} de la etiqueta.`,
+    weightBelow: (average, declared, unit) => `El peso neto promedio ${average} ${unit} está POR DEBAJO de los ${declared} ${unit} de la etiqueta. Detenga el empaque, retenga el lote en FRM-702 y avise al SQF Practitioner. Los pesos se guardan igual.`,
+    weightUnreadable: "No se puede calcular el peso neto. Escriba el peso de la etiqueta como una sola cifra con su unidad (por ejemplo 4 oz), elija la unidad y anote cada peso como un número mayor que cero.",
+    savedWeights: (lot, product) => `Pesos de empaque guardados · Lote ${lot} · ${product}`,
+    savedBelow: "Pesos guardados. El promedio está POR DEBAJO de la etiqueta: detenga el empaque, retenga el lote en FRM-702 y avise al SQF Practitioner.",
   },
   flow: {
     follow: "Seguir este lote",

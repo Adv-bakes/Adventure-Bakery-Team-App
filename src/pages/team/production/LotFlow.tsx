@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   AlertTriangle, ArrowLeft, Calculator, Camera, CheckCircle2, ChevronLeft, ChevronRight, Circle, CircleDot, ClipboardCheck,
-  FilePenLine, Keyboard, Loader2, Mic, RotateCcw, ShieldAlert,
+  FilePenLine, Keyboard, Loader2, Mic, RotateCcw, Scale, ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,24 +153,32 @@ function PackStep({ doc, lot, today, lang, back, onSaved }: {
   const h = usePacking({ doc, entryId: lot.id, lot: lot.lotCode, product: lot.product, today, state, lang, onSaved, backTo: back, inline: true });
   // With the first pack answered, the counts are what is left: they are shown without a tap. The
   // camera is never opened for the person - a browser only allows it from a tap.
-  const opened = useRef(false);
+  // Then the three packs to weigh. Each is opened once, so putting one away does not bring it back.
+  const opened = useRef<"" | "counts" | "weights">("");
   useEffect(() => {
-    if (opened.current || !h.canCount || h.showing) return;
-    if ((state.checked || !h.canPhoto) && !state.counted) { opened.current = true; void h.openCounts(); }
+    if (h.showing) return;
+    const answered = state.checked || !h.canPhoto;
+    if (h.canCount && answered && !state.counted) {
+      if (opened.current === "") { opened.current = "counts"; void h.openCounts(); }
+    } else if (h.canWeigh && answered && (state.counted || !h.canCount) && !state.weighed) {
+      if (opened.current !== "weights") { opened.current = "weights"; void h.openWeights(); }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.checked, state.counted, h.showing]);
+  }, [state.checked, state.counted, state.weighed, h.showing]);
   return (
     <div className="space-y-4">
       {h.fileInput}
       <div className="space-y-1">
         {state.checked && <Status done>{F.firstPackDone}</Status>}
         {state.counted && <Status done>{F.countsDone}</Status>}
+        {state.weighed && <Status done>{P.weighDone}.</Status>}
         {state.counted && !state.checked && <p className="flex items-center gap-1.5 text-sm font-medium text-amber-800"><AlertTriangle className="w-4 h-4" />{F.firstPackNeeded}</p>}
       </div>
       <div className="flex flex-wrap gap-2">
         {h.canPhoto && <Choice icon={<Camera className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "photo"} disabled={h.busy} onClick={h.pickPhoto}>{P.photo}</Choice>}
         {h.canAnswer && <Choice icon={<ClipboardCheck className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "answer"} disabled={h.busy} onClick={() => { void h.openAnswer(); }}>{P.answer}</Choice>}
         {h.canCount && <Choice icon={<Calculator className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "counts"} disabled={h.busy} onClick={() => { void h.openCounts(); }}>{P.counts}</Choice>}
+        {h.canWeigh && <Choice icon={<Scale className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "weights"} disabled={h.busy} onClick={() => { void h.openWeights(); }}>{P.weigh}</Choice>}
         <Choice icon={<FilePenLine className="w-4 h-4 mr-1.5" />} disabled={h.busy} onClick={h.openRecord}>{P.open}</Choice>
       </div>
       {h.showing && (
