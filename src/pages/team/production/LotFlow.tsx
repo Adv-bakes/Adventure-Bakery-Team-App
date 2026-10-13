@@ -517,7 +517,7 @@ function RetentionStep({ doc, step, lot, lang, back, onSaved }: {
   );
 }
 
-// ---------- Retention sample and release (the SQF Practitioner's; their own records) ----------
+// ---------- A retention sample already on the shelf, and the release (the SQF Practitioner's) ----------
 
 function ReleasePanel({ step, lot, lang, docs, back }: {
   step: FlowStep; lot: LotSummary; lang: TodayLang; docs: { retention?: Doc; release?: Doc }; back: string;

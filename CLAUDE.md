@@ -1337,8 +1337,13 @@ itself is unchanged. Built in three pull requests; **the first two are in: the i
 their pop-ups, and the page. Mixing one ingredient at a time and "Start a lot step by step" are the
 third and NOT yet built** - the Mixing step links to the lot record.
 
-- **Steps, in order:** Mixing, Baking, Seal checks, Packing, Sign and submit; then Retention sample and
-  Release for admins and owners only (FSQM-020). A step strip shows done / in progress / not started
+- **Steps, in order:** Mixing, Baking, Seal checks, Packing, Retention sample, Sign and submit; then
+  Release for admins and owners only (FSQM-020). **The retention sample is step 5 for everyone**
+  (owner, 2026-10-12): it is taken at packing - the lot record already counts it among the units not
+  packed - so the person packing logs it, and FSQM-014 v2 (migration `20261012000006`, GJM) moved
+  taking and logging it from the Quality Team to production staff. It is never required for Sign and
+  submit (FSQM-014: retention is by product, not every lot), so a lot with no sample is passed with
+  the arrow. A step strip shows done / in progress / not started
   and jumps; large previous / next arrows at the edges; the arrow keys work when nothing is being typed.
   **No step is locked** (owner): sealing often starts while later loads bake. No finger swipe (owner).
 - **Nothing is stored for the flow.** `flowSteps(records, lot, today, isAdmin)` reads every state from
