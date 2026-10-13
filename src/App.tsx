@@ -16,6 +16,7 @@ import NdaNext from "./pages/NdaNext";
 import BrandAuth from "./pages/BrandAuth";
 import TeamAuth from "./pages/TeamAuth";
 import Today from "./pages/team/Today";
+import LotFlow from "./pages/team/production/LotFlow";
 import AcceptInvite from "./pages/AcceptInvite";
 import ResetPassword from "./pages/ResetPassword";
 import AccessPending from "./pages/AccessPending";
@@ -242,6 +243,11 @@ const App = () => (
 
           {/* ========== PORTAL 2: AB TEAM PORTAL ========== */}
           {/* The floor's home page: the day in order (WORKFLOW_ARCHITECTURE.md). Staff land here. */}
+          <Route path="/team/today/lot/:entryId" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <LotFlow />
+            </ProtectedRoute>
+          } />
           <Route path="/team/today" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <TeamLayout><Today /></TeamLayout>

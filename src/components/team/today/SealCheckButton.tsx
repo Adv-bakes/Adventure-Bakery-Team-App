@@ -83,10 +83,12 @@ export interface SealCheckProps {
   onSaved: (saved?: { last?: LastLoad }) => void;
   /** The query that brings "Back" on the full record to where the person was. */
   backTo?: string;
+  /** Shown on a page, not in a pop-up: nothing to cancel, and the input is cleared after a save. */
+  inline?: boolean;
 }
 
 /** The seal-check input of one batch: its state, its saves, and the pop-up's body and buttons. */
-export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, backTo = "from=today" }: SealCheckProps) {
+export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, backTo = "from=today", inline }: SealCheckProps) {
   const formId = useId();
   // The dialog's common wording (Accept, Try again, Heard ...) is shared with the bake button.
   const M = TODAY_MSG[lang].bake;
@@ -274,6 +276,8 @@ export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, b
       }
       setShowing(false);
       setBusy(false);
+      // On a page the input stays where it is, cleared for the next one.
+      if (inline) open("enter");
       onSaved({ last: p.last });
     } catch (e) {
       console.error(e);
@@ -477,13 +481,13 @@ export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, b
             )}
             {mode === "speak" && !pending && (
               <>
-                <Button variant="ghost" size="sm" onClick={close}>{M.cancel}</Button>
+                <Button variant="ghost" size="sm" onClick={inline ? () => open("enter") : close}>{M.cancel}</Button>
                 {!listening && speechRecognitionSupported && <Button variant="outline" size="sm" onClick={again}>{M.again}</Button>}
               </>
             )}
             {mode === "enter" && (
               <>
-                <Button variant="ghost" size="sm" disabled={busy} onClick={close}>{M.cancel}</Button>
+                {!inline && <Button variant="ghost" size="sm" disabled={busy} onClick={close}>{M.cancel}</Button>}
                 <Button type="submit" form={formId} size="sm" disabled={busy || !enteredRow || needsReviewer(enteredLast)} className={GOLD}>
                   {busy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{M.save}
                 </Button>
@@ -491,7 +495,7 @@ export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, b
             )}
             {mode === "done" && (
               <>
-                <Button variant="ghost" size="sm" disabled={busy} onClick={close}>{M.cancel}</Button>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={inline ? () => open("enter") : close}>{M.cancel}</Button>
                 <Button
                   size="sm" disabled={busy || choice === "none" || needsReviewer(choice)} className={GOLD}
                   onClick={() => accept({ fill: null, last: choice as LastLoad, transcript: "" })}

@@ -35,7 +35,7 @@ const TODAY = "2026-10-08";
 // ---- mapping check ----
 check("mapping: all present", T.checkTodayMapping({
   "FRM-903": ["inspection_date", "shift", "area_line", "released_by"],
-  "FRM-520": ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check", "ingredients"],
+  "FRM-520": ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check", "batches", "rework", "ingredients"],
   "FRM-701": ["product_name", "lot_code", "decision", "release_date"],
   "FRM-801": ["dispatch_date", "customer", "loaded"],
   "FRM-702": ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"],

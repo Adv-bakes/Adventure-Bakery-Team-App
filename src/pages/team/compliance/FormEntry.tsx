@@ -44,6 +44,7 @@ import { FIRST_PACK, firstPackReady, type PackLine } from "@/lib/firstPackCheck"
 import { photographFirstPack } from "@/lib/firstPackPhoto";
 import { PackCountLine } from "@/components/team/forms/PackCountLine";
 import { PACK_COUNTS, packCounts, packCountsReady } from "@/lib/packCounts";
+import { isFlowStep, lotFlowHref } from "@/lib/lotFlow";
 import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatureReview";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { RecallWorkspace } from "@/components/team/trace/RecallWorkspace";
@@ -98,7 +99,13 @@ export default function FormEntry() {
   const cameFromNotifications = searchParams.get("from") === "notifications";
   // The Today page opens records the same way, for the same reason: Back returns to the day.
   const cameFromToday = searchParams.get("from") === "today";
-  const backHref = cameFromNotifications ? "/team/notifications" : cameFromToday ? "/team/today" : `/team/compliance/sops?doc=${docId}`;
+  // The page that follows one lot opens records too, and Back returns to that lot at the same step.
+  const fromLot = searchParams.get("from") === "lot" ? searchParams.get("lot") : null;
+  const fromStep = searchParams.get("step");
+  const backHref = fromLot ? lotFlowHref(fromLot, isFlowStep(fromStep) ? fromStep : undefined)
+    : cameFromNotifications ? "/team/notifications" : cameFromToday ? "/team/today" : `/team/compliance/sops?doc=${docId}`;
+  const backLabel = (formNumber: string | null | undefined) =>
+    fromLot ? "Back to the lot" : cameFromNotifications ? "Back to Notifications" : cameFromToday ? "Back to Today" : `Back to ${formNumber ?? "form"}`;
   const location = useLocation();
   const { role } = useUserRole();
   const isAdmin = role === "admin" || role === "owner";
@@ -836,7 +843,7 @@ export default function FormEntry() {
           className="inline-flex items-center gap-1 text-xs text-[#C89B3C] hover:underline"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          {cameFromNotifications ? "Back to Notifications" : cameFromToday ? "Back to Today" : `Back to ${doc.sop_number ?? "form"}`}
+          {backLabel(doc.sop_number)}
         </Link>
         <div className="flex flex-wrap items-center gap-2 mt-1.5">
           <h1 className="text-2xl font-bold" style={{ color: "#F5F1E6" }}>{doc.title}</h1>
@@ -1190,7 +1197,7 @@ export default function FormEntry() {
           className="inline-flex items-center gap-1 text-xs text-[#C89B3C] hover:underline"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          {cameFromNotifications ? "Back to Notifications" : cameFromToday ? "Back to Today" : `Back to ${doc.sop_number ?? "form"}`}
+          {backLabel(doc.sop_number)}
         </Link>
         {canEdit && (
           <>
