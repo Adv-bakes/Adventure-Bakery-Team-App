@@ -32,7 +32,7 @@
 // anything out of the ordinary - a draft on an earlier revision of the form, limits that no longer
 // match, a column missing - opens the record instead of saving.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, CheckCircle2, ChevronDown, FilePenLine, Flame, Keyboard, Loader2, Mic, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
@@ -74,7 +74,7 @@ const GOLD = "bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#C89B3C]/90";
 // The pop-up sits on a cream panel, where the default field looks switched off: white, with a clear edge.
 const FIELD = "bg-white border-[#2A1F0E]/75 text-[#2A1F0E] font-medium placeholder:font-normal placeholder:text-[#2A1F0E]/55 focus-visible:ring-[#C89B3C]";
 
-export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled, onSaved }: {
+export interface BakeLoadProps {
   doc: Doc;
   lot: string;
   product: string;
@@ -84,8 +84,15 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
   state: BakeState;
   lang: TodayLang;
   disabled?: boolean;
-  onSaved: () => void;
-}) {
+  /** Told what was saved, so a page that follows one lot knows when to move on. */
+  onSaved: (saved?: { last?: LastLoad }) => void;
+  /** The query that brings "Back" on the full record to where the person was. */
+  backTo?: string;
+}
+
+/** The bake input of one batch: its state, its saves, and the pop-up's body and buttons. */
+export function useBakeLoad({ doc, lot, product, today, state, lang, onSaved, backTo = "from=today" }: BakeLoadProps) {
+  const formId = useId();
   const M = TODAY_MSG[lang].bake;
   const navigate = useNavigate();
   const schema = getFormSchema(doc.content);
@@ -126,7 +133,7 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
     setBusy(true);
     try {
       const r = await dayRecord();
-      navigate(`/team/compliance/forms/${doc.id}/entries/${r.id}?from=today`, f ? {
+      navigate(`/team/compliance/forms/${doc.id}/entries/${r.id}?${backTo}`, f ? {
         state: { voiceCommand: newVoiceState(r.id, f, transcript, lang) },
       } : undefined);
     } catch (e) {
@@ -251,7 +258,7 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
       }
       setShowing(false);
       setBusy(false);
-      onSaved();
+      onSaved({ last: p.last });
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : M.openFailed);
@@ -335,52 +342,11 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
     </div>
   );
 
-  return (
+  const title = mode === "done" ? M.doneTitle(lot, product) : M.title(lot, product);
+  const description = mode === "speak" ? `${M.say(card.say, card.sayWithProbe)}${canMark ? ` ${M.sayLast}` : ""}` : mode === "done" ? M.lastLabel : M.enter;
+  // The same input, for the pop-up of the row's button and for a page that follows one lot.
+  const body = (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          {finished ? (
-            // Finished for the operator: small and green, the label kept for a hover and a screen reader.
-            <Button
-              size="sm" variant="outline" disabled={disabled || busy} title={M.doneTip} aria-label={M.doneTip}
-              className="px-2 border-emerald-600/50 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
-            >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Flame className="w-4 h-4" />}
-              <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
-            </Button>
-          ) : (
-            <Button size="sm" variant="outline" disabled={disabled || busy}>
-              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Flame className="w-4 h-4 mr-1" />}
-              {M.button}
-              <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-70" />
-            </Button>
-          )}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => open("speak")}><Mic className="w-4 h-4 mr-2" />{M.speak}</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => open("enter")}><Keyboard className="w-4 h-4 mr-2" />{M.enter}</DropdownMenuItem>
-          {canMark && state.loads > 0 && state.done !== "lot" && (
-            <DropdownMenuItem onSelect={() => open("done")}><CheckCircle2 className="w-4 h-4 mr-2" />{M.done}</DropdownMenuItem>
-          )}
-          {canMark && finished && (
-            <DropdownMenuItem onSelect={reopen}><RotateCcw className="w-4 h-4 mr-2" />{M.notDone}</DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => openRecord(startedBakeFill({ product, lot }, new Date(), lang), "")}>
-            <FilePenLine className="w-4 h-4 mr-2" />{M.open}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Dialog open={showing} onOpenChange={o => { if (!o) close(); }}>
-        <DialogContent className="max-w-md" lang={lang}>
-          <DialogHeader>
-            <DialogTitle className="text-base">{mode === "done" ? M.doneTitle(lot, product) : M.title(lot, product)}</DialogTitle>
-            <DialogDescription>
-              {mode === "speak" ? `${M.say(card.say, card.sayWithProbe)}${canMark ? ` ${M.sayLast}` : ""}` : mode === "done" ? M.lastLabel : M.enter}
-            </DialogDescription>
-          </DialogHeader>
-
           {mode === "speak" && (
             <div className="space-y-3 text-sm">
               {!speechRecognitionSupported && <p className="text-amber-800">{M.noSpeech}</p>}
@@ -431,7 +397,7 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
 
           {mode === "enter" && (
             <form
-              id="bake-entry" className="space-y-3 text-sm"
+              id={formId} className="space-y-3 text-sm"
               onSubmit={e => { e.preventDefault(); if (entered && !needsReviewer(entered.last) && !busy) take(entered, true); }}
             >
               <div className="grid grid-cols-3 gap-2">
@@ -468,7 +434,10 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
 
           {mode === "done" && <div className="text-sm">{lastChoice(["batch", "lot"])}</div>}
 
-          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+    </>
+  );
+  const footer = (
+    <>
             {mode === "speak" && pending && (
               <>
                 {pending.fill && <Button variant="ghost" size="sm" disabled={busy} onClick={() => { setShowing(false); openRecord(pending.fill, pending.transcript); }}>{M.openInstead}</Button>}
@@ -487,7 +456,7 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
             {mode === "enter" && (
               <>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={close}>{M.cancel}</Button>
-                <Button type="submit" form="bake-entry" size="sm" disabled={busy || !entered || needsReviewer(entered.last)} className={GOLD}>
+                <Button type="submit" form={formId} size="sm" disabled={busy || !entered || needsReviewer(entered.last)} className={GOLD}>
                   {busy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{M.save}
                 </Button>
               </>
@@ -503,7 +472,62 @@ export function BakeLoadButton({ doc, lot, product, today, state, lang, disabled
                 </Button>
               </>
             )}
-          </DialogFooter>
+    </>
+  );
+
+  return { busy, mode, showing, canMark, finished, pending, open, close, reopen, openRecord, title, description, body, footer };
+}
+
+export function BakeLoadButton(props: BakeLoadProps) {
+  const { lot, product, lang, state, disabled } = props;
+  const M = TODAY_MSG[lang].bake;
+  const h = useBakeLoad(props);
+  const { busy, canMark, finished } = h;
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          {finished ? (
+            // Finished for the operator: small and green, the label kept for a hover and a screen reader.
+            <Button
+              size="sm" variant="outline" disabled={disabled || busy} title={M.doneTip} aria-label={M.doneTip}
+              className="px-2 border-emerald-600/50 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
+            >
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Flame className="w-4 h-4" />}
+              <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" disabled={disabled || busy}>
+              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Flame className="w-4 h-4 mr-1" />}
+              {M.button}
+              <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-70" />
+            </Button>
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => h.open("speak")}><Mic className="w-4 h-4 mr-2" />{M.speak}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => h.open("enter")}><Keyboard className="w-4 h-4 mr-2" />{M.enter}</DropdownMenuItem>
+          {canMark && state.loads > 0 && state.done !== "lot" && (
+            <DropdownMenuItem onSelect={() => h.open("done")}><CheckCircle2 className="w-4 h-4 mr-2" />{M.done}</DropdownMenuItem>
+          )}
+          {canMark && finished && (
+            <DropdownMenuItem onSelect={h.reopen}><RotateCcw className="w-4 h-4 mr-2" />{M.notDone}</DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => h.openRecord(startedBakeFill({ product, lot }, new Date(), lang), "")}>
+            <FilePenLine className="w-4 h-4 mr-2" />{M.open}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={h.showing} onOpenChange={o => { if (!o) h.close(); }}>
+        <DialogContent className="max-w-md" lang={lang}>
+          <DialogHeader>
+            <DialogTitle className="text-base">{h.title}</DialogTitle>
+            <DialogDescription>{h.description}</DialogDescription>
+          </DialogHeader>
+          {h.body}
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">{h.footer}</DialogFooter>
         </DialogContent>
       </Dialog>
     </>

@@ -26,7 +26,7 @@
 // lot code; with none, one is created with those three answers filled in - but never for a mark
 // on its own, which needs a check already recorded.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle2, ChevronDown, FilePenLine, Keyboard, Loader2, Mic, RotateCcw, Wind } from "lucide-react";
 import { toast } from "sonner";
@@ -69,7 +69,7 @@ const FIELD = "bg-white border-[#2A1F0E]/75 text-[#2A1F0E] font-medium placehold
 const LABEL = "text-xs font-medium text-[#2A1F0E]";
 const GOLD = "bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#C89B3C]/90";
 
-export function SealCheckButton({ doc, lot, product, today, state, lang, disabled, onSaved }: {
+export interface SealCheckProps {
   doc: Doc;
   lot: string;
   product: string;
@@ -79,8 +79,15 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
   state: SealState;
   lang: TodayLang;
   disabled?: boolean;
-  onSaved: () => void;
-}) {
+  /** Told what was saved, so a page that follows one lot knows when to move on. */
+  onSaved: (saved?: { last?: LastLoad }) => void;
+  /** The query that brings "Back" on the full record to where the person was. */
+  backTo?: string;
+}
+
+/** The seal-check input of one batch: its state, its saves, and the pop-up's body and buttons. */
+export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, backTo = "from=today" }: SealCheckProps) {
+  const formId = useId();
   // The dialog's common wording (Accept, Try again, Heard ...) is shared with the bake button.
   const M = TODAY_MSG[lang].bake;
   const S = TODAY_MSG[lang].seal;
@@ -125,7 +132,7 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
     setBusy(true);
     try {
       const r = await batchRecord();
-      navigate(`/team/compliance/forms/${doc.id}/entries/${r.id}?from=today`, f ? {
+      navigate(`/team/compliance/forms/${doc.id}/entries/${r.id}?${backTo}`, f ? {
         state: { voiceCommand: newVoiceState(r.id, f, transcript, lang) },
       } : undefined);
     } catch (e) {
@@ -267,7 +274,7 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
       }
       setShowing(false);
       setBusy(false);
-      onSaved();
+      onSaved({ last: p.last });
     } catch (e) {
       console.error(e);
       toast.error(e instanceof Error ? e.message : S.openFailed);
@@ -374,52 +381,11 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
     </div>
   );
 
-  return (
+  const title = mode === "done" ? S.doneTitle(lot, product) : S.title(lot, product);
+  const description = mode === "speak" ? `${S.say}${canMark ? ` ${S.sayLast}` : ""}` : mode === "done" ? S.lastLabel : S.enter;
+  // The same input, for the pop-up of the row's button and for a page that follows one lot.
+  const body = (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          {finished ? (
-            // Finished for the operator: small and green, the label kept for a hover and a screen reader.
-            <Button
-              size="sm" variant="outline" disabled={disabled || busy} title={S.doneTip} aria-label={S.doneTip}
-              className="px-2 border-emerald-600/50 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
-            >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wind className="w-4 h-4" />}
-              <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
-            </Button>
-          ) : (
-            <Button size="sm" variant="outline" disabled={disabled || busy}>
-              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Wind className="w-4 h-4 mr-1" />}
-              {S.button}
-              <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-70" />
-            </Button>
-          )}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => open("speak")}><Mic className="w-4 h-4 mr-2" />{S.speak}</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => open("enter")}><Keyboard className="w-4 h-4 mr-2" />{S.enter}</DropdownMenuItem>
-          {canMark && state.loads > 0 && state.done !== "lot" && (
-            <DropdownMenuItem onSelect={() => open("done")}><CheckCircle2 className="w-4 h-4 mr-2" />{S.done}</DropdownMenuItem>
-          )}
-          {canMark && finished && (
-            <DropdownMenuItem onSelect={reopen}><RotateCcw className="w-4 h-4 mr-2" />{S.notDone}</DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => openRecord(null, "")}>
-            <FilePenLine className="w-4 h-4 mr-2" />{S.open}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Dialog open={showing} onOpenChange={o => { if (!o) close(); }}>
-        <DialogContent className="max-w-md" lang={lang}>
-          <DialogHeader>
-            <DialogTitle className="text-base">{mode === "done" ? S.doneTitle(lot, product) : S.title(lot, product)}</DialogTitle>
-            <DialogDescription>
-              {mode === "speak" ? `${S.say}${canMark ? ` ${S.sayLast}` : ""}` : mode === "done" ? S.lastLabel : S.enter}
-            </DialogDescription>
-          </DialogHeader>
-
           {mode === "speak" && (
             <div className="space-y-3 text-sm">
               {!speechRecognitionSupported && <p className="text-amber-800">{M.noSpeech}</p>}
@@ -470,7 +436,7 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
 
           {mode === "enter" && (
             <form
-              id="seal-entry" className="space-y-3 text-sm"
+              id={formId} className="space-y-3 text-sm"
               onSubmit={e => { e.preventDefault(); if (enteredRow && !needsReviewer(enteredLast) && !busy) take(enteredRow, enteredLast, "", true); }}
             >
               <div className="grid grid-cols-2 gap-2">
@@ -496,7 +462,10 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
 
           {mode === "done" && <div className="text-sm">{lastChoice(["batch", "lot"])}</div>}
 
-          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+    </>
+  );
+  const footer = (
+    <>
             {mode === "speak" && pending && (
               <>
                 {pending.fill && <Button variant="ghost" size="sm" disabled={busy} onClick={() => { setShowing(false); openRecord(pending.fill, pending.transcript); }}>{M.openInstead}</Button>}
@@ -515,7 +484,7 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
             {mode === "enter" && (
               <>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={close}>{M.cancel}</Button>
-                <Button type="submit" form="seal-entry" size="sm" disabled={busy || !enteredRow || needsReviewer(enteredLast)} className={GOLD}>
+                <Button type="submit" form={formId} size="sm" disabled={busy || !enteredRow || needsReviewer(enteredLast)} className={GOLD}>
                   {busy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{M.save}
                 </Button>
               </>
@@ -531,7 +500,62 @@ export function SealCheckButton({ doc, lot, product, today, state, lang, disable
                 </Button>
               </>
             )}
-          </DialogFooter>
+    </>
+  );
+
+  return { busy, mode, showing, canMark, finished, pending, open, close, reopen, openRecord, title, description, body, footer };
+}
+
+export function SealCheckButton(props: SealCheckProps) {
+  const { lang, state, disabled } = props;
+  const S = TODAY_MSG[lang].seal;
+  const h = useSealCheck(props);
+  const { busy, canMark, finished } = h;
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          {finished ? (
+            // Finished for the operator: small and green, the label kept for a hover and a screen reader.
+            <Button
+              size="sm" variant="outline" disabled={disabled || busy} title={S.doneTip} aria-label={S.doneTip}
+              className="px-2 border-emerald-600/50 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
+            >
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wind className="w-4 h-4" />}
+              <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" disabled={disabled || busy}>
+              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Wind className="w-4 h-4 mr-1" />}
+              {S.button}
+              <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-70" />
+            </Button>
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => h.open("speak")}><Mic className="w-4 h-4 mr-2" />{S.speak}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => h.open("enter")}><Keyboard className="w-4 h-4 mr-2" />{S.enter}</DropdownMenuItem>
+          {canMark && state.loads > 0 && state.done !== "lot" && (
+            <DropdownMenuItem onSelect={() => h.open("done")}><CheckCircle2 className="w-4 h-4 mr-2" />{S.done}</DropdownMenuItem>
+          )}
+          {canMark && finished && (
+            <DropdownMenuItem onSelect={h.reopen}><RotateCcw className="w-4 h-4 mr-2" />{S.notDone}</DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => h.openRecord(null, "")}>
+            <FilePenLine className="w-4 h-4 mr-2" />{S.open}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={h.showing} onOpenChange={o => { if (!o) h.close(); }}>
+        <DialogContent className="max-w-md" lang={lang}>
+          <DialogHeader>
+            <DialogTitle className="text-base">{h.title}</DialogTitle>
+            <DialogDescription>{h.description}</DialogDescription>
+          </DialogHeader>
+          {h.body}
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">{h.footer}</DialogFooter>
         </DialogContent>
       </Dialog>
     </>
