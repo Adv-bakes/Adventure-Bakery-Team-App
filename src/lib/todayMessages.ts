@@ -98,6 +98,7 @@ export interface TodayMessages {
     submitLead: string; submitReady: string; missing: string; missingLine(table: string, line: number, column: string): string; statement: string; signAndSubmit(name: string): string;
     submitted(lot: string, product: string): string; submitFailed: string; needsRecord: string; alreadySubmitted: string;
     finished: string; adminNext: string; openStep: string; startStep: string;
+    olderRecord: string;
     sampleLead: string; sampleNoDiscard: string; sampleNeedsRecord: string; signSample(name: string): string;
     sampleLogged(lot: string, product: string, discard: string): string; sampleFailed: string;
   };
@@ -365,6 +366,7 @@ const en: TodayMessages = {
     sampleLead: "Take one finished pack of this lot. Read what is shown against the pack in your hand, correct what differs, then put it on the retention shelf and sign.",
     sampleNoDiscard: "The discard date could not be worked out from that best-by date. Write it as printed on the pack (for example October 2027), or open the record.",
     sampleNeedsRecord: "This retention sample has to be completed on the record itself.",
+    olderRecord: "This lot record was started on an earlier version of the form, so its packing is finished on the record itself.",
     signSample: name => `Sign as ${name} - sample on the shelf`,
     sampleLogged: (lot, product, discard) => `Retention sample logged · Lot ${lot} · ${product}${discard ? ` · discard due ${discard}` : ""}`,
     sampleFailed: "The retention sample could not be logged.",
@@ -634,6 +636,7 @@ const es: TodayMessages = {
     sampleLead: "Tome un empaque terminado de este lote. Compare lo que se muestra con el empaque que tiene en la mano, corrija lo que difiera, póngalo en el estante de retención y firme.",
     sampleNoDiscard: "No se pudo calcular la fecha de desecho con esa fecha de consumo preferente. Escríbala como está impresa en el empaque (por ejemplo October 2027), o abra el registro.",
     sampleNeedsRecord: "Esta muestra de retención debe completarse en el propio registro.",
+    olderRecord: "Este registro del lote se empezó con una versión anterior del formulario, así que su empaque se termina en el propio registro.",
     signSample: name => `Firmar como ${name} - muestra en el estante`,
     sampleLogged: (lot, product, discard) => `Muestra de retención anotada · Lote ${lot} · ${product}${discard ? ` · desechar el ${discard}` : ""}`,
     sampleFailed: "No se pudo anotar la muestra de retención.",

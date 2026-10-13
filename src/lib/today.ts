@@ -35,6 +35,8 @@ export interface TodayEntry {
   submittedAt: string | null;
   createdBy: string | null;
   submittedBy: string | null;
+  /** The revision of the form the entry was started on (it stays on that layout). */
+  revision?: string | null;
   data: Record<string, any>;     // only the mapped keys
 }
 export type TodayRecords = Record<TodayKind, TodayEntry[]>;

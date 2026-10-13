@@ -1382,6 +1382,13 @@ third and NOT yet built** - the Mixing step links to the lot record.
   when the best-by is changed; a date it cannot read blocks the button. `SAMPLE` is the map of
   FRM-703 ids. Another revision of the form, or disposal, is done on the record. The Today page's
   Release menu still opens the form.
+- **The page never leaves by itself.** The Packing step opens the next input without a tap (counts,
+  then weights), and those inputs hand over to the full record when the lot record is on an earlier
+  revision of the form - so a lot reopened after FRM-520 went to v2 threw the owner straight onto the
+  record (2026-10-12). `loadTodayRecords` now carries each entry's `form_revision`
+  (`TodayEntry.revision`); for an older record the step opens nothing, says its packing is finished on
+  the record, offers only Open the record, and `flowSteps(..., formRevision)` does not wait for pack
+  weights it has no fields for. Anything a step opens by itself must be safe for a record it cannot write.
 - **Outside the team layout on purpose** (no sidebar, no Coach orb): the page is the lot and nothing
   else, and it sets the root font size (`clamp(16px, 1.5vw, 22px)`) like the visitor kiosk, restored
   on leaving. After the first load it refreshes without a spinner, because swapping the page out

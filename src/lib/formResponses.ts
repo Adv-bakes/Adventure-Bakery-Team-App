@@ -762,7 +762,7 @@ export async function loadTodayRecords(): Promise<{ records: TodayRecords; docs:
     const doc = docs[spec.form];
     if (!doc) return;
     const keys = [...spec.fields, ...Object.keys(spec.grids)];
-    const select = ["id", "status", "submitted_at", "created_at", "created_by", "submitted_by", "v__test:data->_test_batch", ...keys.map(k => `v_${k}:data->${k}`)].join(", ");
+    const select = ["id", "status", "form_revision", "submitted_at", "created_at", "created_by", "submitted_by", "v__test:data->_test_batch", ...keys.map(k => `v_${k}:data->${k}`)].join(", ");
     for (let from = 0; ; from += PAGE) {
       const { data, error: err } = await table().select(select).eq("document_id", doc.id).order("id").range(from, from + PAGE - 1);
       if (err) throw err;
@@ -770,7 +770,7 @@ export async function loadTodayRecords(): Promise<{ records: TodayRecords; docs:
         if (r.v__test) continue;
         records[kind].push({
           id: r.id, docId: doc.id, status: r.status, createdAt: r.created_at, submittedAt: r.submitted_at,
-          createdBy: r.created_by ?? null, submittedBy: r.submitted_by ?? null,
+          createdBy: r.created_by ?? null, submittedBy: r.submitted_by ?? null, revision: r.form_revision ?? null,
           data: Object.fromEntries(keys.map(k => [k, r[`v_${k}`]])),
         });
       }
