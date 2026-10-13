@@ -1372,6 +1372,16 @@ third and NOT yet built** - the Mixing step links to the lot record.
   person when still empty and lists team names. Choosing "Matches" after a photo that did not match
   shows a warning, as on the entry page. The step moves on with whichever save completes packing.
   The Today row's Record packing menu does not offer it (not asked for).
+- **The retention sample is logged on the page, without opening FRM-703** (owner, 2026-10-12:
+  "most of the information is already defaulted"). `RetentionStep` shows what `retentionDefaults`
+  looks up (product, lot, bar code, customer, dates), lets the person correct the three answers that
+  are theirs to state - units retained, the best-by date as printed on the pack, the storage
+  location - and one button signs "Sample taken by". It makes the SAME record the form would: a new
+  FRM-703 draft, or the started draft with only its blanks filled, signed and left a draft (the
+  sample is on the shelf until disposal). The discard date is the form's own `derive` rule re-applied
+  when the best-by is changed; a date it cannot read blocks the button. `SAMPLE` is the map of
+  FRM-703 ids. Another revision of the form, or disposal, is done on the record. The Today page's
+  Release menu still opens the form.
 - **Outside the team layout on purpose** (no sidebar, no Coach orb): the page is the lot and nothing
   else, and it sets the root font size (`clamp(16px, 1.5vw, 22px)`) like the visitor kiosk, restored
   on leaving. After the first load it refreshes without a spinner, because swapping the page out

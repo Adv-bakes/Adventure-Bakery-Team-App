@@ -25,12 +25,13 @@ import { useBakeLoad } from "@/components/team/today/BakeLoadButton";
 import { useSealCheck } from "@/components/team/today/SealCheckButton";
 import { usePacking } from "@/components/team/today/PackingButton";
 import {
-  fetchProfileNames, fetchResponse, loadTodayRecords, StaleResponseError, submitResponse,
+  createResponse, fetchProfileNames, fetchResponse, loadTodayRecords, saveResponseData, StaleResponseError, submitResponse,
 } from "@/lib/formResponses";
-import { buildZodSchema, emptyValues, getFormSchema, valueFields, type FormSchema, type GridField } from "@/lib/formSchema";
+import { buildZodSchema, deriveDateValue, emptyValues, getFormSchema, valueFields, type FormSchema, type GridField } from "@/lib/formSchema";
 import { resolveSignatureRequest, withdrawFieldSignatureRequests } from "@/lib/notifications";
 import { packCounts, packCountsReady } from "@/lib/packCounts";
 import { releaseStepHref } from "@/lib/releaseStart";
+import { blanksFilled, retentionDefaults } from "@/lib/retentionStart";
 import { startedBakeFill } from "@/lib/voiceCommands";
 import {
   localDay, lotSummaries, preopState, productionOpen, TODAY_FORMS,
@@ -331,6 +332,174 @@ function SubmitStep({ doc, lot, lang, isAdmin, back, version, onSaved }: {
   );
 }
 
+// ---------- Retention sample: logged here, without opening the form ----------
+
+/** The answers of FRM-703's first section the step shows. Rename a field on the form, update this. */
+const SAMPLE = {
+  shown: ["product_name", "lot_code", "upc", "customer", "date_produced", "date_taken"],
+  typed: ["units_retained", "printed_date", "storage_location"],
+  discard: "discard_due",
+  printed: "printed_date",
+  taken: "date_taken",
+  signature: "taken_by",
+  required: ["product_name", "lot_code", "date_taken", "printed_date", "discard_due", "storage_location"],
+} as const;
+
+/**
+ * FRM-703 is kept as a draft while the sample is on the shelf, and the sample counts as logged once
+ * "Sample taken by" is signed (today.ts retentionStep). Nearly all of its first section is looked
+ * up (retentionStart.ts), so the person reads the answers against the pack in their hand, corrects
+ * the three that are theirs to state, and signs - one tap, the same record as the form would make.
+ * Anything this cannot do (another revision of the form, a date it cannot read) opens the record.
+ */
+function RetentionStep({ doc, step, lot, lang, back, onSaved }: {
+  doc: Doc; step: FlowStep; lot: LotSummary; lang: TodayLang; back: string; onSaved: (s: Saved) => void;
+}) {
+  const F = TODAY_MSG[lang].flow;
+  const R = TODAY_MSG[lang].releaseSteps;
+  const navigate = useNavigate();
+  const schema = getFormSchema(doc.content);
+  const fields = useMemo(() => new Map((schema ? valueFields(schema) : []).map(f => [f.id, f])), [schema]);
+  const usable = !!schema && [...SAMPLE.required, SAMPLE.signature].every(id => fields.has(id));
+  const existing = step.release?.entryId ?? null;
+  const [values, setValues] = useState<Record<string, any> | null>(null);
+  const [signer, setSigner] = useState<{ id: string; name: string } | null>(null);
+  const [needsRecord, setNeedsRecord] = useState(!usable);
+  const [busy, setBusy] = useState(false);
+
+  const openRecord = async () => {
+    if (!step.release) return;
+    setBusy(true);
+    try {
+      const href = await releaseStepHref(step.release, lot, { retention: doc }, back);
+      if (href) { navigate(href); return; }
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : R.startFailed);
+    }
+    setBusy(false);
+  };
+
+  useEffect(() => {
+    if (!usable || !schema) return;
+    let live = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const id = data?.user?.id ?? "";
+        const name = id ? (await fetchProfileNames([id]).catch(() => new Map<string, string>())).get(id) ?? "" : "";
+        const defaults = await retentionDefaults(lot, schema);
+        const r = existing ? await fetchResponse(existing) : null;
+        if (!live) return;
+        // A sample started on an earlier revision of the form has its own layout: the entry page resolves it.
+        if (existing && (!r || r.status !== "draft" || r.form_revision !== doc.revision)) { setNeedsRecord(true); return; }
+        const start: Record<string, any> = { ...emptyValues(schema), ...(r?.data ?? {}) };
+        // What the records can answer goes into BLANK answers only; nothing typed on a started sample is touched.
+        for (const [k, v] of Object.entries(blanksFilled(start, defaults))) start[k] = v;
+        if (!String(start[SAMPLE.taken] ?? "").trim()) start[SAMPLE.taken] = localDay();
+        setSigner(id && name ? { id, name } : null);
+        setValues(start);
+      } catch (e) {
+        console.error(e);
+        if (live) setNeedsRecord(true);
+      }
+    })();
+    return () => { live = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lot.id, existing]);
+
+  const label = (id: string) => fields.get(id)?.label ?? id;
+  const text = (id: string) => String(values?.[id] ?? "").trim();
+  /** The best-by date is read off the pack; the discard date is the form's own rule applied to it. */
+  const setPrinted = (v: string) => setValues(cur => {
+    if (!cur) return cur;
+    const derive = (fields.get(SAMPLE.discard) as { derive?: Parameters<typeof deriveDateValue>[0] } | undefined)?.derive;
+    return { ...cur, [SAMPLE.printed]: v, [SAMPLE.discard]: derive ? deriveDateValue(derive, v) ?? "" : cur[SAMPLE.discard] };
+  });
+  const missing = values ? SAMPLE.required.filter(id => text(id) === "") : [];
+  const units = Number(values?.units_retained);
+  const ready = !!values && !!signer && missing.length === 0 && (!fields.has("units_retained") || (Number.isFinite(units) && units >= 1));
+
+  const sign = async () => {
+    if (!ready || !values || !signer || !schema || busy) return;
+    setBusy(true);
+    try {
+      const signed: Record<string, any> = { ...values, ...(fields.has("units_retained") ? { units_retained: units } : {}), [SAMPLE.signature]: { user_id: signer.id, name: signer.name, signed_at: new Date().toISOString() } };
+      if (existing) {
+        const r = await fetchResponse(existing);
+        if (!r || r.status !== "draft" || r.form_revision !== doc.revision) { toast.message(F.needsRecord); await openRecord(); return; }
+        await saveResponseData(r.id, { ...(r.data ?? {}), ...signed }, r.updated_at);
+      } else {
+        await createResponse(doc, signed);
+      }
+      toast.success(F.sampleLogged(lot.lotCode, lot.product, text(SAMPLE.discard)));
+      setBusy(false);
+      onSaved({ step: "logged" });
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof StaleResponseError ? e.message : F.sampleFailed);
+      setBusy(false);
+    }
+  };
+
+  const openButton = (
+    <Button variant="outline" disabled={busy} onClick={openRecord} className="border-[#2A1F0E]/40 bg-white/70 text-[#2A1F0E] hover:bg-white">
+      <FilePenLine className="w-4 h-4 mr-1.5" />{F.openStep}
+    </Button>
+  );
+  if (needsRecord) {
+    return (
+      <div className="space-y-4">
+        <p className="flex items-start gap-1.5 text-sm text-amber-800"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />{F.sampleNeedsRecord}</p>
+        {openButton}
+      </div>
+    );
+  }
+  if (!values) return <Loader2 className="w-5 h-5 animate-spin text-[#C89B3C]" />;
+  const FIELD = "w-full rounded-md border border-[#2A1F0E]/75 bg-white text-[#2A1F0E] font-medium px-2 py-2 text-sm";
+  return (
+    <div className="space-y-4">
+      <p className="text-sm">{F.sampleLead}</p>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+        {SAMPLE.shown.filter(id => fields.has(id)).map(id => (
+          <div key={id} className="contents">
+            <dt className="opacity-70">{label(id)}</dt>
+            <dd className="font-medium">{text(id) || "—"}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {fields.has("units_retained") && (
+          <label className="flex flex-col justify-end gap-1">
+            <span className="text-xs font-medium">{label("units_retained")}</span>
+            <input className={FIELD} inputMode="numeric" value={values.units_retained ?? ""} onChange={e => setValues({ ...values, units_retained: e.target.value })} />
+          </label>
+        )}
+        <label className="flex flex-col justify-end gap-1">
+          <span className="text-xs font-medium">{label(SAMPLE.printed)}</span>
+          <input className={FIELD} value={values[SAMPLE.printed] ?? ""} onChange={e => setPrinted(e.target.value)} />
+        </label>
+        <label className="flex flex-col justify-end gap-1">
+          <span className="text-xs font-medium">{label("storage_location")}</span>
+          <input className={FIELD} value={values.storage_location ?? ""} onChange={e => setValues({ ...values, storage_location: e.target.value })} />
+        </label>
+      </div>
+      <p className={`text-sm ${text(SAMPLE.discard) ? "" : "text-amber-800"}`}>
+        {text(SAMPLE.discard) ? <>{label(SAMPLE.discard)}: <span className="font-medium">{text(SAMPLE.discard)}</span></> : F.sampleNoDiscard}
+      </p>
+      {fields.get(SAMPLE.signature) && <p className="text-sm italic">"{(fields.get(SAMPLE.signature) as { statement?: string }).statement}"</p>}
+      <div className="flex flex-wrap justify-end gap-2">
+        {openButton}
+        {signer && (
+          <Button onClick={sign} disabled={busy || !ready} className={GOLD}>
+            {busy && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}{F.signSample(signer.name)}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ---------- Retention sample and release (the SQF Practitioner's; their own records) ----------
 
 function ReleasePanel({ step, lot, lang, docs, back }: {
@@ -476,6 +645,10 @@ export default function LotFlow() {
       case "submit": return lots ? <SubmitStep doc={lots} lot={lot} lang={lang} isAdmin={isAdmin} back={back} version={version} onSaved={saved("submit")} /> : null;
       default: {
         const step = steps.find(s => s.key === stepKey);
+        // A sample not yet on the shelf is logged here; once it is, the step shows where it stands.
+        if (step && stepKey === "retention" && step.state !== "done" && docOf("retention")) {
+          return <RetentionStep doc={docOf("retention")!} step={step} lot={lot} lang={lang} back={back} onSaved={saved("retention")} />;
+        }
         return step ? <ReleasePanel step={step} lot={lot} lang={lang} docs={{ retention: docOf("retention"), release: docOf("releases") }} back={back} /> : null;
       }
     }
