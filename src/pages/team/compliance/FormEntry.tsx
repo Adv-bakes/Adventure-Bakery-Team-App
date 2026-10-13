@@ -43,7 +43,9 @@ import { FirstPackCheck, firstPackNotes } from "@/components/team/forms/FirstPac
 import { FIRST_PACK, firstPackReady, type PackLine } from "@/lib/firstPackCheck";
 import { photographFirstPack } from "@/lib/firstPackPhoto";
 import { PackCountLine } from "@/components/team/forms/PackCountLine";
+import { PackWeightLine } from "@/components/team/forms/PackWeightLine";
 import { PACK_COUNTS, packCounts, packCountsReady } from "@/lib/packCounts";
+import { PACK_WEIGHTS, packWeightsReady } from "@/lib/packWeights";
 import { isFlowStep, lotFlowHref } from "@/lib/lotFlow";
 import { TEMPERATURE_REVIEW_FORM, temperatureReviewReady } from "@/lib/temperatureReview";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
@@ -267,6 +269,7 @@ export default function FormEntry() {
   // record itself and kept in step as they change - see ccpDeviations.ts. What was DONE about a
   // deviation stays a person's to fill in.
   const packCountsOn = doc?.sop_number === PACK_COUNTS.form && packCountsReady(schema);
+  const packWeightsOn = doc?.sop_number === PACK_WEIGHTS.form && packWeightsReady(schema);
   const deviationCfg = useMemo(() => deviationFormFor(doc?.sop_number, schema), [doc?.sop_number, schema]);
   const withDeviations = (values: Record<string, any>): Record<string, any> =>
     deviationCfg ? (deriveDeviations(deviationCfg, values).values as Record<string, any>) : values;
@@ -1123,7 +1126,11 @@ export default function FormEntry() {
               />
             ),
             // ...and the three packing counts added up, under their row.
-            more: packCountsOn ? [{ afterField: PACK_COUNTS.after, node: <PackCountLine form={form} /> }] : undefined,
+            // ...and, from the form's v2, the net weight worked out from the three packs weighed.
+            more: [
+              ...(packCountsOn ? [{ afterField: PACK_COUNTS.after, node: <PackCountLine form={form} /> }] : []),
+              ...(packWeightsOn ? [{ afterField: PACK_WEIGHTS.after, node: <PackWeightLine form={form} /> }] : []),
+            ],
           } : undefined}
         />
       </DocSelfContext.Provider>

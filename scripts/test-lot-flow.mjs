@@ -109,7 +109,9 @@ const states = steps => Object.fromEntries(steps.map(s => [s.key, s.state]));
   r.lots.push(a);
   check("first pack answered, counts not: in progress", states(F.flowSteps(r, summary(r, a.id), TODAY, false)).packing, "open");
   Object.assign(a.data, { racked_count: 100, units_packed: "98", not_packed: 2 });
-  check("...and counted: done", states(F.flowSteps(r, summary(r, a.id), TODAY, false)).packing, "done");
+  check("...and counted, the packs not weighed: still in progress", states(F.flowSteps(r, summary(r, a.id), TODAY, false)).packing, "open");
+  Object.assign(a.data, { pack_weight_1: 162, pack_weight_2: 163, pack_weight_3: 170 });
+  check("...and weighed: done", states(F.flowSteps(r, summary(r, a.id), TODAY, false)).packing, "done");
   a.status = "submitted"; a.submittedAt = "2026-10-12T15:00:00Z";
   const admin = F.flowSteps(r, summary(r, a.id), TODAY, true);
   check("a submitted lot record finishes mixing, packing and the record", [states(admin).mixing, states(admin).packing, states(admin).submit], ["done", "done", "done"]);
@@ -134,6 +136,7 @@ check("the first pack alone stays", F.advancesAfter("packing", { step: "checked"
 check("the counts with no first pack stay", F.advancesAfter("packing", { step: "counted" }, withState("packing", "open")), false);
 check("the counts once packing is complete move on", F.advancesAfter("packing", { step: "counted" }, withState("packing", "done")), true);
 check("...and so does the first pack answered last", F.advancesAfter("packing", { step: "checked" }, withState("packing", "done")), true);
+check("...or the packs weighed last", F.advancesAfter("packing", { step: "weighed" }, withState("packing", "done")), true);
 check("a photo kept on the record moves nothing", F.advancesAfter("packing", undefined, withState("packing", "done")), false);
 check("the lot record submitted moves on", F.advancesAfter("submit", undefined, withState("submit", "done")), true);
 check("a release step never moves by itself", F.advancesAfter("retention", undefined, five), false);

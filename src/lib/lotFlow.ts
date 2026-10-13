@@ -111,7 +111,7 @@ export function flowSteps(records: TodayRecords, lot: LotSummary, today: string,
     { key: "mixing", state: submitted ? "done" : mixProgress(entry?.data).state },
     ccpStep("baking", lotBakeState(records, lot, today)),
     ccpStep("sealing", lotSealState(records, lot, today)),
-    { key: "packing", state: lot.packing.done || submitted ? "done" : lot.packing.checked || lot.packing.counted ? "open" : "none" },
+    { key: "packing", state: lot.packing.done || submitted ? "done" : lot.packing.checked || lot.packing.counted || lot.packing.weighed ? "open" : "none" },
     { key: "submit", state: submitted ? "done" : "none" },
   ];
   if (isAdmin) {
@@ -149,12 +149,12 @@ export function stepBefore(steps: FlowStep[], key: FlowStepKey): FlowStepKey | n
 /**
  * Does a save move the page on by itself? Only where the person has said the step is finished:
  * the last load / last check of the batch or the lot, the save that completes packing (the first
- * pack answered and the three counts entered), the last ingredient, the lot record submitted. Anything else stays where it is.
+ * pack answered, the three counts entered, the three packs weighed), the last ingredient, the lot record submitted. Anything else stays where it is.
  */
 export function advancesAfter(key: FlowStepKey, saved: { last?: "batch" | "lot"; step?: string } | undefined, stepsAfterSave: FlowStep[]): boolean {
   const now = stepsAfterSave.find(s => s.key === key)?.state;
   if (key === "baking" || key === "sealing") return !!saved?.last;
-  if (key === "packing") return (saved?.step === "counted" || saved?.step === "checked") && now === "done";
+  if (key === "packing") return (saved?.step === "counted" || saved?.step === "checked" || saved?.step === "weighed") && now === "done";
   if (key === "mixing" || key === "submit") return now === "done";
   // The retention sample signed as on the shelf, from the page.
   if (key === "retention") return saved?.step === "logged" && now === "done";

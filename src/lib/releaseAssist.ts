@@ -25,8 +25,10 @@ export const RELEASE_TARGET = {
   lot: "lot_code",
   checks: "checks",
   note: "note",
+  // The three pack weights are carried over from the lot record, where they are weighed at packing
+  // (FRM-520 v2, 2026-10-12). They are a person's measurements, copied - never a figure suggested.
   fields: ["batch_sheet_ref", "date_produced", "customer", "net_weight_declared", "packaging_tare",
-    "net_weight_unit", "approved_label_ref", "label_version"],
+    "net_weight_unit", "pack_weight_1", "pack_weight_2", "pack_weight_3", "approved_label_ref", "label_version"],
 } as const;
 
 /** `optional` keys are read when present but not required of the form: FRM-606 carried the lot on each row before its v2 and once at the top since. */
@@ -34,7 +36,9 @@ export interface ReleaseSourceSpec { form: string; fields: readonly string[]; gr
 
 /** The single map of form numbers to the answer keys read. Rename a field on one of these forms, update this. */
 export const RELEASE_SOURCES = {
-  lots:     { form: "FRM-520", fields: ["product", "lot_code", "bake_date", "pack_date", "units_packed", "film_lot", "code_check"], grids: { ingredients: ["supplier_lot"] } },
+  // The net-weight block is on the lot record from its v2 (2026-10-12).
+  lots:     { form: "FRM-520", fields: ["product", "lot_code", "bake_date", "pack_date", "units_packed", "film_lot", "code_check"],
+              optional: ["net_weight_declared", "packaging_tare", "net_weight_unit", "pack_weight_1", "pack_weight_2", "pack_weight_3"], grids: { ingredients: ["supplier_lot"] } },
   releases: { form: "FRM-701", fields: ["product_name", "lot_code", "customer", "net_weight_declared", "packaging_tare", "net_weight_unit", "approved_label_ref", "label_version"], grids: {} },
   holds:    { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"], grids: {} },
   preops:   { form: "FRM-903", fields: ["inspection_date", "area_line", "shift"], grids: {} },
@@ -177,6 +181,7 @@ export const CHECK_ROWS = {
   label: "Label is the approved label",
   code: "Date and lot code",
   quantity: "Quantity and pack configuration",
+  weight: "Net weight",
 } as const;
 export type CheckKey = keyof typeof CHECK_ROWS;
 
@@ -284,6 +289,20 @@ export function releaseFill(records: ReleaseRecords, product: string, lot: strin
     fill.warnings.push(
       `No Production Lot Record (FRM-520) found for ${product} lot ${str(lot)}.`
       + (sameCodeOther.length ? ` The same code is on ${plural(sameCodeOther.length, "record")} for another product.` : ""));
+  }
+
+  // --- Weighed at packing: the three packs, with the figures they were judged against. The lot
+  // record's own figures come before the last release's and the specification's - they are what
+  // the person at the scale had in front of them.
+  if (lotRec && WEIGHT_FIELDS.every(k => str(lotRec.data[k]) !== "" && Number.isFinite(Number(lotRec.data[k])))) {
+    for (const k of WEIGHT_FIELDS) put(k, Number(lotRec.data[k]));
+    put("net_weight_declared", lotRec.data.net_weight_declared);
+    if (str(lotRec.data.packaging_tare) !== "" && Number.isFinite(Number(lotRec.data.packaging_tare))) put("packaging_tare", Number(lotRec.data.packaging_tare));
+    put("net_weight_unit", lotRec.data.net_weight_unit);
+    fill.notes.weight = `FRM-520: three packs weighed at packing${isDraft(lotRec) ? " (lot record still a draft)" : ""}: `
+      + `${WEIGHT_FIELDS.map(k => str(lotRec.data[k])).join(", ")}${str(lotRec.data.net_weight_unit) ? ` ${str(lotRec.data.net_weight_unit)}` : ""}. Carried over below.`;
+  } else if (lotRec) {
+    fill.notes.weight = "FRM-520: no pack weights were recorded at packing for this lot. Weigh three packs and enter them below.";
   }
 
   const bakingLine = ccpLine("FRM-507", "oven load", records.baking, "oven_loads", product, lot, ["within_limits"]);
@@ -486,10 +505,31 @@ export function productOptionsForLot(records: ReleaseRecords, lot: string): Sugg
 // ---------- Proposed results ----------
 
 /** The net-weight check is found by how its row label begins, like the others. */
-export const NET_WEIGHT_ROW = "Net weight";
+export const NET_WEIGHT_ROW = CHECK_ROWS.weight;
 const WEIGHT_FIELDS = ["pack_weight_1", "pack_weight_2", "pack_weight_3"] as const;
 const TO_OZ: Record<string, number> = { oz: 1, g: 1 / 28.349523125, lb: 16 };
 const UNIT_WORDS: [RegExp, string][] = [[/^(oz|ounces?)\.?$/i, "oz"], [/^(g|grams?)\.?$/i, "g"], [/^(lb|lbs|pounds?)\.?$/i, "lb"]];
+
+/**
+ * The weight a label declares, in the unit the packs are weighed in. A label often states it twice
+ * ("4 oz (113g)"): the figure given in the unit weighed in is taken as printed, and only when
+ * there is none is the first figure converted. A bare number is read in the unit weighed in.
+ * Anything else - a range, words, a unit not known - is not read.
+ */
+function declaredIn(text: string, unit: string): number | null {
+  if (!TO_OZ[unit]) return null;
+  if (/^\d+(?:\.\d+)?$/.test(text)) return Number(text);
+  const pairs: { n: number; unit: string }[] = [];
+  const rest = text.replace(/(\d+(?:\.\d+)?)\s*([a-z]+)\.?/gi, (whole, n: string, word: string) => {
+    const u = UNIT_WORDS.find(([re]) => re.test(word))?.[1];
+    if (!u) return whole;
+    pairs.push({ n: Number(n), unit: u });
+    return "";
+  });
+  if (pairs.length === 0 || pairs.length > 2 || /[^\s()\/,]/.test(rest)) return null;
+  const same = pairs.find(p => p.unit === unit);
+  return same ? same.n : pairs[0].n * TO_OZ[pairs[0].unit] / TO_OZ[unit];
+}
 
 export interface NetWeight {
   /** The average of the three packs with the empty packaging taken off, in the unit weighed in. */
@@ -506,18 +546,16 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
  * FSQM-020's net-weight check as arithmetic: three packs weighed, the empty packaging taken off,
  * the average at or above the weight on the label. Null until all three weights, the empty
  * packaging weight and a declared weight that can be read as ONE figure are there - nothing is
- * guessed. A declared weight in another unit ("1 lb" weighed in oz) is converted.
+ * guessed. A declared weight in another unit ("1 lb" weighed in oz) is converted; one stated twice
+ * ("4 oz (113g)") is read in the unit weighed in.
  */
 export function netWeight(values: Record<string, any>): NetWeight | null {
   const weights = WEIGHT_FIELDS.map(k => (str(values[k]) === "" ? NaN : Number(values[k])));
   const tare = str(values.packaging_tare) === "" ? NaN : Number(values.packaging_tare);
   if (!weights.every(w => Number.isFinite(w) && w > 0) || !Number.isFinite(tare) || tare < 0) return null;
-  const m = /^(\d+(?:\.\d+)?)\s*([a-z.]*)$/i.exec(str(values.net_weight_declared));
-  if (!m) return null;
   const unit = str(values.net_weight_unit);
-  const said = m[2] ? UNIT_WORDS.find(([re]) => re.test(m[2]))?.[1] : unit;
-  if (!said || !TO_OZ[said] || !TO_OZ[unit]) return null;
-  const declared = Number(m[1]) * TO_OZ[said] / TO_OZ[unit];
+  const declared = declaredIn(str(values.net_weight_declared), unit);
+  if (declared === null) return null;
   const average = weights.reduce((a, b) => a + b, 0) / 3 - tare;
   // A hundredth of the unit of slack, so a conversion's rounding is not read as short weight.
   return { average: round2(average), declared: round2(declared), unit, ok: average + 0.005 >= declared };
