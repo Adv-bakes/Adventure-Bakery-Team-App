@@ -51,6 +51,16 @@ check("last4 of four digits", V.last4("4471"), "4471");
 check("last4 of too few digits", V.last4("47"), "");
 check("last4 of nothing", V.last4(null), "");
 
+// ---- what to call a visitor
+check("first word of the name", V.firstName("Maria Lopez"), "Maria");
+check("a hyphenated first name is one word", V.firstName("Mary-Jo Smith"), "Mary-Jo");
+check("spaces around the name", V.firstName("  Richard N Mercer "), "Richard");
+check("a title keeps the word after it", V.firstName("Dr. Ana Lopez"), "Dr. Ana");
+check("a title without a full stop", V.firstName("mrs Jones"), "mrs Jones");
+check("one word", V.firstName("Cher"), "Cher");
+check("nothing", V.firstName(""), "");
+check("null", V.firstName(null), "");
+
 // ---- capitals in a typed name
 check("first letter", V.capitalizeName("m"), "M");
 check("after a space", V.capitalizeName("maria lopez"), "Maria Lopez");

@@ -1532,6 +1532,11 @@ with a CHECK, so the role was a constraint change. Adding a role touches a list 
   login page. The kiosk has no portal and no account menu, so this is the only way out.
 - **Sign-out** is from the on-site list on the home screen (owner's choice: the list is shown on the
   kiosk). The button arms on the first tap and signs out on the second, since it cannot be undone. An armed button shows a small cancel (X) beside it and stands down by itself after ten seconds, so a wrong tap is never left waiting for the next person.
+- **A goodbye after signing out on the kiosk** (owner, 2026-10-13): a waving rum cake
+  (`components/team/RumCakeWave.tsx`, SVG moved with CSS, still for prefers-reduced-motion) and
+  "Have a nice day, <first name>!" (`firstName` in `visitors.ts`: first word, a title kept with the
+  word after it), for seven seconds or until Done. Kiosk only - in the portal it is staff signing
+  somebody else out, and they keep the toast.
 - **Drawn signatures (`SignatureField.capture: "drawn"`)** are a generic form feature built for this:
   typed name + `SignaturePad` (pointer events on a canvas — finger, stylus or mouse, no tablet
   detection). Value is `{ user_id: null, name, signed_at, image (PNG data URL), witnessed_by }`; the
