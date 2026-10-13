@@ -156,6 +156,8 @@ export function advancesAfter(key: FlowStepKey, saved: { last?: "batch" | "lot";
   if (key === "baking" || key === "sealing") return !!saved?.last;
   if (key === "packing") return (saved?.step === "counted" || saved?.step === "checked") && now === "done";
   if (key === "mixing" || key === "submit") return now === "done";
+  // The retention sample signed as on the shelf, from the page.
+  if (key === "retention") return saved?.step === "logged" && now === "done";
   return false;
 }
 

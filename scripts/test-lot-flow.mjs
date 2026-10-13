@@ -137,6 +137,8 @@ check("...and so does the first pack answered last", F.advancesAfter("packing", 
 check("a photo kept on the record moves nothing", F.advancesAfter("packing", undefined, withState("packing", "done")), false);
 check("the lot record submitted moves on", F.advancesAfter("submit", undefined, withState("submit", "done")), true);
 check("a release step never moves by itself", F.advancesAfter("retention", undefined, five), false);
+const seven = [...five, { key: "retention", state: "done" }, { key: "release", state: "none" }];
+check("the retention sample signed on the page moves on to the release", [F.advancesAfter("retention", { step: "logged" }, seven), F.stepAfter(seven, "retention")], [true, "release"]);
 
 // ---- the address
 check("the page", [F.lotFlowHref("abc"), F.lotFlowHref("abc", "sealing")], ["/team/today/lot/abc", "/team/today/lot/abc?step=sealing"]);
