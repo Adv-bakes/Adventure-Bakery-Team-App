@@ -40,7 +40,7 @@ function Spark({ x, y, className }: { x: number; y: number; className: string })
 
 export function RumCakeWave({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 240 240" className={className} role="img" aria-label="A smiling rum cake waving goodbye">
+    <svg viewBox="0 0 240 240" className={className} role="img" aria-label="A smiling rum cake in a chef's hat, waving goodbye">
       <style>{CSS}</style>
       <g className="rcw-pop">
         {/* plate */}
@@ -79,9 +79,21 @@ export function RumCakeWave({ className }: { className?: string }) {
             fill={GLAZE} stroke="#E6D5B0" strokeWidth="2" strokeLinejoin="round"
           />
           <ellipse cx="120" cy="100" rx="20" ry="6" fill={CAKE_DARK} opacity=".7" />
-          {/* a pecan on top */}
-          <ellipse cx="146" cy="98" rx="8" ry="5" fill="#8A5524" transform="rotate(-18 146 98)" />
-          <path d="M139 99 L153 96" stroke="#5E3814" strokeWidth="1.5" transform="rotate(-18 146 98)" />
+          {/* a pecan, moved to the side to make room for the hat */}
+          <ellipse cx="161" cy="104" rx="8" ry="5" fill="#8A5524" transform="rotate(24 161 104)" />
+          <path d="M154 104 L168 104" stroke="#5E3814" strokeWidth="1.5" transform="rotate(24 161 104)" />
+
+          {/* a chef's hat, worn a little to one side (owner's request, 2026-10-13) */}
+          <g transform="translate(0 5) rotate(-9 120 92)">
+            <path
+              d="M96 78 C78 76 74 52 92 48 C92 30 116 24 124 38 C134 24 158 32 152 50
+                 C168 56 162 78 146 78 Z"
+              fill="#FFFFFF" stroke="#CFC4AD" strokeWidth="2.5" strokeLinejoin="round"
+            />
+            <path d="M108 74 Q106 60 110 50 M122 76 Q122 60 124 46 M136 74 Q138 62 136 52"
+              fill="none" stroke="#DDD3BE" strokeWidth="2" strokeLinecap="round" />
+            <rect x="94" y="74" width="54" height="20" rx="5" fill="#FFFFFF" stroke="#CFC4AD" strokeWidth="2.5" />
+          </g>
 
           {/* face */}
           <g className="rcw-blink">
