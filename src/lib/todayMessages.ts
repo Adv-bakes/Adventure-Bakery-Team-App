@@ -19,6 +19,8 @@ export interface TodayMessages {
   blockedTitle: string;
   blockedBody: string;
   startLot: string;
+  /** A new lot started from its formula sheet and taken step by step (LotFlow.tsx). */
+  startLotSteps: string; startLotStepsTip: string; pickFormulaTitle: string; pickFormula: string; lotExists(lot: string, product: string): string;
   continueLot: string;
   noLots: string;
   bakedOn(date: string): string;
@@ -99,6 +101,19 @@ export interface TodayMessages {
     loads(n: number): string; checks(n: number): string;
     bakeDone: string; sealDone: string;
     mixingLater: string; mixingProgress(done: number, lines: number): string; openLotRecord: string;
+    /** Mixing, one screen at a time: the batches, each ingredient of each batch, the rework question. */
+    mix: {
+      batchesQ: string; batchesHelp: string; batchN(n: number): string;
+      where(batch: number, batches: number, position: number, of: number): string;
+      lotLabel: string; lotIs(lot: string): string; noLotYet: string; otherLot: string;
+      scan: string; scanning: string; scanNone: string; scanFailed: string; scanReads(text: string): string; scanOffer: string;
+      weightLabel(batch: number): string; formula(qty: string, unit: string): string; takeFigure(qty: string, unit: string): string;
+      optionalWeight: string; badWeight: string; needLot: string;
+      save: string; back: string; skip: string; saveFailed: string; moved: string;
+      reworkQ: string; reworkNo: string; reworkYes: string; reworkYesBody: string; answered(answer: string): string;
+      stillOpen(n: number): string; goToOpen: string; done: string;
+      noLines: string; fromFormula: string; formulaFilled(n: number): string; submitted: string; mapping(missing: string): string;
+    };
     firstPackDone: string; firstPackNeeded: string; countsDone: string;
     submitLead: string; submitReady: string; missing: string; missingLine(table: string, line: number, column: string): string; statement: string; signAndSubmit(name: string): string;
     submitted(lot: string, product: string): string; submitFailed: string; needsRecord: string; alreadySubmitted: string;
@@ -163,6 +178,11 @@ const en: TodayMessages = {
   blockedTitle: "Production cannot start yet.",
   blockedBody: "Today's Daily Sanitation & Pre-Op record (FRM-903) must be submitted first. Production records stay closed until it is.",
   startLot: "Start a lot",
+  startLotSteps: "Start a lot step by step",
+  startLotStepsTip: "Pick the product's formula sheet, then mix one ingredient at a time",
+  pickFormulaTitle: "Start a lot step by step",
+  pickFormula: "Pick the product. Its ingredients and expected quantities start today's lot record; the lots and the weights are left blank for you to enter.",
+  lotExists: (lot, product) => `Lot ${lot} · ${product} is already started today. It has been opened.`,
   continueLot: "Continue",
   noLots: "No lot is in progress.",
   bakedOn: date => `baked ${date}`,
@@ -377,6 +397,46 @@ const en: TodayMessages = {
     mixingLater: "The ingredients, their lots and the weights are recorded on the lot record.",
     mixingProgress: (done, lines) => `${done} of ${lines} ingredients complete.`,
     openLotRecord: "Open the lot record",
+    mix: {
+      batchesQ: "How many batches are being mixed for this lot?",
+      batchesHelp: "Each batch is weighed and recorded on its own.",
+      batchN: n => n === 1 ? "1 batch" : `${n} batches`,
+      where: (batch, batches, position, of) => `Batch ${batch} of ${batches} · ingredient ${position} of ${of}`,
+      lotLabel: "Lot on the container",
+      lotIs: lot => `Lot on the container: ${lot}`,
+      noLotYet: "No lot is recorded for this ingredient yet. Go back to batch 1 for it.",
+      otherLot: "A different container for this batch? Add it as a line of its own on the lot record.",
+      scan: "Scan the label",
+      scanning: "Reading the label…",
+      scanNone: "No lot code could be read on that photo. Type it as printed on the container.",
+      scanFailed: "The label could not be read. Type the lot as printed on the container.",
+      scanReads: text => `The label reads: ${text}`,
+      scanOffer: "Also read on the label - tap to use:",
+      weightLabel: batch => `Batch ${batch} weighed`,
+      formula: (qty, unit) => `Formula: ${qty}${unit ? ` ${unit}` : ""} per batch`,
+      takeFigure: (qty, unit) => `Use ${qty}${unit ? ` ${unit}` : ""}`,
+      optionalWeight: "The formula sheet gives no quantity for this line. Enter a weight if it was weighed; otherwise leave it empty.",
+      badWeight: "Enter the weight as a number.",
+      needLot: "Enter the lot printed on the container.",
+      save: "Save and next",
+      back: "Back",
+      skip: "Skip for now",
+      saveFailed: "That could not be saved.",
+      moved: "The lot record was changed somewhere else. It has been read again - check this line.",
+      reworkQ: "Was rework used in this lot?",
+      reworkNo: "No rework used",
+      reworkYes: "Rework was used",
+      reworkYesBody: "Rework is a line of its own in the table, with its original lot code. Add it on the lot record and answer the rework question there.",
+      answered: answer => `Answered: ${answer}`,
+      stillOpen: n => n === 1 ? "1 screen was skipped and still needs its answer." : `${n} screens were skipped and still need their answers.`,
+      goToOpen: "Go to the first one",
+      done: "Mixing is complete.",
+      noLines: "This lot record has no ingredients yet.",
+      fromFormula: "Start from the formula sheet",
+      formulaFilled: n => n === 1 ? "1 ingredient taken from the formula sheet." : `${n} ingredients taken from the formula sheet.`,
+      submitted: "The lot record is submitted. Its mixing is on the record.",
+      mapping: missing => `The lot record form no longer has: ${missing}. Mixing is recorded on the record itself.`,
+    },
     firstPackDone: "First pack checked.",
     firstPackNeeded: "The first pack still needs its answer: photograph it, or answer it here.",
     countsDone: "Counts entered.",
@@ -472,6 +532,11 @@ const es: TodayMessages = {
   blockedTitle: "La producción no puede empezar todavía.",
   blockedBody: "Primero hay que enviar el registro de Limpieza Diaria y Pre-Operación de hoy (FRM-903). Los registros de producción quedan cerrados hasta entonces.",
   startLot: "Empezar un lote",
+  startLotSteps: "Empezar un lote paso a paso",
+  startLotStepsTip: "Elija la hoja de fórmula del producto y mezcle un ingrediente a la vez",
+  pickFormulaTitle: "Empezar un lote paso a paso",
+  pickFormula: "Elija el producto. Sus ingredientes y cantidades esperadas inician el registro del lote de hoy; los lotes y los pesos quedan en blanco para que usted los anote.",
+  lotExists: (lot, product) => `El lote ${lot} · ${product} ya está empezado hoy. Se abrió.`,
   continueLot: "Continuar",
   noLots: "No hay ningún lote en curso.",
   bakedOn: date => `horneado ${date}`,
@@ -686,6 +751,46 @@ const es: TodayMessages = {
     mixingLater: "Los ingredientes, sus lotes y los pesos se anotan en el registro del lote.",
     mixingProgress: (done, lines) => `${done} de ${lines} ingredientes completos.`,
     openLotRecord: "Abrir el registro del lote",
+    mix: {
+      batchesQ: "¿Cuántas tandas se mezclan para este lote?",
+      batchesHelp: "Cada tanda se pesa y se anota por separado.",
+      batchN: n => n === 1 ? "1 tanda" : `${n} tandas`,
+      where: (batch, batches, position, of) => `Tanda ${batch} de ${batches} · ingrediente ${position} de ${of}`,
+      lotLabel: "Lote en el envase",
+      lotIs: lot => `Lote en el envase: ${lot}`,
+      noLotYet: "Este ingrediente todavía no tiene lote anotado. Vuelva a la tanda 1 para anotarlo.",
+      otherLot: "¿Otro envase para esta tanda? Añádalo como una línea propia en el registro del lote.",
+      scan: "Escanear la etiqueta",
+      scanning: "Leyendo la etiqueta…",
+      scanNone: "No se pudo leer un código de lote en esa foto. Escríbalo como está impreso en el envase.",
+      scanFailed: "No se pudo leer la etiqueta. Escriba el lote como está impreso en el envase.",
+      scanReads: text => `La etiqueta dice: ${text}`,
+      scanOffer: "También se leyó en la etiqueta - toque para usar:",
+      weightLabel: batch => `Tanda ${batch} pesada`,
+      formula: (qty, unit) => `Fórmula: ${qty}${unit ? ` ${unit}` : ""} por tanda`,
+      takeFigure: (qty, unit) => `Usar ${qty}${unit ? ` ${unit}` : ""}`,
+      optionalWeight: "La hoja de fórmula no da cantidad para esta línea. Escriba un peso si se pesó; si no, déjelo vacío.",
+      badWeight: "Escriba el peso como un número.",
+      needLot: "Escriba el lote impreso en el envase.",
+      save: "Guardar y seguir",
+      back: "Atrás",
+      skip: "Saltar por ahora",
+      saveFailed: "No se pudo guardar.",
+      moved: "El registro del lote se cambió en otro lugar. Se leyó de nuevo - revise esta línea.",
+      reworkQ: "¿Se usó reproceso en este lote?",
+      reworkNo: "No se usó reproceso",
+      reworkYes: "Se usó reproceso",
+      reworkYesBody: "El reproceso es una línea propia en la tabla, con su código de lote original. Añádalo en el registro del lote y conteste allí la pregunta de reproceso.",
+      answered: answer => `Contestado: ${answer}`,
+      stillOpen: n => n === 1 ? "Se saltó 1 pantalla y todavía falta su respuesta." : `Se saltaron ${n} pantallas y todavía faltan sus respuestas.`,
+      goToOpen: "Ir a la primera",
+      done: "El mezclado está completo.",
+      noLines: "Este registro del lote todavía no tiene ingredientes.",
+      fromFormula: "Empezar desde la hoja de fórmula",
+      formulaFilled: n => n === 1 ? "1 ingrediente tomado de la hoja de fórmula." : `${n} ingredientes tomados de la hoja de fórmula.`,
+      submitted: "El registro del lote está enviado. Su mezclado está en el registro.",
+      mapping: missing => `El formulario del registro del lote ya no tiene: ${missing}. El mezclado se anota en el propio registro.`,
+    },
     firstPackDone: "Primer empaque revisado.",
     firstPackNeeded: "Falta la respuesta del primer empaque: fotografíelo, o contéstelo aquí.",
     countsDone: "Conteos anotados.",

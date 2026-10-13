@@ -24,6 +24,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useBakeLoad } from "@/components/team/today/BakeLoadButton";
 import { useSealCheck } from "@/components/team/today/SealCheckButton";
 import { usePacking } from "@/components/team/today/PackingButton";
+import { MixStep } from "@/components/team/today/MixStep";
 import {
   createResponse, fetchProfileNames, fetchResponse, loadTodayRecords, saveResponseData, StaleResponseError, submitResponse,
 } from "@/lib/formResponses";
@@ -41,7 +42,7 @@ import {
   type LotSummary, type TodayKind, type TodayRecords,
 } from "@/lib/today";
 import {
-  advancesAfter, flowSteps, isFlowStep, LOT_FLOW, lotBackQuery, lotBakeState, lotSealState, mixProgress,
+  advancesAfter, flowSteps, isFlowStep, LOT_FLOW, lotBackQuery, lotBakeState, lotSealState,
   nextOpenStep, stepAfter, stepBefore,
   type FlowStep, type FlowStepKey,
 } from "@/lib/lotFlow";
@@ -200,20 +201,6 @@ function PackStep({ doc, lot, today, lang, back, older, onSaved }: {
           <div className="flex flex-wrap justify-end gap-2">{h.footer}</div>
         </>
       )}
-    </div>
-  );
-}
-
-// ---------- Mixing (the one-ingredient-at-a-time input follows; for now the lot record holds it) ----------
-
-function MixStep({ lot, lang, records, back }: { lot: LotSummary; lang: TodayLang; records: TodayRecords; back: string }) {
-  const F = TODAY_MSG[lang].flow;
-  const p = mixProgress(records.lots.find(e => e.id === lot.id)?.data);
-  return (
-    <div className="space-y-4">
-      <p className="text-sm">{F.mixingLater}</p>
-      {p.lines > 0 && p.batches > 0 && <Status done={p.state === "done"}>{F.mixingProgress(p.linesDone, p.lines)}</Status>}
-      <Button asChild className={GOLD}><Link to={entryHref(lot.docId, lot.id, back)}><FilePenLine className="w-4 h-4 mr-1.5" />{F.openLotRecord}</Link></Button>
     </div>
   );
 }
@@ -837,7 +824,7 @@ export default function LotFlow() {
     }
     const lots = docOf("lots");
     switch (stepKey) {
-      case "mixing": return <MixStep lot={lot} lang={lang} records={records} back={back} />;
+      case "mixing": return lots ? <MixStep doc={lots} lot={lot} lang={lang} back={back} version={version} onSaved={saved("mixing")} /> : null;
       case "baking": return docOf("baking") ? <BakeStep doc={docOf("baking")!} lot={lot} today={today} lang={lang} records={records} back={back} onSaved={saved("baking")} /> : null;
       case "sealing": return docOf("sealing") ? <SealStep doc={docOf("sealing")!} lot={lot} today={today} lang={lang} records={records} back={back} onSaved={saved("sealing")} /> : null;
       case "packing": return lots ? (
