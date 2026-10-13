@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  AlertTriangle, ArrowLeft, Calculator, Camera, CheckCircle2, ChevronLeft, ChevronRight, Circle, CircleDot,
+  AlertTriangle, ArrowLeft, Calculator, Camera, CheckCircle2, ChevronLeft, ChevronRight, Circle, CircleDot, ClipboardCheck,
   FilePenLine, Keyboard, Loader2, Mic, RotateCcw, ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -164,9 +164,11 @@ function PackStep({ doc, lot, today, lang, back, onSaved }: {
       <div className="space-y-1">
         {state.checked && <Status done>{F.firstPackDone}</Status>}
         {state.counted && <Status done>{F.countsDone}</Status>}
+        {state.counted && !state.checked && <p className="flex items-center gap-1.5 text-sm font-medium text-amber-800"><AlertTriangle className="w-4 h-4" />{F.firstPackNeeded}</p>}
       </div>
       <div className="flex flex-wrap gap-2">
         {h.canPhoto && <Choice icon={<Camera className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "photo"} disabled={h.busy} onClick={h.pickPhoto}>{P.photo}</Choice>}
+        {h.canAnswer && <Choice icon={<ClipboardCheck className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "answer"} disabled={h.busy} onClick={() => { void h.openAnswer(); }}>{P.answer}</Choice>}
         {h.canCount && <Choice icon={<Calculator className="w-4 h-4 mr-1.5" />} active={h.showing && h.mode === "counts"} disabled={h.busy} onClick={() => { void h.openCounts(); }}>{P.counts}</Choice>}
         <Choice icon={<FilePenLine className="w-4 h-4 mr-1.5" />} disabled={h.busy} onClick={h.openRecord}>{P.open}</Choice>
       </div>

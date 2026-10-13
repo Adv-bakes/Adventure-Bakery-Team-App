@@ -79,6 +79,7 @@ export interface TodayMessages {
     short(n: number, sum: string, racked: number): string; over(n: number, sum: string, racked: number): string;
     sayWhy: string; notANumber: string; savedCounts(lot: string, product: string): string;
     firstPackDone: string; countsDone: string; optional: string;
+    answer: string; answerHelp: string; answerDisagrees: string; savedAnswer(lot: string, product: string): string;
   };
   /** "Follow this lot": one lot + product, step by step (LotFlow.tsx). */
   flow: {
@@ -88,7 +89,7 @@ export interface TodayMessages {
     loads(n: number): string; checks(n: number): string;
     bakeDone: string; sealDone: string;
     mixingLater: string; mixingProgress(done: number, lines: number): string; openLotRecord: string;
-    firstPackDone: string; countsDone: string;
+    firstPackDone: string; firstPackNeeded: string; countsDone: string;
     submitLead: string; submitReady: string; missing: string; missingLine(table: string, line: number, column: string): string; statement: string; signAndSubmit(name: string): string;
     submitted(lot: string, product: string): string; submitFailed: string; needsRecord: string; alreadySubmitted: string;
     finished: string; adminNext: string; openStep: string; startStep: string;
@@ -305,6 +306,10 @@ const en: TodayMessages = {
     firstPackDone: "First pack checked",
     countsDone: "Counts entered",
     optional: "optional",
+    answer: "Answer the first pack",
+    answerHelp: "What the code on the first pack shows, and who checked it. Use this when there is no photo, or to record a pack that did not match.",
+    answerDisagrees: "The last photo did not agree with this answer. Photograph the corrected pack, or change the answer.",
+    savedAnswer: (lot, product) => `First pack answered · Lot ${lot} · ${product}`,
   },
   flow: {
     follow: "Follow this lot",
@@ -323,6 +328,7 @@ const en: TodayMessages = {
     mixingProgress: (done, lines) => `${done} of ${lines} ingredients complete.`,
     openLotRecord: "Open the lot record",
     firstPackDone: "First pack checked.",
+    firstPackNeeded: "The first pack still needs its answer: photograph it, or answer it here.",
     countsDone: "Counts entered.",
     submitLead: "The lot record (FRM-520) is finished when it is signed and submitted.",
     submitReady: "Everything the lot record needs is there.",
@@ -550,6 +556,10 @@ const es: TodayMessages = {
     firstPackDone: "Primer empaque revisado",
     countsDone: "Conteos anotados",
     optional: "opcional",
+    answer: "Contestar el primer empaque",
+    answerHelp: "Lo que muestra el código del primer empaque, y quién lo revisó. Úselo cuando no hay foto, o para anotar un empaque que no coincidió.",
+    answerDisagrees: "La última foto no coincidió con esta respuesta. Fotografíe el empaque corregido, o cambie la respuesta.",
+    savedAnswer: (lot, product) => `Primer empaque contestado · Lote ${lot} · ${product}`,
   },
   flow: {
     follow: "Seguir este lote",
@@ -567,7 +577,8 @@ const es: TodayMessages = {
     mixingLater: "Los ingredientes, sus lotes y los pesos se anotan en el registro del lote.",
     mixingProgress: (done, lines) => `${done} de ${lines} ingredientes completos.`,
     openLotRecord: "Abrir el registro del lote",
-    firstPackDone: "Primer paquete revisado.",
+    firstPackDone: "Primer empaque revisado.",
+    firstPackNeeded: "Falta la respuesta del primer empaque: fotografíelo, o contéstelo aquí.",
     countsDone: "Conteos anotados.",
     submitLead: "El registro del lote (FRM-520) queda terminado cuando se firma y se envía.",
     submitReady: "El registro del lote tiene todo lo que necesita.",

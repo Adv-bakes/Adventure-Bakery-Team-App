@@ -28,16 +28,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { fetchProfileNames, fetchResponse, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
-import { getFormSchema } from "@/lib/formSchema";
-import { FIRST_PACK, firstPackReady, packVerdict, type PackLine, type PackState } from "@/lib/firstPackCheck";
+import { fetchProfileNames, fetchResponse, loadTeamDirectoryNames, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
+import { getFormSchema, valueFields } from "@/lib/formSchema";
+import { FIRST_PACK, firstPackReady, isPackNote, noteHasMismatch, packVerdict, type PackLine, type PackState } from "@/lib/firstPackCheck";
 import { photographFirstPack } from "@/lib/firstPackPhoto";
 import { PACK_COUNTS, packCounts, packCountsReady } from "@/lib/packCounts";
 import type { PackingState } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 
 type Doc = { id: string; sop_number: string; revision: string | null; content: any };
-type Mode = "photo" | "counts";
+type Mode = "photo" | "counts" | "answer";
 
 const FIELD = "bg-white border-[#2A1F0E]/75 text-[#2A1F0E] font-medium placeholder:font-normal placeholder:text-[#2A1F0E]/55 focus-visible:ring-[#C89B3C]";
 const LABEL = "text-xs font-medium text-[#2A1F0E]";
@@ -207,14 +207,68 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
     } catch (e) { fail(e); }
   };
 
+  // ---- the first pack, answered by hand: no photo, or a photo that cannot settle it
+
+  const fields = schema ? valueFields(schema) : [];
+  const answerField = fields.find(f => f.id === FIRST_PACK.answer) as { label?: string; options?: string[] } | undefined;
+  const byLabel = fields.find(f => f.id === FIRST_PACK.checkedBy)?.label ?? "";
+  const canAnswer = canPhoto && (answerField?.options?.length ?? 0) > 0;
+  const [answer, setAnswer] = useState({ choice: "", by: "" });
+  const [me, setMe] = useState("");
+  const [names, setNames] = useState<string[]>([]);
+  const [photoWrong, setPhotoWrong] = useState(false);
+
+  const openAnswer = async () => {
+    setMode("answer"); setLoaded(false); setAnswer({ choice: "", by: "" });
+    setTimeout(() => { if (live.current) setShowing(true); }, 0);   // after the menu has closed
+    try {
+      const r = await record();
+      if (!live.current) return;
+      if (!r) { toast.message(P.needsRecord); setShowing(false); openRecord(); return; }
+      const { data } = await supabase.auth.getUser();
+      const id = data?.user?.id ?? "";
+      const name = id ? (await fetchProfileNames([id]).catch(() => new Map<string, string>())).get(id) ?? "" : "";
+      if (!live.current) return;
+      // Team names are an offer, as on the form: anybody else is typed in.
+      loadTeamDirectoryNames().then(l => { if (live.current) setNames(l.map(p => p.name).filter(Boolean)); }).catch(() => { /* a plain box */ });
+      const notes = ((r.attachments ?? []) as { note?: string }[]).map(a => a.note ?? "").filter(isPackNote);
+      setPhotoWrong(notes.length > 0 && noteHasMismatch(notes[notes.length - 1]));
+      setMe(name);
+      // What the record already holds is shown as it is.
+      setAnswer({ choice: text(r.data?.[FIRST_PACK.answer]), by: text(r.data?.[FIRST_PACK.checkedBy]) });
+      setLoaded(true);
+    } catch (e) { setShowing(false); fail(e); }
+  };
+
+  /** Whoever answers is the person who checked - offered when the name is still empty, never over a name. */
+  const choose = (choice: string) => setAnswer(a => ({ choice, by: a.by.trim() || me }));
+  const answerReady = loaded && answer.choice !== "" && answer.by.trim() !== "";
+
+  const saveAnswer = async () => {
+    if (!answerReady || busy) return;
+    setBusy(true);
+    try {
+      const ok = await save(d => ({
+        ...d,
+        [FIRST_PACK.answer]: answer.choice,
+        [FIRST_PACK.checkedBy]: answer.by.trim(),
+        pack_date: text(d.pack_date) || today,
+      }));
+      if (!ok) { toast.message(P.needsRecord); setShowing(false); setBusy(false); openRecord(); return; }
+      toast.success(P.savedAnswer(lot, product));
+      setShowing(false); setBusy(false);
+      onSaved({ step: "checked" });
+    } catch (e) { fail(e); }
+  };
+
   const verdict = lines ? packVerdict(lines) : null;
   // The file picker has to be opened inside a tap, or a browser refuses the camera.
   const pickPhoto = () => input.current?.click();
   const dismiss = () => { if (!busy) setShowing(false); };
   const fileInput = <input ref={input} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => takePhoto(e.target.files?.[0])} />;
 
-  const title = mode === "photo" ? P.title(lot, product) : P.countsTitle(lot, product);
-  const description = mode === "photo" ? P.photoHelp : P.countsHelp;
+  const title = mode === "counts" ? P.countsTitle(lot, product) : P.title(lot, product);
+  const description = mode === "photo" ? P.photoHelp : mode === "answer" ? P.answerHelp : P.countsHelp;
   // The same input, for the pop-up of the row's button and for a page that follows one lot.
   const body = (
     <>
@@ -235,6 +289,36 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
               {verdict === "mismatch" && <p className="text-xs text-red-700">{P.mismatch}</p>}
               {verdict === "match" && state.checked && <p className="text-xs opacity-80">{P.alreadyChecked}</p>}
             </div>
+          )}
+
+          {mode === "answer" && (
+            <form id={formId} className="space-y-3 text-sm" onSubmit={e => { e.preventDefault(); void saveAnswer(); }}>
+              {!loaded ? <Loader2 className="w-4 h-4 animate-spin text-[#C89B3C]" /> : (
+                <>
+                  <div className="space-y-1">
+                    <p className={LABEL}>{answerField?.label}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(answerField?.options ?? []).map(o => (
+                        <Button
+                          key={o} type="button" size="sm" variant="outline" onClick={() => choose(o)} aria-pressed={answer.choice === o}
+                          className={answer.choice === o ? (o === FIRST_PACK.matches ? "border-emerald-600 bg-emerald-50 text-emerald-800" : "border-red-500 bg-red-50 text-red-700") : ""}
+                        >
+                          {o}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  {photoWrong && answer.choice === FIRST_PACK.matches && (
+                    <p className="flex items-start gap-1.5 text-amber-800"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" /><span>{P.answerDisagrees}</span></p>
+                  )}
+                  <label className="block space-y-1">
+                    <span className={LABEL}>{byLabel}</span>
+                    <Input className={FIELD} list={`${formId}-names`} value={answer.by} onChange={e => setAnswer({ ...answer, by: e.target.value })} />
+                    <datalist id={`${formId}-names`}>{names.map(n => <option key={n} value={n} />)}</datalist>
+                  </label>
+                </>
+              )}
+            </form>
           )}
 
           {mode === "counts" && (
@@ -295,6 +379,14 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
                 )}
               </>
             )}
+            {mode === "answer" && (
+              <>
+                {!inline && <Button variant="ghost" size="sm" disabled={busy} onClick={() => setShowing(false)}>{M.cancel}</Button>}
+                <Button type="submit" form={formId} size="sm" disabled={busy || !answerReady} className={GOLD}>
+                  {busy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{M.save}
+                </Button>
+              </>
+            )}
             {mode === "counts" && (
               <>
                 {!inline && <Button variant="ghost" size="sm" disabled={busy} onClick={() => setShowing(false)}>{M.cancel}</Button>}
@@ -306,7 +398,7 @@ export function usePacking({ doc, entryId, lot, product, today, state, lang, onS
     </>
   );
 
-  return { busy, mode, showing, canPhoto, canCount, lines, failed, verdict, fileInput, pickPhoto, openCounts, openRecord, dismiss, title, description, body, footer };
+  return { busy, mode, showing, canPhoto, canCount, canAnswer, openAnswer, lines, failed, verdict, fileInput, pickPhoto, openCounts, openRecord, dismiss, title, description, body, footer };
 }
 
 export function PackingButton(props: PackingProps) {
