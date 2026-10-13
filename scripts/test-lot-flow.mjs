@@ -133,6 +133,8 @@ check("the last check of the lot moves on", F.advancesAfter("sealing", { last: "
 check("the first pack alone stays", F.advancesAfter("packing", { step: "checked" }, withState("packing", "open")), false);
 check("the counts with no first pack stay", F.advancesAfter("packing", { step: "counted" }, withState("packing", "open")), false);
 check("the counts once packing is complete move on", F.advancesAfter("packing", { step: "counted" }, withState("packing", "done")), true);
+check("...and so does the first pack answered last", F.advancesAfter("packing", { step: "checked" }, withState("packing", "done")), true);
+check("a photo kept on the record moves nothing", F.advancesAfter("packing", undefined, withState("packing", "done")), false);
 check("the lot record submitted moves on", F.advancesAfter("submit", undefined, withState("submit", "done")), true);
 check("a release step never moves by itself", F.advancesAfter("retention", undefined, five), false);
 

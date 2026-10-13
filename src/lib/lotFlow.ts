@@ -148,13 +148,13 @@ export function stepBefore(steps: FlowStep[], key: FlowStepKey): FlowStepKey | n
 
 /**
  * Does a save move the page on by itself? Only where the person has said the step is finished:
- * the last load / last check of the batch or the lot, the counts once the first pack is also
- * answered, the last ingredient, the lot record submitted. Anything else stays where it is.
+ * the last load / last check of the batch or the lot, the save that completes packing (the first
+ * pack answered and the three counts entered), the last ingredient, the lot record submitted. Anything else stays where it is.
  */
 export function advancesAfter(key: FlowStepKey, saved: { last?: "batch" | "lot"; step?: string } | undefined, stepsAfterSave: FlowStep[]): boolean {
   const now = stepsAfterSave.find(s => s.key === key)?.state;
   if (key === "baking" || key === "sealing") return !!saved?.last;
-  if (key === "packing") return saved?.step === "counted" && now === "done";
+  if (key === "packing") return (saved?.step === "counted" || saved?.step === "checked") && now === "done";
   if (key === "mixing" || key === "submit") return now === "done";
   return false;
 }

@@ -1365,6 +1365,13 @@ third and NOT yet built** - the Mixing step links to the lot record.
   button signs "Recorded by" in the person's name and submits. A draft on an earlier revision is
   finished on the record itself. Retention and release open or start their records through
   `releaseStepHref` (`src/lib/releaseStart.ts`), shared with the Today page's Release menu.
+- **The first pack can be answered by hand on the Packing step** (owner, 2026-10-12: the counts were
+  saved, a photo did not match, and Sign and submit then asked for "Code on the pack" and "First pack
+  checked by" with nowhere on the page to give them). **Answer the first pack** (`usePacking`'s third
+  mode, `openAnswer`) shows the form's own two options and the name, which is offered as the signed-in
+  person when still empty and lists team names. Choosing "Matches" after a photo that did not match
+  shows a warning, as on the entry page. The step moves on with whichever save completes packing.
+  The Today row's Record packing menu does not offer it (not asked for).
 - **Outside the team layout on purpose** (no sidebar, no Coach orb): the page is the lot and nothing
   else, and it sets the root font size (`clamp(16px, 1.5vw, 22px)`) like the visitor kiosk, restored
   on leaving. After the first load it refreshes without a spinner, because swapping the page out
