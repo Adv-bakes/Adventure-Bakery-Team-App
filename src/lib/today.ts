@@ -16,7 +16,7 @@ export interface TodaySourceSpec { form: string; fields: readonly string[]; grid
 export const TODAY_FORMS = {
   preops:     { form: "FRM-903", fields: ["inspection_date", "shift", "area_line", "released_by"], grids: {} },
   lots:       { form: "FRM-520", fields: ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check", "batches", "rework", "pack_weight_1", "pack_weight_2", "pack_weight_3"], grids: { ingredients: ["ingredient"] } },
-  releases:   { form: "FRM-701", fields: ["product_name", "lot_code", "decision", "release_date"], grids: {} },
+  releases:   { form: "FRM-701", fields: ["product_name", "lot_code", "decision", "release_date", "customer"], grids: {} },
   dispatches: { form: "FRM-801", fields: ["dispatch_date", "customer"], grids: { loaded: ["product", "lot_code"] } },
   holds:      { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"], grids: {} },
   receipts:   { form: "FRM-301", fields: [], grids: { receiving_log: ["supplier_name", "material_description"] } },
@@ -405,4 +405,24 @@ export function lotRecords(records: TodayRecords, lot: LotSummary): LotRecordLin
     lines.push({ key: "dispatch", state: draft ? "open" : "done", entryId: e.id, docId: e.docId });
   }
   return lines;
+}
+
+// ---------- Recording a released lot's collection ----------
+
+/**
+ * A dispatch's "loaded" table with this lot on it (FRM-801), for the Record collection button on a
+ * released lot. The product and the lot code are the lot record's own, exactly - a dispatch
+ * written with another name for the product never clears the lot from the page. "Released on
+ * FRM-701" is answered Pass because that is what makes a lot "released" here: a submitted release
+ * record that says so. The quantity is left for the person who loads the truck. A lot already on
+ * the table is not added twice, and a blank seeded line is used before a new one is added.
+ */
+export function loadedWithLot(loaded: unknown, lot: { product: string; lotCode: string }): { rows: Record<string, any>[]; added: boolean } {
+  const rows: Record<string, any>[] = Array.isArray(loaded) ? loaded.map(r => ({ ...(r ?? {}) })) : [];
+  if (rows.some(r => sameLot(lot.product, lot.lotCode, r.product, r.lot_code))) return { rows, added: false };
+  const line = { product: lot.product, lot_code: lot.lotCode, released: "pass" };
+  const blank = rows.findIndex(r => ["product", "lot_code", "quantity", "released"].every(k => str(r[k]) === ""));
+  if (blank >= 0) rows[blank] = { ...rows[blank], ...line };
+  else rows.push({ quantity: "", ...line });
+  return { rows, added: true };
 }

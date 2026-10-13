@@ -132,6 +132,8 @@ export interface TodayMessages {
   release: string;
   shipping: string;
   recordCollection: string;
+  collectLot: string;
+  collectFailed: string;
   lastDispatch(date: string, customer: string, lots: number, draft: boolean): string;
   noDispatches: string;
   attention: string;
@@ -439,6 +441,8 @@ const en: TodayMessages = {
   release: "Release (FRM-701)",
   shipping: "Shipping",
   recordCollection: "Record a collection (FRM-801)",
+  collectLot: "Record collection",
+  collectFailed: "The dispatch record could not be opened.",
   lastDispatch: (date, customer, lots, draft) => `Last dispatch ${date}${customer ? ` to ${customer}` : ""}, ${lots} lot${lots === 1 ? "" : "s"}${draft ? " (draft)" : ""}.`,
   noDispatches: "No dispatch recorded yet.",
   attention: "Attention",
@@ -746,6 +750,8 @@ const es: TodayMessages = {
   release: "Liberar (FRM-701)",
   shipping: "Envíos",
   recordCollection: "Registrar una recogida (FRM-801)",
+  collectLot: "Registrar recogida",
+  collectFailed: "No se pudo abrir el registro de despacho.",
   lastDispatch: (date, customer, lots, draft) => `Último envío ${date}${customer ? ` a ${customer}` : ""}, ${lots} lote${lots === 1 ? "" : "s"}${draft ? " (borrador)" : ""}.`,
   noDispatches: "Todavía no hay envíos registrados.",
   attention: "Atención",

@@ -1327,6 +1327,21 @@ starting from `profiles.preferred_language` and remembered in `localStorage` (`t
 - **The Receiving card links its logs** (owner, 2026-10-12): `recentReceipts(records, today)` gives the
   newest FRM-301 entry whenever it was made, plus every other one made today or yesterday; each line
   opens that entry, and a draft is tagged.
+- **Each lot is listed on the card of the stage it is at** (owner, 2026-10-13). **Production**: lots
+  still being made (`preparing`, `in_progress`), with **Start a lot** on the card's title line.
+  **Finished product**: lots awaiting release (Release menu and Follow this lot for admins and owners,
+  Records for everyone else) and lots not released. **Shipping**: lots released and awaiting
+  collection, each with Lot record, Records and **Record collection**. `section(title, icon, body,
+  action)` puts a card's main button on its title line; `lotLine` draws a lot's line on any card.
+  A lot leaves the page only when a SUBMITTED dispatch (FRM-801) lists its product AND lot code - the
+  one dispatch on record when this was built named the customer as the product, which would never
+  have cleared its lot. So **Record collection** (`collectLot`) opens the signed-in person's dispatch
+  draft dated today, or starts one, with the lot on its loaded table exactly as the lot record names
+  it (`loadedWithLot` in `today.ts`: never added twice, a blank seeded line used first, "Released on
+  FRM-701" answered Pass because a submitted release record is what makes the lot "released" here,
+  the quantity left for the person loading). A new dispatch also takes the customer from the lot's
+  release record. The line about today's CCP records is shown only once a bake or a seal check is
+  on record - "No CCP record started today" is gone.
 - **Records, on a finished lot's row** (owner, 2026-10-13, `components/team/today/LotRecordsButton.tsx`):
   a drop-down after the Lot record button listing the lot's records in the order they were made, each
   with its name, form number and where it stands - lot record (FRM-520, mixing and packing), baking
