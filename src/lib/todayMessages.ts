@@ -116,7 +116,6 @@ export interface TodayMessages {
     sampleLogged(lot: string, product: string, discard: string): string; sampleFailed: string;
   };
   recordSealChecks: string;
-  ccpTodayNone: string;
   ccpBakingToday(n: number): string;
   ccpSealingToday(n: number): string;
   receiving: string;
@@ -425,7 +424,6 @@ const en: TodayMessages = {
     startStep: "Start the record",
   },
   recordSealChecks: "Record seal checks (FRM-606)",
-  ccpTodayNone: "No CCP record started today.",
   ccpBakingToday: n => n === 0 ? "Today's baking record is open." : `Today's baking record has ${n} oven load${n === 1 ? "" : "s"}.`,
   ccpSealingToday: n => `${n} sealing record${n === 1 ? "" : "s"} today.`,
   receiving: "Receiving",
@@ -733,7 +731,6 @@ const es: TodayMessages = {
     startStep: "Empezar el registro",
   },
   recordSealChecks: "Registrar las revisiones de sellado (FRM-606)",
-  ccpTodayNone: "Hoy no se ha empezado ningún registro de PCC.",
   ccpBakingToday: n => n === 0 ? "El registro de horneado de hoy está abierto." : `El registro de horneado de hoy tiene ${n} hornada${n === 1 ? "" : "s"}.`,
   ccpSealingToday: n => `${n} registro${n === 1 ? "" : "s"} de sellado hoy.`,
   receiving: "Recepción",

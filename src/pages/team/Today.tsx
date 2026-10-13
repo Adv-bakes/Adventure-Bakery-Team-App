@@ -358,13 +358,14 @@ export default function Today() {
                   {M.startLot}
                 </Button>
               </div>
-              <p className="text-xs tp-card-dim">
-                {ccp.baking || ccp.sealing.length
-                  ? [ccp.baking ? M.ccpBakingToday(ovenLoads(ccp.baking)) : null, ccp.sealing.length ? M.ccpSealingToday(ccp.sealing.length) : null].filter(Boolean).join(" ")
-                  : M.ccpTodayNone}
-                {review && <span className="ml-1 font-medium text-emerald-700">{M.bake.awaitingReview(review.by)}</span>}
-                {sealReview && <span className="ml-1 font-medium text-emerald-700">{M.seal.awaitingReview(sealReview.by)}</span>}
-              </p>
+              {/* Said only once a bake or a seal check is on record today: with none, there is nothing to say (owner, 2026-10-13). */}
+              {(ccp.baking || ccp.sealing.length > 0 || review || sealReview) && (
+                <p className="text-xs tp-card-dim">
+                  {[ccp.baking ? M.ccpBakingToday(ovenLoads(ccp.baking)) : null, ccp.sealing.length ? M.ccpSealingToday(ccp.sealing.length) : null].filter(Boolean).join(" ")}
+                  {review && <span className="ml-1 font-medium text-emerald-700">{M.bake.awaitingReview(review.by)}</span>}
+                  {sealReview && <span className="ml-1 font-medium text-emerald-700">{M.seal.awaitingReview(sealReview.by)}</span>}
+                </p>
+              )}
             </>
           ))}
 
