@@ -601,6 +601,12 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   suggested because it is notation, not a measurement — contrast `suggestFrom` for weights. FRM-520 lot code.
   `as: "month_year"` (`monthYear`, always English: 2026-10-12 → "October 2026") is FRM-009's Month
   covered from the Date of the update (owner, 2026-10-12, migration `20261012000002`, no revision change).
+- **A lot link beside a text field (`TextField.lotLink`):** `{ fromField }` shows a "Lot 6286" link to
+  the right of the field - the lot code of the date in `fromField`, today's while that date is blank.
+  A tap adds it to what is typed ("Rum Cake" -> "Rum Cake, Lot 6286"; an empty field gets "Lot 6286");
+  the link goes once the text names that lot. Never added without the tap. `appendLotText` /
+  `hasLotText` in `formSchema.ts`, tested by `scripts/test-lot-link.mjs`. Set by migration. First use:
+  FRM-903's Product / batch run (owner, 2026-10-13, migration `20261013000001`, no revision change).
 - **A section that starts collapsed (`FormSection.collapsed`):** for a part of a form only filled in an
   exceptional case. `CollapsedSection` in `FormRenderer` shows it as one line to tap. It is open whenever
   it holds an answer (`sectionHasAnswers` - defaults, fill-time column defaults and a fixed row's printed

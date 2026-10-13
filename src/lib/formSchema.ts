@@ -100,6 +100,29 @@ export interface TextField     extends FieldBase {
    * the person's job title (else department) when a listed name is entered and it is empty.
    */
   teamPick?: { titleField?: string };
+  /**
+   * A "Lot 6286" link to the right of the field that adds the lot code of the date in
+   * `fromField` (today's while that date is blank) to what is already typed: "Rum Cake" becomes
+   * "Rum Cake, Lot 6286" (FRM-903's Product / batch run; owner, 2026-10-13). Only on a tap -
+   * the field is free text and may name several runs. See appendLotText.
+   */
+  lotLink?: { fromField: string };
+}
+
+/**
+ * `text` with "Lot <lot>" added after a comma, or just "Lot <lot>" when nothing is typed. A lot
+ * the text already names is not added twice. Trailing commas and spaces are tidied first.
+ */
+export function appendLotText(text: unknown, lot: string): string {
+  const base = (typeof text === "string" ? text : "").replace(/[\s,]+$/, "");
+  if (hasLotText(base, lot)) return base;
+  return base ? `${base}, Lot ${lot}` : `Lot ${lot}`;
+}
+
+/** Whether `text` already names the lot ("Lot 6286", any case), so the link has nothing to add. */
+export function hasLotText(text: unknown, lot: string): boolean {
+  if (typeof text !== "string" || !lot) return false;
+  return new RegExp(`\\blot\\s*#?\\s*${lot.replace(/[^\w]/g, "")}\\b`, "i").test(text);
 }
 
 /**
