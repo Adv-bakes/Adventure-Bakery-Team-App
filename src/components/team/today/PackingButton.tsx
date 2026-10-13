@@ -19,7 +19,7 @@
 // The record is the row's own FRM-520 entry. It is opened instead when it is on an earlier
 // revision of the form, or when the save is refused (a draft somebody else started).
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Calculator, Camera, CheckCircle2, ChevronDown, Eye, FilePenLine, Loader2, MinusCircle, Package } from "lucide-react";
 import { toast } from "sonner";
@@ -52,7 +52,7 @@ const TONE: Record<PackState, string> = {
 const blank = { racked: "", packed: "", notPacked: "", film: "", notes: "" };
 const text = (v: unknown) => (v == null ? "" : String(v));
 
-export function PackingButton({ doc, entryId, lot, product, today, state, lang, disabled, onSaved }: {
+export interface PackingProps {
   doc: Doc;
   /** The row's own FRM-520 entry. */
   entryId: string;
@@ -63,8 +63,15 @@ export function PackingButton({ doc, entryId, lot, product, today, state, lang, 
   state: PackingState;
   lang: TodayLang;
   disabled?: boolean;
-  onSaved: () => void;
-}) {
+  /** Told what was saved, so a page that follows one lot knows when to move on. */
+  onSaved: (saved?: { step?: "checked" | "counted" }) => void;
+  /** The query that brings "Back" on the full record to where the person was. */
+  backTo?: string;
+}
+
+/** The packing input of one lot record: the first-pack photo, the counts, and the pop-up's body and buttons. */
+export function usePacking({ doc, entryId, lot, product, today, state, lang, onSaved, backTo = "from=today" }: PackingProps) {
+  const formId = useId();
   const M = TODAY_MSG[lang].bake;   // the dialogs' common wording (Save, Cancel)
   const P = TODAY_MSG[lang].pack;
   const navigate = useNavigate();
@@ -82,7 +89,7 @@ export function PackingButton({ doc, entryId, lot, product, today, state, lang, 
   const live = useRef(true);
   useEffect(() => () => { live.current = false; }, []);
 
-  const href = `/team/compliance/forms/${doc.id}/entries/${entryId}?from=today`;
+  const href = `/team/compliance/forms/${doc.id}/entries/${entryId}?${backTo}`;
   const openRecord = () => navigate(href);
 
   /** The lot record as it is now; null when it has to be opened instead (another revision, or gone). */
@@ -143,7 +150,7 @@ export function PackingButton({ doc, entryId, lot, product, today, state, lang, 
       if (!ok) { toast.message(P.needsRecord); setShowing(false); setBusy(false); openRecord(); return; }
       toast.success(P.saved(lot, product));
       setShowing(false); setBusy(false);
-      onSaved();
+      onSaved({ step: "checked" });
     } catch (e) { fail(e); }
   };
 
@@ -194,58 +201,21 @@ export function PackingButton({ doc, entryId, lot, product, today, state, lang, 
       if (!ok) { toast.message(P.needsRecord); setShowing(false); setBusy(false); openRecord(); return; }
       toast.success(P.savedCounts(lot, product));
       setShowing(false); setBusy(false);
-      onSaved();
+      onSaved({ step: "counted" });
     } catch (e) { fail(e); }
   };
 
   const verdict = lines ? packVerdict(lines) : null;
-  const tick = (done: boolean) => done ? <CheckCircle2 className="w-3.5 h-3.5 ml-2 text-emerald-700" aria-hidden /> : null;
+  // The file picker has to be opened inside a tap, or a browser refuses the camera.
+  const pickPhoto = () => input.current?.click();
+  const dismiss = () => { if (!busy) setShowing(false); };
+  const fileInput = <input ref={input} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => takePhoto(e.target.files?.[0])} />;
 
-  return (
+  const title = mode === "photo" ? P.title(lot, product) : P.countsTitle(lot, product);
+  const description = mode === "photo" ? P.photoHelp : P.countsHelp;
+  // The same input, for the pop-up of the row's button and for a page that follows one lot.
+  const body = (
     <>
-      <input ref={input} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => takePhoto(e.target.files?.[0])} />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          {state.done ? (
-            <Button
-              size="sm" variant="outline" disabled={disabled || busy} title={P.doneTip} aria-label={P.doneTip}
-              className="px-2 border-emerald-600/50 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
-            >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
-              <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
-            </Button>
-          ) : (
-            <Button size="sm" variant="outline" disabled={disabled || busy}>
-              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Package className="w-4 h-4 mr-1" />}
-              {P.button}
-              <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-70" />
-            </Button>
-          )}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {canPhoto && (
-            // The file picker has to be opened inside the tap, or a browser refuses the camera.
-            <DropdownMenuItem onSelect={() => input.current?.click()} title={state.checked ? P.firstPackDone : undefined}>
-              <Camera className="w-4 h-4 mr-2" />{P.photo}{tick(state.checked)}
-            </DropdownMenuItem>
-          )}
-          {canCount && (
-            <DropdownMenuItem onSelect={openCounts} title={state.counted ? P.countsDone : undefined}>
-              <Calculator className="w-4 h-4 mr-2" />{P.counts}{tick(state.counted)}
-            </DropdownMenuItem>
-          )}
-          {(canPhoto || canCount) && <DropdownMenuSeparator />}
-          <DropdownMenuItem onSelect={openRecord}><FilePenLine className="w-4 h-4 mr-2" />{P.open}</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Dialog open={showing} onOpenChange={o => { if (!o && !busy) setShowing(false); }}>
-        <DialogContent className="max-w-md" lang={lang}>
-          <DialogHeader>
-            <DialogTitle className="text-base">{mode === "photo" ? P.title(lot, product) : P.countsTitle(lot, product)}</DialogTitle>
-            <DialogDescription>{mode === "photo" ? P.photoHelp : P.countsHelp}</DialogDescription>
-          </DialogHeader>
-
           {mode === "photo" && (
             <div className="space-y-2 text-sm">
               {busy && !lines && <p className="flex items-center gap-2 font-medium"><Loader2 className="w-4 h-4 animate-spin text-[#C89B3C]" />{P.reading}</p>}
@@ -266,7 +236,7 @@ export function PackingButton({ doc, entryId, lot, product, today, state, lang, 
           )}
 
           {mode === "counts" && (
-            <form id="pack-counts" className="space-y-3 text-sm" onSubmit={e => { e.preventDefault(); void saveCounts(); }}>
+            <form id={formId} className="space-y-3 text-sm" onSubmit={e => { e.preventDefault(); void saveCounts(); }}>
               {!loaded ? <Loader2 className="w-4 h-4 animate-spin text-[#C89B3C]" /> : (
                 <>
                   <div className="grid grid-cols-3 gap-2">
@@ -305,7 +275,10 @@ export function PackingButton({ doc, entryId, lot, product, today, state, lang, 
             </form>
           )}
 
-          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+    </>
+  );
+  const footer = (
+    <>
             {mode === "photo" && (
               <>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => setShowing(false)}>{M.cancel}</Button>
@@ -323,12 +296,69 @@ export function PackingButton({ doc, entryId, lot, product, today, state, lang, 
             {mode === "counts" && (
               <>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => setShowing(false)}>{M.cancel}</Button>
-                <Button type="submit" form="pack-counts" size="sm" disabled={busy || !countsReady} className={GOLD}>
+                <Button type="submit" form={formId} size="sm" disabled={busy || !countsReady} className={GOLD}>
                   {busy && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{M.save}
                 </Button>
               </>
             )}
-          </DialogFooter>
+    </>
+  );
+
+  return { busy, mode, showing, canPhoto, canCount, lines, failed, verdict, fileInput, pickPhoto, openCounts, openRecord, dismiss, title, description, body, footer };
+}
+
+export function PackingButton(props: PackingProps) {
+  const { lang, state, disabled } = props;
+  const P = TODAY_MSG[lang].pack;
+  const h = usePacking(props);
+  const { busy, canPhoto, canCount } = h;
+  const tick = (done: boolean) => done ? <CheckCircle2 className="w-3.5 h-3.5 ml-2 text-emerald-700" aria-hidden /> : null;
+  return (
+    <>
+      {h.fileInput}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          {state.done ? (
+            <Button
+              size="sm" variant="outline" disabled={disabled || busy} title={P.doneTip} aria-label={P.doneTip}
+              className="px-2 border-emerald-600/50 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
+            >
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
+              <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-70" />
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" disabled={disabled || busy}>
+              {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Package className="w-4 h-4 mr-1" />}
+              {P.button}
+              <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-70" />
+            </Button>
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {canPhoto && (
+            // The file picker has to be opened inside the tap, or a browser refuses the camera.
+            <DropdownMenuItem onSelect={h.pickPhoto} title={state.checked ? P.firstPackDone : undefined}>
+              <Camera className="w-4 h-4 mr-2" />{P.photo}{tick(state.checked)}
+            </DropdownMenuItem>
+          )}
+          {canCount && (
+            <DropdownMenuItem onSelect={h.openCounts} title={state.counted ? P.countsDone : undefined}>
+              <Calculator className="w-4 h-4 mr-2" />{P.counts}{tick(state.counted)}
+            </DropdownMenuItem>
+          )}
+          {(canPhoto || canCount) && <DropdownMenuSeparator />}
+          <DropdownMenuItem onSelect={h.openRecord}><FilePenLine className="w-4 h-4 mr-2" />{P.open}</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={h.showing} onOpenChange={o => { if (!o) h.dismiss(); }}>
+        <DialogContent className="max-w-md" lang={lang}>
+          <DialogHeader>
+            <DialogTitle className="text-base">{h.title}</DialogTitle>
+            <DialogDescription>{h.description}</DialogDescription>
+          </DialogHeader>
+          {h.body}
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">{h.footer}</DialogFooter>
         </DialogContent>
       </Dialog>
     </>
