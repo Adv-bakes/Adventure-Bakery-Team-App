@@ -298,6 +298,12 @@ export default function Today() {
                             />
                           )}
                           <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>{M.releaseSteps.step.lot}</Link></Button>
+                          {/* Until it is released, the lot can still be followed: the sample and the release are steps of the flow. */}
+                          {l.stage === "awaiting_release" && isAdmin && (
+                            <Button asChild size="sm" title={M.flow.followTip} className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+                              <Link to={lotFlowHref(l.id)}><Footprints className="w-4 h-4 mr-1" />{M.flow.follow}</Link>
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 flex-wrap">
