@@ -31,6 +31,9 @@ import { buildZodSchema, deriveDateValue, emptyValues, getFormSchema, valueField
 import { resolveSignatureRequest, withdrawFieldSignatureRequests } from "@/lib/notifications";
 import { packCounts, packCountsReady } from "@/lib/packCounts";
 import { releaseStepHref } from "@/lib/releaseStart";
+import { CCP_REVIEW, ccpReviewReady, recordRows, reviewBlocks, withVerification, type CcpKind } from "@/lib/ccpReview";
+import { deriveDeviations, deviationFormFor, deviationProblems } from "@/lib/ccpDeviations";
+import { normLot, sameProduct } from "@/lib/releaseAssist";
 import { blanksFilled, retentionDefaults } from "@/lib/retentionStart";
 import { startedBakeFill } from "@/lib/voiceCommands";
 import {
@@ -517,10 +520,188 @@ function RetentionStep({ doc, step, lot, lang, back, onSaved }: {
   );
 }
 
+// ---------- Reviewing a CCP record and submitting it, before the release ----------
+
+/**
+ * FRM-507 or FRM-606 for this lot, shown for the reviewer to check against the critical limits,
+ * with one button that signs "Verified by" and submits (ccpReview.ts has the rules). The reviewer
+ * never signs for the operator, and what was done about a deviation is never filled in here.
+ */
+function CcpReviewStep({ kind, doc, step, lot, lang, back, version, onSaved }: {
+  kind: CcpKind; doc: Doc | undefined; step: FlowStep; lot: LotSummary; lang: TodayLang; back: string; version: number; onSaved: (s: Saved) => void;
+}) {
+  const F = TODAY_MSG[lang].flow;
+  const V = F.review;
+  const navigate = useNavigate();
+  const schema = doc ? getFormSchema(doc.content) : null;
+  const cfg = CCP_REVIEW[kind];
+  const entryId = step.release?.entryId ?? null;
+  const [record, setRecord] = useState<{ id: string; data: Record<string, any> } | null>(null);
+  const [signer, setSigner] = useState<{ id: string; name: string } | null>(null);
+  const [needsRecord, setNeedsRecord] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const usable = !!doc && !!schema && ccpReviewReady(kind, schema);
+  const href = doc && entryId ? entryHref(doc.id, entryId, back) : null;
+
+  /** The record as it would be submitted: Section 3 in step with its lines, and this reviewer's sign-off. */
+  const prepared = (data: Record<string, any>, who: { id: string; name: string } | null) => {
+    let values: Record<string, any> = { ...emptyValues(schema as FormSchema), ...data };
+    const section3 = deviationFormFor(doc?.sop_number, schema);
+    if (section3) values = deriveDeviations(section3, values).values as Record<string, any>;
+    return who ? withVerification(kind, values, who, new Date().toISOString()) : values;
+  };
+  const gaps = (values: Record<string, any>): string[] => {
+    const section3 = deviationFormFor(doc?.sop_number, schema);
+    return [...new Set([...(section3 ? deviationProblems(section3, values) : []), ...missingAnswers(schema as FormSchema, values, F.missingLine)])];
+  };
+
+  useEffect(() => {
+    setRecord(null); setNeedsRecord(false);
+    if (!usable || !entryId || step.state === "done") return;
+    let live = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        const id = data?.user?.id ?? "";
+        const name = id ? (await fetchProfileNames([id]).catch(() => new Map<string, string>())).get(id) ?? "" : "";
+        const r = await fetchResponse(entryId);
+        if (!live) return;
+        setSigner(id && name ? { id, name } : null);
+        // A record started on an earlier revision of the form has its own layout: the entry page resolves it.
+        if (!r || r.status !== "draft" || r.form_revision !== doc!.revision) { setNeedsRecord(true); return; }
+        setRecord({ id: r.id, data: r.data ?? {} });
+      } catch (e) {
+        console.error(e);
+        if (live) setNeedsRecord(true);
+      }
+    })();
+    return () => { live = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entryId, version, step.state]);
+
+  const verify = async () => {
+    if (!usable || !entryId || !signer || busy) return;
+    setBusy(true);
+    try {
+      const r = await fetchResponse(entryId);
+      if (!r || r.status !== "draft" || r.form_revision !== doc!.revision) { toast.message(V.needsRecord); if (href) navigate(href); return; }
+      if (reviewBlocks(kind, r.data, localDay()).length) { setRecord({ id: r.id, data: r.data ?? {} }); setBusy(false); return; }
+      const values = prepared(r.data ?? {}, signer);
+      if (gaps(values).length) { setRecord({ id: r.id, data: r.data ?? {} }); setBusy(false); return; }
+      await submitResponse(r.id, buildZodSchema(schema as FormSchema).parse(values), r.updated_at);
+      // A submitted entry can no longer be signed, so an outstanding request is finished either way.
+      try { await resolveSignatureRequest(r.id, "Entry submitted"); } catch { /* prompt only */ }
+      toast.success(V.verified(cfg.form, String(values[CCP_REVIEW.date] ?? "")));
+      setBusy(false);
+      onSaved({ step: "verified" });
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof StaleResponseError ? e.message : V.failed);
+      setBusy(false);
+    }
+  };
+
+  const openButton = href ? (
+    <Button asChild variant="outline" className="border-[#2A1F0E]/40 bg-white/70 text-[#2A1F0E] hover:bg-white">
+      <Link to={href}><FilePenLine className="w-4 h-4 mr-1.5" />{F.openStep}</Link>
+    </Button>
+  ) : null;
+
+  if (!entryId) return <Status>{V.noRecord[kind]}</Status>;
+  if (step.state === "done") return <div className="space-y-4"><Status done>{V.submitted}</Status>{openButton}</div>;
+  if (!usable || needsRecord) {
+    return (
+      <div className="space-y-4">
+        <p className="flex items-start gap-1.5 text-sm text-amber-800"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />{V.needsRecord}</p>
+        {openButton}
+      </div>
+    );
+  }
+  if (!record) return <Loader2 className="w-5 h-5 animate-spin text-[#C89B3C]" />;
+
+  const data = record.data;
+  const grid = valueFields(schema as FormSchema).find(f => f.id === cfg.grid) as GridField;
+  const rows = recordRows(kind, data);
+  const columns = grid.columns.filter(c => rows.some(r => String(r[c.id] ?? "").trim() !== ""));
+  // The baking record is the whole day's: lines of another product or lot are shown, greyed.
+  const mine = (r: Record<string, any>) => kind !== "baking"
+    || (normLot(r.lot_code) === normLot(lot.lotCode) && (!String(r.product ?? "").trim() || sameProduct(r.product, lot.product)));
+  const blocks = reviewBlocks(kind, data, localDay());
+  const values = prepared(data, signer);
+  const missing = blocks.length ? [] : gaps(values);
+  const deviations: Record<string, any>[] = (Array.isArray(values.deviation_log) ? values.deviation_log : []).filter((r: any) => r && Object.entries(r).some(([k, v]) => !k.startsWith("_") && String(v ?? "").trim() !== ""));
+  const log = valueFields(schema as FormSchema).find(f => f.id === "deviation_log") as GridField | undefined;
+  const signedAt = data[CCP_REVIEW.monitored]?.signed_at;
+  const cell = (v: unknown) => {
+    const s = String(v ?? "").trim();
+    return s === "pass" ? <span className="font-medium text-emerald-700">PASS</span> : s === "fail" ? <span className="font-medium text-red-700">FAIL</span> : s || "—";
+  };
+  const warn = (text: string) => <p key={text} className="flex items-start gap-1.5 text-sm text-amber-800"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />{text}</p>;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm">{V.lead[kind]}</p>
+      <p className="text-sm">
+        {V.date}: <span className="font-medium">{String(data[CCP_REVIEW.date] ?? "—")}</span>
+        {signedAt && <> · {V.monitoredBy(String(data[CCP_REVIEW.monitored]?.name ?? ""), new Date(signedAt).toLocaleString(lang === "es" ? "es-US" : "en-US", { dateStyle: "medium", timeStyle: "short" }))}</>}
+      </p>
+      {rows.length > 0 && (
+        <div className="overflow-x-auto rounded-md border border-[#2A1F0E]/25 bg-white/60">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs">{columns.map(c => <th key={c.id} className="px-2 py-1.5 font-medium align-bottom">{c.label}</th>)}</tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} className={`border-t border-[#2A1F0E]/15 ${mine(r) ? "" : "opacity-50"}`}>
+                  {columns.map(c => <td key={c.id} className="px-2 py-1.5 align-top">{cell(r[c.id])}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {kind === "baking" && rows.some(r => !mine(r)) && <p className="text-xs opacity-70">{V.otherLot}</p>}
+      {deviations.length === 0 ? (rows.length > 0 && <Status done>{V.noDeviations}</Status>) : (
+        <div className="rounded-md border border-red-600/50 bg-red-50 p-3 text-sm space-y-1">
+          <p className="font-medium text-red-800">{V.deviations}</p>
+          {deviations.map((d, i) => (
+            <p key={i}>{(log?.columns ?? []).filter(c => String(d[c.id] ?? "").trim() !== "").map(c => `${c.label}: ${d[c.id]}`).join(" · ")}</p>
+          ))}
+        </div>
+      )}
+      {blocks.includes("no_rows") && warn(V.noRows)}
+      {blocks.includes("not_signed") && warn(V.notSigned)}
+      {blocks.includes("not_finished") && warn(V.notFinished[kind])}
+      {blocks.length === 0 && (missing.length > 0 ? (
+        <div className="rounded-md border border-amber-500 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="font-medium">{V.missing}</p>
+          <ul className="list-disc pl-5 mt-1 space-y-0.5">{missing.map(m => <li key={m}>{m}</li>)}</ul>
+        </div>
+      ) : (
+        <div className="rounded-md border border-emerald-600/50 bg-emerald-50 p-3 text-sm space-y-1">
+          <Status done>{V.ready}</Status>
+          <p className="italic">"{(valueFields(schema as FormSchema).find(f => f.id === CCP_REVIEW.verified) as { statement?: string } | undefined)?.statement}"</p>
+        </div>
+      ))}
+      <div className="flex flex-wrap justify-end gap-2">
+        {openButton}
+        {signer && (
+          <Button onClick={verify} disabled={busy || blocks.length > 0 || missing.length > 0} className={GOLD}>
+            {busy && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}{V.verify(signer.name)}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ---------- A retention sample already on the shelf, and the release (the SQF Practitioner's) ----------
 
-function ReleasePanel({ step, lot, lang, docs, back }: {
+function ReleasePanel({ step, lot, lang, docs, back, warnings = [] }: {
   step: FlowStep; lot: LotSummary; lang: TodayLang; docs: { retention?: Doc; release?: Doc }; back: string;
+  /** What the release should not go ahead without knowing: a CCP record not yet reviewed. A warning, never a block (owner). */
+  warnings?: string[];
 }) {
   const R = TODAY_MSG[lang].releaseSteps;
   const F = TODAY_MSG[lang].flow;
@@ -546,6 +727,7 @@ function ReleasePanel({ step, lot, lang, docs, back }: {
   return (
     <div className="space-y-4">
       <p className="text-sm font-medium">{R.step[r.key]}</p>
+      {warnings.map(w => <p key={w} className="flex items-start gap-1.5 text-sm font-medium text-amber-800"><AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />{w}</p>)}
       <Status done={r.state === "done"}>{status}</Status>
       <Button onClick={go} disabled={busy} className={GOLD}>
         {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <FilePenLine className="w-4 h-4 mr-1.5" />}
@@ -671,7 +853,15 @@ export default function LotFlow() {
         if (step && stepKey === "retention" && step.state !== "done" && docOf("retention")) {
           return <RetentionStep doc={docOf("retention")!} step={step} lot={lot} lang={lang} back={back} onSaved={saved("retention")} />;
         }
-        return step ? <ReleasePanel step={step} lot={lot} lang={lang} docs={{ retention: docOf("retention"), release: docOf("releases") }} back={back} /> : null;
+        if (step && (stepKey === "bakeReview" || stepKey === "sealReview")) {
+          const kind = stepKey === "bakeReview" ? "baking" : "sealing";
+          return <CcpReviewStep kind={kind} doc={docOf(kind)} step={step} lot={lot} lang={lang} back={back} version={version} onSaved={saved(stepKey)} />;
+        }
+        // The release itself: a CCP record still not reviewed is said, and never blocks it.
+        const unreviewed = stepKey === "release" && step?.release?.state !== "done"
+          ? ([["bakeReview", "baking"], ["sealReview", "sealing"]] as const).filter(([k]) => steps.find(s => s.key === k)?.state !== "done").map(([, kind]) => F.review.notReviewed[kind])
+          : [];
+        return step ? <ReleasePanel step={step} lot={lot} lang={lang} docs={{ retention: docOf("retention"), release: docOf("releases") }} back={back} warnings={unreviewed} /> : null;
       }
     }
   };

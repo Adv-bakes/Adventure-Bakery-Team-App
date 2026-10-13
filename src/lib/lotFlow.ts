@@ -29,7 +29,7 @@ export const LOT_FLOW = {
 } as const;
 
 export type FlowState = "done" | "open" | "none";
-export type FlowStepKey = "mixing" | "baking" | "sealing" | "packing" | "submit" | "retention" | "release";
+export type FlowStepKey = "mixing" | "baking" | "sealing" | "packing" | "submit" | "retention" | "bakeReview" | "sealReview" | "release";
 
 export interface FlowStep {
   key: FlowStepKey;
@@ -103,7 +103,8 @@ const ccpStep = (key: "baking" | "sealing", s: BakeState): FlowStep =>
 /**
  * The steps of one lot, in order, each with how far it has got. The retention sample is taken at
  * packing by the person packing (FSQM-014 v2, 2026-10-12), so it comes before the lot record is
- * signed, for everyone. Release is the SQF Practitioner's alone (FSQM-020): admins and owners only.
+ * signed, for everyone. The review of the two CCP records and the release are the SQF Practitioner's
+ * (FSQM-017, FSQM-020): admins and owners only.
  * `formRevision` is the lot record form's current revision, when the caller knows it.
  */
 export function flowSteps(records: TodayRecords, lot: LotSummary, today: string, isAdmin: boolean, formRevision?: string | null): FlowStep[] {
@@ -122,8 +123,14 @@ export function flowSteps(records: TodayRecords, lot: LotSummary, today: string,
   const sample = release.find(s => s.key === "retention");
   if (sample) steps.push({ key: "retention", state: sample.state, release: sample });
   steps.push({ key: "submit", state: submitted ? "done" : "none" });
-  const decision = release.find(s => s.key === "release");
-  if (isAdmin && decision) steps.push({ key: "release", state: decision.state, release: decision });
+  if (isAdmin) {
+    // The two CCP records are reviewed, signed as verifier and submitted before the release decision
+    // (FSQM-017): the reviewer is the person who releases.
+    for (const [key, from] of [["bakeReview", "baking"], ["sealReview", "sealing"], ["release", "release"]] as const) {
+      const r = release.find(s => s.key === from);
+      if (r) steps.push({ key, state: r.state, release: r });
+    }
+  }
   return steps;
 }
 
@@ -162,6 +169,8 @@ export function advancesAfter(key: FlowStepKey, saved: { last?: "batch" | "lot";
   if (key === "mixing" || key === "submit") return now === "done";
   // The retention sample signed as on the shelf, from the page.
   if (key === "retention") return saved?.step === "logged" && now === "done";
+  // A CCP record verified and submitted - once no other record of the lot is still waiting.
+  if (key === "bakeReview" || key === "sealReview") return saved?.step === "verified" && now === "done";
   return false;
 }
 
@@ -174,5 +183,5 @@ export function lotFlowHref(entryId: string, step?: FlowStepKey): string {
   return `/team/today/lot/${encodeURIComponent(entryId)}${step ? `?step=${step}` : ""}`;
 }
 
-export const FLOW_STEP_KEYS: readonly FlowStepKey[] = ["mixing", "baking", "sealing", "packing", "retention", "submit", "release"];
+export const FLOW_STEP_KEYS: readonly FlowStepKey[] = ["mixing", "baking", "sealing", "packing", "retention", "submit", "bakeReview", "sealReview", "release"];
 export const isFlowStep = (v: unknown): v is FlowStepKey => typeof v === "string" && (FLOW_STEP_KEYS as readonly string[]).includes(v);

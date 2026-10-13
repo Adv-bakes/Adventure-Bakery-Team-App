@@ -94,7 +94,7 @@ export interface TodayMessages {
   /** "Follow this lot": one lot + product, step by step (LotFlow.tsx). */
   flow: {
     follow: string; followTip: string; backToToday: string; notFound: string; previous: string; next: string;
-    step: Record<"mixing" | "baking" | "sealing" | "packing" | "submit" | "retention" | "release", string>;
+    step: Record<"mixing" | "baking" | "sealing" | "packing" | "submit" | "retention" | "bakeReview" | "sealReview" | "release", string>;
     state: Record<"done" | "open" | "none", string>;
     loads(n: number): string; checks(n: number): string;
     bakeDone: string; sealDone: string;
@@ -104,6 +104,14 @@ export interface TodayMessages {
     submitted(lot: string, product: string): string; submitFailed: string; needsRecord: string; alreadySubmitted: string;
     finished: string; adminNext: string; openStep: string; startStep: string;
     olderRecord: string;
+    /** Reviewing a CCP record (FRM-507, FRM-606) and submitting it, before the release. */
+    review: {
+      lead: Record<"baking" | "sealing", string>; noRecord: Record<"baking" | "sealing", string>; submitted: string; date: string;
+      monitoredBy(name: string, at: string): string; notSigned: string; notFinished: Record<"baking" | "sealing", string>; noRows: string;
+      otherLot: string; deviations: string; noDeviations: string; missing: string; ready: string;
+      verify(name: string): string; verified(form: string, date: string): string; failed: string; needsRecord: string;
+      notReviewed: Record<"baking" | "sealing", string>;
+    };
     sampleLead: string; sampleNoDiscard: string; sampleNeedsRecord: string; signSample(name: string): string;
     sampleLogged(lot: string, product: string, discard: string): string; sampleFailed: string;
   };
@@ -246,7 +254,7 @@ const en: TodayMessages = {
     lastNone: "More checks to come",
     lastBatch: "Last check of this batch",
     lastLot: "Last check of this lot",
-    lastBatchHelp: "This product's sealing and boxing checks are finished for today.",
+    lastBatchHelp: "This product's sealing and boxing checks are finished for today. The record is signed in your name.",
     lastLotHelp: "All of today's checks are finished. The records for this lot are signed in your name and sent for review.",
     sayLast: 'On the final check, add "last check of this batch" or "last check of this lot".',
     markOnly: which => `Marks the check recorded last for this batch as: ${which}.`,
@@ -359,7 +367,7 @@ const en: TodayMessages = {
     notFound: "This lot could not be found. It may have been deleted.",
     previous: "Previous step",
     next: "Next step",
-    step: { mixing: "Mixing", baking: "Baking", sealing: "Seal checks", packing: "Packing", submit: "Sign and submit", retention: "Retention sample", release: "Release" },
+    step: { mixing: "Mixing", baking: "Baking", sealing: "Seal checks", packing: "Packing", submit: "Sign and submit", retention: "Retention sample", bakeReview: "Review baking", sealReview: "Review seal checks", release: "Release" },
     state: { done: "Done", open: "In progress", none: "Not started" },
     loads: n => n === 0 ? "No oven load recorded yet." : n === 1 ? "1 oven load recorded." : `${n} oven loads recorded.`,
     checks: n => n === 0 ? "No seal check recorded yet." : n === 1 ? "1 seal check recorded." : `${n} seal checks recorded.`,
@@ -387,6 +395,29 @@ const en: TodayMessages = {
     sampleNoDiscard: "The discard date could not be worked out from that best-by date. Write it as printed on the pack (for example October 2027), or open the record.",
     sampleNeedsRecord: "This retention sample has to be completed on the record itself.",
     olderRecord: "This lot record was started on an earlier version of the form, so its packing is finished on the record itself.",
+    review: {
+      lead: { baking: "The baking record (FRM-507) that carries this lot's oven loads. Check each load against the critical limits, then sign as verifier and submit it.",
+        sealing: "The seal check record (FRM-606) of this lot. Check each check against the critical limits, then sign as verifier and submit it." },
+      noRecord: { baking: "No baking record carries an oven load for this lot.", sealing: "No seal check record was found for this lot." },
+      submitted: "Reviewed and submitted.",
+      date: "Production date",
+      monitoredBy: (name, at) => `Monitored by ${name}, signed ${at}.`,
+      notSigned: "The operator has not signed \"Monitored by\". The record cannot be verified until they have: they sign it when they mark the last load or the last check, or on the record itself.",
+      notFinished: { baking: "Today's baking is not marked finished. Submitting now would close the day's record to further loads.",
+        sealing: "This batch's checks are not marked finished. Submitting now would close the record to further checks." },
+      noRows: "Nothing is recorded on this record yet.",
+      otherLot: "Greyed lines are another product or lot on the same record.",
+      deviations: "Deviations recorded",
+      noDeviations: "No deviation: every line met the limits.",
+      missing: "Still needed before it can be submitted:",
+      ready: "The record is complete.",
+      verify: name => `Sign as verifier (${name}) and submit`,
+      verified: (form, date) => `${form} for ${date} verified and submitted.`,
+      failed: "The record could not be submitted.",
+      needsRecord: "This record has to be reviewed on the record itself.",
+      notReviewed: { baking: "The baking record for this lot is not yet reviewed and submitted (step \"Review baking\").",
+        sealing: "The seal check record for this lot is not yet reviewed and submitted (step \"Review seal checks\")." },
+    },
     signSample: name => `Sign as ${name} - sample on the shelf`,
     sampleLogged: (lot, product, discard) => `Retention sample logged · Lot ${lot} · ${product}${discard ? ` · discard due ${discard}` : ""}`,
     sampleFailed: "The retention sample could not be logged.",
@@ -531,7 +562,7 @@ const es: TodayMessages = {
     lastNone: "Faltan más revisiones",
     lastBatch: "Última revisión de esta tanda",
     lastLot: "Última revisión del lote",
-    lastBatchHelp: "Las revisiones de sellado y de empaque de este producto ya terminaron por hoy.",
+    lastBatchHelp: "Las revisiones de sellado y de empaque de este producto ya terminaron por hoy. El registro se firma con su nombre.",
     lastLotHelp: "Todas las revisiones de hoy terminaron. Los registros de este lote se firman con su nombre y se envían a revisión.",
     sayLast: 'En la última revisión, agregue "última revisión de esta tanda" o "última revisión del lote".',
     markOnly: which => `Marca la última revisión registrada de esta tanda como: ${which}.`,
@@ -644,7 +675,7 @@ const es: TodayMessages = {
     notFound: "No se encontró este lote. Puede que se haya eliminado.",
     previous: "Paso anterior",
     next: "Paso siguiente",
-    step: { mixing: "Mezclado", baking: "Horneado", sealing: "Revisiones de sellado", packing: "Empaque", submit: "Firmar y enviar", retention: "Muestra de retención", release: "Liberación" },
+    step: { mixing: "Mezclado", baking: "Horneado", sealing: "Revisiones de sellado", packing: "Empaque", submit: "Firmar y enviar", retention: "Muestra de retención", bakeReview: "Revisar horneado", sealReview: "Revisar sellado", release: "Liberación" },
     state: { done: "Hecho", open: "En curso", none: "Sin empezar" },
     loads: n => n === 0 ? "Aún no hay cargas de horno registradas." : n === 1 ? "1 carga de horno registrada." : `${n} cargas de horno registradas.`,
     checks: n => n === 0 ? "Aún no hay revisiones de sellado registradas." : n === 1 ? "1 revisión de sellado registrada." : `${n} revisiones de sellado registradas.`,
@@ -672,6 +703,29 @@ const es: TodayMessages = {
     sampleNoDiscard: "No se pudo calcular la fecha de desecho con esa fecha de consumo preferente. Escríbala como está impresa en el empaque (por ejemplo October 2027), o abra el registro.",
     sampleNeedsRecord: "Esta muestra de retención debe completarse en el propio registro.",
     olderRecord: "Este registro del lote se empezó con una versión anterior del formulario, así que su empaque se termina en el propio registro.",
+    review: {
+      lead: { baking: "El registro de horneado (FRM-507) que lleva las cargas de horno de este lote. Revise cada carga contra los límites críticos, luego firme como verificador y envíelo.",
+        sealing: "El registro de revisiones de sellado (FRM-606) de este lote. Revise cada revisión contra los límites críticos, luego firme como verificador y envíelo." },
+      noRecord: { baking: "Ningún registro de horneado lleva una carga de horno de este lote.", sealing: "No se encontró registro de revisiones de sellado para este lote." },
+      submitted: "Revisado y enviado.",
+      date: "Fecha de producción",
+      monitoredBy: (name, at) => `Monitoreado por ${name}, firmado ${at}.`,
+      notSigned: "El operador no ha firmado \"Monitoreado por\". El registro no puede verificarse hasta que lo haga: lo firma al marcar la última carga o la última revisión, o en el propio registro.",
+      notFinished: { baking: "El horneado de hoy no está marcado como terminado. Enviarlo ahora cerraría el registro del día a más cargas.",
+        sealing: "Las revisiones de este lote de producto no están marcadas como terminadas. Enviarlo ahora cerraría el registro a más revisiones." },
+      noRows: "Aún no hay nada anotado en este registro.",
+      otherLot: "Las líneas en gris son de otro producto o lote en el mismo registro.",
+      deviations: "Desviaciones anotadas",
+      noDeviations: "Sin desviaciones: cada línea cumplió los límites.",
+      missing: "Falta antes de poder enviarlo:",
+      ready: "El registro está completo.",
+      verify: name => `Firmar como verificador (${name}) y enviar`,
+      verified: (form, date) => `${form} del ${date} verificado y enviado.`,
+      failed: "No se pudo enviar el registro.",
+      needsRecord: "Este registro debe revisarse en el propio registro.",
+      notReviewed: { baking: "El registro de horneado de este lote aún no está revisado y enviado (paso \"Revisar horneado\").",
+        sealing: "El registro de revisiones de sellado de este lote aún no está revisado y enviado (paso \"Revisar sellado\")." },
+    },
     signSample: name => `Firmar como ${name} - muestra en el estante`,
     sampleLogged: (lot, product, discard) => `Muestra de retención anotada · Lote ${lot} · ${product}${discard ? ` · desechar el ${discard}` : ""}`,
     sampleFailed: "No se pudo anotar la muestra de retención.",
