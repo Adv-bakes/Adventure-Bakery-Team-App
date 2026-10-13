@@ -189,10 +189,11 @@ export default function Today() {
     </div>
   );
 
-  const section = (title: string, icon: React.ReactNode, body: React.ReactNode) => (
+  const section = (title: string, icon: React.ReactNode, body: React.ReactNode, action?: React.ReactNode) => (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between gap-3 space-y-0">
         <CardTitle className="text-base flex items-center gap-2">{icon}{title}</CardTitle>
+        {action}
       </CardHeader>
       <CardContent className="space-y-3">{body}</CardContent>
     </Card>
@@ -351,13 +352,6 @@ export default function Today() {
                 </ul>
               )}
 
-              <div className="flex flex-wrap gap-2 pt-1">
-                <Button onClick={startLot} disabled={!open || !docOf("lots") || busy === "lot"} size="sm"
-                  className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
-                  {busy === "lot" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Play className="w-4 h-4 mr-1" />}
-                  {M.startLot}
-                </Button>
-              </div>
               {/* Said only once a bake or a seal check is on record today: with none, there is nothing to say (owner, 2026-10-13). */}
               {(ccp.baking || ccp.sealing.length > 0 || review || sealReview) && (
                 <p className="text-xs tp-card-dim">
@@ -367,6 +361,13 @@ export default function Today() {
                 </p>
               )}
             </>
+          ), (
+            // Above the lots, on the card's own line: starting a lot is the first thing done here (owner, 2026-10-13).
+            <Button onClick={startLot} disabled={!open || !docOf("lots") || busy === "lot"} size="sm"
+              className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+              {busy === "lot" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Play className="w-4 h-4 mr-1" />}
+              {M.startLot}
+            </Button>
           ))}
 
           {/* ---- Receiving ---- */}
