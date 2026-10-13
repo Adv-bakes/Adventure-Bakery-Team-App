@@ -64,7 +64,7 @@ const states = steps => Object.fromEntries(steps.map(s => [s.key, s.state]));
   r.lots.push(a);
   const lot = summary(r, a.id);
   check("a worker's steps end at the lot record, the retention sample before it", keys(F.flowSteps(r, lot, TODAY, false)), ["mixing", "baking", "sealing", "packing", "retention", "submit"]);
-  check("an admin's go on to the release", keys(F.flowSteps(r, lot, TODAY, true)), ["mixing", "baking", "sealing", "packing", "retention", "submit", "release"]);
+  check("an admin's go on to the release", keys(F.flowSteps(r, lot, TODAY, true)), ["mixing", "baking", "sealing", "packing", "retention", "submit", "bakeReview", "sealReview", "release"]);
   check("a new lot: nothing started", states(F.flowSteps(r, lot, TODAY, false)), { mixing: "none", baking: "none", sealing: "none", packing: "none", retention: "none", submit: "none" });
   check("the page opens on the first step not finished", F.nextOpenStep(F.flowSteps(r, lot, TODAY, false)), "mixing");
 }
@@ -123,7 +123,17 @@ const states = steps => Object.fromEntries(steps.map(s => [s.key, s.state]));
   r.retention.push(entry({ product_name: "Rum Cake - Original", lot_code: "6285", taken_by: { signed_at: "2026-10-12T16:00:00Z" } }));
   const after = F.flowSteps(r, summary(r, a.id), TODAY, true);
   check("a signed sample kept as a draft is done, with its record to open", [states(after).retention, !!after.find(s => s.key === "retention").release.entryId], ["done", true]);
-  check("everything done but the release: it opens there", F.nextOpenStep(after), "release");
+  check("with the sample logged, the CCP records come next: none found is said on its step", [F.nextOpenStep(after), states(after).bakeReview, states(after).sealReview], ["bakeReview", "none", "none"]);
+  const bake = entry({ production_date: TODAY, oven_loads: [{ product: "Rum Cake - Original", lot_code: "6285", last_load: "Last load of this lot" }] });
+  const seal = entry({ production_date: TODAY, product: "Rum Cake - Original", lot_code: "6285", seal_checks: [{ check: "At boxing", last_check: "Last check of this batch" }] });
+  r.baking.push(bake); r.sealing.push(seal);
+  const waiting = F.flowSteps(r, summary(r, a.id), TODAY, true);
+  check("drafts wait for their review, each with its record", [states(waiting).bakeReview, states(waiting).sealReview, waiting.find(s => s.key === "bakeReview").release.entryId === bake.id, F.nextOpenStep(waiting)], ["open", "open", true, "bakeReview"]);
+  bake.status = "submitted";
+  check("the baking record submitted: the seal checks are next", [states(F.flowSteps(r, summary(r, a.id), TODAY, true)).bakeReview, F.nextOpenStep(F.flowSteps(r, summary(r, a.id), TODAY, true))], ["done", "sealReview"]);
+  seal.status = "submitted";
+  check("everything done but the release: it opens there", F.nextOpenStep(F.flowSteps(r, summary(r, a.id), TODAY, true)), "release");
+  check("a worker never sees the reviews", keys(F.flowSteps(r, summary(r, a.id), TODAY, false)).filter(k => /Review/.test(k)), []);
   check("for a worker, everything done opens on the last step", F.nextOpenStep(F.flowSteps(r, summary(r, a.id), TODAY, false)), "submit");
 }
 
@@ -143,6 +153,11 @@ check("...or the packs weighed last", F.advancesAfter("packing", { step: "weighe
 check("a photo kept on the record moves nothing", F.advancesAfter("packing", undefined, withState("packing", "done")), false);
 check("the lot record submitted moves on", F.advancesAfter("submit", undefined, withState("submit", "done")), true);
 check("a release step never moves by itself", F.advancesAfter("retention", undefined, five), false);
+{
+  const reviewing = state => [...five, { key: "bakeReview", state }, { key: "sealReview", state: "open" }, { key: "release", state: "none" }];
+  check("a record verified and submitted moves on to the next review", [F.advancesAfter("bakeReview", { step: "verified" }, reviewing("done")), F.stepAfter(reviewing("done"), "bakeReview")], [true, "sealReview"]);
+  check("...unless another record of the lot is still waiting", F.advancesAfter("bakeReview", { step: "verified" }, reviewing("open")), false);
+}
 const seven = [...five.slice(0, 4), { key: "retention", state: "done" }, five[4], { key: "release", state: "none" }];
 check("the retention sample signed on the page moves on to Sign and submit", [F.advancesAfter("retention", { step: "logged" }, seven), F.stepAfter(seven, "retention"), F.stepAfter(seven, "packing")], [true, "submit", "retention"]);
 

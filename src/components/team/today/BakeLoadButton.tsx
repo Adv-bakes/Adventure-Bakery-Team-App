@@ -55,6 +55,7 @@ import { newVoiceState } from "@/lib/voiceCommandTarget";
 import { speechRecognitionSupported, useSpeechCommand } from "@/hooks/useSpeechCommand";
 import { useUserPref } from "@/lib/userPrefs";
 import { deriveDeviations, deviationFormFor } from "@/lib/ccpDeviations";
+import { recordFinished } from "@/lib/ccpReview";
 import { loadBakeTargets } from "@/lib/formReport";
 import type { BakeTargets } from "@/lib/bakeTargets";
 import type { BakeState } from "@/lib/today";
@@ -220,8 +221,10 @@ export function useBakeLoad({ doc, lot, product, today, state, lang, onSaved, ba
           if (!marked) return "noload";
           values = marked.values;
         }
-        // The last load of the lot is the operator saying the day's baking is complete: their line is signed.
-        if (p.last === "lot" && signer?.name && !values.monitored_by?.signed_at) {
+        // The operator's line is signed when the day's baking is complete: the last load of the lot, or
+        // the last load of the only product still baking (recordFinished). The record is the whole
+        // day's, so one product finishing while another is still in the oven does not sign it.
+        if (p.last && recordFinished("baking", values) && signer?.name && !values.monitored_by?.signed_at) {
           values.monitored_by = { user_id: signer.id, name: signer.name, signed_at: new Date().toISOString() };
         }
         // Section 3 follows from the row just added, and is saved with it.

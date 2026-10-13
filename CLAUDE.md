@@ -1403,6 +1403,25 @@ third and NOT yet built** - the Mixing step links to the lot record.
   (`TodayEntry.revision`); for an older record the step opens nothing, says its packing is finished on
   the record, offers only Open the record, and `flowSteps(..., formRevision)` does not wait for pack
   weights it has no fields for. Anything a step opens by itself must be safe for a record it cannot write.
+- **The two CCP records are reviewed and submitted at the release** (owner, 2026-10-13: a lot had been
+  released with its FRM-507 and FRM-606 still drafts). Admins and owners get **Review baking** and
+  **Review seal checks** before Release (`CcpReviewStep`; rules in `src/lib/ccpReview.ts`, tested by
+  `scripts/test-ccp-review.mjs`). The step shows the record's lines (on the day's baking record, another
+  product's lines greyed) and its deviations, and one button signs "Verified by" and submits. No
+  document changed: FSQM-017 already says a record is not submitted until its reviewer has checked it.
+  - **The verifier never signs for the operator.** A record without "Monitored by" is not offered; it
+    says so. To make that signature happen, the operator's line is now signed when the record is
+    FINISHED, not only at the end of the lot: a seal check record (one batch) at "last check of this
+    batch", the baking record (the whole day) once every product on it has its last load marked
+    (`recordFinished`).
+  - **Submitting closes the record**, and the baking record is the whole day's, so the button is offered
+    only once the record is marked finished or its production date has passed (`reviewBlocks`).
+  - "Who verified this record" follows from who the two signers are, and "Internal temperature on this
+    day" from the loads when all or none were probed (`withVerification`); an answer or a signature
+    already there is never replaced. Section 3 is re-derived first, and a deviation with no action
+    recorded stops the submit as on the form. What was done about a deviation is never filled in.
+  - **The release is warned, never blocked** (owner): the Release step says which record is not yet
+    reviewed. The release helper still lists the batch check as supported only on submitted records.
 - **Outside the team layout on purpose** (no sidebar, no Coach orb): the page is the lot and nothing
   else, and it sets the root font size (`clamp(16px, 1.5vw, 22px)`) like the visitor kiosk, restored
   on leaving. After the first load it refreshes without a spinner, because swapping the page out

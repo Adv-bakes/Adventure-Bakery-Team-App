@@ -229,8 +229,9 @@ export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, b
           if (!marked) return "noload";
           values = marked.values;
         }
-        // The last check of the lot is the operator saying the day's checks are complete: their line is signed.
-        if (p.last === "lot") values = signed(values);
+        // A seal check record is one batch's, so the last check of the BATCH finishes it: the operator's
+        // line is signed then (and at the last check of the lot, which finishes every batch's record).
+        if (p.last) values = signed(values);
         // Section 3 follows from the row just added, and is saved with it.
         const section3 = deviationFormFor(doc.sop_number, schema);
         if (section3) values = deriveDeviations(section3, values).values as Record<string, any>;
