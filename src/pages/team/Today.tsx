@@ -26,12 +26,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords } from "@/lib/formResponses";
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
-  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, localDay, lotsInProgress, openHolds, recentReceipts,
+  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, localDay, lotRecords, lotsInProgress, openHolds, recentReceipts,
   ovenLoads, preopState, productionOpen, releaseSteps, sealState, sealingAwaitingReview, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 import { lotFlowHref } from "@/lib/lotFlow";
+import { LotRecordsButton } from "@/components/team/today/LotRecordsButton";
 import { BakeLoadButton } from "@/components/team/today/BakeLoadButton";
 import { SealCheckButton } from "@/components/team/today/SealCheckButton";
 import { PackingButton } from "@/components/team/today/PackingButton";
@@ -298,6 +299,9 @@ export default function Today() {
                             />
                           )}
                           <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>{M.releaseSteps.step.lot}</Link></Button>
+                          {/* The lot's records, to open and read: on a released lot for everyone, and before the release
+                              for those who do not have the Release menu. It never starts or changes a record. */}
+                          {(l.stage === "released" || !isAdmin) && <LotRecordsButton lines={lotRecords(records!, l)} lang={lang} />}
                           {/* Until it is released, the lot can still be followed: the sample and the release are steps of the flow. */}
                           {l.stage === "awaiting_release" && isAdmin && (
                             <Button asChild size="sm" title={M.flow.followTip} className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">

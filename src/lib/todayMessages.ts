@@ -68,6 +68,11 @@ export interface TodayMessages {
     sampleStarted: string; sampleOnShelf(due: string): string; sampleDisposed: string;
     noRecord: Record<"lot" | "baking" | "sealing" | "retention" | "release", string>;
   };
+  /** "Records" on a finished lot's row: the lot's records in order, to open and read. */
+  records: {
+    button: string; heading: string; submitted: string; draft: string; none: string;
+    name: Record<"lot" | "baking" | "sealing" | "retention" | "release" | "dispatch", string>;
+  };
   /** The packing button on a lot's row: the first pack from a photo, and the three counts. */
   pack: {
     button: string; doneTip: string; photo: string; counts: string; open: string;
@@ -278,6 +283,21 @@ const en: TodayMessages = {
       sealing: "No seal check record was found for this lot. Look in the SOPs Library under FRM-606.",
       retention: "The Retention Sample Log (FRM-703) could not be found.",
       release: "The release record form (FRM-701) could not be found.",
+    },
+  },
+  records: {
+    button: "Records",
+    heading: "This lot's records, in order. Choose one to open it.",
+    submitted: "Submitted",
+    draft: "Still a draft",
+    none: "None found for this lot",
+    name: {
+      lot: "Lot record - mixing and packing (FRM-520)",
+      baking: "Baking record (FRM-507)",
+      sealing: "Seal check record (FRM-606)",
+      retention: "Retention sample (FRM-703)",
+      release: "Release record (FRM-701)",
+      dispatch: "Dispatch record (FRM-801)",
     },
   },
   pack: {
@@ -548,6 +568,21 @@ const es: TodayMessages = {
       sealing: "No se encontró registro de sellado para este lote. Búsquelo en la biblioteca, en FRM-606.",
       retention: "No se encontró el registro de muestras de retención (FRM-703).",
       release: "No se encontró el formulario de liberación (FRM-701).",
+    },
+  },
+  records: {
+    button: "Registros",
+    heading: "Los registros de este lote, en orden. Elija uno para abrirlo.",
+    submitted: "Enviado",
+    draft: "Aún en borrador",
+    none: "No se encontró ninguno para este lote",
+    name: {
+      lot: "Registro del lote - mezclado y empaque (FRM-520)",
+      baking: "Registro de horneado (FRM-507)",
+      sealing: "Registro de revisiones de sellado (FRM-606)",
+      retention: "Muestra de retención (FRM-703)",
+      release: "Registro de liberación (FRM-701)",
+      dispatch: "Registro de despacho (FRM-801)",
     },
   },
   pack: {

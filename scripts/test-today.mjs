@@ -259,5 +259,23 @@ check("attention counts", T.attentionCounts([
     return T.releaseSteps(q, T.lotSummaries(q)[0])[1].state; })(), "done");
 }
 
+// ---- a finished lot's records, to open and read
+{
+  const r = T.emptyTodayRecords();
+  const e = (kind, data, status = "submitted") => { const x = entry(data, status); x.docId = "doc-" + kind; r[kind].push(x); return x; };
+  const lotE = e("lots", { product: "Rum Cake - Original", lot_code: "6285", bake_date: "2026-10-12", ingredients: [{ ingredient: "Flour" }] });
+  e("baking", { production_date: "2026-10-12", oven_loads: [{ product: "Rum Cake - Original", lot_code: "6285" }] });
+  e("retention", { product_name: "Rum Cake - Original", lot_code: "6285", taken_by: { signed_at: "2026-10-12T16:00:00Z" }, discard_due: "2027-11-30" }, "draft");
+  const rel = e("releases", { product_name: "Rum Cake - Original", lot_code: "6285", decision: "RELEASED" });
+  const lot = T.lotSummaries(r)[0];
+  const lines = T.lotRecords(r, lot);
+  check("the records in the order they were made, no dispatch yet", lines.map(l => [l.key, l.state]), [["lot", "done"], ["baking", "done"], ["sealing", "none"], ["retention", "done"], ["release", "done"]]);
+  check("each line that has a record says which to open", [lines[0].entryId === lotE.id, lines[4].entryId === rel.id, lines[2].entryId ?? null, lines[3].sample.stage], [true, true, null, "on_shelf"]);
+  const d = e("dispatches", { dispatch_date: "2026-10-13", customer: "Brand A", loaded: [{ product: "Rum Cake - Original", lot_code: "6285" }] }, "draft");
+  check("a dispatch being prepared is listed as a draft", T.lotRecords(r, lot).slice(-1).map(l => [l.key, l.state, l.entryId === d.id]), [["dispatch", "open", true]]);
+  e("dispatches", { dispatch_date: "2026-10-13", customer: "Brand B", loaded: [{ product: "Rum Cake - Pumpkin Spice", lot_code: "6285" }] });
+  check("another product's dispatch on the same code is not this lot's", T.lotRecords(r, lot).filter(l => l.key === "dispatch").length, 1);
+}
+
 console.log(`${cases - failures}/${cases} passed`);
 process.exit(failures ? 1 : 0);

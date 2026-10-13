@@ -385,3 +385,24 @@ export function releaseSteps(records: TodayRecords, lot: LotSummary): ReleaseSte
     step("release", records.releases.filter(e => mine(e.data.product_name, e.data.lot_code))),
   ];
 }
+
+// ---------- A finished lot's records, to open and read ----------
+
+export type LotRecordKey = ReleaseStepKey | "dispatch";
+export interface LotRecordLine extends Omit<ReleaseStep, "key"> { key: LotRecordKey }
+
+/**
+ * The records of one lot in the order they were made: the release steps, then the dispatch that
+ * loads it - a draft one too, since a released lot waiting for collection may have its dispatch
+ * started. A dispatch is listed only when there is one. Read from the records, like everything here.
+ */
+export function lotRecords(records: TodayRecords, lot: LotSummary): LotRecordLine[] {
+  const lines: LotRecordLine[] = releaseSteps(records, lot);
+  const loads = records.dispatches.filter(d => rowsOf(d, "loaded").some(row => sameLot(lot.product, lot.lotCode, row.product, row.lot_code)));
+  if (loads.length) {
+    const draft = loads.filter(e => !isSubmitted(e)).sort(best)[0];
+    const e = draft ?? [...loads].sort(best)[0];
+    lines.push({ key: "dispatch", state: draft ? "open" : "done", entryId: e.id, docId: e.docId });
+  }
+  return lines;
+}
