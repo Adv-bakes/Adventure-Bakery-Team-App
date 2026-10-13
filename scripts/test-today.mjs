@@ -36,7 +36,7 @@ const TODAY = "2026-10-08";
 check("mapping: all present", T.checkTodayMapping({
   "FRM-903": ["inspection_date", "shift", "area_line", "released_by"],
   "FRM-520": ["product", "lot_code", "bake_date", "pack_date", "units_packed", "racked_count", "not_packed", "code_check", "batches", "rework", "pack_weight_1", "pack_weight_2", "pack_weight_3", "ingredients"],
-  "FRM-701": ["product_name", "lot_code", "decision", "release_date"],
+  "FRM-701": ["product_name", "lot_code", "decision", "release_date", "customer"],
   "FRM-801": ["dispatch_date", "customer", "loaded"],
   "FRM-702": ["hold_tag_number", "material_name_description", "supplier_lot_batch_number", "final_disposition_decision"],
   "FRM-301": ["receiving_log"],
@@ -275,6 +275,20 @@ check("attention counts", T.attentionCounts([
   check("a dispatch being prepared is listed as a draft", T.lotRecords(r, lot).slice(-1).map(l => [l.key, l.state, l.entryId === d.id]), [["dispatch", "open", true]]);
   e("dispatches", { dispatch_date: "2026-10-13", customer: "Brand B", loaded: [{ product: "Rum Cake - Pumpkin Spice", lot_code: "6285" }] });
   check("another product's dispatch on the same code is not this lot's", T.lotRecords(r, lot).filter(l => l.key === "dispatch").length, 1);
+}
+
+// ---- a released lot's collection: the dispatch's loaded table
+{
+  const lot = { product: "Rum Cake - Pumpkin Spice", lotCode: "6285" };
+  check("a new dispatch starts with the lot, released", T.loadedWithLot([], lot), { rows: [{ quantity: "", product: "Rum Cake - Pumpkin Spice", lot_code: "6285", released: "pass" }], added: true });
+  check("the blank seeded line is used", T.loadedWithLot([{ product: "", lot_code: "", quantity: "", released: "" }], lot).rows, [{ product: "Rum Cake - Pumpkin Spice", lot_code: "6285", quantity: "", released: "pass" }]);
+  const two = T.loadedWithLot([{ product: "Rum Cake - Original", lot_code: "6285", quantity: "40 cases", released: "pass" }], lot);
+  check("a second lot is added after the first", [two.added, two.rows.length, two.rows[0].quantity, two.rows[1].lot_code], [true, 2, "40 cases", "6285"]);
+  check("a lot already on the table is not added twice", T.loadedWithLot(two.rows, lot).added, false);
+  check("...however its code is written", T.loadedWithLot([{ product: "rum cake pumpkin spice", lot_code: " 6285 ", released: "pass" }], lot).added, false);
+  const given = [{ product: "", lot_code: "" }];
+  T.loadedWithLot(given, lot);
+  check("the table handed in is not changed", given, [{ product: "", lot_code: "" }]);
 }
 
 console.log(`${cases - failures}/${cases} passed`);

@@ -23,10 +23,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords } from "@/lib/formResponses";
+import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords, saveResponseData } from "@/lib/formResponses";
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
-  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, localDay, lotRecords, lotsInProgress, openHolds, recentReceipts,
+  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, loadedWithLot, localDay, lotRecords, lotsInProgress, openHolds, recentReceipts,
   ovenLoads, preopState, productionOpen, releaseSteps, sealState, sealingAwaitingReview, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
@@ -132,8 +132,12 @@ export default function Today() {
   const sealReview = useMemo(() => records ? sealingAwaitingReview(records, today) : null, [records, today]);
   const dispatch = useMemo(() => records ? lastDispatch(records.dispatches) : null, [records]);
   const receipts = useMemo(() => records ? recentReceipts(records.receipts, today) : [], [records, today]);
-  const awaitingRelease = lots.filter(l => l.stage === "awaiting_release");
   const awaitingCollection = lots.filter(l => l.stage === "released");
+  // Each lot is listed on the card of the stage it is at (owner, 2026-10-13): still being made under
+  // Production, waiting for its release under Finished product, released and waiting for the
+  // truck under Shipping.
+  const making = lots.filter(l => l.stage === "preparing" || l.stage === "in_progress");
+  const finishedLots = lots.filter(l => l.stage === "awaiting_release" || l.stage === "not_released");
 
   const docOf = (kind: keyof typeof TODAY_FORMS): Doc | undefined => docs[TODAY_FORMS[kind].form];
 
@@ -172,6 +176,37 @@ export default function Today() {
     }
   };
 
+  /**
+   * A released lot's collection: today's dispatch record (FRM-801) with the lot on its loaded
+   * table. The signed-in person's draft dated today is used if there is one - a truck often takes
+   * several lots - else a new one is started. The product and lot code are the lot record's own.
+   */
+  const collectLot = async (l: LotSummary) => {
+    const doc = docOf("dispatches");
+    if (!doc) return;
+    setBusy(`collect:${l.id}`);
+    try {
+      const existing = await findDraftForDay(doc.id, "dispatch_date", today);
+      let id: string;
+      if (!existing) {
+        const customer = String(l.release?.data.customer ?? "").trim();
+        id = (await createResponse(doc, { dispatch_date: today, ...(customer ? { customer } : {}), loaded: loadedWithLot([], l).rows })).id;
+      } else {
+        // A draft on an earlier revision of the form is opened as it is, for the lot to be typed in.
+        const { rows, added } = loadedWithLot(existing.data?.loaded, l);
+        if (added && existing.form_revision === doc.revision) {
+          await saveResponseData(existing.id, { ...(existing.data ?? {}), loaded: rows }, existing.updated_at);
+        }
+        id = existing.id;
+      }
+      navigate(entryHref(doc.id, id));
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : M.collectFailed);
+      setBusy(null);
+    }
+  };
+
   const preopDoc = docOf("preops");
   const preopName = preop.state !== "none"
     ? (names[preop.entry.submittedBy ?? ""] ?? names[preop.entry.createdBy ?? ""] ?? (preop.entry.data.released_by?.name ?? ""))
@@ -189,13 +224,35 @@ export default function Today() {
     </div>
   );
 
-  const section = (title: string, icon: React.ReactNode, body: React.ReactNode) => (
+  const section = (title: string, icon: React.ReactNode, body: React.ReactNode, action?: React.ReactNode) => (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between gap-3 space-y-0">
         <CardTitle className="text-base flex items-center gap-2">{icon}{title}</CardTitle>
+        {action}
       </CardHeader>
       <CardContent className="space-y-3">{body}</CardContent>
     </Card>
+  );
+
+  /** A lot's line on a card: its name, where it stands, and the buttons for that stage. */
+  const lotLine = (l: LotSummary, buttons: React.ReactNode) => (
+    <li key={l.id} className="py-2 flex items-center justify-between gap-3 flex-wrap">
+      <div className="text-sm">
+        <div className="font-medium">
+          Lot {l.lotCode || "—"} · {l.product || "—"}
+          {l.status === "draft" && <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded border tp-card-dim">{M.draft}</span>}
+        </div>
+        <div className="tp-card-dim">
+          {l.bakeDate && <span>{M.bakedOn(l.bakeDate)} · </span>}
+          <span>{M.stage[l.stage] ?? l.stage}</span>
+          {l.onHold && <span className="ml-2 text-destructive font-medium">{M.onHold}</span>}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">{buttons}</div>
+    </li>
+  );
+  const lotRecordButton = (l: LotSummary) => (
+    <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>{M.releaseSteps.step.lot}</Link></Button>
   );
 
   return (
@@ -272,100 +329,66 @@ export default function Today() {
                 </div>
               )}
 
-              {lots.length === 0 ? (
+              {making.length === 0 ? (
                 <p className="text-sm tp-card-dim">{M.noLots}</p>
               ) : (
                 <ul className="divide-y divide-border">
-                  {lots.map(l => (
-                    <li key={l.id} className="py-2 flex items-center justify-between gap-3 flex-wrap">
-                      <div className="text-sm">
-                        <div className="font-medium">
-                          Lot {l.lotCode || "—"} · {l.product || "—"}
-                          {l.status === "draft" && <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded border tp-card-dim">{M.draft}</span>}
-                        </div>
-                        <div className="tp-card-dim">
-                          {l.bakeDate && <span>{M.bakedOn(l.bakeDate)} · </span>}
-                          <span>{M.stage[l.stage] ?? l.stage}</span>
-                          {l.onHold && <span className="ml-2 text-destructive font-medium">{M.onHold}</span>}
-                        </div>
-                      </div>
-                      {l.stage === "awaiting_release" || l.stage === "released" ? (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {/* Release is the SQF Practitioner's alone (FSQM-020): the steps, for admins and owners. */}
-                          {l.stage === "awaiting_release" && isAdmin && (
-                            <ReleaseButton
-                              lot={l} steps={releaseSteps(records!, l)} lang={lang}
-                              docs={{ retention: docOf("retention"), release: docOf("releases") }}
-                            />
-                          )}
-                          <Button asChild variant="outline" size="sm"><Link to={entryHref(l.docId, l.id)}>{M.releaseSteps.step.lot}</Link></Button>
-                          {/* The lot's records, to open and read: on a released lot for everyone, and before the release
-                              for those who do not have the Release menu. It never starts or changes a record. */}
-                          {(l.stage === "released" || !isAdmin) && <LotRecordsButton lines={lotRecords(records!, l)} lang={lang} />}
-                          {/* Until it is released, the lot can still be followed: the sample and the release are steps of the flow. */}
-                          {l.stage === "awaiting_release" && isAdmin && (
-                            <Button asChild size="sm" title={M.flow.followTip} className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
-                              <Link to={lotFlowHref(l.id)}><Footprints className="w-4 h-4 mr-1" />{M.flow.follow}</Link>
-                            </Button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {/* Baking comes before the lot record's next step, so its button comes first. */}
-                          {canVoice && docOf("baking") && l.lotCode && l.product && (
-                            <BakeLoadButton
-                              doc={docOf("baking")!} lot={l.lotCode} product={l.product} today={today}
-                              state={bakeState(records!, today, l.product, l.lotCode)}
-                              lang={lang} disabled={!open} onSaved={load}
-                            />
-                          )}
-                          {canVoice && docOf("sealing") && l.lotCode && l.product && (
-                            <SealCheckButton
-                              doc={docOf("sealing")!} lot={l.lotCode} product={l.product} today={today}
-                              state={sealState(records!, today, l.product, l.lotCode)}
-                              lang={lang} disabled={!open} onSaved={load}
-                            />
-                          )}
-                          {/* Packing is on the lot's own record: the first pack from a photo, and the counts. */}
-                          {canVoice && docOf("lots") && l.lotCode && l.product && (
-                            <PackingButton
-                              doc={docOf("lots")!} entryId={l.id} lot={l.lotCode} product={l.product} today={today}
-                              state={l.packing} lang={lang} disabled={!open} onSaved={load}
-                            />
-                          )}
-                          <Button asChild size="sm" variant="outline" disabled={!open}>
-                            <Link to={entryHref(l.docId, l.id)} aria-disabled={!open} onClick={e => { if (!open) e.preventDefault(); }}>
-                              {M.continueLot}
-                            </Link>
-                          </Button>
-                          {/* The same work one step at a time: the page becomes this lot only. */}
-                          {canVoice && (
-                            <Button asChild size="sm" title={M.flow.followTip} className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
-                              <Link to={lotFlowHref(l.id)}><Footprints className="w-4 h-4 mr-1" />{M.flow.follow}</Link>
-                            </Button>
-                          )}
-                        </div>
+                  {making.map(l => lotLine(l, (
+                    <>
+                      {/* Baking comes before the lot record's next step, so its button comes first. */}
+                      {canVoice && docOf("baking") && l.lotCode && l.product && (
+                        <BakeLoadButton
+                          doc={docOf("baking")!} lot={l.lotCode} product={l.product} today={today}
+                          state={bakeState(records!, today, l.product, l.lotCode)}
+                          lang={lang} disabled={!open} onSaved={load}
+                        />
                       )}
-                    </li>
-                  ))}
+                      {canVoice && docOf("sealing") && l.lotCode && l.product && (
+                        <SealCheckButton
+                          doc={docOf("sealing")!} lot={l.lotCode} product={l.product} today={today}
+                          state={sealState(records!, today, l.product, l.lotCode)}
+                          lang={lang} disabled={!open} onSaved={load}
+                        />
+                      )}
+                      {/* Packing is on the lot's own record: the first pack from a photo, and the counts. */}
+                      {canVoice && docOf("lots") && l.lotCode && l.product && (
+                        <PackingButton
+                          doc={docOf("lots")!} entryId={l.id} lot={l.lotCode} product={l.product} today={today}
+                          state={l.packing} lang={lang} disabled={!open} onSaved={load}
+                        />
+                      )}
+                      <Button asChild size="sm" variant="outline" disabled={!open}>
+                        <Link to={entryHref(l.docId, l.id)} aria-disabled={!open} onClick={e => { if (!open) e.preventDefault(); }}>
+                          {M.continueLot}
+                        </Link>
+                      </Button>
+                      {/* The same work one step at a time: the page becomes this lot only. */}
+                      {canVoice && (
+                        <Button asChild size="sm" title={M.flow.followTip} className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+                          <Link to={lotFlowHref(l.id)}><Footprints className="w-4 h-4 mr-1" />{M.flow.follow}</Link>
+                        </Button>
+                      )}
+                    </>
+                  )))}
                 </ul>
               )}
 
-              <div className="flex flex-wrap gap-2 pt-1">
-                <Button onClick={startLot} disabled={!open || !docOf("lots") || busy === "lot"} size="sm"
-                  className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
-                  {busy === "lot" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Play className="w-4 h-4 mr-1" />}
-                  {M.startLot}
-                </Button>
-              </div>
-              <p className="text-xs tp-card-dim">
-                {ccp.baking || ccp.sealing.length
-                  ? [ccp.baking ? M.ccpBakingToday(ovenLoads(ccp.baking)) : null, ccp.sealing.length ? M.ccpSealingToday(ccp.sealing.length) : null].filter(Boolean).join(" ")
-                  : M.ccpTodayNone}
-                {review && <span className="ml-1 font-medium text-emerald-700">{M.bake.awaitingReview(review.by)}</span>}
-                {sealReview && <span className="ml-1 font-medium text-emerald-700">{M.seal.awaitingReview(sealReview.by)}</span>}
-              </p>
+              {/* Said only once a bake or a seal check is on record today: with none, there is nothing to say (owner, 2026-10-13). */}
+              {(ccp.baking || ccp.sealing.length > 0 || review || sealReview) && (
+                <p className="text-xs tp-card-dim">
+                  {[ccp.baking ? M.ccpBakingToday(ovenLoads(ccp.baking)) : null, ccp.sealing.length ? M.ccpSealingToday(ccp.sealing.length) : null].filter(Boolean).join(" ")}
+                  {review && <span className="ml-1 font-medium text-emerald-700">{M.bake.awaitingReview(review.by)}</span>}
+                  {sealReview && <span className="ml-1 font-medium text-emerald-700">{M.seal.awaitingReview(sealReview.by)}</span>}
+                </p>
+              )}
             </>
+          ), (
+            // Above the lots, on the card's own line: starting a lot is the first thing done here (owner, 2026-10-13).
+            <Button onClick={startLot} disabled={!open || !docOf("lots") || busy === "lot"} size="sm"
+              className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+              {busy === "lot" ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Play className="w-4 h-4 mr-1" />}
+              {M.startLot}
+            </Button>
           ))}
 
           {/* ---- Receiving ---- */}
@@ -400,33 +423,68 @@ export default function Today() {
             </div>
           ))}
 
-          {/* ---- Finished product ---- */}
+          {/* ---- Finished product: lots waiting for their release ---- */}
           {section(M.finished, <PackageCheck className="w-4 h-4 text-[hsl(var(--tp-gold))]" />, (
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="text-sm space-y-1">
-                <div className={awaitingRelease.length ? "font-medium" : "tp-card-dim"}>{M.awaitingRelease(awaitingRelease.length)}</div>
-                {awaitingRelease.length > 0 && (
-                  <ul className="text-xs tp-card-dim">{awaitingRelease.map(l => <li key={l.id}>Lot {l.lotCode} · {l.product}</li>)}</ul>
-                )}
-                <div className="tp-card-dim">{M.awaitingCollection(awaitingCollection.length)}</div>
-              </div>
-              {isAdmin && docOf("releases") && (
-                <Button asChild size="sm" variant="outline"><Link to={startHref(docOf("releases")!.id)}>{M.release}</Link></Button>
-              )}
-            </div>
-          ))}
+            finishedLots.length === 0 ? (
+              <p className="text-sm tp-card-dim">{M.awaitingRelease(0)}</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {finishedLots.map(l => lotLine(l, (
+                  <>
+                    {/* Release is the SQF Practitioner's alone (FSQM-020): the steps, for admins and owners. */}
+                    {l.stage === "awaiting_release" && isAdmin && (
+                      <ReleaseButton
+                        lot={l} steps={releaseSteps(records!, l)} lang={lang}
+                        docs={{ retention: docOf("retention"), release: docOf("releases") }}
+                      />
+                    )}
+                    {lotRecordButton(l)}
+                    {/* The lot's records, to open and read, for those who do not have the Release menu on this lot. */}
+                    {(l.stage !== "awaiting_release" || !isAdmin) && <LotRecordsButton lines={lotRecords(records!, l)} lang={lang} />}
+                    {/* Until it is released, the lot can still be followed: the reviews and the release are steps of the flow. */}
+                    {l.stage === "awaiting_release" && isAdmin && (
+                      <Button asChild size="sm" title={M.flow.followTip} className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+                        <Link to={lotFlowHref(l.id)}><Footprints className="w-4 h-4 mr-1" />{M.flow.follow}</Link>
+                      </Button>
+                    )}
+                  </>
+                )))}
+              </ul>
+            )
+          ), isAdmin && docOf("releases") ? (
+            <Button asChild size="sm" variant="outline"><Link to={startHref(docOf("releases")!.id)}>{M.release}</Link></Button>
+          ) : undefined)}
 
-          {/* ---- Shipping ---- */}
+          {/* ---- Shipping: lots released and waiting for the truck ---- */}
           {section(M.shipping, <Truck className="w-4 h-4 text-[hsl(var(--tp-gold))]" />, (
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="text-sm tp-card-dim">
-                {dispatch ? M.lastDispatch(dispatch.date, dispatch.customer, dispatch.lots, dispatch.status !== "submitted") : M.noDispatches}
-              </div>
-              {docOf("dispatches") && (
-                <Button asChild size="sm" variant="outline"><Link to={startHref(docOf("dispatches")!.id)}>{M.recordCollection}</Link></Button>
+            <>
+              {awaitingCollection.length === 0 ? (
+                <p className="text-sm tp-card-dim">{M.awaitingCollection(0)}</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {awaitingCollection.map(l => lotLine(l, (
+                    <>
+                      {lotRecordButton(l)}
+                      <LotRecordsButton lines={lotRecords(records!, l)} lang={lang} />
+                      {/* Today's dispatch record with this lot on it. A lot leaves the page when that record is submitted. */}
+                      {canVoice && docOf("dispatches") && (
+                        <Button size="sm" onClick={() => collectLot(l)} disabled={busy === `collect:${l.id}`}
+                          className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+                          {busy === `collect:${l.id}` ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Truck className="w-4 h-4 mr-1" />}
+                          {M.collectLot}
+                        </Button>
+                      )}
+                    </>
+                  )))}
+                </ul>
               )}
-            </div>
-          ))}
+              <p className="text-xs tp-card-dim">
+                {dispatch ? M.lastDispatch(dispatch.date, dispatch.customer, dispatch.lots, dispatch.status !== "submitted") : M.noDispatches}
+              </p>
+            </>
+          ), docOf("dispatches") ? (
+            <Button asChild size="sm" variant="outline"><Link to={startHref(docOf("dispatches")!.id)}>{M.recordCollection}</Link></Button>
+          ) : undefined)}
 
           {/* ---- Attention (admin / owner) ---- */}
           {isAdmin && section(M.attention, <Bell className="w-4 h-4 text-[hsl(var(--tp-gold))]" />, (
