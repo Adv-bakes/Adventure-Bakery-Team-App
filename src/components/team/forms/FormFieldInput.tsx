@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { deriveDateValue, deriveTextValue, nextDerivedFill } from "@/lib/formSchema";
+import { appendLotText, deriveDateValue, deriveTextValue, hasLotText, julianLotCode, nextDerivedFill } from "@/lib/formSchema";
 import { loadSelectOptions, loadSuggestRows } from "@/lib/formReport";
 import { suggestValuesFromRows } from "@/lib/pickFrom";
 import { fetchFormLinkTarget, type FormLinkTarget } from "@/lib/formResponses";
@@ -125,6 +125,32 @@ function DerivedText({ derive, control, value, onChange }: {
       title={`Today's value - set the ${from} and this follows it`}
     >
       {derive.as === "julian_lot" ? "Today" : "Use"} {today}
+    </button>
+  );
+}
+
+/**
+ * The "Lot 6286" link beside a text field (TextField.lotLink): adds the lot code of the form's
+ * date - today's while that date is blank - to what is typed. Nothing is shown once the text
+ * names that lot.
+ */
+function LotLink({ spec, control, value, onChange }: {
+  spec: NonNullable<TextField["lotLink"]>;
+  control: Control<Record<string, any>>;
+  value: unknown;
+  onChange: (value: string) => void;
+}) {
+  const source = useWatch({ control, name: spec.fromField });
+  const lot = julianLotCode(source) ?? julianLotCode(format(new Date(), "yyyy-MM-dd"));
+  if (!lot || hasLotText(value, lot)) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(appendLotText(value, lot))}
+      className="text-xs font-medium text-[#9A6F1E] hover:underline shrink-0 whitespace-nowrap"
+      title={`Add the lot code of ${julianLotCode(source) ? `the ${spec.fromField.replace(/_/g, " ")}` : "today"}`}
+    >
+      Lot {lot}
     </button>
   );
 }
@@ -576,10 +602,16 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer, sugg
             );
         }
 
+        const lotLink = field.type === "text" && !disabled ? (field as TextField).lotLink : undefined;
         return (
           <div className="space-y-1">
             {labelEl}
-            {input}
+            {lotLink ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">{input}</div>
+                <LotLink spec={lotLink} control={control} value={rhf.value} onChange={rhf.onChange} />
+              </div>
+            ) : input}
             {field.help && <p className="text-xs text-muted-foreground"><DocRefText text={field.help} /></p>}
             {field.linkTo && <FormLink spec={field.linkTo} />}
             {error && <p className="text-xs text-red-600">{error}</p>}
