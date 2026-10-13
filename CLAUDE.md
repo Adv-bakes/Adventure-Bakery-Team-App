@@ -1321,6 +1321,15 @@ starting from `profiles.preferred_language` and remembered in `localStorage` (`t
 - **The Receiving card links its logs** (owner, 2026-10-12): `recentReceipts(records, today)` gives the
   newest FRM-301 entry whenever it was made, plus every other one made today or yesterday; each line
   opens that entry, and a draft is tagged.
+- **Records, on a finished lot's row** (owner, 2026-10-13, `components/team/today/LotRecordsButton.tsx`):
+  a drop-down after the Lot record button listing the lot's records in the order they were made, each
+  with its name, form number and where it stands - lot record (FRM-520, mixing and packing), baking
+  (FRM-507), seal checks (FRM-606), retention sample (FRM-703), release (FRM-701), and the dispatch
+  (FRM-801) once one loads the lot, a draft included. `lotRecords(records, lot)` (`today.ts`) =
+  `releaseSteps` plus the dispatch. **It only opens a record; it never starts or changes one**, so it is
+  shown to everyone: on a released lot, and before the release to those without the Release menu. The
+  day's FRM-903 is not listed (it belongs to the day, not the lot). A lot with several seal check
+  records opens the first still a draft, else the newest, as the Release menu does.
 - Entries opened from here carry `?from=today`; `FormEntry` turns that into "Back to Today" (same
   mechanism as `from=notifications`). `loadTodayRecords()` is the loader, same shape as
   `loadReleaseRecords` (mapped keys only, paged, `_test_batch` rows skipped) plus `created_by` /
