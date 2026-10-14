@@ -6,7 +6,7 @@ import pdfMake from "pdfmake/build/pdfmake";
 import type { Content, TableCell, TDocumentDefinitions } from "pdfmake/interfaces";
 import { format } from "date-fns";
 import { appOrigin, confidentialFooter, loadLogoDataUrl, PDF_GOLD } from "@/lib/sopPdf";
-import type { ContactRow, LotTrace, RecordRef, TraceResult } from "@/lib/lotTrace";
+import { noReceiptExpected, type ContactRow, type LotTrace, type RecordRef, type TraceResult } from "@/lib/lotTrace";
 
 const GRID = { hLineColor: () => "#999999", vLineColor: () => "#999999", hLineWidth: () => 0.5, vLineWidth: () => 0.5 };
 const dash = "-";
@@ -45,12 +45,15 @@ function lotBlock(lot: LotTrace): Content[] {
       headerRows: 1, widths: ["30%", "22%", "*"],
       body: [
         head(["Ingredient", "Supplier lot", "Received (FRM-301)"]),
-        ...lot.inputs.map((i): TableCell[] => [
-          { text: [i.ingredient, i.brand ? ` (${i.brand})` : "", i.trigger ? "  - the lot traced" : ""], bold: i.trigger },
+        // A batch made on site (the syrup) opens out to what it was made from, one row each, indented.
+        ...lot.inputs.flatMap(i => [{ i, sub: false }, ...(i.madeHere?.inputs ?? []).map(s => ({ i: s, sub: true }))]).map(({ i, sub }): TableCell[] => [
+          { text: [sub ? "in it: " : "", i.ingredient, i.brand ? ` (${i.brand})` : "", i.trigger && !i.madeHere ? "  - the lot traced" : ""], bold: i.trigger && !i.madeHere, margin: [sub ? 10 : 0, 0, 0, 0] },
           i.supplierLot || { text: "none recorded", color: "#B45309" },
-          i.receipts.length
+          i.madeHere
+            ? { stack: [`Made here ${i.madeHere.madeOn}${i.madeHere.useBy ? `, use by ${i.madeHere.useBy}` : ""}`, recordLink(i.madeHere.ref)] }
+            : i.receipts.length
             ? { stack: i.receipts.map(r => ({ stack: [`${r.date}${r.supplier ? ` - ${r.supplier}` : ""}${r.qty ? `, qty ${r.qty}` : ""}`, recordLink(r.ref)] })) }
-            : i.supplierLot ? { text: "no receipt found", color: "#B45309" } : dash,
+            : i.supplierLot ? (noReceiptExpected(i.supplierLot) ? { text: "not received", color: "#777777" } : { text: "no receipt found", color: "#B45309" }) : dash,
         ]),
       ],
     },
@@ -105,7 +108,9 @@ export function buildTraceDoc(result: TraceResult, context?: { recordTitle?: str
 
   if (result.gaps.length) {
     body.push(h2("What the records do not show"));
-    body.push({ ul: result.gaps, fontSize: 8.5, color: "#92400E" });
+    // A copy: pdfmake rewrites a list's items in place, and these are the page's own - handing them over
+    // turned each gap into an object and the page crashed on its next render.
+    body.push({ ul: [...result.gaps], fontSize: 8.5, color: "#92400E" });
   }
   if (start.kind === "material" && result.materialReceipts.length) {
     body.push(h2(`Receipts of supplier lot ${start.lot} (FRM-301)`));

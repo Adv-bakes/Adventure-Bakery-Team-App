@@ -44,7 +44,7 @@ export default function LotTrace() {
           Trace a supplier lot forward to every lot of ours it went into, or one of our lots back to its
           supplier lots and forward to the customers who collected it. The records are pulled from the
           Production Lot Records (FRM-520), receiving (FRM-301), dispatch (FRM-801), retention (FRM-703),
-          release (FRM-701), holds (FRM-702) and the contact list (FRM-011).
+          release (FRM-701), holds (FRM-702), the batches made on site such as the syrup (FRM-530) and the contact list (FRM-011).
         </p>
       </div>
 

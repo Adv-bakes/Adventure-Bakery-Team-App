@@ -75,6 +75,8 @@ export interface TodayMessages {
   records: {
     button: string; heading: string; submitted: string; draft: string; none: string;
     name: Record<"lot" | "baking" | "sealing" | "retention" | "release" | "dispatch", string>;
+    /** A batch made on site the lot was dunked in. */
+    batchName(title: string): string;
   };
   /** The packing button on a lot's row: the first pack from a photo, and the three counts. */
   pack: {
@@ -342,6 +344,7 @@ const en: TodayMessages = {
   records: {
     button: "Records",
     heading: "This lot's records, in order. Choose one to open it.",
+    batchName: title => `${title} - made here (FRM-530)`,
     submitted: "Submitted",
     draft: "Still a draft",
     none: "None found for this lot",
@@ -766,6 +769,7 @@ const es: TodayMessages = {
   records: {
     button: "Registros",
     heading: "Los registros de este lote, en orden. Elija uno para abrirlo.",
+    batchName: title => `${title} - hecho aquí (FRM-530)`,
     submitted: "Enviado",
     draft: "Aún en borrador",
     none: "No se encontró ninguno para este lote",

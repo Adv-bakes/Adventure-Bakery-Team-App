@@ -321,6 +321,15 @@ check("attention counts", T.attentionCounts([
   check("nothing made on site: nothing offered", T.syrupLotsFor(r, "Rum", "2026-10-15"), []);
   check("batches being made are the drafts", T.batchesInProgress(r).map(b => b.lotCode), ["6280"]);
 
+  // A lot's Records: the syrup it was dunked in, after the baking.
+  r.lots.push(lot("Rum Cake - Original", "6290", "submitted", { ingredients: [
+    { ingredient: "Cake mix", supplier_lot: "CM-1" }, { ingredient: "Simple syrup", supplier_lot: "62-87" }, { ingredient: "Rum", supplier_lot: "R-1" },
+  ] }));
+  const lr = T.lotRecords(r, T.lotSummaries(r).find(l => l.lotCode === "6290"));
+  check("Records lists the syrup batch after the baking", lr.map(l => l.key), ["lot", "baking", "batch", "sealing", "retention", "release"]);
+  check("...named, and opened from its own record", [lr[2].title, lr[2].state], ["Simple Syrup lot 6287", "done"]);
+  check("a lot dunked in nothing made here lists no batch", T.lotRecords(r, T.lotSummaries(r).find(l => l.lotCode === "6279") ?? { id: "x", product: "", lotCode: "" }).some(l => l.key === "batch"), false);
+
   // On the shelf: signed, with a lot code; in date, or past it by no more than a week.
   const shelf = T.batchesOnShelf(r, "2026-10-15");
   check("on the shelf: signed batches in date, grouped by product", shelf.map(b => `${b.product}:${b.lotCode}`), ["Caramel glaze:6286", "Simple Syrup:6287"]);

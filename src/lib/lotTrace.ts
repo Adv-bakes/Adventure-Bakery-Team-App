@@ -30,6 +30,12 @@ export const TRACE_FORMS = {
   releases:   { form: "FRM-701", fields: ["product_name", "lot_code", "quantity_released", "customer", "decision"], grids: {} },
   holds:      { form: "FRM-702", fields: ["hold_tag_number", "material_name_description", "supplier_name", "supplier_lot_batch_number", "total_quantity_placed_on_hold", "detailed_description_of_issue", "final_disposition_decision"], grids: {} },
   contacts:   { form: "FRM-011", fields: ["reviewed_on"], grids: { contacts: ["group", "name", "phone", "email", "when"] } },
+  /**
+   * Batches made on site for use in other products - the simple syrup (FRM-530). A lot record's line
+   * whose ingredient is the batch's product and whose lot is the batch's lot code is that batch, and
+   * the trace follows it one step further back, to the supplier lots it was made from.
+   */
+  intermediates: { form: "FRM-530", fields: ["product", "lot_code", "made_on", "use_by"], grids: { ingredients: ["ingredient", "brand", "supplier_lot"] } },
 } as const satisfies Record<string, TraceFormSpec>;
 
 export type TraceKind = keyof typeof TRACE_FORMS;
@@ -92,7 +98,11 @@ export function namesMatch(a: unknown, b: unknown): boolean {
 }
 
 /** A lot cell that says there is no lot (mains water): not a missing receipt. */
-const NO_LOT = /\bno lot\b|^n\/?a$|^none$/i;
+// Water from the mains has no lot to receive, and is written as such.
+const NO_LOT = /\bno lot\b|^n\/?a$|^none$|^mains\b|^municipal\b|^tap\b/i;
+
+/** A supplier lot that is not received, so has no FRM-301 entry to find ("mains" water, "no lot"). */
+export const noReceiptExpected = (lot: string) => NO_LOT.test(str(lot));
 const str = (v: unknown) => (v == null ? "" : String(v).trim());
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 const rowsOf = (e: TraceEntry, grid: string): Record<string, any>[] =>
@@ -140,6 +150,11 @@ export interface InputLine {
   trigger: boolean;
   receipts: ReceiptLine[];
   ref: RecordRef;
+  /**
+   * The line is a batch made on site (FRM-530): its record, and the supplier lots it was made from,
+   * each with its own receipts. `trigger` on the line is set when one of those is the traced lot.
+   */
+  madeHere?: { ref: RecordRef; madeOn: string; useBy: string; inputs: InputLine[] };
 }
 export interface DispatchLine { customer: string; product: string; quantity: string; date: string; ref: RecordRef }
 export interface RetentionLine { product: string; customer: string; units: string; location: string; disposition: string; ref: RecordRef }
@@ -205,6 +220,33 @@ function receiptIndex(records: TraceRecords): Map<string, ReceiptLine[]> {
   return idx;
 }
 
+/** The batch made on site that a lot record's line names: same product as its ingredient, same lot code. */
+function batchFor(records: TraceRecords, ingredient: unknown, lot: unknown): TraceEntry | null {
+  const key = normLot(lot);
+  if (!key || !normName(ingredient)) return null;
+  const hits = (records.intermediates ?? []).filter(b => normLot(b.data.lot_code) === key && namesMatch(b.data.product, ingredient));
+  // A submitted record before a draft, then the newest.
+  return hits.sort((a, b) => Number(isDraft(a)) - Number(isDraft(b)) || String(b.date ?? "").localeCompare(String(a.date ?? "")))[0] ?? null;
+}
+
+function batchTitle(e: TraceEntry): string {
+  return [str(e.data.product), str(e.data.lot_code) && `lot ${str(e.data.lot_code)}`].filter(Boolean).join(" ");
+}
+
+/** The supplier lots a batch made on site was made from, each with its receipts. */
+function batchInputs(records: TraceRecords, receipts: Map<string, ReceiptLine[]>, b: TraceEntry, triggerLot: string): InputLine[] {
+  const r530 = ref("intermediates", b, batchTitle(b));
+  return rowsOf(b, "ingredients").filter(row => str(row.ingredient) || str(row.supplier_lot)).map(row => {
+    const lot = str(row.supplier_lot);
+    return {
+      ingredient: str(row.ingredient), brand: str(row.brand), supplierLot: lot,
+      trigger: !!triggerLot && normLot(lot) === triggerLot,
+      receipts: lot ? receipts.get(normLot(lot)) ?? [] : [],
+      ref: r530,
+    };
+  });
+}
+
 function lotTitle(e: TraceEntry): string {
   return [str(e.data.lot_code), str(e.data.product)].filter(Boolean).join(" - ");
 }
@@ -222,11 +264,18 @@ function buildLot(records: TraceRecords, receipts: Map<string, ReceiptLine[]>, c
     for (const row of rowsOf(e, "ingredients")) {
       const lot = str(row.supplier_lot);
       if (!str(row.ingredient) && !lot) continue;
+      const batch = batchFor(records, row.ingredient, lot);
+      const made = batch ? {
+        ref: ref("intermediates", batch, batchTitle(batch)), madeOn: str(batch.data.made_on), useBy: str(batch.data.use_by),
+        inputs: batchInputs(records, receipts, batch, triggerLot),
+      } : undefined;
       inputs.push({
         ingredient: str(row.ingredient), brand: str(row.brand), supplierLot: lot,
-        trigger: !!triggerLot && normLot(lot) === triggerLot,
-        receipts: lot ? receipts.get(normLot(lot)) ?? [] : [],
+        trigger: !!triggerLot && (normLot(lot) === triggerLot || !!made?.inputs.some(i => i.trigger)),
+        // A batch made on site is not received: its record is the batch record.
+        receipts: lot && !made ? receipts.get(normLot(lot)) ?? [] : [],
         ref: r520,
+        ...(made ? { madeHere: made } : {}),
       });
     }
     const film = str(e.data.film_lot);
@@ -330,14 +379,22 @@ export function runTrace(records: TraceRecords, start: TraceStart): TraceResult 
 
   if (start.kind === "material") {
     result.materialReceipts = receipts.get(target) ?? [];
+    // The batches made on site that used this supplier lot: a lot dunked in one of them used it too.
+    const viaBatches = (records.intermediates ?? []).filter(b => rowsOf(b, "ingredients").some(r => normLot(r.supplier_lot) === target));
     for (const e of records.lots) {
-      const hit = rowsOf(e, "ingredients").some(r => normLot(r.supplier_lot) === target) || normLot(e.data.film_lot) === target;
+      const rows = rowsOf(e, "ingredients");
+      const hit = rows.some(r => normLot(r.supplier_lot) === target) || normLot(e.data.film_lot) === target
+        || rows.some(r => viaBatches.some(b => normLot(b.data.lot_code) === normLot(r.supplier_lot) && namesMatch(b.data.product, r.ingredient)));
       if (hit) add(e);
     }
+    if (viaBatches.length && groups.size === 0) {
+      gaps.push(`Supplier lot ${start.lot} went into ${viaBatches.map(b => batchTitle(b)).join(", ")} (FRM-530), which no Production Lot Record (FRM-520) names yet.`);
+    }
     for (const g of groups.values()) lots.push(buildLot(records, receipts, g.code, g.product, g.entries, target));
-    if (lots.length === 0) gaps.push(`No Production Lot Record (FRM-520) lists supplier lot ${start.lot}. Check the spelling of the lot, and any production from before FRM-520 was in use.`);
+    if (lots.length === 0 && !viaBatches.length) gaps.push(`No Production Lot Record (FRM-520) lists supplier lot ${start.lot}. Check the spelling of the lot, and any production from before FRM-520 was in use.`);
     if (result.materialReceipts.length === 0) gaps.push(`No receipt of supplier lot ${start.lot} on FRM-301.`);
-    const names = new Set(lots.flatMap(l => l.inputs.filter(i => i.trigger).map(i => normName(i.ingredient))));
+    const names = new Set(lots.flatMap(l => l.inputs.flatMap(i => [i, ...(i.madeHere?.inputs ?? [])])
+      .filter(i => i.trigger && !i.madeHere).map(i => normName(i.ingredient))));
     if (names.size > 1) gaps.push(`Supplier lot ${start.lot} is recorded under ${names.size} different ingredient names - check they are the same material.`);
   } else {
     for (const e of records.lots) if (normLot(e.data.lot_code) === target) add(e);
@@ -356,8 +413,12 @@ export function runTrace(records: TraceRecords, start: TraceStart): TraceResult 
   for (const lot of lots) {
     const name = [lot.lotCode, lot.product].filter(Boolean).join(" ");
     // One line per lot, not one per ingredient: ten amber lines are read by nobody under stress.
-    const lotted = lot.inputs.filter(i => i.supplierLot && !NO_LOT.test(i.supplierLot));
-    const unlotted = lot.inputs.filter(i => !i.supplierLot);
+    // A batch made on site is checked through what it was made from, not for a receipt of its own.
+    const flat = lot.inputs.flatMap(i => i.madeHere
+      ? i.madeHere.inputs.map(s => ({ ...s, ingredient: `${s.ingredient} (in ${i.ingredient} lot ${i.supplierLot})` }))
+      : [i]);
+    const lotted = flat.filter(i => i.supplierLot && !NO_LOT.test(i.supplierLot));
+    const unlotted = flat.filter(i => !i.supplierLot);
     const unreceived = lotted.filter(i => i.receipts.length === 0);
     if (unlotted.length) gaps.push(`${name}: no supplier lot recorded for ${unlotted.map(i => i.ingredient).join(", ")}.`);
     if (unreceived.length) {
@@ -378,7 +439,10 @@ export function runTrace(records: TraceRecords, start: TraceStart): TraceResult 
   const note = (r: RecordRef) => { if (r.draft) drafts.set(r.id, r); };
   for (const l of lots) {
     l.records.forEach(note);
-    l.inputs.forEach(i => i.receipts.forEach(x => note(x.ref)));
+    l.inputs.forEach(i => {
+      i.receipts.forEach(x => note(x.ref));
+      if (i.madeHere) { note(i.madeHere.ref); i.madeHere.inputs.forEach(s => s.receipts.forEach(x => note(x.ref))); }
+    });
     [...l.dispatches, ...l.retention, ...l.releases].forEach(x => note(x.ref));
   }
   result.materialReceipts.forEach(x => note(x.ref));
@@ -432,6 +496,11 @@ export function startOptions(records: TraceRecords): StartOption[] {
     push("material", e.data.film_lot, "Film / bag");
   }
   for (const e of records.receipts) for (const r of rowsOf(e, "receiving_log")) push("material", r.lot_batch_number, r.material_description);
+  // A batch made on site, and what it was made from: tracing its lot finds the lots dunked in it.
+  for (const e of records.intermediates ?? []) {
+    push("material", e.data.lot_code, e.data.product);
+    for (const r of rowsOf(e, "ingredients")) push("material", r.supplier_lot, r.ingredient);
+  }
   for (const e of records.dispatches) for (const r of rowsOf(e, "loaded")) push("lot", r.lot_code, r.product);
   for (const e of records.retention) push("lot", e.data.lot_code, e.data.product_name);
   for (const e of records.releases) push("lot", e.data.lot_code, e.data.product_name);
@@ -454,6 +523,21 @@ export function toRecordFill(result: TraceResult): Record<string, any> {
   for (const l of lots) {
     for (const i of l.inputs) {
       const base = { finished_lot: lotName(l), ingredient: i.ingredient, supplier_lot: i.supplierLot };
+      if (i.madeHere) {
+        // Made on site: its batch record is what is found, then each supplier lot it was made from.
+        trace_back.push({ ...base, supplier: i.brand || "Made on site", received: i.madeHere.madeOn, found: "Found",
+          source: `${i.ref.title}; ${i.madeHere.ref.title}`, _src: srcKey(i.madeHere.ref) });
+        for (const s of i.madeHere.inputs) {
+          const sub = { finished_lot: lotName(l), ingredient: `${s.ingredient} (in ${i.ingredient} lot ${i.supplierLot})`, supplier_lot: s.supplierLot };
+          if (s.receipts.length === 0) {
+            trace_back.push({ ...sub, supplier: s.brand, received: "", found: "Not found", source: s.ref.title, _src: srcKey(s.ref) });
+          } else for (const r of s.receipts) {
+            trace_back.push({ ...sub, supplier: r.supplier || s.brand, received: r.date, found: "Found",
+              source: `${s.ref.title}; ${r.ref.title}`, _src: srcKey(r.ref) });
+          }
+        }
+        continue;
+      }
       if (i.receipts.length === 0) {
         trace_back.push({ ...base, supplier: i.brand, received: "", found: "Not found", source: i.ref.title, _src: srcKey(i.ref) });
       } else for (const r of i.receipts) {
@@ -473,7 +557,7 @@ export function toRecordFill(result: TraceResult): Record<string, any> {
       _src: l.records[0] ? srcKey(l.records[0]) : "",
     });
   }
-  const trigger = lots.flatMap(l => l.inputs).find(i => i.trigger);
+  const trigger = lots.flatMap(l => l.inputs.flatMap(i => i.madeHere ? i.madeHere.inputs : [i])).find(i => i.trigger);
   const customers = [...new Set(result.customers.map(c => c.customer))];
   const fill: Record<string, any> = {
     trigger: start.kind === "material" ? RECALL_TRIGGERS.material : RECALL_TRIGGERS.lot,
