@@ -20,7 +20,7 @@ export interface TodayMessages {
   blockedBody: string;
   startLot: string;
   /** A new lot started from its formula sheet and taken step by step (LotFlow.tsx). */
-  startLotSteps: string; startLotStepsTip: string; pickFormulaTitle: string; pickFormula: string; lotExists(lot: string, product: string): string;
+  startLotSteps: string; startLotStepsTip: string; pickFormulaTitle: string; pickFormula: string; lotExists(lot: string, product: string): string; lotSubmitted(lot: string, product: string): string;
   continueLot: string;
   noLots: string;
   bakedOn(date: string): string;
@@ -183,6 +183,7 @@ const en: TodayMessages = {
   pickFormulaTitle: "Start a lot step by step",
   pickFormula: "Pick the product. Its ingredients and expected quantities start today's lot record; the lots and the weights are left blank for you to enter.",
   lotExists: (lot, product) => `Lot ${lot} · ${product} is already started today. It has been opened.`,
+  lotSubmitted: (lot, product) => `Lot ${lot} · ${product} already has a submitted lot record today, so a second one was not started. To add to it, an admin reopens that record.`,
   continueLot: "Continue",
   noLots: "No lot is in progress.",
   bakedOn: date => `baked ${date}`,
@@ -537,6 +538,7 @@ const es: TodayMessages = {
   pickFormulaTitle: "Empezar un lote paso a paso",
   pickFormula: "Elija el producto. Sus ingredientes y cantidades esperadas inician el registro del lote de hoy; los lotes y los pesos quedan en blanco para que usted los anote.",
   lotExists: (lot, product) => `El lote ${lot} · ${product} ya está empezado hoy. Se abrió.`,
+  lotSubmitted: (lot, product) => `El lote ${lot} · ${product} ya tiene hoy un registro de lote enviado, así que no se empezó otro. Para añadirle, un administrador reabre ese registro.`,
   continueLot: "Continuar",
   noLots: "No hay ningún lote en curso.",
   bakedOn: date => `horneado ${date}`,
