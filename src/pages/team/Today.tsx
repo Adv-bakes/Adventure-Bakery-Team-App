@@ -15,10 +15,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  AlertTriangle, Bell, CheckCircle2, ClipboardCheck, Factory, Footprints, Loader2, PackageCheck,
+  AlertTriangle, Bell, CheckCircle2, ChevronDown, ChevronRight, ClipboardCheck, Factory, Footprints, Loader2, PackageCheck,
   PackageOpen, Play, ShieldAlert, Sun, Truck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useUserPref } from "@/lib/userPrefs";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,9 @@ function timeOf(iso: string | null): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+/** The per-person setting that keeps "Made here, on the shelf" folded away. */
+const SHELF_CLOSED = "today.shelfClosed";
+
 export default function Today() {
   const navigate = useNavigate();
   const { role, roles } = useUserRole();
@@ -77,6 +81,8 @@ export default function Today() {
   const [attention, setAttention] = useState({ overdue: 0, due: 0, askedOfMe: 0, alerts: 0 });
   const [busy, setBusy] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
+  // "Made here, on the shelf" folded away or open: remembered per person, on any device (owner, 2026-10-14).
+  const [shelfClosed, setShelfClosed] = useUserPref<boolean>(SHELF_CLOSED, false);
 
   const today = localDay();
 
@@ -464,8 +470,17 @@ export default function Today() {
               {/* Made on site and signed, still usable - the same batches the Dunking step offers (owner, 2026-10-14). */}
               {shelf.length > 0 && (
                 <div className="text-sm space-y-1">
-                  <div className="font-medium">{M.flow.batch.shelfTitle}</div>
-                  <ul className="space-y-0.5">
+                  <button type="button" onClick={() => setShelfClosed(!shelfClosed)} aria-expanded={!shelfClosed}
+                    className="flex items-center gap-1 font-medium hover:underline">
+                    {shelfClosed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {M.flow.batch.shelfTitle}
+                    {/* Folded away it still says how many, and a batch to discard is never hidden. */}
+                    {shelfClosed && <span className="font-normal tp-card-dim">({shelf.length})</span>}
+                    {shelfClosed && shelf.some(b => b.expired) && (
+                      <span className="ml-1 font-medium text-amber-700"><AlertTriangle className="inline w-3.5 h-3.5 mr-0.5 -mt-0.5" />{M.flow.batch.shelfToDiscard(shelf.filter(b => b.expired).length)}</span>
+                    )}
+                  </button>
+                  {!shelfClosed && <ul className="space-y-0.5 pl-5">
                     {shelf.map(b => (
                       <li key={b.id}>
                         <Link to={entryHref(b.docId, b.id)} className={`hover:underline ${b.expired ? "text-amber-700 font-medium" : "tp-card-dim"}`}>
@@ -474,7 +489,7 @@ export default function Today() {
                         </Link>
                       </li>
                     ))}
-                  </ul>
+                  </ul>}
                 </div>
               )}
 
