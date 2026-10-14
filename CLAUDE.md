@@ -639,7 +639,7 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   `useUserPref(key, fallback)` returns `[value, set]`; `fallback` must be a constant. All of a person's
   settings load once per page load and again when the account changes; a copy tagged with the user id is
   kept in `localStorage` (`userPrefs.cache`) so a page opens in the person's arrangement without a
-  flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, and `form.skipSubmitConfirm`
+  flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, `today.shelfClosed`, and `form.skipSubmitConfirm`
   (`SKIP_SUBMIT_CONFIRM`, owner 2026-10-12: a "Do not show this again" tick on FormEntry's "Submit this
   entry?" dialog, taking effect when the person goes on to submit; switched back on My Account, "Form
   entries"). **Conveniences, never records**: nothing in the lib throws, and with the table missing or the
@@ -1471,6 +1471,8 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     record, and one past its use-by in amber ("- discard") for 7 days, then it drops off. Not a history
     (the record's Entries list is that). FRM-530 records no "used up", so a batch emptied early still
     shows until its use-by; a "Used up / discarded on" field was offered as the fix if that misleads.
+    It folds away with a tap and stays folded per person (`useUserPref`, key `today.shelfClosed`);
+    folded, it still shows the count and "N to discard" in amber, so a batch past its use-by is never hidden.
   - **Not yet built (part 4):** the lot trace through a homemade syrup lot to its sugar lot, and the
     release helper / Records drop-down listing the syrup batch.
 

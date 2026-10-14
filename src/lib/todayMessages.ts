@@ -112,7 +112,7 @@ export interface TodayMessages {
       done(useBy: string): string; needsRecord: string; openRecord: string;
       onToday(product: string, lot: string): string; continue: string;
       offer: string; offerLine(lot: string, madeOn: string, useBy: string): string; draft: string; expired(useBy: string): string;
-      shelfTitle: string; shelfLine(product: string, lot: string, madeOn: string, useBy: string): string; shelfExpired(product: string, lot: string, useBy: string): string;
+      shelfTitle: string; shelfToDiscard(n: number): string; shelfLine(product: string, lot: string, madeOn: string, useBy: string): string; shelfExpired(product: string, lot: string, useBy: string): string;
     };
     /** Dunking: the lots of the syrup and the rum each lot is dunked in. */
     dunk: {
@@ -485,6 +485,7 @@ const en: TodayMessages = {
       draft: "not yet signed",
       expired: useBy => `Past its use-by date (${useBy}). FSQM-016: syrup is used within 30 days of being made.`,
       shelfTitle: "Made here, on the shelf",
+      shelfToDiscard: n => n === 1 ? "1 to discard" : `${n} to discard`,
       shelfLine: (product, lot, madeOn, useBy) => `${product} · Lot ${lot} · made ${madeOn} · use by ${useBy || "—"}`,
       shelfExpired: (product, lot, useBy) => `${product} · Lot ${lot} · past its use-by on ${useBy} - discard`,
     },
@@ -883,6 +884,7 @@ const es: TodayMessages = {
       draft: "sin firmar",
       expired: useBy => `Pasó su fecha de uso (${useBy}). FSQM-016: el almíbar se usa dentro de los 30 días de hecho.`,
       shelfTitle: "Hecho aquí, en el estante",
+      shelfToDiscard: n => n === 1 ? "1 para desechar" : `${n} para desechar`,
       shelfLine: (product, lot, madeOn, useBy) => `${product} · Lote ${lot} · hecho ${madeOn} · usar antes de ${useBy || "—"}`,
       shelfExpired: (product, lot, useBy) => `${product} · Lote ${lot} · pasó su fecha de uso el ${useBy} - desechar`,
     },
