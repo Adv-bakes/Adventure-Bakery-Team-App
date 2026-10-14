@@ -320,6 +320,16 @@ check("attention counts", T.attentionCounts([
   check("another product is not offered", T.syrupLotsFor(r, "Caramel glaze", "2026-10-15").map(o => o.lotCode), ["6286"]);
   check("nothing made on site: nothing offered", T.syrupLotsFor(r, "Rum", "2026-10-15"), []);
   check("batches being made are the drafts", T.batchesInProgress(r).map(b => b.lotCode), ["6280"]);
+
+  // On the shelf: signed, with a lot code; in date, or past it by no more than a week.
+  const shelf = T.batchesOnShelf(r, "2026-10-15");
+  check("on the shelf: signed batches in date, grouped by product", shelf.map(b => `${b.product}:${b.lotCode}`), ["Caramel glaze:6286", "Simple Syrup:6287"]);
+  check("a draft is not on the shelf", shelf.some(b => b.lotCode === "6280"), false);
+  check("a batch past its use-by by a week is still shown, flagged", T.batchesOnShelf(r, "2026-10-14").map(b => [b.lotCode, b.expired]),
+    [["6286", false], ["6287", false], ["6250", true]]);
+  check("...and then drops off", T.batchesOnShelf(r, "2026-10-15").some(b => b.lotCode === "6250"), false);
+  check("the use-by day itself is still in date", T.batchesOnShelf(r, "2026-11-13").find(b => b.lotCode === "6287").expired, false);
+  check("the day after it is not", T.batchesOnShelf(r, "2026-11-14").find(b => b.lotCode === "6287").expired, true);
 }
 
 console.log(`${cases - failures}/${cases} passed`);

@@ -208,6 +208,22 @@ export function batchesInProgress(records: TodayRecords): BatchSummary[] {
     .sort((a, b) => b.madeOn.localeCompare(a.madeOn) || a.product.localeCompare(b.product));
 }
 
+/**
+ * What made-on-site product is on the shelf (owner, 2026-10-14): every SIGNED batch with a lot code
+ * that is still within its use-by date, and - in amber, to be discarded - one past it by no more than
+ * a week, after which it drops off. FRM-530 records no "used up", so a batch emptied early still shows
+ * until its use-by. Grouped by product, newest first.
+ */
+export function batchesOnShelf(records: TodayRecords, today: string): SyrupLot[] {
+  const [y, m, d] = today.split("-").map(Number);
+  const weekAgo = new Date(Date.UTC(y, m - 1, d - 7)).toISOString().slice(0, 10);
+  return records.intermediates
+    .filter(e => isSubmitted(e) && str(e.data.lot_code) !== "")
+    .map(e => { const b = batchSummary(e); return { ...b, expired: !!b.useBy && b.useBy < today }; })
+    .filter(b => !b.expired || b.useBy >= weekAgo)
+    .sort((a, b) => a.product.localeCompare(b.product) || b.madeOn.localeCompare(a.madeOn) || b.lotCode.localeCompare(a.lotCode));
+}
+
 export interface SyrupLot extends BatchSummary {
   /** Past its use-by date (FSQM-016: used within 30 days of being made). */
   expired: boolean;

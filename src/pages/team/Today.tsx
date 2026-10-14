@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords, saveResponseData } from "@/lib/formResponses";
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
-  attentionCounts, bakeState, batchesInProgress, bakingAwaitingReview, ccpToday, lastDispatch, loadedWithLot, localDay, lotRecords, lotSummaries, lotsInProgress, openHolds, recentReceipts,
+  attentionCounts, bakeState, batchesInProgress, batchesOnShelf, bakingAwaitingReview, ccpToday, lastDispatch, loadedWithLot, localDay, lotRecords, lotSummaries, lotsInProgress, openHolds, recentReceipts,
   ovenLoads, preopState, productionOpen, releaseSteps, sealState, sealingAwaitingReview, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
@@ -143,6 +143,7 @@ export default function Today() {
   // truck under Shipping.
   const making = lots.filter(l => l.stage === "preparing" || l.stage === "in_progress");
   const batches = useMemo(() => records ? batchesInProgress(records) : [], [records]);
+  const shelf = useMemo(() => records ? batchesOnShelf(records, today) : [], [records, today]);
   const finishedLots = lots.filter(l => l.stage === "awaiting_release" || l.stage === "not_released");
 
   const docOf = (kind: keyof typeof TODAY_FORMS): Doc | undefined => docs[TODAY_FORMS[kind].form];
@@ -458,6 +459,23 @@ export default function Today() {
                     </>
                   )))}
                 </ul>
+              )}
+
+              {/* Made on site and signed, still usable - the same batches the Dunking step offers (owner, 2026-10-14). */}
+              {shelf.length > 0 && (
+                <div className="text-sm space-y-1">
+                  <div className="font-medium">{M.flow.batch.shelfTitle}</div>
+                  <ul className="space-y-0.5">
+                    {shelf.map(b => (
+                      <li key={b.id}>
+                        <Link to={entryHref(b.docId, b.id)} className={`hover:underline ${b.expired ? "text-amber-700 font-medium" : "tp-card-dim"}`}>
+                          {b.expired && <AlertTriangle className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />}
+                          {b.expired ? M.flow.batch.shelfExpired(b.product, b.lotCode, b.useBy) : M.flow.batch.shelfLine(b.product, b.lotCode, b.madeOn, b.useBy)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
               {/* Batches made on site for use in other products (the syrup, FRM-530), while being made. */}

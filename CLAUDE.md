@@ -1466,6 +1466,11 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     the stored syrup has no rum in it (the growth score at step 10 was written assuming alcohol and is
     flagged in the text for the food safety team), the hold rule names FRM-530, step 11 says the rum goes
     in the dunk tank and the lots are written on FRM-520.
+  - **"Made here, on the shelf"** on the Production card (owner, 2026-10-14; `batchesOnShelf` in
+    `today.ts`): every SIGNED FRM-530 batch with a lot code still within its use-by, each line opening the
+    record, and one past its use-by in amber ("- discard") for 7 days, then it drops off. Not a history
+    (the record's Entries list is that). FRM-530 records no "used up", so a batch emptied early still
+    shows until its use-by; a "Used up / discarded on" field was offered as the fix if that misleads.
   - **Not yet built (part 4):** the lot trace through a homemade syrup lot to its sugar lot, and the
     release helper / Records drop-down listing the syrup batch.
 
