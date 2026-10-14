@@ -458,6 +458,12 @@ export interface GridField extends FieldBase {
   type: "grid";
   columns: GridColumn[];
   rows: GridRows;
+  /**
+   * Dynamic grids only: each row gets Move up / Move down, for a table whose ORDER is information
+   * (FRM-501: the ingredient table's order is the order the mixing screens present them in).
+   * Set by migration; the builder has no control for it.
+   */
+  reorder?: boolean;
   // Per-row "scan a package label" camera button (see applyLabelScan). Off by
   // default so checklist/QC grids don't grow a control they'd never use.
   scanLabel?: boolean;
