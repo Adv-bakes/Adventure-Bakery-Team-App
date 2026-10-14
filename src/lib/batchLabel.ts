@@ -31,6 +31,16 @@ export interface LabelPage {
   qr: string;
 }
 
+/** The batch as the labels need it, from an FRM-530 entry's answers. */
+export function labelBatchFrom(data: Record<string, any> | null | undefined): LabelBatch {
+  const d = data ?? {};
+  const s = (v: unknown) => String(v ?? "").trim();
+  return {
+    product: s(d.product), lotCode: s(d.lot_code), madeOn: s(d.made_on), useBy: s(d.use_by),
+    quantityMade: s(d.quantity_made), madeBy: s(d.made_by?.name),
+  };
+}
+
 /** The most labels printed at once - a batch is one kettle, not a production run. */
 export const MAX_LABELS = 20;
 

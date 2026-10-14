@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Bell, CalendarClock, CheckCircle2, ChevronDown, Loader2, PenLine, Thermometer } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, CheckCircle2, ChevronDown, Loader2, PenLine, Printer, Thermometer } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,7 @@ function NotificationCard({
 }) {
   const isTemp = n.notification_type === "temperature_alert";
   const isSignature = n.notification_type === "signature_requested" || n.notification_type === "signature_signed";
+  const isLabels = n.notification_type === "label_print_requested";
   const overdue = n.severity === "overdue";
   const accent = overdue ? "border-l-destructive"
     : isTemp ? "border-l-destructive/70"
@@ -62,6 +63,7 @@ function NotificationCard({
           <div className="mt-0.5 shrink-0">
             {isTemp ? <Thermometer className="w-4 h-4 text-destructive" />
               : isSignature ? <PenLine className="w-4 h-4 text-[hsl(var(--tp-gold))]" />
+              : isLabels ? <Printer className="w-4 h-4 text-[hsl(var(--tp-gold))]" />
               : overdue ? <AlertTriangle className="w-4 h-4 text-destructive" />
               : <CalendarClock className="w-4 h-4 text-[hsl(var(--tp-gold))]" />}
           </div>
@@ -179,10 +181,11 @@ export default function Notifications() {
     }
   };
 
-  const signatures = open.filter((n) => n.notification_type === "signature_requested");
+  // Asked of you: a signature, or labels to print at the label printer.
+  const signatures = open.filter((n) => n.notification_type === "signature_requested" || n.notification_type === "label_print_requested");
   const signed = open.filter((n) => n.notification_type === "signature_signed");
   const overdue = open.filter((n) => n.severity === "overdue"
-    && n.notification_type !== "signature_requested");
+    && n.notification_type !== "signature_requested" && n.notification_type !== "label_print_requested");
   const due = open.filter((n) => n.notification_type === "verification_due" && n.severity !== "overdue");
   const alerts = open.filter((n) => n.notification_type === "temperature_alert");
 
@@ -206,7 +209,7 @@ export default function Notifications() {
         <p className="text-sm tp-on-bg-dim mt-1">
           Verification activities that have fallen due, and open alerts — visible to the whole team
           and labelled with the position responsible for each.
-          {" A signature someone has asked you for is addressed to you alone; everything else is the team's."}
+          {" A signature or labels someone has asked you for are addressed to you alone; everything else is the team's."}
           {" Notices from management stay at the top until you have read them."}
         </p>
       </div>

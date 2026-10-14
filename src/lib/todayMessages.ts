@@ -113,7 +113,11 @@ export interface TodayMessages {
       onToday(product: string, lot: string): string; continue: string;
       offer: string; offerLine(lot: string, madeOn: string, useBy: string): string; draft: string; expired(useBy: string): string;
       shelfTitle: string; shelfToDiscard(n: number): string;
-      labels: { lead: string; count: string; print(n: number): string; each(q: string): string; noQuantity(made: string): string; badCount(max: number): string; failed: string }; shelfLine(product: string, lot: string, madeOn: string, useBy: string): string; shelfExpired(product: string, lot: string, useBy: string): string;
+      labels: {
+        lead: string; count: string; print(n: number): string; each(q: string): string; noQuantity(made: string): string; badCount(max: number): string; failed: string;
+        sendToPrinter: string; sendLead: string; sendTo: string; choose: string; notePlaceholder: string; send(n: number): string; sent(n: number, who: string): string; sendFailed: string;
+        pageTitle(product: string, lot: string): string; pageLead: string; printed: string; markedPrinted: string; notSigned: string; notFound: string; back: string;
+      }; shelfLine(product: string, lot: string, madeOn: string, useBy: string): string; shelfExpired(product: string, lot: string, useBy: string): string;
     };
     /** Dunking: the lots of the syrup and the rum each lot is dunked in. */
     dunk: {
@@ -494,6 +498,21 @@ const en: TodayMessages = {
         noQuantity: made => made ? `"${made}" cannot be shared out, so the labels leave the quantity off.` : "No quantity made is recorded, so the labels leave it off.",
         badCount: max => `Enter a whole number from 1 to ${max}.`,
         failed: "The labels could not be made.",
+        sendToPrinter: "Send to the label printer",
+        sendLead: "The label printer is at one computer. Ask the person there to print these labels - it reaches them as a notification with a link.",
+        sendTo: "Send to",
+        choose: "Choose a person",
+        notePlaceholder: "Note (optional)",
+        send: n => n === 1 ? "Send 1 label" : `Send ${n} labels`,
+        sent: (n, who) => `${n === 1 ? "1 label" : `${n} labels`} sent to ${who || "the label printer"}.`,
+        sendFailed: "The request could not be sent.",
+        pageTitle: (product, lot) => `Labels: ${product || "batch"} lot ${lot || "?"}`,
+        pageLead: "Print on the 4 x 6 in label printer at actual size. When the labels are printed, mark them printed to close the request.",
+        printed: "The labels are printed",
+        markedPrinted: "Marked printed. The request is closed.",
+        notSigned: "This batch is not signed yet, so its labels cannot be printed.",
+        notFound: "This batch record could not be found. It may have been deleted.",
+        back: "Back to Notifications",
       },
       shelfToDiscard: n => n === 1 ? "1 to discard" : `${n} to discard`,
       shelfLine: (product, lot, madeOn, useBy) => `${product} · Lot ${lot} · made ${madeOn} · use by ${useBy || "—"}`,
@@ -902,6 +921,21 @@ const es: TodayMessages = {
         noQuantity: made => made ? `"${made}" no se puede repartir, así que las etiquetas no muestran la cantidad.` : "No hay cantidad hecha anotada, así que las etiquetas no la muestran.",
         badCount: max => `Escriba un número entero de 1 a ${max}.`,
         failed: "No se pudieron hacer las etiquetas.",
+        sendToPrinter: "Enviar a la impresora de etiquetas",
+        sendLead: "La impresora de etiquetas está en una computadora. Pida a la persona que está allí que imprima estas etiquetas - le llega como notificación con un enlace.",
+        sendTo: "Enviar a",
+        choose: "Elija una persona",
+        notePlaceholder: "Nota (opcional)",
+        send: n => n === 1 ? "Enviar 1 etiqueta" : `Enviar ${n} etiquetas`,
+        sent: (n, who) => `${n === 1 ? "1 etiqueta enviada" : `${n} etiquetas enviadas`} a ${who || "la impresora de etiquetas"}.`,
+        sendFailed: "No se pudo enviar el pedido.",
+        pageTitle: (product, lot) => `Etiquetas: ${product || "tanda"} lote ${lot || "?"}`,
+        pageLead: "Imprima en la impresora de etiquetas de 4 x 6 pulgadas a tamaño real. Cuando estén impresas, márquelas como impresas para cerrar el pedido.",
+        printed: "Las etiquetas están impresas",
+        markedPrinted: "Marcadas como impresas. El pedido está cerrado.",
+        notSigned: "Esta tanda no está firmada todavía, así que sus etiquetas no se pueden imprimir.",
+        notFound: "No se encontró este registro de tanda. Puede que se haya borrado.",
+        back: "Volver a Notificaciones",
       },
       shelfToDiscard: n => n === 1 ? "1 para desechar" : `${n} para desechar`,
       shelfLine: (product, lot, madeOn, useBy) => `${product} · Lote ${lot} · hecho ${madeOn} · usar antes de ${useBy || "—"}`,

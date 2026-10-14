@@ -18,6 +18,7 @@ import TeamAuth from "./pages/TeamAuth";
 import Today from "./pages/team/Today";
 import LotFlow from "./pages/team/production/LotFlow";
 import BatchFlow from "./pages/team/production/BatchFlow";
+import LabelPrintPage from "./pages/team/production/LabelPrintPage";
 import AcceptInvite from "./pages/AcceptInvite";
 import ResetPassword from "./pages/ResetPassword";
 import AccessPending from "./pages/AccessPending";
@@ -247,6 +248,12 @@ const App = () => (
           <Route path="/team/today/lot/:entryId" element={
             <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
               <LotFlow />
+            </ProtectedRoute>
+          } />
+          {/* Where a label print request lands: the computer the label printer is plugged into. */}
+          <Route path="/team/print/labels/:entryId" element={
+            <ProtectedRoute allowedRoles={["admin", "staff", "owner"]}>
+              <TeamLayout><LabelPrintPage /></TeamLayout>
             </ProtectedRoute>
           } />
           <Route path="/team/today/batch/:entryId" element={

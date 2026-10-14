@@ -56,6 +56,11 @@ check("a quantity that cannot be read is left off", L.labelPages({ ...batch, qua
 check("at most twenty", L.labelPages(batch, 500).length, L.MAX_LABELS);
 check("at least one", L.labelPages(batch, 0).length, 1);
 
+// ---- from the record
+check("the batch as the labels need it", L.labelBatchFrom({ product: " Simple Syrup ", lot_code: "6287", made_on: "2026-10-14", use_by: "2026-11-13", quantity_made: "75 lb", made_by: { name: "Richard Mercer", signed_at: "x" } }),
+  { product: "Simple Syrup", lotCode: "6287", madeOn: "2026-10-14", useBy: "2026-11-13", quantityMade: "75 lb", madeBy: "Richard Mercer" });
+check("an empty record gives blanks, not an error", L.labelBatchFrom(null).lotCode, "");
+
 rmSync(out, { recursive: true, force: true });
 console.log(failures ? `${failures} of ${cases} cases failed` : `all ${cases} cases passed`);
 process.exit(failures ? 1 : 0);

@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
  */
 // "signature_signed" is news for the person who asked (sign_response_field writes it): nothing waits
 // on it, so unlike the request it CAN be cleared.
-export const FEED_TYPES = ["verification_due", "temperature_alert", "signature_requested", "signature_signed"] as const;
+export const FEED_TYPES = ["verification_due", "temperature_alert", "signature_requested", "signature_signed", "label_print_requested"] as const;
 
 export type NotificationLink = { label: string; href: string };
 
@@ -231,6 +231,27 @@ export async function openSignatureRequest(responseId: string): Promise<AppNotif
  * what lets them sign in to the Team Portal. `profiles.access_granted` is deliberately NOT tested -
  * it is the CLIENT portal's switch, and an admin who signs in daily has it off.
  */
+// ---------------------------------------------------------------- label print requests
+
+/**
+ * Ask a named person to print a signed batch's container labels (FRM-530): the label printer is on a
+ * USB cable at one computer (owner, 2026-10-14). It lands under "Asked of you" with a link to the print
+ * page. An open request for the same batch is replaced.
+ */
+export async function requestLabelPrint(responseId: string, count: number, assignedTo: string, note?: string): Promise<void> {
+  const { error } = await (supabase as any).rpc("request_label_print", {
+    _response_id: responseId, _count: count, _assigned_to: assignedTo, _note: note ?? null,
+  });
+  if (error) throw error;
+}
+
+/** The labels were printed: every open request for the batch closes. */
+export async function resolveLabelPrint(responseId: string): Promise<number> {
+  const { data, error } = await (supabase as any).rpc("resolve_label_print", { _response_id: responseId });
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
 export async function fetchTeamSigners(): Promise<Signatory[]> {
   const { data: roles, error } = await supabase
     .from("user_roles").select("user_id, role").in("role", ["staff", "admin", "owner"]);

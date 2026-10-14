@@ -639,7 +639,7 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   `useUserPref(key, fallback)` returns `[value, set]`; `fallback` must be a constant. All of a person's
   settings load once per page load and again when the account changes; a copy tagged with the user id is
   kept in `localStorage` (`userPrefs.cache`) so a page opens in the person's arrangement without a
-  flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, `today.shelfClosed`, and `form.skipSubmitConfirm`
+  flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, `today.shelfClosed`, `labels.printer`, and `form.skipSubmitConfirm`
   (`SKIP_SUBMIT_CONFIRM`, owner 2026-10-12: a "Do not show this again" tick on FormEntry's "Submit this
   entry?" dialog, taking effect when the person goes on to submit; switched back on My Account, "Form
   entries"). **Conveniences, never records**: nothing in the lib throws, and with the table missing or the
@@ -1485,6 +1485,17 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     first** (`decodeQr` in `barcodeDecode.ts` - BarcodeDetector, else ZXing - then `parseLabelPayload`):
     one of our labels gives its lot exactly and nothing is sent to be read; anything else goes to the AI
     read as before. Checked on the harness by rendering the PDF and decoding its QR; not on a real printer.
+  - **Send to the label printer** (owner, 2026-10-14: the printer is on a USB cable at one computer).
+    The label panel (`components/team/today/BatchLabels.tsx`, shared by Finish and sign and the print
+    page) asks a named person - remembered per person, `useUserPref` key `labels.printer` - with an
+    optional note. `request_label_print(response, count, person, note)` (migration `20261014000003`,
+    `SECURITY DEFINER`, signed FRM-530 only, 1-20 labels, the person needs a team role) writes a
+    `label_print_requested` notification (in `FEED_TYPES`, shown under "Asked of you" with a printer
+    icon, and clearable) linking to **`/team/print/labels/:entryId?count=N`** (`LabelPrintPage.tsx`,
+    in the team layout): the labels for that count, Print, and **The labels are printed**, which calls
+    `resolve_label_print(response)` and closes every open request for the batch (reason "Printed",
+    no name - as job resolutions). Asking again closes the earlier open request as "Asked again" and
+    adds a new row, so each ask stays on record (the dedupe key carries a timestamp).
   - **Not yet built (part 4):** the lot trace through a homemade syrup lot to its sugar lot, and the
     release helper / Records drop-down listing the syrup batch.
 
