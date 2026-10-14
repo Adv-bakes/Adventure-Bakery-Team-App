@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AlertTriangle, Bell, CheckCircle2, ChevronDown, ChevronRight, ClipboardCheck, Factory, Footprints, Loader2, PackageCheck,
-  PackageOpen, Play, ShieldAlert, Sun, Truck,
+  PackageOpen, Play, Printer, ShieldAlert, Sun, Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUserPref } from "@/lib/userPrefs";
@@ -482,11 +482,17 @@ export default function Today() {
                   </button>
                   {!shelfClosed && <ul className="space-y-0.5 pl-5">
                     {shelf.map(b => (
-                      <li key={b.id}>
+                      <li key={b.id} className="flex items-center gap-2 flex-wrap">
                         <Link to={entryHref(b.docId, b.id)} className={`hover:underline ${b.expired ? "text-amber-700 font-medium" : "tp-card-dim"}`}>
                           {b.expired && <AlertTriangle className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />}
                           {b.expired ? M.flow.batch.shelfExpired(b.product, b.lotCode, b.useBy) : M.flow.batch.shelfLine(b.product, b.lotCode, b.madeOn, b.useBy)}
                         </Link>
+                        {/* The container labels - print here or send to the label printer - are on the batch's own page. */}
+                        {!b.expired && (
+                          <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs">
+                            <Link to={`${batchFlowHref(b.id)}?step=finish`}><Printer className="w-3.5 h-3.5 mr-1" />{M.flow.batch.labelsButton}</Link>
+                          </Button>
+                        )}
                       </li>
                     ))}
                   </ul>}

@@ -1471,6 +1471,8 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     record, and one past its use-by in amber ("- discard") for 7 days, then it drops off. Not a history
     (the record's Entries list is that). FRM-530 records no "used up", so a batch emptied early still
     shows until its use-by; a "Used up / discarded on" field was offered as the fix if that misleads.
+    Each in-date line has a **Labels** button to the batch page's Finish and sign step (the only place the
+    label panel is reachable from the Today page once a batch is signed - owner, 2026-10-14).
     It folds away with a tap and stays folded per person (`useUserPref`, key `today.shelfClosed`);
     folded, it still shows the count and "N to discard" in amber, so a batch past its use-by is never hidden.
   - **Container labels** (owner, 2026-10-14): once a batch is SIGNED, Finish and sign offers **Print
