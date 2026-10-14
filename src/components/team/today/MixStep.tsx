@@ -60,6 +60,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
   const [busy, setBusy] = useState(false);
   const [lotText, setLotText] = useState("");
   const [weight, setWeight] = useState("");
+  const [unit, setUnit] = useState("");
   const [error, setError] = useState("");
   const [scanning, setScanning] = useState(false);
   const [scan, setScan] = useState<{ reads: string; chips: string[]; none: boolean } | null>(null);
@@ -106,6 +107,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
   useEffect(() => {
     setLotText(screen?.kind === "line" ? screen.lot : "");
     setWeight(screen?.kind === "line" ? screen.weight : "");
+    setUnit(screen?.kind === "line" ? screen.unit : "");
     setError(""); setScan(null); setReworkYes(false);
     scanned.current = "";
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -153,11 +155,15 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
     const n = Number(typed);
     // A line the formula gives no quantity may be left unweighed; anything typed must still be a number.
     if (typed === "" ? s.needsWeight : (!Number.isFinite(n) || n < 0)) { setError(X.badWeight); return; }
+    // Where the formula gives the line no unit, a weight needs the unit it was weighed in.
+    const picksUnit = asksUnit(s) && typed !== "";
+    if (picksUnit && !unit) { setError(X.needUnit); return; }
     setError("");
     void commit(
       d => applyMixEntry(d, { index: s.index, ingredient: s.ingredient, brand: s.brand }, {
         ...(s.asksLot ? { lot: typedLot } : {}),
         batch: s.batch, weight: typed === "" ? "" : n,
+        ...(picksUnit ? { unit } : {}),
       }),
       () => setAt(idx + 1),
     );
@@ -185,6 +191,15 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
       if (live.current) setScanning(false);
     }
   };
+
+  // The units the lot record's own Unit column offers.
+  const units = useMemo(() => {
+    const grid = schema ? valueFields(schema).find(f => f.id === LOT_FLOW.grid) as GridField | undefined : undefined;
+    const col = grid?.columns.find(c => c.id === LOT_FLOW.unit) as { options?: unknown[] } | undefined;
+    return (col?.options ?? []).map(String);
+  }, [schema]);
+  /** The unit is the person's to give where the formula sheet gives the line no quantity, or no unit. */
+  const asksUnit = (s: Line) => units.length > 0 && (!s.needsWeight || !s.unit);
 
   const cfg = schema?.settings?.batchSheet;
   const fromFormula = (source: FormulaSource) => {
@@ -393,7 +408,13 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
           {/* The formula's figure is a grey hint only: the box stays empty until it is typed or taken with the link. */}
           <Input id="mix-weight" type="number" inputMode="decimal" step="any" min={0} value={weight} placeholder={s.expected}
             onChange={e => { setWeight(e.target.value); setError(""); }} className={`${BIG} w-40`} disabled={busy} />
-          {s.unit && <span className="text-lg font-medium">{s.unit}</span>}
+          {asksUnit(s) ? (
+            <select aria-label={X.unitLabel} value={unit} disabled={busy} onChange={e => { setUnit(e.target.value); setError(""); }}
+              className="h-12 rounded-md border border-input bg-white px-3 text-lg">
+              <option value="">{X.unitLabel}</option>
+              {[...new Set([...units, ...(unit ? [unit] : [])])].map(u => <option key={u} value={u}>{u}</option>)}
+            </select>
+          ) : s.unit && <span className="text-lg font-medium">{s.unit}</span>}
           {s.needsWeight && weight.trim() === "" && (
             <button type="button" disabled={busy} onClick={() => { setWeight(s.expected); setError(""); }}
               className="text-sm font-medium underline underline-offset-2 text-[#7a5a14] hover:text-[#2A1F0E]">{X.takeFigure(s.expected, s.unit)}</button>

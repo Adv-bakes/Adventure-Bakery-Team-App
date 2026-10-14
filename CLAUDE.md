@@ -1381,7 +1381,9 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
   - **A weight is never filled in**: the formula's figure is the box's grey placeholder and a
     "Use 17.49 lb" link. A line the formula gives NO quantity (pan spray; on the real sheets also
     Flavor) has an optional weight, and is asked again in batches 2 and 3 only if it was weighed with
-    the first. `mixProgress` still counts such a line complete on its lot alone.
+    the first. `mixProgress` still counts such a line complete on its lot alone. On such a line, and
+    on one the formula gives a quantity but no unit, the **unit is a pick-list** beside the weight
+    (the Unit column's own options; owner, 2026-10-13) and is required once a weight is typed.
   - **The table's rows have no id**, so a line is addressed by position + ingredient + brand;
     `applyMixEntry` returns null when the row has moved or been renamed, and the screen reads the
     record again and says so, writing nothing.

@@ -198,6 +198,9 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
   const b = F.applyMixEntry(a, ref, { batch: 2, weight: 17.4 });
   check("batch 2 writes its own column and leaves the lot", [b.ingredients[0].actual_qty_2, b.ingredients[0].actual_qty, b.ingredients[0].supplier_lot], [17.4, 17.5, "L1"]);
   check("a lot alone leaves the weights", F.applyMixEntry(b, ref, { lot: "L9" }).ingredients[0].actual_qty, 17.5);
+  const u = F.applyMixEntry({ ingredients: [{ ...row("Flavor", ""), unit: "" }] }, { index: 0, ingredient: "Flavor", brand: "" }, { batch: 1, weight: 4, unit: "oz" });
+  check("a unit chosen with the weight is written on the line", [u.ingredients[0].actual_qty, u.ingredients[0].unit], [4, "oz"]);
+  check("a unit not named is left as it is", F.applyMixEntry(v, ref, { batch: 1, weight: 1 }).ingredients[0].unit, "lb");
   check("a row that moved is refused", F.applyMixEntry(v, { index: 1, ingredient: "Flour", brand: "" }, { lot: "L1" }), null);
   check("a row that is gone is refused", F.applyMixEntry(v, { index: 5, ingredient: "Flour", brand: "" }, { lot: "L1" }), null);
   check("a brand that changed is refused", F.applyMixEntry(v, { ...ref, brand: "Other" }, { lot: "L1" }), null);
