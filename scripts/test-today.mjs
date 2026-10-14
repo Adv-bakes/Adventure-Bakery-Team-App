@@ -43,6 +43,7 @@ check("mapping: all present", T.checkTodayMapping({
   "FRM-507": ["production_date", "monitored_by", "oven_loads"],
   "FRM-606": ["production_date", "product", "lot_code", "monitored_by", "seal_checks"],
   "FRM-703": ["product_name", "lot_code", "taken_by", "discard_due"],
+  "FRM-530": ["product", "lot_code", "made_on", "use_by", "ingredients"],
 }), []);
 check("mapping: renamed and missing", T.checkTodayMapping({ "FRM-903": ["inspection_date"] }).slice(0, 2),
   ['FRM-903 no longer has "shift"', 'FRM-903 no longer has "area_line"']);
@@ -296,6 +297,29 @@ check("attention counts", T.attentionCounts([
   const given = [{ product: "", lot_code: "" }];
   T.loadedWithLot(given, lot);
   check("the table handed in is not changed", given, [{ product: "", lot_code: "" }]);
+}
+
+// ---------- batches made on site (FRM-530: the syrup) ----------
+{
+  const r = rec();
+  const batch = (product, lot_code, made_on, use_by, status = "submitted") => entry({ product, lot_code, made_on, use_by, ingredients: [] }, status);
+  r.intermediates.push(
+    batch("Simple Syrup", "6287", "2026-10-14", "2026-11-13"),
+    batch("Simple Syrup", "6280", "2026-10-07", "2026-11-06", "draft"),
+    batch("Simple Syrup", "6250", "2026-09-07", "2026-10-07"),
+    batch("Simple Syrup", "6200", "2026-07-19", "2026-08-18"),
+    batch("Caramel glaze", "6286", "2026-10-13", "2026-11-12"),
+    batch("Simple Syrup", "", "2026-10-14", "2026-11-13"),
+  );
+  check("the table is read from the records", Object.keys(T.TODAY_FORMS).includes("intermediates"), true);
+  const offers = T.syrupLotsFor(r, "Simple syrup", "2026-10-15");
+  check("offered for the line by product name, newest first, a lot code needed", offers.map(o => o.lotCode), ["6287", "6280", "6250"]);
+  check("past its use-by: still offered, flagged", offers.map(o => o.expired), [false, false, true]);
+  check("long past it: not offered", offers.some(o => o.lotCode === "6200"), false);
+  check("a draft is offered with its status", offers[1].status, "draft");
+  check("another product is not offered", T.syrupLotsFor(r, "Caramel glaze", "2026-10-15").map(o => o.lotCode), ["6286"]);
+  check("nothing made on site: nothing offered", T.syrupLotsFor(r, "Rum", "2026-10-15"), []);
+  check("batches being made are the drafts", T.batchesInProgress(r).map(b => b.lotCode), ["6280"]);
 }
 
 console.log(`${cases - failures}/${cases} passed`);

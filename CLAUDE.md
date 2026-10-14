@@ -1445,16 +1445,29 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     required and the Today page would treat a syrup batch as a lot awaiting release. Number 530, not 510:
     FRM-510 was retired because it read too close to FRM-501.
   - **FRM-501 "Made as"** (same migration, no revision change): Finished product (blank) or Made on site
-    for use in other products. Nothing reads it yet.
+    for use in other products. `formulaEntrySource` sets `FormulaSource.intermediate` from it, and
+    **Start a lot step by step** (`startBatchFrom` in `Today.tsx`) then starts an FRM-530 batch instead of a
+    lot record - today as Date made and its lot code, the same reopen / refuse rules as a lot - and opens
+    **`/team/today/batch/:entryId`** (`pages/team/production/BatchFlow.tsx`): two steps, **Ingredients**
+    (the mixing screens with `BATCH_SPEC`: one batch, one weighed column, no rework, "Weighed" and "Open
+    the batch record" wording) and **Finish and sign** (quantity made, use by filled from the form's own
+    derive rule while blank, the labelled tick, notes, one button that signs "Made by" and submits; gaps
+    are saved and listed, nothing signed). `MixSpec` (`LOT_SPEC` / `BATCH_SPEC`) is the switch in every
+    mixing rule. Batches still drafts are listed under Production (`batchesInProgress`) with Continue and
+    **Follow this batch**. FRM-530 is in `TODAY_FORMS.intermediates`.
+  - **Homemade syrup is offered at Dunking** (`syrupLotsFor(records, ingredient, today)` in `today.ts`):
+    the FRM-530 batches whose product matches the dunking line's ingredient name, newest first, as
+    buttons ("Lot 6287 · made ... · use by ..."; a draft says "not yet signed"). A batch past its use-by is
+    still listed for 30 days, and choosing it shows the FSQM-016 warning - **warned, never blocked**. A bought
+    syrup and the rum have no batches, so nothing is offered and the lot is typed or scanned.
   - **FSQM-021 v3** (GJM): syrup made on site is its own lot on FRM-530, used within 30 days; the rum is
     added in the dunk tank and is not kept in the syrup; the lot record lists the syrup and rum with their
     lots; tracing follows homemade syrup one step further. **FSQM-016 (draft)**: three lines corrected -
     the stored syrup has no rum in it (the growth score at step 10 was written assuming alcohol and is
     flagged in the text for the food safety team), the hold rule names FRM-530, step 11 says the rum goes
     in the dunk tank and the lots are written on FRM-520.
-  - **Not yet built:** Start a lot step by step reading "Made as" and a short flow for FRM-530; FRM-530
-    batches on the Today page; offering homemade syrup lots at Dunking with the 30-day warning; the trace
-    through a syrup lot to its sugar lot (part 4).
+  - **Not yet built (part 4):** the lot trace through a homemade syrup lot to its sugar lot, and the
+    release helper / Records drop-down listing the syrup batch.
 
 - **Steps, in order:** Mixing, Baking, Dunking (only when the lot record has dunking lines), Seal checks, Packing, Retention sample, Sign and submit; then
   Release for admins and owners only (FSQM-020). **The retention sample is step 5 for everyone**

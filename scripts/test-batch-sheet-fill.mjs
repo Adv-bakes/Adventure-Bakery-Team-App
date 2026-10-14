@@ -135,7 +135,10 @@ check("null data does not throw", T.formulaEntrySource(entry(null)).lines, []);
   check("the lot record's rows carry the hidden marker", values.ingredients.map(r => r._stage ?? "-"), ["-", "dunking", "dunking", "-"]);
   check("...and are otherwise ordinary lines, lot blank", [values.ingredients[2].ingredient, values.ingredients[2].brand, values.ingredients[2].supplier_lot], ["Rum", "Bacardi", ""]);
   check("a dunking line with no quantity is not warned about", warnings, []);
-  check("a sheet without the column is all mixing", T.formulaEntrySource(entry(grid([{ ingredient: "A", production_qty: "1 lb" }]))).lines[0].stage, undefined);
+  check("Made as: a finished product by default", src.intermediate, undefined);
+  check("Made as: made on site for use in other products", T.formulaEntrySource(entry({ ...grid([{ ingredient: "Sugar" }]), made_as: "Made on site for use in other products" })).intermediate, true);
+  check("Made as: a finished product said plainly", T.formulaEntrySource(entry({ ...grid([{ ingredient: "Sugar" }]), made_as: "Finished product" })).intermediate, undefined);
+  check("a sheet without the column is all mixing",T.formulaEntrySource(entry(grid([{ ingredient: "A", production_qty: "1 lb" }]))).lines[0].stage, undefined);
 }
 {
   const src = T.formulaEntrySource(entry(grid([{ ingredient: "A" }, { ingredient: "B" }])));

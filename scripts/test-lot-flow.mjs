@@ -271,6 +271,24 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
   check("dunking is a step the address can name", F.isFlowStep("dunking"), true);
 }
 
+// ---- a batch made on site (FRM-530): one batch, no rework
+{
+  const B = F.BATCH_SPEC;
+  const syrup = { ingredients: [row("Granulated sugar", 20), row("Water", 10)] };
+  check("no batches screen and no rework screen", F.mixScreens(syrup, B).map(s => s.kind === "line" ? `${s.batch}:${s.ingredient}` : s.kind), ["1:Granulated sugar", "1:Water"]);
+  check("it opens on the first ingredient", F.nextMixScreen(syrup, B), 0);
+  check("nothing entered", F.mixProgress(syrup, B), { state: "none", lines: 2, linesDone: 0, batches: 1 });
+  const done = { ingredients: [row("Granulated sugar", 20, "SUG-1", 20.1), row("Water", 10, "mains", 10)] };
+  check("every line in: done, with no rework question", F.mixProgress(done, B).state, "done");
+  check("...whereas the lot record would still want its batches and rework", F.mixProgress(done).state, "open");
+  check("the form's mapping holds without batches, rework or batches 2 and 3", F.checkMixMapping({ sections: [{ fields: [
+    { id: "ingredients", columns: ["ingredient", "brand", "supplier_lot", "expected_qty", "unit", "actual_qty"].map(id => ({ id })) },
+  ] }] }, B), []);
+  check("the batch's date field", B.dateField, "made_on");
+  check("the batch page's address", F.batchFlowHref("x y"), "/team/today/batch/x%20y");
+  check("no lines: nowhere to open, but no error", F.nextMixScreen({}, B), 0);
+}
+
 // ---- the address
 check("the page", [F.lotFlowHref("abc"), F.lotFlowHref("abc", "sealing")], ["/team/today/lot/abc", "/team/today/lot/abc?step=sealing"]);
 check("back from a record", F.lotBackQuery("abc", "baking"), "from=lot&lot=abc&step=baking");

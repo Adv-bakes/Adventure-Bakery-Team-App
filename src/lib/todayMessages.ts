@@ -20,6 +20,7 @@ export interface TodayMessages {
   blockedBody: string;
   startLot: string;
   /** A new lot started from its formula sheet and taken step by step (LotFlow.tsx). */
+  batchFormMissing: string;
   startLotSteps: string; startLotStepsTip: string; pickFormulaTitle: string; pickFormula: string; lotExists(lot: string, product: string): string; lotSubmitted(lot: string, product: string): string;
   continueLot: string;
   noLots: string;
@@ -102,6 +103,16 @@ export interface TodayMessages {
     bakeDone: string; sealDone: string;
     mixingLater: string; mixingProgress(done: number, lines: number): string; openLotRecord: string;
     /** Mixing, one screen at a time: the batches, each ingredient of each batch, the rework question. */
+    /** A batch made on site for use in other products (FRM-530: the syrup), and its offer at Dunking. */
+    batch: {
+      title(product: string, lot: string): string; notFound: string;
+      step: Record<"ingredients" | "finish", string>;
+      finishLead: string; quantityMade: string; quantityHelp: string; useBy: string; useByHelp: string; labelled: string; notes: string;
+      signAndSubmit(name: string): string; submitted(product: string, lot: string, useBy: string): string; failed: string;
+      done(useBy: string): string; needsRecord: string; openRecord: string;
+      onToday(product: string, lot: string): string; continue: string;
+      offer: string; offerLine(lot: string, madeOn: string, useBy: string): string; draft: string; expired(useBy: string): string;
+    };
     /** Dunking: the lots of the syrup and the rum each lot is dunked in. */
     dunk: {
       lead: string; where(position: number, of: number): string;
@@ -110,10 +121,10 @@ export interface TodayMessages {
     };
     mix: {
       batchesQ: string; batchesHelp: string; batchN(n: number): string;
-      where(batch: number, batches: number, position: number, of: number): string;
+      where(batch: number, batches: number, position: number, of: number): string; whereOne(position: number, of: number): string;
       lotLabel: string; lotIs(lot: string): string; noLotYet: string; otherLot: string;
       scan: string; scanning: string; scanNone: string; scanFailed: string; scanReads(text: string): string; scanOffer: string;
-      weightLabel(batch: number): string; formula(qty: string, unit: string): string; takeFigure(qty: string, unit: string): string;
+      weightLabel(batch: number): string; weighedOne: string; formula(qty: string, unit: string): string; takeFigure(qty: string, unit: string): string;
       optionalWeight: string; badWeight: string; needLot: string; unitLabel: string; needUnit: string;
       save: string; back: string; skip: string; saveFailed: string; moved: string;
       reworkQ: string; reworkNo: string; reworkYes: string; reworkYesBody: string; answered(answer: string): string;
@@ -184,6 +195,7 @@ const en: TodayMessages = {
   blockedTitle: "Production cannot start yet.",
   blockedBody: "Today's Daily Sanitation & Pre-Op record (FRM-903) must be submitted first. Production records stay closed until it is.",
   startLot: "Start a lot",
+  batchFormMissing: "The batch record (FRM-530) could not be found, so the batch was not started.",
   startLotSteps: "Start a lot step by step",
   startLotStepsTip: "Pick the product's formula sheet, then mix one ingredient at a time",
   pickFormulaTitle: "Start a lot step by step",
@@ -409,6 +421,7 @@ const en: TodayMessages = {
       batchesHelp: "Each batch is weighed and recorded on its own.",
       batchN: n => n === 1 ? "1 batch" : `${n} batches`,
       where: (batch, batches, position, of) => `Batch ${batch} of ${batches} · ingredient ${position} of ${of}`,
+      whereOne: (position, of) => `Ingredient ${position} of ${of}`,
       lotLabel: "Lot on the container",
       lotIs: lot => `Lot on the container: ${lot}`,
       noLotYet: "No lot is recorded for this ingredient yet. Go back to batch 1 for it.",
@@ -420,6 +433,7 @@ const en: TodayMessages = {
       scanReads: text => `The label reads: ${text}`,
       scanOffer: "Also read on the label - tap to use:",
       weightLabel: batch => `Batch ${batch} weighed`,
+      weighedOne: "Weighed",
       formula: (qty, unit) => `Formula: ${qty}${unit ? ` ${unit}` : ""} per batch`,
       takeFigure: (qty, unit) => `Use ${qty}${unit ? ` ${unit}` : ""}`,
       optionalWeight: "The formula sheet gives no quantity for this line. Enter a weight if it was weighed; otherwise leave it empty.",
@@ -445,6 +459,30 @@ const en: TodayMessages = {
       formulaFilled: n => n === 1 ? "1 ingredient taken from the formula sheet." : `${n} ingredients taken from the formula sheet.`,
       submitted: "The lot record is submitted. Its mixing is on the record.",
       mapping: missing => `The lot record form no longer has: ${missing}. Mixing is recorded on the record itself.`,
+    },
+    batch: {
+      title: (product, lot) => `${product || "Batch"} · Lot ${lot || "—"}`,
+      notFound: "This batch could not be found. It may have been deleted.",
+      step: { ingredients: "Ingredients", finish: "Finish and sign" },
+      finishLead: "Seal the container and label it with what it is, its lot code and the date it was made. Then sign the batch record.",
+      quantityMade: "Quantity made",
+      quantityHelp: "For example 5 gal.",
+      useBy: "Use by",
+      useByHelp: "30 days from the date it was made (FSQM-016).",
+      labelled: "The container is sealed and labelled with what it is, its lot code and the date made",
+      notes: "Notes",
+      signAndSubmit: name => `Sign as ${name} and submit`,
+      submitted: (product, lot, useBy) => `${product} lot ${lot} recorded. Use by ${useBy}.`,
+      failed: "The batch record could not be submitted.",
+      done: useBy => `This batch is recorded. Its lot code is offered at Dunking until ${useBy}.`,
+      needsRecord: "This batch record has to be finished on the record itself.",
+      openRecord: "Open the batch record",
+      onToday: (product, lot) => `${product} · Lot ${lot} - being made`,
+      continue: "Follow this batch",
+      offer: "Made on site - tap the one in use:",
+      offerLine: (lot, madeOn, useBy) => `Lot ${lot} · made ${madeOn} · use by ${useBy}`,
+      draft: "not yet signed",
+      expired: useBy => `Past its use-by date (${useBy}). FSQM-016: syrup is used within 30 days of being made.`,
     },
     dunk: {
       lead: "The syrup and the rum this lot is dunked in: the lot printed on each container.",
@@ -552,6 +590,7 @@ const es: TodayMessages = {
   blockedTitle: "La producción no puede empezar todavía.",
   blockedBody: "Primero hay que enviar el registro de Limpieza Diaria y Pre-Operación de hoy (FRM-903). Los registros de producción quedan cerrados hasta entonces.",
   startLot: "Empezar un lote",
+  batchFormMissing: "No se encontró el registro de tanda (FRM-530), así que no se empezó la tanda.",
   startLotSteps: "Empezar un lote paso a paso",
   startLotStepsTip: "Elija la hoja de fórmula del producto y mezcle un ingrediente a la vez",
   pickFormulaTitle: "Empezar un lote paso a paso",
@@ -777,6 +816,7 @@ const es: TodayMessages = {
       batchesHelp: "Cada tanda se pesa y se anota por separado.",
       batchN: n => n === 1 ? "1 tanda" : `${n} tandas`,
       where: (batch, batches, position, of) => `Tanda ${batch} de ${batches} · ingrediente ${position} de ${of}`,
+      whereOne: (position, of) => `Ingrediente ${position} de ${of}`,
       lotLabel: "Lote en el envase",
       lotIs: lot => `Lote en el envase: ${lot}`,
       noLotYet: "Este ingrediente todavía no tiene lote anotado. Vuelva a la tanda 1 para anotarlo.",
@@ -788,6 +828,7 @@ const es: TodayMessages = {
       scanReads: text => `La etiqueta dice: ${text}`,
       scanOffer: "También se leyó en la etiqueta - toque para usar:",
       weightLabel: batch => `Tanda ${batch} pesada`,
+      weighedOne: "Pesado",
       formula: (qty, unit) => `Fórmula: ${qty}${unit ? ` ${unit}` : ""} por tanda`,
       takeFigure: (qty, unit) => `Usar ${qty}${unit ? ` ${unit}` : ""}`,
       optionalWeight: "La hoja de fórmula no da cantidad para esta línea. Escriba un peso si se pesó; si no, déjelo vacío.",
@@ -813,6 +854,30 @@ const es: TodayMessages = {
       formulaFilled: n => n === 1 ? "1 ingrediente tomado de la hoja de fórmula." : `${n} ingredientes tomados de la hoja de fórmula.`,
       submitted: "El registro del lote está enviado. Su mezclado está en el registro.",
       mapping: missing => `El formulario del registro del lote ya no tiene: ${missing}. El mezclado se anota en el propio registro.`,
+    },
+    batch: {
+      title: (product, lot) => `${product || "Tanda"} · Lote ${lot || "—"}`,
+      notFound: "No se encontró esta tanda. Puede que se haya borrado.",
+      step: { ingredients: "Ingredientes", finish: "Terminar y firmar" },
+      finishLead: "Selle el envase y rotúlelo con lo que es, su código de lote y la fecha en que se hizo. Luego firme el registro de la tanda.",
+      quantityMade: "Cantidad hecha",
+      quantityHelp: "Por ejemplo 5 gal.",
+      useBy: "Usar antes de",
+      useByHelp: "30 días desde la fecha en que se hizo (FSQM-016).",
+      labelled: "El envase está sellado y rotulado con lo que es, su código de lote y la fecha en que se hizo",
+      notes: "Notas",
+      signAndSubmit: name => `Firmar como ${name} y enviar`,
+      submitted: (product, lot, useBy) => `${product} lote ${lot} registrado. Usar antes de ${useBy}.`,
+      failed: "No se pudo enviar el registro de la tanda.",
+      done: useBy => `Esta tanda está registrada. Su código de lote se ofrece en el remojo hasta el ${useBy}.`,
+      needsRecord: "Este registro de tanda debe terminarse en el propio registro.",
+      openRecord: "Abrir el registro de la tanda",
+      onToday: (product, lot) => `${product} · Lote ${lot} - en preparación`,
+      continue: "Seguir esta tanda",
+      offer: "Hecho aquí - toque el que está en uso:",
+      offerLine: (lot, madeOn, useBy) => `Lote ${lot} · hecho ${madeOn} · usar antes de ${useBy}`,
+      draft: "sin firmar",
+      expired: useBy => `Pasó su fecha de uso (${useBy}). FSQM-016: el almíbar se usa dentro de los 30 días de hecho.`,
     },
     dunk: {
       lead: "El almíbar y el ron en que se remoja este lote: el lote impreso en cada envase.",

@@ -26,12 +26,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords, saveResponseData } from "@/lib/formResponses";
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
-  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, loadedWithLot, localDay, lotRecords, lotSummaries, lotsInProgress, openHolds, recentReceipts,
+  attentionCounts, bakeState, batchesInProgress, bakingAwaitingReview, ccpToday, lastDispatch, loadedWithLot, localDay, lotRecords, lotSummaries, lotsInProgress, openHolds, recentReceipts,
   ovenLoads, preopState, productionOpen, releaseSteps, sealState, sealingAwaitingReview, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
-import { LOT_FLOW, lotFlowHref } from "@/lib/lotFlow";
+import { BATCH_SPEC, batchFlowHref, LOT_FLOW, lotFlowHref } from "@/lib/lotFlow";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { getFormSchema, julianLotCode, valueFields, type GridField } from "@/lib/formSchema";
 import { normLot, sameProduct } from "@/lib/releaseAssist";
@@ -142,6 +142,7 @@ export default function Today() {
   // Production, waiting for its release under Finished product, released and waiting for the
   // truck under Shipping.
   const making = lots.filter(l => l.stage === "preparing" || l.stage === "in_progress");
+  const batches = useMemo(() => records ? batchesInProgress(records) : [], [records]);
   const finishedLots = lots.filter(l => l.stage === "awaiting_release" || l.stage === "not_released");
 
   const docOf = (kind: keyof typeof TODAY_FORMS): Doc | undefined => docs[TODAY_FORMS[kind].form];
@@ -170,6 +171,9 @@ export default function Today() {
   const lotBatchSheet = getFormSchema(docOf("lots")?.content)?.settings?.batchSheet;
   const startLotFrom = async (source: FormulaSource) => {
     setPicking(false);
+    // A product made on site for use in other products (the syrup) is a batch on FRM-530, with its
+    // own short flow - not a lot record (owner, 2026-10-14).
+    if (source.intermediate) { await startBatchFrom(source); return; }
     const doc = docOf("lots");
     const schema = getFormSchema(doc?.content);
     const cfg = schema?.settings?.batchSheet;
@@ -198,6 +202,42 @@ export default function Today() {
       navigate(lotFlowHref(r.id, "mixing"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not start a lot");
+      setBusy(null);
+    }
+  };
+
+  /**
+   * A new batch of something made on site (FRM-530) from its formula sheet: today as the date made,
+   * which gives its lot code, and the ingredient lines with nothing weighed. The same rules as a lot:
+   * an open batch of that product and code is reopened, and one already submitted is not given a
+   * second record.
+   */
+  const startBatchFrom = async (source: FormulaSource) => {
+    const doc = docOf("intermediates");
+    const schema = getFormSchema(doc?.content);
+    const cfg = schema?.settings?.batchSheet;
+    if (!doc || !schema || !cfg) { toast.error(M.batchFormMissing); return; }
+    const code = julianLotCode(today) ?? "";
+    const same = (records?.intermediates ?? []).filter(e => sameProduct(e.data.product, source.product) && normLot(e.data.lot_code) === normLot(code));
+    const existing = same.find(e => e.status === "draft");
+    if (existing) {
+      toast.message(M.lotExists(code, String(existing.data.product ?? source.product)));
+      navigate(batchFlowHref(existing.id));
+      return;
+    }
+    if (same.length > 0) {
+      toast.warning(M.lotSubmitted(code, source.product), { duration: 12000 });
+      return;
+    }
+    setBusy("lotSteps");
+    try {
+      const grid = valueFields(schema).find(f => f.id === cfg.grid) as GridField | undefined;
+      const { values, warnings } = batchSheetFill(cfg, (grid?.columns ?? []).map(c => c.id), {}, source);
+      const r = await createResponse(doc, { ...values, [BATCH_SPEC.dateField]: today, [LOT_FLOW.lotCode]: code });
+      for (const w of warnings) toast.message(w);
+      navigate(batchFlowHref(r.id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not start a batch");
       setBusy(null);
     }
   };
@@ -417,6 +457,27 @@ export default function Today() {
                       )}
                     </>
                   )))}
+                </ul>
+              )}
+
+              {/* Batches made on site for use in other products (the syrup, FRM-530), while being made. */}
+              {batches.length > 0 && (
+                <ul className="divide-y divide-border">
+                  {batches.map(b => (
+                    <li key={b.id} className="py-2 flex items-center justify-between gap-3 flex-wrap">
+                      <div className="text-sm font-medium">{M.flow.batch.onToday(b.product || "—", b.lotCode || "—")}</div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button asChild size="sm" variant="outline">
+                          <Link to={entryHref(b.docId, b.id)}>{M.continueLot}</Link>
+                        </Button>
+                        {canVoice && (
+                          <Button asChild size="sm" className="bg-[hsl(var(--tp-gold))] text-[#2A1F0E] hover:bg-[hsl(var(--tp-gold))]/90">
+                            <Link to={batchFlowHref(b.id)}><Footprints className="w-4 h-4 mr-1" />{M.flow.batch.continue}</Link>
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
                 </ul>
               )}
 
