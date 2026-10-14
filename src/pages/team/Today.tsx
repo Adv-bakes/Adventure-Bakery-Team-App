@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createResponse, fetchProfileNames, findDraftForDay, loadTodayRecords, saveResponseData } from "@/lib/formResponses";
 import { fetchOpenNotifications } from "@/lib/notifications";
 import {
-  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, loadedWithLot, localDay, lotRecords, lotsInProgress, openHolds, recentReceipts,
+  attentionCounts, bakeState, bakingAwaitingReview, ccpToday, lastDispatch, loadedWithLot, localDay, lotRecords, lotSummaries, lotsInProgress, openHolds, recentReceipts,
   ovenLoads, preopState, productionOpen, releaseSteps, sealState, sealingAwaitingReview, TODAY_FORMS,
   type LotSummary, type PreopState, type TodayEntry, type TodayRecords,
 } from "@/lib/today";
@@ -175,10 +175,18 @@ export default function Today() {
     const cfg = schema?.settings?.batchSheet;
     if (!doc || !schema || !cfg) return;
     const code = julianLotCode(today) ?? "";
-    const existing = lots.find(l => l.status === "draft" && sameProduct(l.product, source.product) && normLot(l.lotCode) === normLot(code));
+    // Every record of this product and today's code, shipped ones included (`lots` leaves those out).
+    const same = (records ? lotSummaries(records) : []).filter(l => sameProduct(l.product, source.product) && normLot(l.lotCode) === normLot(code));
+    const existing = same.find(l => l.status === "draft");
     if (existing) {
       toast.message(M.lotExists(code, existing.product));
       navigate(lotFlowHref(existing.id));
+      return;
+    }
+    // One lot record per product per bake day (FRM-520): a record already submitted is not joined
+    // by a second one, which would share its release and its dispatch (owner, 2026-10-13).
+    if (same.length > 0) {
+      toast.warning(M.lotSubmitted(code, same[0].product), { duration: 12000 });
       return;
     }
     setBusy("lotSteps");

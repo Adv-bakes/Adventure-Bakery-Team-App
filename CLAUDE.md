@@ -1396,7 +1396,11 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
   - **Start a lot step by step**, beside Start a lot on the Today page (`startLotFrom`): pick the
     product's formula sheet, a new FRM-520 is created with its lines, today's bake date and lot code,
     and the lot page opens on Mixing. If that product already has a draft lot of today's code, that
-    one is opened instead of a second record.
+    one is opened instead of a second record. If its record of today's code is already SUBMITTED,
+    nothing is started and the person is told (owner, 2026-10-13: one lot record per product per bake
+    day; a second run of the same code would share the first one's release and dispatch). The owner
+    considered separate runs and set it aside "for now" - a run's own lot code (6286B) was my
+    recommendation if it comes back. The plain Start a lot button has no product yet and is not checked.
   - Not built: a fourth batch, a line added from the page, offering received lots (FRM-301) for an
     ingredient. **Untested from here: the camera and the real read of an ingredient label.**
 
