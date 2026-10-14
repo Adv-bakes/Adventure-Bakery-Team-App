@@ -607,6 +607,16 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   the link goes once the text names that lot. Never added without the tap. `appendLotText` /
   `hasLotText` in `formSchema.ts`, tested by `scripts/test-lot-link.mjs`. Set by migration. First use:
   FRM-903's Product / batch run (owner, 2026-10-13, migration `20261013000001`, no revision change).
+- **Rows that can be moved (`GridField.reorder`):** on a dynamic grid, each row gets Move up / Move
+  down, for a table whose ORDER is information. The arrows are a leading column on the LEFT, beside
+  the row's first cell: a wide table is scrolled sideways and at its right edge the name is out of
+  sight. `moveRow` replaces the whole table (as a header sort does - cell names are positional) and
+  forgets anything remembered by row position (scan result, remembered pack, sort mark). Set by
+  migration; the builder has no control for it. First use: **FRM-501's ingredient table** (owner,
+  2026-10-13, migration `20261013000002`, no revision change) - its order is the order
+  `formulaEntrySource` copies to the lot record, which is the order the mixing screens of "Follow this
+  lot" present the ingredients in. A lot already started keeps the order it was started with. A header
+  sort on that table changes the same order.
 - **A section that starts collapsed (`FormSection.collapsed`):** for a part of a form only filled in an
   exceptional case. `CollapsedSection` in `FormRenderer` shows it as one line to tap. It is open whenever
   it holds an answer (`sectionHasAnswers` - defaults, fill-time column defaults and a fixed row's printed

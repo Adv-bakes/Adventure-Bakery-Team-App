@@ -474,6 +474,19 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
   // at another row, so it is forgotten and the next photo starts afresh.
   useEffect(() => { setPack(null); }, [rows.length]);
 
+  // ---- Move a row up or down (field.reorder): the order of the lines is itself information ----
+  // FRM-501: the ingredient table's order is the order the mixing screens ask for them in.
+  // The whole table is replaced, as a header sort does, because cell names are positional.
+  const reorder = !fixed && field.reorder === true && !disabled;
+  const moveRow = (from: number, to: number) => {
+    const current = Array.isArray(watchedRows) ? [...watchedRows] : [];
+    if (to < 0 || to >= current.length) return;
+    [current[from], current[to]] = [current[to], current[from]];
+    replace(current);
+    // Anything remembered by row position would now point at another line.
+    setScan(null); setPack(null); setSort(null);
+  };
+
   // ---- "Recalculate" on a share column (column.shareOf): % of Formula from the quantities ----
   const [share, setShare] = useState<
     | { column: string; message: string; prev: GridRowValue[] }
@@ -524,6 +537,7 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
             <Table className="[&_td]:py-1.5 [&_td]:px-2 [&_th]:px-2 [&_th]:align-bottom table-fixed w-full" style={{ minWidth: tableMinWidth }}>
               <TableHeader>
                 <TableRow className="bg-[#C89B3C]/8">
+                  {reorder && <TableHead className="w-10" />}
                   {scanEnabled && <TableHead className="w-10" />}
                   {rowDialogEnabled && <TableHead className="w-10" />}
                   {fixed && (
@@ -589,6 +603,20 @@ export function GridFieldInput({ field, control, disabled, onScanLabel, fillCont
                   <TableRow key={row.id}>
                     {/* Leading scan cell — the label photo is where filling the
                         row STARTS, so it reads left-to-right with the work. */}
+                    {/* Move the line up or down. On the left, beside the name: a table this wide
+                        is scrolled sideways, and at its right edge the name is out of sight. */}
+                    {reorder && (
+                      <TableCell className="w-10 align-top">
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={rowIdx === 0}
+                              onClick={() => moveRow(rowIdx, rowIdx - 1)} title="Move up" aria-label={`Move row ${rowIdx + 1} up`}>
+                              <ArrowUp className="w-3.5 h-3.5 text-[#2A1F0E]/60" />
+                            </Button>
+                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={rowIdx === rows.length - 1}
+                              onClick={() => moveRow(rowIdx, rowIdx + 1)} title="Move down" aria-label={`Move row ${rowIdx + 1} down`}>
+                              <ArrowDown className="w-3.5 h-3.5 text-[#2A1F0E]/60" />
+                            </Button>
+                      </TableCell>
+                    )}
                     {scanEnabled && (
                       <TableCell className="w-10 align-top">
                         <Button
