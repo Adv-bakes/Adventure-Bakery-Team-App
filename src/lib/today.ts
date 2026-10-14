@@ -157,13 +157,17 @@ export function lotSummaries(records: TodayRecords): LotSummary[] {
     const decision = str(release?.data.decision).toUpperCase();
     const released = !!release && isSubmitted(release) && decision.startsWith("RELEASED");
     const notReleased = !!release && isSubmitted(release) && decision.startsWith("NOT");
+    // A lot record still a draft is work in hand whatever else names its lot. A second record
+    // started for a product + code that already has a submitted, released and collected record
+    // matches that one's release and dispatch, and was dropped from the page as "shipped" while
+    // nobody had finished it (owner, 2026-10-13). An unfinished record is never hidden.
+    const made = rowsOf(e, "ingredients").some(r => str(r.ingredient));
     let stage: LotStage;
-    if (dispatch) stage = "shipped";
+    if (!isSubmitted(e)) stage = made ? "in_progress" : "preparing";
+    else if (dispatch) stage = "shipped";
     else if (released) stage = "released";
     else if (notReleased) stage = "not_released";
-    else if (isSubmitted(e)) stage = "awaiting_release";
-    else if (rowsOf(e, "ingredients").some(r => str(r.ingredient))) stage = "in_progress";
-    else stage = "preparing";
+    else stage = "awaiting_release";
     out.push({
       id: e.id, docId: e.docId, product, lotCode, bakeDate: day(e.data.bake_date), status: e.status, stage,
       onHold: records.holds.some(h => holdApplies(h, product, lotCode)),

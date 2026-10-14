@@ -100,6 +100,13 @@ const lot = (product, lot_code, status = "draft", extra = {}) => entry({ product
   r.dispatches.push(entry({ dispatch_date: "2026-10-08", customer: "Brand A", loaded: [{ product: "Rum Cake - Original", lot_code: "6-279" }] }));
   check("stage: shipped (lot compared normalised)", T.lotSummaries(r)[0].stage, "shipped");
   check("shipped lots leave the in-progress list", T.lotsInProgress(r).length, 0);
+  // A second record started for the same product and code, still a draft: it is work in hand.
+  r.lots.push(lot("Rum Cake - Original", "6279", "draft", { ingredients: [{ ingredient: "Soybean oil" }] }));
+  const second = T.lotSummaries(r).find(l => l.status === "draft");
+  check("a draft lot record is never released or shipped by another record's release", second.stage, "in_progress");
+  check("...so it stays on the page, and the shipped one stays off", T.lotsInProgress(r).map(l => l.status), ["draft"]);
+  r.lots.push(lot("Rum Cake - Original", "6279", "draft"));
+  check("...and with no ingredients yet it is being prepared", T.lotSummaries(r).filter(l => l.stage === "preparing").length, 1);
 }
 {
   const r = rec();

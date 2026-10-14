@@ -1327,6 +1327,11 @@ starting from `profiles.preferred_language` and remembered in `localStorage` (`t
 - **The Receiving card links its logs** (owner, 2026-10-12): `recentReceipts(records, today)` gives the
   newest FRM-301 entry whenever it was made, plus every other one made today or yesterday; each line
   opens that entry, and a draft is tagged.
+- **A lot record still a draft is always shown under Production** (owner, 2026-10-13): `lotSummaries`
+  gives a draft `in_progress` or `preparing` whatever release or dispatch names its lot. A second
+  FRM-520 started for a product + code whose first record was already submitted, released and collected
+  matched that record's FRM-701 and FRM-801, became "shipped", and vanished from the page unfinished.
+  Its lot page still shows Release as done, because the steps are matched by product + code.
 - **Each lot is listed on the card of the stage it is at** (owner, 2026-10-13). **Production**: lots
   still being made (`preparing`, `in_progress`), with **Start a lot** on the card's title line.
   **Finished product**: lots awaiting release (Release menu and Follow this lot for admins and owners,
