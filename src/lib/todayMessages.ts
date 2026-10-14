@@ -112,7 +112,7 @@ export interface TodayMessages {
       done(useBy: string): string; needsRecord: string; openRecord: string;
       onToday(product: string, lot: string): string; continue: string;
       offer: string; offerLine(lot: string, madeOn: string, useBy: string): string; draft: string; expired(useBy: string): string;
-      shelfTitle: string; shelfToDiscard(n: number): string;
+      shelfTitle: string; shelfToDiscard(n: number): string; labelsButton: string;
       labels: {
         lead: string; count: string; print(n: number): string; each(q: string): string; noQuantity(made: string): string; badCount(max: number): string; failed: string;
         sendToPrinter: string; sendLead: string; sendTo: string; choose: string; notePlaceholder: string; send(n: number): string; sent(n: number, who: string): string; sendFailed: string;
@@ -490,6 +490,7 @@ const en: TodayMessages = {
       draft: "not yet signed",
       expired: useBy => `Past its use-by date (${useBy}). FSQM-016: syrup is used within 30 days of being made.`,
       shelfTitle: "Made here, on the shelf",
+      labelsButton: "Labels",
       labels: {
         lead: "Print a label for each container it was put into.",
         count: "Containers",
@@ -913,6 +914,7 @@ const es: TodayMessages = {
       draft: "sin firmar",
       expired: useBy => `Pasó su fecha de uso (${useBy}). FSQM-016: el almíbar se usa dentro de los 30 días de hecho.`,
       shelfTitle: "Hecho aquí, en el estante",
+      labelsButton: "Etiquetas",
       labels: {
         lead: "Imprima una etiqueta para cada envase en que se puso.",
         count: "Envases",
