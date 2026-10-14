@@ -21,6 +21,7 @@ import {
 } from "@/lib/formResponses";
 import { buildZodSchema, deriveDateValue, emptyValues, getFormSchema, valueFields, type FormSchema, type GridField } from "@/lib/formSchema";
 import { BATCH_SPEC, mixProgress } from "@/lib/lotFlow";
+import { BatchLabels } from "@/components/team/today/BatchLabels";
 import { TODAY_FORMS, type TodayRecords } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 
@@ -159,6 +160,7 @@ function FinishStep({ doc, entryId, lang, version, onDone }: {
     return (
       <div className="space-y-4">
         <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-800"><CheckCircle2 className="w-4 h-4" />{B.done(String(rec?.data?.[BATCH_FORM.useBy] ?? ""))}</p>
+        {rec && <BatchLabels responseId={rec.id} data={rec.data ?? {}} lang={lang} />}
         {openRecord}
       </div>
     );
