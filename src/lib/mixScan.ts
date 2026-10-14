@@ -9,6 +9,8 @@
 import {
   extractPackageLabel, getResponseAttachmentUrl, removeResponseAttachment, uploadResponseAttachment,
 } from "./formResponses";
+import { decodeQr } from "./barcodeDecode";
+import { parseLabelPayload } from "./batchLabel";
 
 export interface MixScanResult {
   /** The variable-applied lot code, as printed; blank when none could be read. */
@@ -35,7 +37,18 @@ export function mixScanResult(result: { facts?: Record<string, string | undefine
   return { lot, alternates, reads };
 }
 
+/**
+ * One of our own container labels (a batch made on site, FRM-530) carries a QR code with the lot:
+ * when the photo shows one, the lot is taken from it exactly and the photo is not sent to be read.
+ */
+async function ourLabel(file: File): Promise<MixScanResult | null> {
+  const read = parseLabelPayload(await decodeQr(file));
+  return read ? { lot: read.lotCode, alternates: [], reads: `${read.product} · lot ${read.lotCode} (our label's code)` } : null;
+}
+
 export async function scanIngredientLot(responseId: string, file: File): Promise<MixScanResult> {
+  const ours = await ourLabel(file);
+  if (ours) return ours;
   let path: string | null = null;
   try {
     path = (await uploadResponseAttachment(responseId, file)).path;

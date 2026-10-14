@@ -1473,6 +1473,18 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     shows until its use-by; a "Used up / discarded on" field was offered as the fix if that misleads.
     It folds away with a tap and stays folded per person (`useUserPref`, key `today.shelfClosed`);
     folded, it still shows the count and "N to discard" in amber, so a batch past its use-by is never hidden.
+  - **Container labels** (owner, 2026-10-14): once a batch is SIGNED, Finish and sign offers **Print
+    labels** with a number of containers (1-20). `labelPages` (`src/lib/batchLabel.ts`, tested by
+    `scripts/test-batch-label.mjs`) gives one 4 x 6 in page per container (`batchLabelPdf.ts`, pdfmake):
+    product, LOT in large print, made / use by, the container's share of "Quantity made" (`labelQuantity`:
+    `parseQty`, divided, two places - 75 lb over 2 = 37.5 lb; unreadable or blank = left off, never
+    guessed), "Container 1 of 2", who made it, and a **QR code** (`labelPayload`: lines
+    `ADVBAKES-LOT/1`, `FRM-530`, product, lot, made, use by). The window is opened in the tap (a later one
+    is blocked) and the PDF opens ready to print; without a window it downloads. Reprint any time from the
+    signed batch. No count of containers is stored (owner: no form change). **"Scan the label" reads our QR
+    first** (`decodeQr` in `barcodeDecode.ts` - BarcodeDetector, else ZXing - then `parseLabelPayload`):
+    one of our labels gives its lot exactly and nothing is sent to be read; anything else goes to the AI
+    read as before. Checked on the harness by rendering the PDF and decoding its QR; not on a real printer.
   - **Not yet built (part 4):** the lot trace through a homemade syrup lot to its sugar lot, and the
     release helper / Records drop-down listing the syrup batch.
 

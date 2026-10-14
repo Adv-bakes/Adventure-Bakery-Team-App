@@ -73,3 +73,38 @@ export async function decodeBarcode(file: Blob): Promise<string> {
     bitmap?.close?.();
   }
 }
+
+/**
+ * The text of a QR code in a photograph - our own container labels (batchLabel.ts) carry one with
+ * the lot. The same two decoders, asked for QR codes only. Returns "" when none was found; never throws.
+ */
+export async function decodeQr(file: Blob): Promise<string> {
+  let bitmap: ImageBitmap | null = null;
+  try {
+    bitmap = await createImageBitmap(file);
+    const Detector = (globalThis as any).BarcodeDetector;
+    if (Detector) {
+      const supported: string[] = await Detector.getSupportedFormats?.() ?? ["qr_code"];
+      if (supported.includes("qr_code")) {
+        const found: { rawValue?: string }[] = await new Detector({ formats: ["qr_code"] }).detect(bitmap).catch(() => []);
+        const text = String(found[0]?.rawValue ?? "");
+        if (text) return text;
+      }
+    }
+    const Z = await import("@zxing/library");
+    const hints = new Map<unknown, unknown>([[Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.QR_CODE]], [Z.DecodeHintType.TRY_HARDER, true]]);
+    for (const longest of [1600, 1000, 2400]) {
+      const img = luminance(bitmap, longest, false);
+      if (!img) return "";
+      try {
+        const reader = new Z.MultiFormatReader();
+        return reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.RGBLuminanceSource(img.grey, img.width, img.height))), hints as any).getText();
+      } catch { /* nothing found at this size */ }
+    }
+    return "";
+  } catch {
+    return "";
+  } finally {
+    bitmap?.close?.();
+  }
+}

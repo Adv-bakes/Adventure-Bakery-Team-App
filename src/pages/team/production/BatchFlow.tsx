@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Circle, CircleDot, FilePenLine, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Circle, CircleDot, FilePenLine, Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ import {
 } from "@/lib/formResponses";
 import { buildZodSchema, deriveDateValue, emptyValues, getFormSchema, valueFields, type FormSchema, type GridField } from "@/lib/formSchema";
 import { BATCH_SPEC, mixProgress } from "@/lib/lotFlow";
+import { labelPages, labelQuantity, MAX_LABELS } from "@/lib/batchLabel";
+import { printBatchLabels } from "@/lib/batchLabelPdf";
 import { TODAY_FORMS, type TodayRecords } from "@/lib/today";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 
@@ -64,6 +66,56 @@ function missingAnswers(schema: FormSchema, values: Record<string, any>, line: (
 function derivedUseBy(schema: FormSchema | null, madeOn: unknown): string {
   const f = schema ? valueFields(schema).find(x => x.id === BATCH_FORM.useBy) as any : undefined;
   return f?.derive ? deriveDateValue(f.derive, madeOn) ?? "" : "";
+}
+
+/**
+ * Container labels for a signed batch: how many containers, each label's share of the quantity, and
+ * one button that opens the labels ready to print. Printed only from a signed record, so a label
+ * always matches it; the button can be used again to reprint.
+ */
+function LabelPrint({ data, lang }: { data: Record<string, any>; lang: TodayLang }) {
+  const L = TODAY_MSG[lang].flow.batch.labels;
+  const [count, setCount] = useState("1");
+  const [busy, setBusy] = useState(false);
+  const n = Math.floor(Number(count));
+  const valid = Number.isInteger(n) && n >= 1 && n <= MAX_LABELS;
+  const quantityMade = String(data[BATCH_FORM.quantity] ?? "");
+  const each = valid ? labelQuantity(quantityMade, n) : null;
+
+  const print = async () => {
+    if (!valid || busy) return;
+    // Opened in the tap itself: a window opened after the PDF is built would be blocked.
+    const win = window.open("", "_blank");
+    setBusy(true);
+    try {
+      await printBatchLabels(labelPages({
+        product: String(data[BATCH_FORM.product] ?? ""), lotCode: String(data[BATCH_FORM.lotCode] ?? ""),
+        madeOn: String(data[BATCH_FORM.madeOn] ?? ""), useBy: String(data[BATCH_FORM.useBy] ?? ""),
+        quantityMade, madeBy: String(data[BATCH_FORM.signature]?.name ?? ""),
+      }, n), win);
+    } catch (e) {
+      console.error(e);
+      win?.close();
+      toast.error(L.failed);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-md border border-[#2A1F0E]/20 bg-white/70 p-3 space-y-2">
+      <p className="text-sm font-medium">{L.lead}</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <label htmlFor="label-count" className="text-sm">{L.count}</label>
+        <Input id="label-count" type="number" inputMode="numeric" min={1} max={MAX_LABELS} step={1} value={count}
+          onChange={e => setCount(e.target.value)} className="h-12 w-24 text-lg bg-white" disabled={busy} />
+        <Button type="button" onClick={print} disabled={!valid || busy} className={`h-12 px-5 ${GOLD}`}>
+          {busy ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Printer className="w-4 h-4 mr-1.5" />}{L.print(valid ? n : 1)}
+        </Button>
+      </div>
+      <p className="text-sm opacity-80">{!valid ? L.badCount(MAX_LABELS) : each ? L.each(each) : L.noQuantity(quantityMade)}</p>
+    </div>
+  );
 }
 
 function FinishStep({ doc, entryId, lang, version, onDone }: {
@@ -159,6 +211,7 @@ function FinishStep({ doc, entryId, lang, version, onDone }: {
     return (
       <div className="space-y-4">
         <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-800"><CheckCircle2 className="w-4 h-4" />{B.done(String(rec?.data?.[BATCH_FORM.useBy] ?? ""))}</p>
+        {rec && <LabelPrint data={rec.data ?? {}} lang={lang} />}
         {openRecord}
       </div>
     );
