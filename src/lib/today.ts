@@ -23,6 +23,8 @@ export const TODAY_FORMS = {
   baking:     { form: "FRM-507", fields: ["production_date", "monitored_by"], grids: { oven_loads: ["lot_code"] } },
   sealing:    { form: "FRM-606", fields: ["production_date", "product", "lot_code", "monitored_by"], grids: { seal_checks: ["check"] } },
   retention:  { form: "FRM-703", fields: ["product_name", "lot_code", "taken_by", "discard_due"], grids: {} },
+  /** Batches made on site for use in other products - the simple syrup (FRM-530). */
+  intermediates: { form: "FRM-530", fields: ["product", "lot_code", "made_on", "use_by"], grids: { ingredients: ["ingredient"] } },
 } as const satisfies Record<string, TodaySourceSpec>;
 
 export type TodayKind = keyof typeof TODAY_FORMS;
@@ -181,6 +183,50 @@ export function lotSummaries(records: TodayRecords): LotSummary[] {
 /** The lots still being worked: everything that has not shipped. */
 export function lotsInProgress(records: TodayRecords): LotSummary[] {
   return lotSummaries(records).filter(l => l.stage !== "shipped");
+}
+
+// ---------- Batches made on site for use in other products (FRM-530: the syrup) ----------
+
+export interface BatchSummary {
+  id: string;
+  docId: string;
+  product: string;
+  lotCode: string;
+  madeOn: string;
+  useBy: string;
+  status: string;
+}
+
+const batchSummary = (e: TodayEntry): BatchSummary => ({
+  id: e.id, docId: e.docId, product: str(e.data.product), lotCode: str(e.data.lot_code),
+  madeOn: day(e.data.made_on), useBy: day(e.data.use_by), status: e.status,
+});
+
+/** Batches still being made: a draft is listed under Production until it is signed and submitted. */
+export function batchesInProgress(records: TodayRecords): BatchSummary[] {
+  return records.intermediates.filter(e => !isSubmitted(e)).map(batchSummary)
+    .sort((a, b) => b.madeOn.localeCompare(a.madeOn) || a.product.localeCompare(b.product));
+}
+
+export interface SyrupLot extends BatchSummary {
+  /** Past its use-by date (FSQM-016: used within 30 days of being made). */
+  expired: boolean;
+}
+
+/**
+ * The batches made on site that a dunking line could be: same product name as the line's ingredient
+ * ("Simple Syrup"), with a lot code. Newest first. A batch past its use-by is still listed, flagged,
+ * for 30 days after it, so a container still in use is found and warned about rather than hidden; an
+ * older one is not offered. A draft (not yet signed) is listed too, with its status.
+ */
+export function syrupLotsFor(records: TodayRecords, ingredient: string, today: string): SyrupLot[] {
+  const [y, m, d] = today.split("-").map(Number);
+  const limit = new Date(Date.UTC(y, m - 1, d - 30)).toISOString().slice(0, 10);
+  return records.intermediates
+    .filter(e => sameProduct(e.data.product, ingredient) && str(e.data.lot_code) !== "")
+    .map(e => { const b = batchSummary(e); return { ...b, expired: !!b.useBy && b.useBy < today }; })
+    .filter(b => !b.useBy || b.useBy >= limit)
+    .sort((a, b) => b.madeOn.localeCompare(a.madeOn) || b.lotCode.localeCompare(a.lotCode));
 }
 
 // ---------- Holds, receipts, dispatches, CCP records ----------

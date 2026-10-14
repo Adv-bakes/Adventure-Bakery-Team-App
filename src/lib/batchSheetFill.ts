@@ -55,6 +55,11 @@ export interface FormulaSource {
   client: string;
   status: string;
   lines: ExpectedLine[];
+  /**
+   * Made on site for use in other products (the simple syrup): a batch of it is recorded on FRM-530,
+   * the Intermediate Batch Record, not on the lot record. From the formula sheet's "Made as".
+   */
+  intermediate?: boolean;
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -162,6 +167,8 @@ export const FORMULA_FORM = {
   columns: { ingredient: "ingredient", brand: "supplier", pct: "pct_of_formula", qty: "production_qty" },
   /** "Added at" (Mixing / Dunking). Optional: a sheet without the column is all mixing. */
   stage: "added_at",
+  /** "Made as": blank or Finished product, or made on site for use in other products (FRM-530). Optional. */
+  madeAs: "made_as",
 } as const;
 
 /** The part of a form entry this reads. */
@@ -209,6 +216,7 @@ export function formulaEntrySource(entry: FormulaEntry): FormulaSource {
     client: "",
     status,
     lines,
+    ...(/^made on site/i.test(text(d[F.madeAs])) ? { intermediate: true } : {}),
   };
 }
 

@@ -21,8 +21,8 @@ import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
 import { fetchResponse, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
 import { getFormSchema, julianLotCode, valueFields, type GridField } from "@/lib/formSchema";
 import {
-  applyMixEntry, checkMixMapping, LOT_FLOW, MIX_BATCH_CHOICES, mixProgress, mixScreenDone, mixScreens, nextMixScreen, noReworkOption,
-  type MixScreen,
+  applyMixEntry, checkMixMapping, LOT_FLOW, LOT_SPEC, MIX_BATCH_CHOICES, mixProgress, mixScreenDone, mixScreens, nextMixScreen, noReworkOption,
+  type MixScreen, type MixSpec,
 } from "@/lib/lotFlow";
 import { scanIngredientLot } from "@/lib/mixScan";
 import { localDay, type LotSummary } from "@/lib/today";
@@ -37,8 +37,13 @@ const BIG = "h-12 text-lg bg-white";
 
 const screenKey = (s: MixScreen | undefined) => (!s ? "" : s.kind === "line" ? `line:${s.batch}:${s.index}` : s.kind);
 
-export function MixStep({ doc, lot, lang, back, version, onSaved }: {
-  doc: Doc; lot: LotSummary; lang: TodayLang;
+export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPEC }: {
+  doc: Doc;
+  /** The record being walked: its id and the form's document id (a lot record, or an FRM-530 batch). */
+  lot: Pick<LotSummary, "id" | "docId">;
+  lang: TodayLang;
+  /** Batches and rework, or the one-batch FRM-530 (BATCH_SPEC). */
+  spec?: MixSpec;
   /** The query that brings Back on the full record to this step. */
   back: string;
   /** Counts the page's loads of the records, so the record is read again after each. */
@@ -49,7 +54,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
   const X = F.mix;
   const schema = getFormSchema(doc.content);
   const href = `/team/compliance/forms/${lot.docId}/entries/${lot.id}?${back}`;
-  const mapping = useMemo(() => checkMixMapping(schema), [schema]);
+  const mapping = useMemo(() => checkMixMapping(schema, spec), [schema, spec]);
 
   const [rec, setRec] = useState<FormResponse | null>(null);
   /** Why the step cannot write here, when it cannot. */
@@ -84,7 +89,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
         else {
           setClosed("");
           setRec(r);
-          setAt(a => a ?? nextMixScreen(r.data));
+          setAt(a => a ?? nextMixScreen(r.data, spec));
         }
       } catch (e) {
         console.error(e);
@@ -94,13 +99,13 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
       }
     })();
     return () => { on = false; };
-  }, [lot.id, doc.revision, version]);
+  }, [lot.id, doc.revision, version, spec]);
 
   const data = rec?.data;
-  const screens = useMemo(() => mixScreens(data), [data]);
+  const screens = useMemo(() => mixScreens(data, spec), [data, spec]);
   const idx = Math.min(at ?? 0, screens.length - 1);
   const screen = screens[idx];
-  const progress = useMemo(() => mixProgress(data), [data]);
+  const progress = useMemo(() => mixProgress(data, spec), [data, spec]);
   const key = screenKey(screen);
 
   // A new screen starts from what the record holds for it. The same screen keeps what is being typed.
@@ -215,9 +220,9 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
         // A record started blank has no bake date: a lot started here is today's, and the date
         // gives the lot code (the form's own rule). A date or a code already there is kept.
         const v = res.values;
-        if (!String(v[LOT_FLOW.bakeDate] ?? "").trim() && !String(v[LOT_FLOW.lotCode] ?? "").trim()) {
+        if (!String(v[spec.dateField] ?? "").trim() && !String(v[LOT_FLOW.lotCode] ?? "").trim()) {
           const day = localDay();
-          v[LOT_FLOW.bakeDate] = day;
+          v[spec.dateField] = day;
           v[LOT_FLOW.lotCode] = julianLotCode(day) ?? "";
         }
         return v;
@@ -232,7 +237,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
 
   const openRecord = (
     <Button asChild variant="outline" className={PLAIN}>
-      <Link to={href}><FilePenLine className="w-4 h-4 mr-1.5" />{F.openLotRecord}</Link>
+      <Link to={href}><FilePenLine className="w-4 h-4 mr-1.5" />{spec.batches ? F.openLotRecord : F.batch.openRecord}</Link>
     </Button>
   );
   const amber = (text: string) => (
@@ -278,7 +283,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
     );
   }
 
-  const skipped = screens.filter(s => s.kind !== "rework" && !mixScreenDone(data, s)).length;
+  const skipped = screens.filter(s => s.kind !== "rework" && !mixScreenDone(data, s, spec)).length;
   const nav = (save?: React.ReactNode) => (
     <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
       <div className="flex flex-wrap gap-2">
@@ -348,13 +353,13 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
         {reworkYes && (
           <div className="rounded-md border border-amber-500 bg-amber-50 p-3 text-sm text-amber-900 space-y-2">
             <p>{X.reworkYesBody}</p>
-            <Button asChild className={GOLD}><Link to={href}><FilePenLine className="w-4 h-4 mr-1.5" />{F.openLotRecord}</Link></Button>
+            <Button asChild className={GOLD}><Link to={href}><FilePenLine className="w-4 h-4 mr-1.5" />{spec.batches ? F.openLotRecord : F.batch.openRecord}</Link></Button>
           </div>
         )}
         {skipped > 0 && (
           <div className="flex flex-wrap items-center gap-3">
             {amber(X.stillOpen(skipped))}
-            <Button type="button" variant="outline" className={PLAIN} onClick={() => setAt(nextMixScreen(data))}>{X.goToOpen}</Button>
+            <Button type="button" variant="outline" className={PLAIN} onClick={() => setAt(nextMixScreen(data, spec))}>{X.goToOpen}</Button>
           </div>
         )}
         {nav()}
@@ -367,7 +372,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
     <form className="space-y-4" onSubmit={e => { e.preventDefault(); saveLine(s); }}>
       <input ref={file} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { void takePhoto(e.target.files?.[0]); }} />
       {/* Where the person is says enough here; the count of complete lines is on the first and last screens. */}
-      <p className="text-sm font-medium opacity-80">{X.where(s.batch, progress.batches, s.position, s.of)}</p>
+      <p className="text-sm font-medium opacity-80">{spec.batches ? X.where(s.batch, progress.batches, s.position, s.of) : X.whereOne(s.position, s.of)}</p>
       <div>
         <p className="text-2xl font-semibold leading-tight">{s.ingredient}</p>
         {s.brand && <p className="text-sm opacity-80">{s.brand}</p>}
@@ -403,7 +408,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved }: {
       ) : amber(X.noLotYet)}
 
       <div className="space-y-1.5">
-        <label htmlFor="mix-weight" className="block text-sm font-medium">{X.weightLabel(s.batch)}</label>
+        <label htmlFor="mix-weight" className="block text-sm font-medium">{spec.batches ? X.weightLabel(s.batch) : X.weighedOne}</label>
         <div className="flex flex-wrap items-center gap-2">
           {/* The formula's figure is a grey hint only: the box stays empty until it is typed or taken with the link. */}
           <Input id="mix-weight" type="number" inputMode="decimal" step="any" min={0} value={weight} placeholder={s.expected}

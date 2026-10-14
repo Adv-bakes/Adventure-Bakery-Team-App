@@ -18,7 +18,8 @@ import { Input } from "@/components/ui/input";
 import { fetchResponse, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
 import { addDunkLot, applyMixEntry, dunkProgress, dunkScreens, nextDunkScreen, removeDunkLine, type DunkScreen } from "@/lib/lotFlow";
 import { scanIngredientLot } from "@/lib/mixScan";
-import type { LotSummary } from "@/lib/today";
+import { syrupLotsFor, type LotSummary, type TodayRecords } from "@/lib/today";
+import { normLot } from "@/lib/releaseAssist";
 import { TODAY_MSG, type TodayLang } from "@/lib/todayMessages";
 
 type Doc = { id: string; sop_number: string; revision: string | null; content: any };
@@ -27,8 +28,11 @@ const GOLD = "bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#C89B3C]/90";
 const PLAIN = "border-[#2A1F0E]/40 bg-white/70 text-[#2A1F0E] hover:bg-white";
 const BIG = "h-12 text-lg bg-white";
 
-export function DunkStep({ doc, lot, lang, back, version, onSaved }: {
+export function DunkStep({ doc, lot, lang, back, version, onSaved, records, today }: {
   doc: Doc; lot: LotSummary; lang: TodayLang;
+  /** The day's records, for the batches made on site (FRM-530) a line can be offered. */
+  records: TodayRecords;
+  today: string;
   /** The query that brings Back on the full record to this step. */
   back: string;
   /** Counts the page's loads of the records, so the record is read again after each. */
@@ -38,6 +42,7 @@ export function DunkStep({ doc, lot, lang, back, version, onSaved }: {
   const F = TODAY_MSG[lang].flow;
   const X = F.dunk;
   const M = F.mix;
+  const B = F.batch;
   const href = `/team/compliance/forms/${lot.docId}/entries/${lot.id}?${back}`;
 
   const [rec, setRec] = useState<FormResponse | null>(null);
@@ -208,6 +213,9 @@ export function DunkStep({ doc, lot, lang, back, version, onSaved }: {
   }
 
   const s = screen;
+  // Syrup made on site: its batches (FRM-530) are offered by name; a bought syrup has none and is typed or scanned.
+  const offers = syrupLotsFor(records, s.ingredient, today).slice(0, 5);
+  const chosen = offers.find(o => normLot(o.lotCode) === normLot(lotText) && lotText.trim() !== "");
   return (
     <form className="space-y-4" onSubmit={e => { e.preventDefault(); save(s); }}>
       <input ref={file} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { void takePhoto(e.target.files?.[0]); }} />
@@ -223,6 +231,21 @@ export function DunkStep({ doc, lot, lang, back, version, onSaved }: {
 
       <div className="space-y-1.5">
         <label htmlFor="dunk-lot" className="block text-sm font-medium">{M.lotLabel}</label>
+        {offers.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-sm opacity-80">{B.offer}</p>
+            <div className="flex flex-wrap gap-2">
+              {offers.map(o => (
+                <button key={o.id} type="button" disabled={busy} onClick={() => { setLotText(o.lotCode); setError(""); }}
+                  aria-pressed={chosen?.id === o.id}
+                  className={`rounded-lg border px-3 py-2 text-left text-sm font-medium ${chosen?.id === o.id ? "border-[#C89B3C] bg-[#C89B3C]/25" : "border-[#2A1F0E]/30 bg-white hover:bg-[#C89B3C]/15"} ${o.expired ? "text-amber-900" : ""}`}>
+                  {B.offerLine(o.lotCode, o.madeOn || "—", o.useBy || "—")}
+                  {o.status !== "submitted" && <span className="ml-1 font-normal opacity-70">({B.draft})</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <Input id="dunk-lot" value={lotText} onChange={e => { setLotText(e.target.value); setError(""); }} autoComplete="off" autoCapitalize="characters"
             className={`${BIG} max-w-xs`} disabled={busy} />
@@ -230,6 +253,7 @@ export function DunkStep({ doc, lot, lang, back, version, onSaved }: {
             {scanning ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Camera className="w-4 h-4 mr-1.5" />}{scanning ? M.scanning : M.scan}
           </Button>
         </div>
+        {chosen?.expired && amber(B.expired(chosen.useBy))}
         {scan?.reads && <p className="text-sm opacity-80">{M.scanReads(scan.reads)}</p>}
         {scan?.none && amber(M.scanNone)}
         {scan && scan.chips.length > 0 && (

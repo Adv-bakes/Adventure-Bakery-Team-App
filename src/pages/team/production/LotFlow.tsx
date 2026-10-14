@@ -826,7 +826,7 @@ export default function LotFlow() {
     const lots = docOf("lots");
     switch (stepKey) {
       case "mixing": return lots ? <MixStep doc={lots} lot={lot} lang={lang} back={back} version={version} onSaved={saved("mixing")} /> : null;
-      case "dunking": return lots ? <DunkStep doc={lots} lot={lot} lang={lang} back={back} version={version} onSaved={saved("dunking")} /> : null;
+      case "dunking": return lots ? <DunkStep doc={lots} lot={lot} lang={lang} back={back} version={version} onSaved={saved("dunking")} records={records} today={today} /> : null;
       case "baking": return docOf("baking") ? <BakeStep doc={docOf("baking")!} lot={lot} today={today} lang={lang} records={records} back={back} onSaved={saved("baking")} /> : null;
       case "sealing": return docOf("sealing") ? <SealStep doc={docOf("sealing")!} lot={lot} today={today} lang={lang} records={records} back={back} onSaved={saved("sealing")} /> : null;
       case "packing": return lots ? (

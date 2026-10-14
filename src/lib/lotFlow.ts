@@ -39,6 +39,20 @@ export const LOT_FLOW = {
 
 export const DUNKING = "dunking";
 
+/**
+ * Which record the mixing screens are walking. The lot record (FRM-520) asks how many batches (one
+ * weighed column each) and the rework question; the Intermediate Batch Record (FRM-530, the syrup made
+ * in the kettle) is one batch with one weighed column and no rework. Same field ids otherwise.
+ */
+export interface MixSpec {
+  batches: boolean;
+  rework: boolean;
+  /** The date a record started from the formula sheet is given, with the lot code it yields. */
+  dateField: string;
+}
+export const LOT_SPEC: MixSpec = { batches: true, rework: true, dateField: "bake_date" };
+export const BATCH_SPEC: MixSpec = { batches: false, rework: false, dateField: "made_on" };
+
 /** Is this line of the lot record added at dunking rather than mixed? */
 export const isDunkLine = (r: unknown): boolean =>
   !!r && typeof r === "object" && String((r as Record<string, unknown>)[LOT_FLOW.stage] ?? "").trim().toLowerCase() === DUNKING;
@@ -73,19 +87,19 @@ export interface MixProgress {
  * batch. A line with no expected quantity (pan spray) needs only its lot. Mixing is done when the
  * number of batches is answered, every line is complete, and the rework question is answered.
  */
-export function mixProgress(data: Record<string, any> | null | undefined): MixProgress {
+export function mixProgress(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC): MixProgress {
   const d = data ?? {};
   // The dunking lines (syrup, rum) are not mixed: the Dunking step asks for them.
   const rows: Record<string, unknown>[] = (Array.isArray(d[LOT_FLOW.grid]) ? d[LOT_FLOW.grid] : [])
     .filter((r: any) => str(r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(r));
   const n = Number(str(d[LOT_FLOW.batches]));
-  const batches = Number.isInteger(n) && n >= 1 ? Math.min(n, LOT_FLOW.weighed.length) : 0;
+  const batches = !spec.batches ? 1 : Number.isInteger(n) && n >= 1 ? Math.min(n, LOT_FLOW.weighed.length) : 0;
   const complete = (r: Record<string, unknown>) =>
     str(r[LOT_FLOW.lot]) !== "" && (str(r[LOT_FLOW.expected]) === "" || LOT_FLOW.weighed.slice(0, batches).every(k => str(r[k]) !== ""));
   const linesDone = batches ? rows.filter(complete).length : 0;
-  const touched = batches > 0 || str(d[LOT_FLOW.rework]) !== ""
+  const touched = (spec.batches && batches > 0) || (spec.rework && str(d[LOT_FLOW.rework]) !== "")
     || rows.some(r => str(r[LOT_FLOW.lot]) !== "" || LOT_FLOW.weighed.some(k => str(r[k]) !== ""));
-  const done = rows.length > 0 && batches > 0 && linesDone === rows.length && str(d[LOT_FLOW.rework]) !== "";
+  const done = rows.length > 0 && batches > 0 && linesDone === rows.length && (!spec.rework || str(d[LOT_FLOW.rework]) !== "");
   return { state: done ? "done" : touched ? "open" : "none", lines: rows.length, linesDone, batches };
 }
 
@@ -128,10 +142,10 @@ const gridRows = (d: Record<string, any>): Record<string, unknown>[] => (Array.i
  * that is the only screen. Batches 2 and 3 ask the weight only, so a line the formula gives no
  * quantity is asked again only if it was weighed with the first batch.
  */
-export function mixScreens(data: Record<string, any> | null | undefined): MixScreen[] {
+export function mixScreens(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC): MixScreen[] {
   const d = data ?? {};
-  const batches = mixProgress(d).batches;
-  const out: MixScreen[] = [{ kind: "batches" }];
+  const batches = mixProgress(d, spec).batches;
+  const out: MixScreen[] = spec.batches ? [{ kind: "batches" }] : [];
   if (!batches) return out;
   const named = gridRows(d).map((r, index) => ({ r, index })).filter(x => str(x.r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(x.r));
   for (let b = 1; b <= batches; b++) {
@@ -145,23 +159,23 @@ export function mixScreens(data: Record<string, any> | null | undefined): MixScr
       position: i + 1, of: here.length,
     }));
   }
-  out.push({ kind: "rework" });
+  if (spec.rework) out.push({ kind: "rework" });
   return out;
 }
 
 /** Is this screen answered on the record? */
-export function mixScreenDone(data: Record<string, any> | null | undefined, s: MixScreen): boolean {
+export function mixScreenDone(data: Record<string, any> | null | undefined, s: MixScreen, spec: MixSpec = LOT_SPEC): boolean {
   const d = data ?? {};
-  if (s.kind === "batches") return mixProgress(d).batches > 0;
+  if (s.kind === "batches") return mixProgress(d, spec).batches > 0;
   if (s.kind === "rework") return str(d[LOT_FLOW.rework]) !== "";
   return (!s.asksLot || s.lot !== "") && (!s.needsWeight || s.weight !== "");
 }
 
 /** Where the mixing step opens: the first screen not yet answered, else the last one. */
-export function nextMixScreen(data: Record<string, any> | null | undefined): number {
-  const screens = mixScreens(data);
-  const i = screens.findIndex(s => !mixScreenDone(data, s));
-  return i >= 0 ? i : screens.length - 1;
+export function nextMixScreen(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC): number {
+  const screens = mixScreens(data, spec);
+  const i = screens.findIndex(s => !mixScreenDone(data, s, spec));
+  return i >= 0 ? i : Math.max(0, screens.length - 1);
 }
 
 /** The number of batches the page offers: one per weighed column of the form. */
@@ -194,14 +208,16 @@ export function applyMixEntry(
 }
 
 /** Field and column ids LOT_FLOW names that the lot record form no longer has. Empty = the mixing step can write. */
-export function checkMixMapping(schema: { sections?: { fields?: any[] }[] } | null | undefined): string[] {
+export function checkMixMapping(schema: { sections?: { fields?: any[] }[] } | null | undefined, spec: MixSpec = LOT_SPEC): string[] {
   const fields = (schema?.sections ?? []).flatMap(s => s.fields ?? []);
   const byId = new Map(fields.map(f => [f.id, f]));
   const missing: string[] = [];
-  for (const id of [LOT_FLOW.batches, LOT_FLOW.grid, LOT_FLOW.rework]) if (!byId.has(id)) missing.push(id);
+  const top = [...(spec.batches ? [LOT_FLOW.batches] : []), LOT_FLOW.grid, ...(spec.rework ? [LOT_FLOW.rework] : [])];
+  for (const id of top) if (!byId.has(id)) missing.push(id);
   const cols = new Set<string>((byId.get(LOT_FLOW.grid)?.columns ?? []).map((c: any) => c.id));
   if (byId.has(LOT_FLOW.grid)) {
-    for (const id of [LOT_FLOW.ingredient, LOT_FLOW.brand, LOT_FLOW.lot, LOT_FLOW.expected, LOT_FLOW.unit, ...LOT_FLOW.weighed]) {
+    const weighed = spec.batches ? LOT_FLOW.weighed : LOT_FLOW.weighed.slice(0, 1);
+    for (const id of [LOT_FLOW.ingredient, LOT_FLOW.brand, LOT_FLOW.lot, LOT_FLOW.expected, LOT_FLOW.unit, ...weighed]) {
       if (!cols.has(id)) missing.push(`${LOT_FLOW.grid}.${id}`);
     }
   }
@@ -425,6 +441,11 @@ export function advancesAfter(key: FlowStepKey, saved: { last?: "batch" | "lot";
 /** The query that brings "Back" on a full record to this lot and step. Read by FormEntry. */
 export function lotBackQuery(entryId: string, step: FlowStepKey): string {
   return `from=lot&lot=${encodeURIComponent(entryId)}&step=${step}`;
+}
+
+/** The short page for a batch made on site (FRM-530, the syrup): BatchFlow.tsx. */
+export function batchFlowHref(entryId: string): string {
+  return `/team/today/batch/${encodeURIComponent(entryId)}`;
 }
 
 export function lotFlowHref(entryId: string, step?: FlowStepKey): string {
