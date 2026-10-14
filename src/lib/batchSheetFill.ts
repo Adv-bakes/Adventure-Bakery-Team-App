@@ -33,7 +33,15 @@ export interface ExpectedLine {
   /** Blank when the formula gives the ingredient no quantity. */
   expected: number | "";
   unit: string;
+  /**
+   * "dunking" when the formula sheet marks the line as added at dunking (syrup, rum), not mixed.
+   * Absent = mixing. Carried onto the lot record's row as a hidden key (STAGE_KEY).
+   */
+  stage?: "dunking";
 }
+
+/** The hidden key on a lot record's row that says the line is added at dunking (lotFlow.isDunkLine reads it). */
+export const STAGE_KEY = "_stage";
 
 /** A formula, wherever it is kept, in the one shape the fill reads. */
 export interface FormulaSource {
@@ -152,6 +160,8 @@ export const FORMULA_FORM = {
   batchSize: "scaled_production_batch_size",
   grid: "prototype_formulation_grid",
   columns: { ingredient: "ingredient", brand: "supplier", pct: "pct_of_formula", qty: "production_qty" },
+  /** "Added at" (Mixing / Dunking). Optional: a sheet without the column is all mixing. */
+  stage: "added_at",
 } as const;
 
 /** The part of a form entry this reads. */
@@ -186,7 +196,8 @@ export function formulaEntrySource(entry: FormulaEntry): FormulaSource {
         expected = round2((pct / 100) * batch.qty);
         unit = batch.unit;
       }
-      return { ingredient: text(r[F.columns.ingredient]), brand: text(r[F.columns.brand]), expected, unit };
+      const dunking = text(r[F.stage]).toLowerCase() === "dunking";
+      return { ingredient: text(r[F.columns.ingredient]), brand: text(r[F.columns.brand]), expected, unit, ...(dunking ? { stage: "dunking" as const } : {}) };
     });
   const version = text(d[F.version]);
   const status = entry.status || "draft";
@@ -305,10 +316,13 @@ export function batchSheetFill(
       if (cfg.columns.brand) row[cfg.columns.brand] = l.brand;
       if (cfg.columns.expected) row[cfg.columns.expected] = l.expected;
       if (cfg.columns.unit) row[cfg.columns.unit] = l.unit;
+      if (l.stage) row[STAGE_KEY] = l.stage;
       return row;
     });
-    const missing = source.lines.filter(l => l.expected === "").map(l => l.ingredient);
-    if (missing.length === source.lines.length) {
+    // A dunking line (syrup, rum) is not weighed for the batch, so it is not expected to have a quantity.
+    const mixed = source.lines.filter(l => !l.stage);
+    const missing = mixed.filter(l => l.expected === "").map(l => l.ingredient);
+    if (mixed.length > 0 && missing.length === mixed.length) {
       warnings.push("The formula gives no quantities, so the expected quantities are blank. Enter the quantity per batch on the formula.");
     } else if (missing.length) {
       warnings.push(`No expected quantity on the formula for: ${missing.join(", ")}.`);

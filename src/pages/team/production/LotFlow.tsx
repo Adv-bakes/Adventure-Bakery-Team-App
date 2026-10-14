@@ -25,6 +25,7 @@ import { useBakeLoad } from "@/components/team/today/BakeLoadButton";
 import { useSealCheck } from "@/components/team/today/SealCheckButton";
 import { usePacking } from "@/components/team/today/PackingButton";
 import { MixStep } from "@/components/team/today/MixStep";
+import { DunkStep } from "@/components/team/today/DunkStep";
 import {
   createResponse, fetchProfileNames, fetchResponse, loadTodayRecords, saveResponseData, StaleResponseError, submitResponse,
 } from "@/lib/formResponses";
@@ -54,7 +55,7 @@ type Saved = { last?: "batch" | "lot"; step?: string } | undefined;
 const LANG_KEY = "today.lang";
 const GOLD = "bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#C89B3C]/90";
 /** The steps that are production records: closed until the day's pre-op check is submitted. */
-const GATED: FlowStepKey[] = ["mixing", "baking", "sealing", "packing", "submit"];
+const GATED: FlowStepKey[] = ["mixing", "baking", "dunking", "sealing", "packing", "submit"];
 
 const entryHref = (docId: string, id: string, back: string) => `/team/compliance/forms/${docId}/entries/${id}?${back}`;
 
@@ -825,6 +826,7 @@ export default function LotFlow() {
     const lots = docOf("lots");
     switch (stepKey) {
       case "mixing": return lots ? <MixStep doc={lots} lot={lot} lang={lang} back={back} version={version} onSaved={saved("mixing")} /> : null;
+      case "dunking": return lots ? <DunkStep doc={lots} lot={lot} lang={lang} back={back} version={version} onSaved={saved("dunking")} /> : null;
       case "baking": return docOf("baking") ? <BakeStep doc={docOf("baking")!} lot={lot} today={today} lang={lang} records={records} back={back} onSaved={saved("baking")} /> : null;
       case "sealing": return docOf("sealing") ? <SealStep doc={docOf("sealing")!} lot={lot} today={today} lang={lang} records={records} back={back} onSaved={saved("sealing")} /> : null;
       case "packing": return lots ? (
