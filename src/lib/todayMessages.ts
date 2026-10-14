@@ -108,7 +108,7 @@ export interface TodayMessages {
       lotLabel: string; lotIs(lot: string): string; noLotYet: string; otherLot: string;
       scan: string; scanning: string; scanNone: string; scanFailed: string; scanReads(text: string): string; scanOffer: string;
       weightLabel(batch: number): string; formula(qty: string, unit: string): string; takeFigure(qty: string, unit: string): string;
-      optionalWeight: string; badWeight: string; needLot: string;
+      optionalWeight: string; badWeight: string; needLot: string; unitLabel: string; needUnit: string;
       save: string; back: string; skip: string; saveFailed: string; moved: string;
       reworkQ: string; reworkNo: string; reworkYes: string; reworkYesBody: string; answered(answer: string): string;
       stillOpen(n: number): string; goToOpen: string; done: string;
@@ -418,6 +418,8 @@ const en: TodayMessages = {
       takeFigure: (qty, unit) => `Use ${qty}${unit ? ` ${unit}` : ""}`,
       optionalWeight: "The formula sheet gives no quantity for this line. Enter a weight if it was weighed; otherwise leave it empty.",
       badWeight: "Enter the weight as a number.",
+      unitLabel: "Unit",
+      needUnit: "Choose the unit the weight is in.",
       needLot: "Enter the lot printed on the container.",
       save: "Save and next",
       back: "Back",
@@ -773,6 +775,8 @@ const es: TodayMessages = {
       takeFigure: (qty, unit) => `Usar ${qty}${unit ? ` ${unit}` : ""}`,
       optionalWeight: "La hoja de fórmula no da cantidad para esta línea. Escriba un peso si se pesó; si no, déjelo vacío.",
       badWeight: "Escriba el peso como un número.",
+      unitLabel: "Unidad",
+      needUnit: "Elija la unidad del peso.",
       needLot: "Escriba el lote impreso en el envase.",
       save: "Guardar y seguir",
       back: "Atrás",

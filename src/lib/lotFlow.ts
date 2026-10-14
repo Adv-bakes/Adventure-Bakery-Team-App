@@ -157,12 +157,12 @@ export const MIX_BATCH_CHOICES: readonly number[] = LOT_FLOW.weighed.map((_, i) 
  * Write one screen's answer onto the record's answers. The table's rows have no id of their own,
  * so a line is addressed by its position AND its ingredient and brand: if somebody has since
  * moved or renamed the row, nothing is written and null comes back (the page then reads the
- * record again). Only what the change names is written - a lot or a weight left out is untouched.
+ * record again). Only what the change names is written - a lot, a weight or a unit left out is untouched.
  */
 export function applyMixEntry(
   values: Record<string, any>,
   ref: { index: number; ingredient: string; brand: string },
-  change: { lot?: string; batch?: number; weight?: number | "" },
+  change: { lot?: string; batch?: number; weight?: number | ""; unit?: string },
 ): Record<string, any> | null {
   const rows = gridRows(values);
   const row = rows[ref.index];
@@ -174,6 +174,7 @@ export function applyMixEntry(
     if (!key) return null;
     next[key] = change.weight;
   }
+  if (change.unit !== undefined) next[LOT_FLOW.unit] = change.unit;
   return { ...values, [LOT_FLOW.grid]: rows.map((r, i) => (i === ref.index ? next : r)) };
 }
 
