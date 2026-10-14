@@ -96,12 +96,18 @@ export interface TodayMessages {
   /** "Follow this lot": one lot + product, step by step (LotFlow.tsx). */
   flow: {
     follow: string; followTip: string; backToToday: string; notFound: string; previous: string; next: string;
-    step: Record<"mixing" | "baking" | "sealing" | "packing" | "submit" | "retention" | "bakeReview" | "sealReview" | "release", string>;
+    step: Record<"mixing" | "baking" | "dunking" | "sealing" | "packing" | "submit" | "retention" | "bakeReview" | "sealReview" | "release", string>;
     state: Record<"done" | "open" | "none", string>;
     loads(n: number): string; checks(n: number): string;
     bakeDone: string; sealDone: string;
     mixingLater: string; mixingProgress(done: number, lines: number): string; openLotRecord: string;
     /** Mixing, one screen at a time: the batches, each ingredient of each batch, the rework question. */
+    /** Dunking: the lots of the syrup and the rum each lot is dunked in. */
+    dunk: {
+      lead: string; where(position: number, of: number): string;
+      amountLabel: string; amountHelp: string; anotherLot(ingredient: string): string; removeLine: string;
+      done: string; submitted: string; added(ingredient: string): string;
+    };
     mix: {
       batchesQ: string; batchesHelp: string; batchN(n: number): string;
       where(batch: number, batches: number, position: number, of: number): string;
@@ -389,7 +395,7 @@ const en: TodayMessages = {
     notFound: "This lot could not be found. It may have been deleted.",
     previous: "Previous step",
     next: "Next step",
-    step: { mixing: "Mixing", baking: "Baking", sealing: "Seal checks", packing: "Packing", submit: "Sign and submit", retention: "Retention sample", bakeReview: "Review baking", sealReview: "Review seal checks", release: "Release" },
+    step: { mixing: "Mixing", baking: "Baking", dunking: "Dunking", sealing: "Seal checks", packing: "Packing", submit: "Sign and submit", retention: "Retention sample", bakeReview: "Review baking", sealReview: "Review seal checks", release: "Release" },
     state: { done: "Done", open: "In progress", none: "Not started" },
     loads: n => n === 0 ? "No oven load recorded yet." : n === 1 ? "1 oven load recorded." : `${n} oven loads recorded.`,
     checks: n => n === 0 ? "No seal check recorded yet." : n === 1 ? "1 seal check recorded." : `${n} seal checks recorded.`,
@@ -439,6 +445,17 @@ const en: TodayMessages = {
       formulaFilled: n => n === 1 ? "1 ingredient taken from the formula sheet." : `${n} ingredients taken from the formula sheet.`,
       submitted: "The lot record is submitted. Its mixing is on the record.",
       mapping: missing => `The lot record form no longer has: ${missing}. Mixing is recorded on the record itself.`,
+    },
+    dunk: {
+      lead: "The syrup and the rum this lot is dunked in: the lot printed on each container.",
+      where: (position, of) => `Dunking line ${position} of ${of}`,
+      amountLabel: "Amount used (optional)",
+      amountHelp: "If you know it, for example 2 gal. It is not weighed.",
+      anotherLot: ingredient => `Another lot of ${ingredient}`,
+      removeLine: "Remove this extra line",
+      done: "Dunking is complete.",
+      submitted: "The lot record is submitted. Its dunking is on the record.",
+      added: ingredient => `A second line of ${ingredient} was added for the other lot.`,
     },
     firstPackDone: "First pack checked.",
     firstPackNeeded: "The first pack still needs its answer: photograph it, or answer it here.",
@@ -746,7 +763,7 @@ const es: TodayMessages = {
     notFound: "No se encontró este lote. Puede que se haya eliminado.",
     previous: "Paso anterior",
     next: "Paso siguiente",
-    step: { mixing: "Mezclado", baking: "Horneado", sealing: "Revisiones de sellado", packing: "Empaque", submit: "Firmar y enviar", retention: "Muestra de retención", bakeReview: "Revisar horneado", sealReview: "Revisar sellado", release: "Liberación" },
+    step: { mixing: "Mezclado", baking: "Horneado", dunking: "Remojo", sealing: "Revisiones de sellado", packing: "Empaque", submit: "Firmar y enviar", retention: "Muestra de retención", bakeReview: "Revisar horneado", sealReview: "Revisar sellado", release: "Liberación" },
     state: { done: "Hecho", open: "En curso", none: "Sin empezar" },
     loads: n => n === 0 ? "Aún no hay cargas de horno registradas." : n === 1 ? "1 carga de horno registrada." : `${n} cargas de horno registradas.`,
     checks: n => n === 0 ? "Aún no hay revisiones de sellado registradas." : n === 1 ? "1 revisión de sellado registrada." : `${n} revisiones de sellado registradas.`,
@@ -796,6 +813,17 @@ const es: TodayMessages = {
       formulaFilled: n => n === 1 ? "1 ingrediente tomado de la hoja de fórmula." : `${n} ingredientes tomados de la hoja de fórmula.`,
       submitted: "El registro del lote está enviado. Su mezclado está en el registro.",
       mapping: missing => `El formulario del registro del lote ya no tiene: ${missing}. El mezclado se anota en el propio registro.`,
+    },
+    dunk: {
+      lead: "El almíbar y el ron en que se remoja este lote: el lote impreso en cada envase.",
+      where: (position, of) => `Línea de remojo ${position} de ${of}`,
+      amountLabel: "Cantidad usada (opcional)",
+      amountHelp: "Si la sabe, por ejemplo 2 gal. No se pesa.",
+      anotherLot: ingredient => `Otro lote de ${ingredient}`,
+      removeLine: "Quitar esta línea de más",
+      done: "El remojo está completo.",
+      submitted: "El registro del lote está enviado. Su remojo está en el registro.",
+      added: ingredient => `Se añadió una segunda línea de ${ingredient} para el otro lote.`,
     },
     firstPackDone: "Primer empaque revisado.",
     firstPackNeeded: "Falta la respuesta del primer empaque: fotografíelo, o contéstelo aquí.",

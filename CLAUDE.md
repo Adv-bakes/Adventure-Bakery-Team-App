@@ -1415,8 +1415,33 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     recommendation if it comes back. The plain Start a lot button has no product yet and is not checked.
   - Not built: a fourth batch, a line added from the page, offering received lots (FRM-301) for an
     ingredient. **Untested from here: the camera and the real read of an ingredient label.**
+- **Dunking: the syrup and the rum** (owner, 2026-10-14; plan in four parts, parts 1-2 built). Every cake
+  is dunked in simple syrup with rum added to the dunk tank, after the bake and before sealing, and
+  neither was on a formula sheet or lot record - a recall of either could not be traced.
+  - **FRM-501's ingredient table has an "Added at" column** (Mixing / Dunking; blank = Mixing; migration
+    `20261014000001`, no revision change). Syrup and rum are ordinary lines marked Dunking, with no
+    quantity. **Pecans and the pan spray stay with mixing** (owner: no extra step for the worker).
+  - `formulaEntrySource` reads it into `ExpectedLine.stage`, and `batchSheetFill` puts a **hidden key
+    `_stage: "dunking"`** on the lot record's row (`STAGE_KEY`). FRM-520 is unchanged: grid rows are
+    validated as `z.record`, so the key survives submit, and "Copy from a previous entry" copies it. The
+    lines print on the record like any ingredient; "Lot on the container" is required, so the lot record
+    cannot be submitted without the syrup and rum lots. A line without the key is mixing.
+  - **Mixing leaves dunking lines out** (`isDunkLine` in `mixProgress` / `mixScreens`), and a **Dunking
+    step** between Baking and Seal checks (`DunkStep.tsx`; `dunkScreens`, `dunkProgress`,
+    `nextDunkScreen`) asks each line's lot (typed or Scan the label) and an **optional amount used**,
+    kept in the line's Notes as "Amount used: 2 gal" (`withAmount` / `amountOf`; other notes kept) - what
+    a lot absorbs is not weighed. The step exists only for a lot whose record has dunking lines.
+  - **Two lots of one ingredient** (owner: yes, two rum lots in one lot): "Another lot of Rum" saves what
+    is typed on the line and adds a blank line of the same ingredient and brand at the END of the table
+    (`addDunkLot`, so no other line's position changes); a blank extra line can be taken back
+    (`removeDunkLine`).
+  - The lot trace already follows the rum and a bought syrup: it matches FRM-520 lines' supplier lots.
+  - **Not yet built (parts 3-4):** "Made as" on FRM-501 and a short Intermediate Batch Record + flow for
+    syrup made in the kettle (FRM-520 cannot hold it: its packing answers are required); offering those
+    syrup lots at Dunking with a 30-day use-by warning (owner confirmed 30 days); the trace through a
+    homemade syrup lot to its sugar lot.
 
-- **Steps, in order:** Mixing, Baking, Seal checks, Packing, Retention sample, Sign and submit; then
+- **Steps, in order:** Mixing, Baking, Dunking (only when the lot record has dunking lines), Seal checks, Packing, Retention sample, Sign and submit; then
   Release for admins and owners only (FSQM-020). **The retention sample is step 5 for everyone**
   (owner, 2026-10-12): it is taken at packing - the lot record already counts it among the units not
   packed - so the person packing logs it, and FSQM-014 v2 (migration `20261012000006`, GJM) moved

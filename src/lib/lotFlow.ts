@@ -29,10 +29,22 @@ export const LOT_FLOW = {
   weighed: ["actual_qty", "actual_qty_2", "actual_qty_3"],
   rework: "rework",
   signature: "recorded_by",
+  notes: "notes",
+  /**
+   * A hidden key on a line of the lot record, copied from the formula sheet's "Added at": the line is
+   * added at dunking (syrup, rum), not mixed. Absent = mixing, so older records read as before.
+   */
+  stage: "_stage",
 } as const;
 
+export const DUNKING = "dunking";
+
+/** Is this line of the lot record added at dunking rather than mixed? */
+export const isDunkLine = (r: unknown): boolean =>
+  !!r && typeof r === "object" && String((r as Record<string, unknown>)[LOT_FLOW.stage] ?? "").trim().toLowerCase() === DUNKING;
+
 export type FlowState = "done" | "open" | "none";
-export type FlowStepKey = "mixing" | "baking" | "sealing" | "packing" | "submit" | "retention" | "bakeReview" | "sealReview" | "release";
+export type FlowStepKey = "mixing" | "baking" | "dunking" | "sealing" | "packing" | "submit" | "retention" | "bakeReview" | "sealReview" | "release";
 
 export interface FlowStep {
   key: FlowStepKey;
@@ -63,7 +75,9 @@ export interface MixProgress {
  */
 export function mixProgress(data: Record<string, any> | null | undefined): MixProgress {
   const d = data ?? {};
-  const rows: Record<string, unknown>[] = (Array.isArray(d[LOT_FLOW.grid]) ? d[LOT_FLOW.grid] : []).filter((r: any) => str(r?.[LOT_FLOW.ingredient]) !== "");
+  // The dunking lines (syrup, rum) are not mixed: the Dunking step asks for them.
+  const rows: Record<string, unknown>[] = (Array.isArray(d[LOT_FLOW.grid]) ? d[LOT_FLOW.grid] : [])
+    .filter((r: any) => str(r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(r));
   const n = Number(str(d[LOT_FLOW.batches]));
   const batches = Number.isInteger(n) && n >= 1 ? Math.min(n, LOT_FLOW.weighed.length) : 0;
   const complete = (r: Record<string, unknown>) =>
@@ -119,7 +133,7 @@ export function mixScreens(data: Record<string, any> | null | undefined): MixScr
   const batches = mixProgress(d).batches;
   const out: MixScreen[] = [{ kind: "batches" }];
   if (!batches) return out;
-  const named = gridRows(d).map((r, index) => ({ r, index })).filter(x => str(x.r?.[LOT_FLOW.ingredient]) !== "");
+  const named = gridRows(d).map((r, index) => ({ r, index })).filter(x => str(x.r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(x.r));
   for (let b = 1; b <= batches; b++) {
     const here = named.filter(x => b === 1 || str(x.r[LOT_FLOW.expected]) !== "" || str(x.r[LOT_FLOW.weighed[0]]) !== "");
     here.forEach((x, i) => out.push({
@@ -162,7 +176,7 @@ export const MIX_BATCH_CHOICES: readonly number[] = LOT_FLOW.weighed.map((_, i) 
 export function applyMixEntry(
   values: Record<string, any>,
   ref: { index: number; ingredient: string; brand: string },
-  change: { lot?: string; batch?: number; weight?: number | ""; unit?: string },
+  change: { lot?: string; batch?: number; weight?: number | ""; unit?: string; amount?: string },
 ): Record<string, any> | null {
   const rows = gridRows(values);
   const row = rows[ref.index];
@@ -175,6 +189,7 @@ export function applyMixEntry(
     next[key] = change.weight;
   }
   if (change.unit !== undefined) next[LOT_FLOW.unit] = change.unit;
+  if (change.amount !== undefined) next[LOT_FLOW.notes] = withAmount(str(row[LOT_FLOW.notes]), change.amount);
   return { ...values, [LOT_FLOW.grid]: rows.map((r, i) => (i === ref.index ? next : r)) };
 }
 
@@ -199,6 +214,106 @@ export function noReworkOption(schema: { sections?: { fields?: any[] }[] } | nul
   const options: unknown[] = Array.isArray(f?.options) ? f.options : [];
   const no = options.find(o => /^no\b/i.test(String(o)));
   return no == null ? "" : String(no);
+}
+
+// ---------- Dunking, one line at a time ----------
+
+/**
+ * What a dunking line holds besides its lot: the amount used, if the person gives one. A cake's share
+ * of the syrup or the rum is not weighed, so it is optional free text ("1 gal"), kept in the line's
+ * Notes as "Amount used: 1 gal" so it prints on the record. Anything else in Notes is kept.
+ */
+export const AMOUNT_PREFIX = "Amount used: ";
+
+export function amountOf(notes: unknown): string {
+  const part = str(notes).split("; ").find(p => p.startsWith(AMOUNT_PREFIX));
+  return part ? part.slice(AMOUNT_PREFIX.length).trim() : "";
+}
+
+export function withAmount(notes: string, amount: string): string {
+  const others = str(notes).split("; ").filter(p => p !== "" && !p.startsWith(AMOUNT_PREFIX));
+  const a = amount.trim();
+  return [...others, ...(a ? [AMOUNT_PREFIX + a] : [])].join("; ");
+}
+
+export interface DunkScreen {
+  /** The line's position in the record's table - blank lines included, so it addresses the row. */
+  index: number;
+  ingredient: string;
+  brand: string;
+  lot: string;
+  amount: string;
+  /** Another line of the same ingredient is on the record (a second lot), so a blank one can go. */
+  twin: boolean;
+  position: number;
+  of: number;
+}
+
+/** One screen per dunking line of the lot record, in the table's order. */
+export function dunkScreens(data: Record<string, any> | null | undefined): DunkScreen[] {
+  const rows = gridRows(data ?? {});
+  const lines = rows.map((r, index) => ({ r, index })).filter(x => isDunkLine(x.r) && str(x.r[LOT_FLOW.ingredient]) !== "");
+  const named = (x: { r: Record<string, unknown> }) => str(x.r[LOT_FLOW.ingredient]).toLowerCase();
+  return lines.map((x, i) => ({
+    index: x.index,
+    ingredient: str(x.r[LOT_FLOW.ingredient]), brand: str(x.r[LOT_FLOW.brand]),
+    lot: str(x.r[LOT_FLOW.lot]), amount: amountOf(x.r[LOT_FLOW.notes]),
+    twin: lines.some(y => y.index !== x.index && named(y) === named(x)),
+    position: i + 1, of: lines.length,
+  }));
+}
+
+export interface DunkProgress { state: FlowState; lines: number; linesDone: number }
+
+/** Dunking is done when every dunking line has the lot on its container. */
+export function dunkProgress(data: Record<string, any> | null | undefined): DunkProgress {
+  const s = dunkScreens(data);
+  const linesDone = s.filter(x => x.lot !== "").length;
+  return { state: s.length > 0 && linesDone === s.length ? "done" : linesDone > 0 ? "open" : "none", lines: s.length, linesDone };
+}
+
+/** Where the dunking step opens: the first line with no lot, else the last one. */
+export function nextDunkScreen(data: Record<string, any> | null | undefined): number {
+  const s = dunkScreens(data);
+  const i = s.findIndex(x => x.lot === "");
+  return i >= 0 ? i : Math.max(0, s.length - 1);
+}
+
+type LineRef = { index: number; ingredient: string; brand: string };
+const sameRow = (row: Record<string, unknown> | undefined, ref: LineRef) =>
+  !!row && str(row[LOT_FLOW.ingredient]) === ref.ingredient && str(row[LOT_FLOW.brand]) === ref.brand;
+
+/**
+ * A second lot of a dunking ingredient (a new bottle of rum part way through): a new line of the same
+ * ingredient and brand at the END of the table, its lot and amount blank - "If two lots of the same
+ * ingredient were used, write two lines". At the end so no other line's position changes. Null when
+ * the line it copies has moved.
+ */
+export function addDunkLot(values: Record<string, any>, ref: LineRef): { values: Record<string, any>; index: number } | null {
+  const rows = gridRows(values);
+  const row = rows[ref.index];
+  if (!sameRow(row, ref) || !isDunkLine(row)) return null;
+  const copy: Record<string, unknown> = {};
+  for (const k of Object.keys(row)) copy[k] = "";
+  copy[LOT_FLOW.ingredient] = row[LOT_FLOW.ingredient];
+  copy[LOT_FLOW.brand] = row[LOT_FLOW.brand];
+  copy[LOT_FLOW.expected] = row[LOT_FLOW.expected] ?? "";
+  copy[LOT_FLOW.unit] = row[LOT_FLOW.unit] ?? "";
+  copy[LOT_FLOW.stage] = DUNKING;
+  return { values: { ...values, [LOT_FLOW.grid]: [...rows, copy] }, index: rows.length };
+}
+
+/**
+ * Take back a second line added by mistake: only a dunking line with no lot and no amount, while
+ * another line of the same ingredient stays. Null when that does not hold or the line has moved.
+ */
+export function removeDunkLine(values: Record<string, any>, ref: LineRef): Record<string, any> | null {
+  const rows = gridRows(values);
+  const row = rows[ref.index];
+  if (!sameRow(row, ref) || !isDunkLine(row) || str(row[LOT_FLOW.lot]) !== "" || amountOf(row[LOT_FLOW.notes]) !== "") return null;
+  const name = ref.ingredient.toLowerCase();
+  if (!rows.some((r, i) => i !== ref.index && isDunkLine(r) && str(r[LOT_FLOW.ingredient]).toLowerCase() === name)) return null;
+  return { ...values, [LOT_FLOW.grid]: rows.filter((_, i) => i !== ref.index) };
 }
 
 const RANK: Record<BakeState["done"], number> = { open: 0, batch: 1, lot: 2 };
@@ -245,6 +360,10 @@ export function flowSteps(records: TodayRecords, lot: LotSummary, today: string,
   const steps: FlowStep[] = [
     { key: "mixing", state: submitted ? "done" : mixProgress(entry?.data).state },
     ccpStep("baking", lotBakeState(records, lot, today)),
+    // Only for a lot whose record carries dunking lines (from a formula sheet that marks them).
+    ...(dunkScreens(entry?.data).length > 0
+      ? [{ key: "dunking" as const, state: submitted ? "done" as const : dunkProgress(entry?.data).state }]
+      : []),
     ccpStep("sealing", lotSealState(records, lot, today)),
     { key: "packing", state: packed || submitted ? "done" : lot.packing.checked || lot.packing.counted || lot.packing.weighed ? "open" : "none" },
   ];
@@ -295,7 +414,7 @@ export function advancesAfter(key: FlowStepKey, saved: { last?: "batch" | "lot";
   const now = stepsAfterSave.find(s => s.key === key)?.state;
   if (key === "baking" || key === "sealing") return !!saved?.last;
   if (key === "packing") return (saved?.step === "counted" || saved?.step === "checked" || saved?.step === "weighed") && now === "done";
-  if (key === "mixing" || key === "submit") return now === "done";
+  if (key === "mixing" || key === "dunking" || key === "submit") return now === "done";
   // The retention sample signed as on the shelf, from the page.
   if (key === "retention") return saved?.step === "logged" && now === "done";
   // A CCP record verified and submitted - once no other record of the lot is still waiting.
@@ -312,5 +431,5 @@ export function lotFlowHref(entryId: string, step?: FlowStepKey): string {
   return `/team/today/lot/${encodeURIComponent(entryId)}${step ? `?step=${step}` : ""}`;
 }
 
-export const FLOW_STEP_KEYS: readonly FlowStepKey[] = ["mixing", "baking", "sealing", "packing", "retention", "submit", "bakeReview", "sealReview", "release"];
+export const FLOW_STEP_KEYS: readonly FlowStepKey[] = ["mixing", "baking", "dunking", "sealing", "packing", "retention", "submit", "bakeReview", "sealReview", "release"];
 export const isFlowStep = (v: unknown): v is FlowStepKey => typeof v === "string" && (FLOW_STEP_KEYS as readonly string[]).includes(v);

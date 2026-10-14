@@ -219,6 +219,58 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
   check("a form whose options changed gives none", F.noReworkOption({ sections: [{ fields: [{ id: "rework", options: ["None", "Yes"] }] }] }), "");
 }
 
+// ---- dunking: the syrup and rum lines, not mixed
+{
+  const dunk = (ingredient, brand, lot = "", notes = "") => ({ ...row(ingredient, ""), brand, supplier_lot: lot, notes, _stage: "dunking" });
+  const rows = [row("Flour", 17.49, "L1", 17.5), dunk("Simple syrup", "Made on site"), dunk("Rum", "Bacardi")];
+  const d = { batches: 1, rework: "No rework used", ingredients: rows };
+  check("a dunking line is not a mixing line", F.mixProgress(d), { state: "done", lines: 1, linesDone: 1, batches: 1 });
+  check("...nor a mixing screen", F.mixScreens(d).map(s => s.kind === "line" ? s.ingredient : s.kind), ["batches", "Flour", "rework"]);
+  check("isDunkLine reads the marker only", [F.isDunkLine(rows[1]), F.isDunkLine(rows[0]), F.isDunkLine(null), F.isDunkLine({ _stage: "Dunking" })], [true, false, false, true]);
+  const s = F.dunkScreens(d);
+  check("one screen per dunking line, addressed by its row", s.map(x => [x.index, x.ingredient, x.position, x.of]), [[1, "Simple syrup", 1, 2], [2, "Rum", 2, 2]]);
+  check("nothing entered", [F.dunkProgress(d).state, F.nextDunkScreen(d)], ["none", 0]);
+  const one = F.applyMixEntry(d, { index: 1, ingredient: "Simple syrup", brand: "Made on site" }, { lot: "S6287", amount: "2 gal" });
+  check("a lot and an amount are written on the line", [one.ingredients[1].supplier_lot, one.ingredients[1].notes], ["S6287", "Amount used: 2 gal"]);
+  check("...the marker is kept", one.ingredients[1]._stage, "dunking");
+  check("half done: in progress, opens on the rum", [F.dunkProgress(one).state, F.nextDunkScreen(one)], ["open", 1]);
+  const both = F.applyMixEntry(one, { index: 2, ingredient: "Rum", brand: "Bacardi" }, { lot: "R-77" });
+  check("every line has its lot: done", F.dunkProgress(both), { state: "done", lines: 2, linesDone: 2 });
+  check("the amount is read back", F.dunkScreens(both)[0].amount, "2 gal");
+
+  // Notes keep anything else written in them.
+  check("amount added beside other notes", F.withAmount("opened new jug", "1 gal"), "opened new jug; Amount used: 1 gal");
+  check("amount replaced, other notes kept", F.withAmount("opened new jug; Amount used: 1 gal", "2 gal"), "opened new jug; Amount used: 2 gal");
+  check("amount taken off", F.withAmount("Amount used: 1 gal", ""), "");
+  check("amount read from mixed notes", F.amountOf("x; Amount used: 750 ml"), "750 ml");
+
+  // A second lot of rum.
+  const added = F.addDunkLot(both, { index: 2, ingredient: "Rum", brand: "Bacardi" });
+  check("a second rum line goes at the end, blank", [added.index, added.values.ingredients[3].ingredient, added.values.ingredients[3].supplier_lot, added.values.ingredients[3]._stage],
+    [3, "Rum", "", "dunking"]);
+  check("...no other line moves", added.values.ingredients.slice(0, 3), both.ingredients);
+  check("...and the step is open again until its lot is in", [F.dunkProgress(added.values).state, F.nextDunkScreen(added.values)], ["open", 2]);
+  check("both rum lines know they have a twin", F.dunkScreens(added.values).map(x => x.twin), [false, true, true]);
+  check("adding from a line that moved is refused", F.addDunkLot(both, { index: 1, ingredient: "Rum", brand: "Bacardi" }), null);
+  check("a mixing line cannot be given a dunking twin", F.addDunkLot(both, { index: 0, ingredient: "Flour", brand: "" }), null);
+  const back = F.removeDunkLine(added.values, { index: 3, ingredient: "Rum", brand: "Bacardi" });
+  check("a blank second line can be taken back", back.ingredients.length, 3);
+  check("...but not the only line of an ingredient", F.removeDunkLine(d, { index: 2, ingredient: "Rum", brand: "Bacardi" }), null);
+  check("...nor a line with its lot", F.removeDunkLine(added.values, { index: 2, ingredient: "Rum", brand: "Bacardi" }), null);
+
+  // The step on the lot page.
+  const lotRec = entry({ product: "Rum Cake - Original", lot_code: "6287", bake_date: TODAY, ...both });
+  const r = { lots: [lotRec], baking: [], sealing: [], preops: [], receipts: [], holds: [], releases: [], retention: [], dispatches: [] };
+  const lot = T.lotSummaries(r)[0];
+  check("the Dunking step sits between Baking and Seal checks", keys(F.flowSteps(r, lot, TODAY, false)).slice(0, 4), ["mixing", "baking", "dunking", "sealing"]);
+  check("...and is done from the record", states(F.flowSteps(r, lot, TODAY, false)).dunking, "done");
+  check("a page save that completes it moves on", F.advancesAfter("dunking", undefined, F.flowSteps(r, lot, TODAY, false)), true);
+  const plain = entry({ product: "Rum Cake - Original", lot_code: "6287", bake_date: TODAY, ingredients: [row("Flour", 17.49)] });
+  const r2 = { ...r, lots: [plain] };
+  check("a lot with no dunking lines has no Dunking step", keys(F.flowSteps(r2, T.lotSummaries(r2)[0], TODAY, false)).includes("dunking"), false);
+  check("dunking is a step the address can name", F.isFlowStep("dunking"), true);
+}
+
 // ---- the address
 check("the page", [F.lotFlowHref("abc"), F.lotFlowHref("abc", "sealing")], ["/team/today/lot/abc", "/team/today/lot/abc?step=sealing"]);
 check("back from a record", F.lotBackQuery("abc", "baking"), "from=lot&lot=abc&step=baking");

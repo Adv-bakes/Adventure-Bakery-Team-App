@@ -123,6 +123,21 @@ const grid = rows => ({ product_name: "P", formula_version: "v2", scaled_product
 }
 check("null data does not throw", T.formulaEntrySource(entry(null)).lines, []);
 {
+  // "Added at": the syrup and the rum are added at dunking, not mixed.
+  const src = T.formulaEntrySource(entry(grid([
+    { ingredient: "Flour", production_qty: "10 lb" },
+    { ingredient: "Simple syrup", supplier: "Made on site", added_at: "Dunking" },
+    { ingredient: "Rum", supplier: "Bacardi", added_at: "dunking" },
+    { ingredient: "Pecans", production_qty: "2 lb", added_at: "Mixing" },
+  ])));
+  check("the stage comes across only for dunking lines", src.lines.map(l => l.stage ?? "-"), ["-", "dunking", "dunking", "-"]);
+  const { values, warnings } = T.batchSheetFill(CFG, COLS, {}, src);
+  check("the lot record's rows carry the hidden marker", values.ingredients.map(r => r._stage ?? "-"), ["-", "dunking", "dunking", "-"]);
+  check("...and are otherwise ordinary lines, lot blank", [values.ingredients[2].ingredient, values.ingredients[2].brand, values.ingredients[2].supplier_lot], ["Rum", "Bacardi", ""]);
+  check("a dunking line with no quantity is not warned about", warnings, []);
+  check("a sheet without the column is all mixing", T.formulaEntrySource(entry(grid([{ ingredient: "A", production_qty: "1 lb" }]))).lines[0].stage, undefined);
+}
+{
   const src = T.formulaEntrySource(entry(grid([{ ingredient: "A" }, { ingredient: "B" }])));
   const { warnings } = T.batchSheetFill(CFG, COLS, {}, { ...src, lines: src.lines.map(l => ({ ...l, expected: "", unit: "" })) });
   check("no quantities at all", warnings.length === 1 && warnings[0].includes("gives no quantities"), true);
