@@ -454,8 +454,28 @@ export function releaseSteps(records: TodayRecords, lot: LotSummary): ReleaseSte
 
 // ---------- A finished lot's records, to open and read ----------
 
-export type LotRecordKey = ReleaseStepKey | "dispatch";
-export interface LotRecordLine extends Omit<ReleaseStep, "key"> { key: LotRecordKey }
+export type LotRecordKey = ReleaseStepKey | "dispatch" | "batch";
+export interface LotRecordLine extends Omit<ReleaseStep, "key"> {
+  key: LotRecordKey;
+  /** A batch made on site the lot was dunked in (FRM-530): what it is, e.g. "Simple Syrup lot 6287". */
+  title?: string;
+}
+
+/**
+ * The batches made on site (FRM-530) a lot's record names: a line whose ingredient is the batch's
+ * product and whose lot is the batch's lot code - the syrup it was dunked in. One per batch.
+ */
+export function lotBatches(records: TodayRecords, lot: LotSummary): TodayEntry[] {
+  const entry = records.lots.find(e => e.id === lot.id);
+  const out: TodayEntry[] = [];
+  for (const row of entry ? rowsOf(entry, "ingredients") : []) {
+    const key = normLot(row.supplier_lot);
+    if (!key) continue;
+    const b = records.intermediates.find(x => normLot(x.data.lot_code) === key && sameProduct(x.data.product, row.ingredient));
+    if (b && !out.includes(b)) out.push(b);
+  }
+  return out;
+}
 
 /**
  * The records of one lot in the order they were made: the release steps, then the dispatch that
@@ -464,6 +484,13 @@ export interface LotRecordLine extends Omit<ReleaseStep, "key"> { key: LotRecord
  */
 export function lotRecords(records: TodayRecords, lot: LotSummary): LotRecordLine[] {
   const lines: LotRecordLine[] = releaseSteps(records, lot);
+  // The syrup the lot was dunked in comes after the baking, as the dunking does.
+  const batches: LotRecordLine[] = lotBatches(records, lot).map(b => ({
+    key: "batch", state: isSubmitted(b) ? "done" : "open", entryId: b.id, docId: b.docId,
+    title: `${str(b.data.product)} lot ${str(b.data.lot_code)}`,
+  }));
+  const at = lines.findIndex(l => l.key === "baking");
+  lines.splice(at >= 0 ? at + 1 : lines.length, 0, ...batches);
   const loads = records.dispatches.filter(d => rowsOf(d, "loaded").some(row => sameLot(lot.product, lot.lotCode, row.product, row.lot_code)));
   if (loads.length) {
     const draft = loads.filter(e => !isSubmitted(e)).sort(best)[0];

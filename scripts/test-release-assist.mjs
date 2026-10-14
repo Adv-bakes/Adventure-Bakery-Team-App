@@ -225,7 +225,7 @@ check("mapping: a renamed field and a missing form are named",
   T.checkReleaseMapping({ "FRM-520": ["product", "lot_code", "bake_date", "pack_date", "units_packed", "film_lot", "code_check", "ingredients"],
     "FRM-701": T.RELEASE_SOURCES.releases.fields.slice(), "FRM-702": T.RELEASE_SOURCES.holds.fields.slice(),
     "FRM-903": ["area_line", "shift"], "FRM-601": T.RELEASE_SOURCES.labels.fields.slice(), "FRM-704": T.RELEASE_SOURCES.specs.fields.slice(),
-    "FRM-507": ["production_date", "oven_loads"] }),
+    "FRM-507": ["production_date", "oven_loads"], "FRM-530": ["product", "lot_code", "ingredients"] }),
   ['FRM-903 no longer has "inspection_date"', "FRM-606 was not found"]);
 
 // ---- the net-weight figures come from the specification when there is no earlier release
@@ -331,6 +331,30 @@ check("mapping: a renamed field and a missing form are named",
   check("a good weight is proposed with the sum", T.proposals(weighed, fill, FULL).filter(p => p.index === 8).map(p => [p.state, p.text]), [["supported", "Average net weight 114 g, at or above the 113 g on the label."]]);
   const light = { ...blank, ...w(133, 133, 134) };
   check("a short weight is against, and accepting does not answer it", [T.proposals(light, fill, FULL).find(p => p.index === 8).state, T.acceptProposals(light, T.proposals(light, fill, FULL)).values.checks[8].result], ["against", ""]);
+}
+
+// ---- the syrup a lot is dunked in, made on site (FRM-530)
+{
+  const r = records();
+  r.lots[0].data.ingredients.push({ ingredient: "Simple Syrup", supplier_lot: "6270" });
+  r.intermediates.push(entry({ product: "Simple Syrup", lot_code: "6270", ingredients: [{ ingredient: "Granulated sugar", supplier_lot: "SUG-77" }] }));
+  const g = T.releaseFill(r, "Rum Cake - Original", "6273", "self");
+  has("batch evidence names the syrup batch", g.notes.batch, "FRM-530 Simple Syrup lot 6270 (made on site): submitted.");
+  check("a submitted syrup batch does not stop the batch check being supported", g.supports.batch, true);
+  has("the hold check counts the sugar inside the syrup", g.notes.hold, "or the 5 supplier lots used in it");
+
+  r.holds.push(entry({ hold_tag_number: "H-9", material_name_description: "Granulated sugar", supplier_lot_batch_number: "SUG-77" }));
+  const h = T.releaseFill(r, "Rum Cake - Original", "6273", "self");
+  has("a hold on the sugar in the syrup is a hold on this lot", h.notes.hold, "FRM-702 hold H-9 on Granulated sugar lot SUG-77: OPEN");
+  check("...so no hold cannot be supported", h.supports.hold, false);
+
+  const d = records();
+  d.lots[0].data.ingredients.push({ ingredient: "Simple Syrup", supplier_lot: "6270" });
+  d.intermediates.push(entry({ product: "Simple Syrup", lot_code: "6270", ingredients: [] }, "draft"));
+  const dd = T.releaseFill(d, "Rum Cake - Original", "6273", "self");
+  has("an unsigned syrup batch is said", dd.notes.batch, "FRM-530 Simple Syrup lot 6270 (made on site): still a DRAFT - not signed.");
+  check("...and the batch check is not supported", dd.supports.batch, false);
+  check("a syrup bought in is not mistaken for ours", T.releaseFill(records(), "Rum Cake - Original", "6273", "self").notes.batch.includes("FRM-530"), false);
 }
 
 rmSync(out, { recursive: true, force: true });

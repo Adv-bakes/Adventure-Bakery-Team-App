@@ -27,7 +27,7 @@ export function LotRecordsButton({ lines, lang }: { lines: LotRecordLine[]; lang
     <>
       {icon(l)}
       <span className="flex-1">
-        <span className="block">{i + 1}. {R.name[l.key]}</span>
+        <span className="block">{i + 1}. {l.key === "batch" ? R.batchName(l.title ?? "") : R.name[l.key]}</span>
         <span className={`block text-xs ${l.state === "open" ? "text-amber-700" : "opacity-70"}`}>{status(l)}</span>
       </span>
     </>
@@ -43,11 +43,11 @@ export function LotRecordsButton({ lines, lang }: { lines: LotRecordLine[]; lang
       <DropdownMenuContent align="end" className="max-w-[22rem]">
         <DropdownMenuLabel className="text-xs font-normal opacity-80">{R.heading}</DropdownMenuLabel>
         {lines.map((l, i) => l.entryId && l.docId ? (
-          <DropdownMenuItem key={l.key} asChild className="items-start cursor-pointer">
+          <DropdownMenuItem key={`${l.key}:${l.entryId}`} asChild className="items-start cursor-pointer">
             <Link to={`/team/compliance/forms/${l.docId}/entries/${l.entryId}?from=today`}>{row(l, i)}</Link>
           </DropdownMenuItem>
         ) : (
-          <DropdownMenuItem key={l.key} disabled className="items-start">{row(l, i)}</DropdownMenuItem>
+          <DropdownMenuItem key={`${l.key}:${i}`} disabled className="items-start">{row(l, i)}</DropdownMenuItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

@@ -48,6 +48,8 @@ export const RELEASE_SOURCES = {
   // FRM-507 named the product once at the top until its v2 (2026-10-09) and on each oven load since.
   baking:   { form: "FRM-507", fields: ["production_date"], optional: ["product"], grids: { oven_loads: ["product", "lot_code", "within_limits"] } },
   sealing:  { form: "FRM-606", fields: ["production_date", "product"], optional: ["lot_code"], grids: { seal_checks: ["lot_code", "visual", "pull_test"] } },
+  // Batches made on site (the syrup a lot is dunked in): their supplier lots are the lot's too, for holds.
+  intermediates: { form: "FRM-530", fields: ["product", "lot_code"], grids: { ingredients: ["ingredient", "supplier_lot"] } },
 } as const satisfies Record<string, ReleaseSourceSpec>;
 
 export type ReleaseKind = keyof typeof RELEASE_SOURCES;
@@ -305,6 +307,13 @@ export function releaseFill(records: ReleaseRecords, product: string, lot: strin
     fill.notes.weight = "FRM-520: no pack weights were recorded at packing for this lot. Weigh three packs and enter them below.";
   }
 
+  // The batches made on site the lot record names - the syrup it was dunked in (FRM-530).
+  const batches: ReleaseEntry[] = [];
+  for (const r of lotRec ? rowsOf(lotRec, "ingredients") : []) {
+    const b = (records.intermediates ?? []).find(x => normLot(x.data.lot_code) !== "" && normLot(x.data.lot_code) === normLot(r.supplier_lot) && sameProduct(x.data.product, r.ingredient));
+    if (b && !batches.includes(b)) batches.push(b);
+  }
+
   const bakingLine = ccpLine("FRM-507", "oven load", records.baking, "oven_loads", product, lot, ["within_limits"]);
   const sealingLine = ccpLine("FRM-606", "sealing check", records.sealing, "seal_checks", product, lot, ["visual", "pull_test"]);
   fill.notes.batch = [
@@ -313,8 +322,9 @@ export function releaseFill(records: ReleaseRecords, product: string, lot: strin
       : "FRM-520: no lot record found for this lot.",
     bakingLine.text,
     sealingLine.text,
+    ...batches.map(b => `FRM-530 ${str(b.data.product)} lot ${str(b.data.lot_code)} (made on site): ${isDraft(b) ? "still a DRAFT - not signed" : "submitted"}.`),
   ].join(" ");
-  fill.supports.batch = !!lotRec && !isDraft(lotRec) && bakingLine.ok && sealingLine.ok;
+  fill.supports.batch = !!lotRec && !isDraft(lotRec) && bakingLine.ok && sealingLine.ok && batches.every(b => !isDraft(b));
 
   if (dates.length === 0) {
     fill.notes.preop = "FRM-903: the production date is not known, so no pre-operation record could be looked up.";
@@ -331,8 +341,11 @@ export function releaseFill(records: ReleaseRecords, product: string, lot: strin
   }
 
   // Holds are matched on lot codes only: this lot, and every supplier and film lot that went into it.
+  // ...and the supplier lots inside a batch made on site that went into it: a hold on the sugar in
+  // the syrup is a hold on this lot.
   const inputs = lotRec
-    ? [...rowsOf(lotRec, "ingredients").map(r => normLot(r.supplier_lot)), normLot(lotRec.data.film_lot)].filter(Boolean)
+    ? [...rowsOf(lotRec, "ingredients").map(r => normLot(r.supplier_lot)), normLot(lotRec.data.film_lot),
+        ...batches.flatMap(b => rowsOf(b, "ingredients").map(r => normLot(r.supplier_lot)))].filter(Boolean)
     : [];
   const codes = new Set([key, ...inputs]);
   const holds = records.holds.filter(h => codes.has(normLot(h.data.supplier_lot_batch_number)));

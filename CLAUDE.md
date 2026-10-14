@@ -1498,8 +1498,23 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     `resolve_label_print(response)` and closes every open request for the batch (reason "Printed",
     no name - as job resolutions). Asking again closes the earlier open request as "Asked again" and
     adds a new row, so each ask stays on record (the dedupe key carries a timestamp).
-  - **Not yet built (part 4):** the lot trace through a homemade syrup lot to its sugar lot, and the
-    release helper / Records drop-down listing the syrup batch.
+  - **The trace goes through the syrup** (part 4, owner, 2026-10-14). `TRACE_FORMS.intermediates`
+    (FRM-530). A lot record's line whose ingredient is a batch's product and whose lot is its lot code
+    (`batchFor`, normalised, product names matched) gets `InputLine.madeHere` - the batch record and the
+    supplier lots it was made from, each with its receipts - and is not expected to have a receipt of its
+    own. From a supplier lot (a sugar recall) the trace finds the batches that used it, then every lot whose
+    line names one of them; a batch no lot names yet is said in the gaps. The syrup's own lot code and its
+    ingredients' lots are start options. Gaps are checked through the batch ("Granulated sugar (in Simple
+    Syrup lot 6287)"). FRM-012's trace-back table gets the batch line ("Found", from FRM-530) then one row
+    per supplier lot inside it. Water written as "mains" (or municipal / tap) is not expected to have a
+    receipt (`noReceiptExpected`) and reads "not received". The trace screen and its PDF indent the
+    batch's ingredients under it ("in it: ..."). A lot's **Records** drop-down lists the batch after the
+    baking (`lotBatches`, `LotRecordLine.title`). The **release helper** names the batch in the batch
+    evidence, supports the batch check only when it is signed, and - the part that matters - counts the
+    supplier lots inside it for the hold check: a hold on the sugar in the syrup is a hold on the lot.
+  - **The trace PDF no longer crashes the page** (found while checking this): it handed `result.gaps` to
+    pdfmake as a `ul`, and pdfmake rewrites a list's items in place, so the page's own gaps became objects
+    and React failed on the next render. It now passes a copy - never hand pdfmake an array the page renders.
 
 - **Steps, in order:** Mixing, Baking, Dunking (only when the lot record has dunking lines), Seal checks, Packing, Retention sample, Sign and submit; then
   Release for admins and owners only (FSQM-020). **The retention sample is step 5 for everyone**

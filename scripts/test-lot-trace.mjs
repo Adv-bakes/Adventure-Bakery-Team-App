@@ -196,6 +196,70 @@ check("idle without a start", T.clockState("", T.TRACE_TARGET_MS, at(9)).state, 
 check("24 h deadline is local", T.clockState("2026-10-01T08:30", T.NOTICE_LIMIT_MS, at(9)).deadline.getDate(), 2);
 check("formatDuration minutes", T.formatDuration(14 * 60000), "14 min");
 
+// ---- through a batch made on site (FRM-530): the syrup ----
+{
+  const syrupRecords = {
+    ...records,
+    lots: [
+      entry({ product: "Rum Cake Original", lot_code: "6290", bake_date: "2026-10-17", units_packed: "100 units", ingredients: [
+        { ingredient: "Cake mix", brand: "Pillsbury", supplier_lot: "CM-1" },
+        { ingredient: "Simple Syrup", brand: "Adventure Bakery", supplier_lot: "6287", _stage: "dunking" },
+        { ingredient: "Rum", brand: "Lugo", supplier_lot: "RUM-9", _stage: "dunking" },
+      ] }),
+      entry({ product: "Rum Cake Pumpkin Spice", lot_code: "6291", bake_date: "2026-10-18", units_packed: "90 units", ingredients: [
+        { ingredient: "simple syrup", brand: "Adventure Bakery", supplier_lot: "62-87" },
+      ] }),
+      entry({ product: "Rum Cake Original", lot_code: "6292", bake_date: "2026-10-19", ingredients: [
+        { ingredient: "Simple Syrup", brand: "Adventure Bakery", supplier_lot: "6299" },
+      ] }),
+    ],
+    receipts: [entry({ receiving_log: [{ supplier_name: "Domino", material_description: "Granulated sugar", lot_batch_number: "SUG-77", qty_received: 2 }] }, "submitted", "2026-10-10T12:00:00Z")],
+    dispatches: [entry({ dispatch_date: "2026-10-20", customer: "Island Treats LLC", loaded: [{ product: "Rum Cake Original", lot_code: "6290", quantity: "100 units" }] })],
+    intermediates: [
+      entry({ product: "Simple Syrup", lot_code: "6287", made_on: "2026-10-14", use_by: "2026-11-13", ingredients: [
+        { ingredient: "Granulated sugar", brand: "Domino", supplier_lot: "SUG-77" },
+        { ingredient: "Water", brand: "", supplier_lot: "mains" },
+      ] }),
+      entry({ product: "Caramel glaze", lot_code: "6299", made_on: "2026-10-15", ingredients: [{ ingredient: "Sugar", supplier_lot: "SUG-88" }] }),
+    ],
+  };
+
+  // One of our lots: back through the syrup to its sugar lot.
+  const back = T.runTrace(syrupRecords, { kind: "lot", lot: "6290", name: "Rum Cake Original" });
+  const syrup = back.lots[0].inputs.find(i => i.ingredient === "Simple Syrup");
+  check("the syrup line is the batch made on site", [syrup.madeHere?.ref.form, syrup.madeHere?.madeOn, syrup.madeHere?.useBy], ["FRM-530", "2026-10-14", "2026-11-13"]);
+  check("...and opens out to what it was made from", syrup.madeHere.inputs.map(i => [i.ingredient, i.supplierLot]), [["Granulated sugar", "SUG-77"], ["Water", "mains"]]);
+  check("the sugar lot's receipt is found", syrup.madeHere.inputs[0].receipts.map(r => r.supplier), ["Domino"]);
+  check("the syrup itself is not expected to have a receipt", syrup.receipts, []);
+  ok("water from the mains is not a missing receipt", !back.gaps.some(g => /Water/.test(g)));
+  ok("the rum's missing receipt is still a gap", back.gaps.some(g => /RUM-9/.test(g)));
+  ok("the syrup is not reported as unreceived", !back.gaps.some(g => /Simple Syrup \(6287\)/.test(g)));
+  const glaze = T.runTrace(syrupRecords, { kind: "lot", lot: "6292" }).lots[0].inputs[0];
+  check("a lot code of another product made on site is not this syrup", glaze.madeHere, undefined);
+
+  // A supplier recall of the sugar: forward through the syrup to the lots dunked in it.
+  const fwd = T.runTrace(syrupRecords, { kind: "material", lot: "SUG-77", name: "Granulated sugar" });
+  check("the sugar lot finds every lot dunked in that syrup, spelling aside", fwd.lots.map(l => l.lotCode).sort(), ["6290", "6291"]);
+  ok("...marking the syrup line as the way it got there", fwd.lots.every(l => l.inputs.some(i => i.trigger && i.madeHere)));
+  check("...and its customers", fwd.customers.map(c => c.customer), ["Island Treats LLC"]);
+  check("the receipt of the sugar lot itself", fwd.materialReceipts.map(r => r.material), ["Granulated sugar"]);
+  const fill = T.toRecordFill(fwd);
+  check("the recall record names the sugar as the material", [fill.material, fill.material_lot, fill.material_supplier], ["Granulated sugar", "SUG-77", "Domino"]);
+  const rows = fill.trace_back.filter(r => r.finished_lot === "6290");
+  check("its trace back shows the syrup batch, then the sugar inside it", rows.map(r => [r.ingredient, r.supplier_lot, r.found]),
+    [["Cake mix", "CM-1", "Not found"], ["Simple Syrup", "6287", "Found"], ["Granulated sugar (in Simple Syrup lot 6287)", "SUG-77", "Found"],
+      ["Water (in Simple Syrup lot 6287)", "mains", "Not found"], ["Rum", "RUM-9", "Not found"]]);
+
+  // A sugar lot used in a batch no lot record names yet.
+  const unused = T.runTrace(syrupRecords, { kind: "material", lot: "SUG-88" });
+  check("a batch nobody used yet is said, not reported as nothing", [unused.lots.length, unused.gaps.some(g => /Caramel glaze lot 6299 \(FRM-530\)/.test(g))], [0, true]);
+
+  // Tracing the syrup lot itself.
+  check("the syrup's own lot finds the lots dunked in it", T.runTrace(syrupRecords, { kind: "material", lot: "6287", name: "Simple Syrup" }).lots.map(l => l.lotCode).sort(), ["6290", "6291"]);
+  ok("the syrup and its sugar are offered as places to start", ["Simple Syrup - lot 6287", "Granulated sugar - lot SUG-77"].every(l => T.startOptions(syrupRecords).some(o => o.label === l)));
+  check("records without the batch list still trace", T.runTrace({ ...syrupRecords, intermediates: undefined }, { kind: "lot", lot: "6290" }).lots[0].inputs[1].madeHere, undefined);
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1); }
 console.log("all lot-trace checks passed");

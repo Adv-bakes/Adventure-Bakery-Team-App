@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { loadTraceRecords, type TraceData } from "@/lib/formResponses";
 import {
   mailtoHref, normLot, normName, runTrace, startOptions,
-  type ContactRow, type EmailDraft, type LotTrace, type RecordRef, type TraceResult, type TraceStart,
+  type ContactRow, type EmailDraft, type LotTrace, type RecordRef, type TraceResult, type TraceStart, noReceiptExpected,
 } from "@/lib/lotTrace";
 import { generateTracePdf } from "@/lib/tracePdf";
 
@@ -69,13 +69,19 @@ function LotCard({ lot }: { lot: LotTrace }) {
             <table className="w-full text-xs">
               <thead><tr className="border-b" style={{ borderColor: HAIR }}><Th>Ingredient</Th><Th>Supplier lot</Th><Th>Received (FRM-301)</Th></tr></thead>
               <tbody>
-                {lot.inputs.map((i, n) => (
-                  <tr key={n} className={cn("border-b last:border-0", i.trigger && "bg-amber-50")} style={{ borderColor: "rgba(200,155,60,0.15)" }}>
-                    <Td>{i.ingredient}{i.brand && <span className="text-[#2A1F0E]/55"> ({i.brand})</span>}{i.trigger && <span className="ml-1 font-semibold text-amber-800">- the lot traced</span>}</Td>
+                {/* A batch made on site (the syrup) opens out to what it was made from, one row each, indented. */}
+                {lot.inputs.flatMap(i => [{ i, sub: false }, ...(i.madeHere?.inputs ?? []).map(s => ({ i: s, sub: true }))]).map(({ i, sub }, n) => (
+                  <tr key={n} className={cn("border-b last:border-0", i.trigger && !i.madeHere && "bg-amber-50")} style={{ borderColor: "rgba(200,155,60,0.15)" }}>
+                    <Td className={cn(sub && "pl-6")}>{sub && <span className="text-[#2A1F0E]/45">in it: </span>}{i.ingredient}{i.brand && <span className="text-[#2A1F0E]/55"> ({i.brand})</span>}{i.trigger && !i.madeHere && <span className="ml-1 font-semibold text-amber-800">- the lot traced</span>}</Td>
                     <Td className="font-medium">{i.supplierLot || <span className="text-amber-700">none recorded</span>}</Td>
                     <Td>
-                      {i.receipts.length === 0
-                        ? (i.supplierLot && <span className="text-amber-700">no receipt found</span>)
+                      {i.madeHere ? (
+                        <div className="flex flex-wrap items-center gap-x-2">
+                          <span>Made here {i.madeHere.madeOn}{i.madeHere.useBy && `, use by ${i.madeHere.useBy}`}</span>
+                          <RecordLink r={i.madeHere.ref} />
+                        </div>
+                      ) : i.receipts.length === 0
+                        ? (i.supplierLot && (noReceiptExpected(i.supplierLot) ? <span className="opacity-60">not received</span> : <span className="text-amber-700">no receipt found</span>))
                         : i.receipts.map((r, k) => (
                           <div key={k} className="flex flex-wrap items-center gap-x-2">
                             <span>{r.date}{r.supplier && ` - ${r.supplier}`}{r.qty && `, qty ${r.qty}`}</span>
