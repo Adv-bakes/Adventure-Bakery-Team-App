@@ -516,7 +516,13 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   copies the named fields, blanks the `clear` grid columns in every copied row, and **never copies a
   signature**. Like the voice fill, the result is unsaved and dirty (`keepDefaultValues`) with one Undo.
   First use: **FRM-520 Production Lot Record** copies product + the ingredient grid with `supplier_lot` and
-  `notes` blanked — a lot is never inherited from another day.
+  `notes` blanked — a lot is never inherited from another day. **FRM-501 Formula Sheet** has it too (owner,
+  2026-10-15, migration `20261015000003`, no revision change: a new flavor's formula started from another
+  one, Pumpkin Spice -> Pineapple): Made as, the two batch sizes, the ingredient table and the process
+  parameters are copied; product name, version, bar code, **allergens in formula** (restated for the new
+  product), trial data, validation ticks and signatures are not. The same migration gives FRM-501
+  `instanceTitleTemplate` "{product_name} {formula_version}" - without it every entry, in the picker and
+  the Entries list, read "FRM-501 - <date>".
 - **Names from the team directory (`GridColumn.teamPick`):** `{ titleColumn? }` on a text grid column offers
   everyone with a staff, admin or owner role and a profile name (`loadTeamDirectoryNames` in
   `formResponses.ts`; auditor and kiosk accounts are left out, portal access is not required). It is an
