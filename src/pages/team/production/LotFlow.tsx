@@ -18,6 +18,8 @@ import {
   FilePenLine, Keyboard, Loader2, Mic, RotateCcw, Scale, ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useRefreshOnReturn } from "@/hooks/useRefreshOnReturn";
+import { RefreshButton } from "@/components/team/today/RefreshButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -762,6 +764,7 @@ export default function LotFlow() {
     }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  const { refresh, refreshing } = useRefreshOnReturn(load);
 
   // The page is rem-sized, so the tablet gets larger type and larger buttons from one setting.
   useEffect(() => {
@@ -900,6 +903,7 @@ export default function LotFlow() {
             <h1 className="text-2xl md:text-3xl font-semibold tp-on-bg">
               Lot {lot.lotCode || "—"} · {lot.product || "—"}
               {lot.onHold && <span className="ml-3 text-base font-medium text-red-300">{M.onHold}</span>}
+              <span className="ml-3"><RefreshButton onClick={() => { void refresh(); }} spinning={refreshing} label={M.refresh} tip={M.refreshTip} /></span>
             </h1>
 
             <ol className="flex flex-wrap gap-2">

@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUserPref } from "@/lib/userPrefs";
+import { useRefreshOnReturn } from "@/hooks/useRefreshOnReturn";
+import { RefreshButton } from "@/components/team/today/RefreshButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
@@ -109,8 +111,9 @@ export default function Today() {
     try { localStorage.setItem(LANG_KEY, l); } catch { /* no storage */ }
   };
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  /** `quiet` (a refresh) keeps the page on screen instead of swapping it for the spinner. */
+  const load = useCallback(async (quiet?: unknown) => {
+    if (quiet !== true) setLoading(true);
     try {
       const [{ records, docs, problems }, notifications] = await Promise.all([
         loadTodayRecords(),
@@ -133,6 +136,7 @@ export default function Today() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  const { refresh, refreshing } = useRefreshOnReturn(() => load(true));
 
   const preop: PreopState = useMemo(() => records ? preopState(records.preops, today) : { state: "none" }, [records, today]);
   const open = productionOpen(preop);
@@ -359,6 +363,7 @@ export default function Today() {
             <span className="text-base font-normal tp-on-bg-dim">
               {new Date().toLocaleDateString(lang === "es" ? "es-US" : "en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
             </span>
+            <RefreshButton onClick={() => { void refresh(); }} spinning={refreshing || loading} label={M.refresh} tip={M.refreshTip} />
           </h1>
           <p className="text-sm tp-on-bg-dim mt-1">{M.intro}</p>
         </div>

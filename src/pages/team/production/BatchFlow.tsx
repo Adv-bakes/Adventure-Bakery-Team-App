@@ -6,7 +6,9 @@
 // Opened from "Start a lot step by step" when the formula sheet picked says "Made on site for use in
 // other products", and from the batch's line on the Today page.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRefreshOnReturn } from "@/hooks/useRefreshOnReturn";
+import { RefreshButton } from "@/components/team/today/RefreshButton";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Circle, CircleDot, FilePenLine, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -82,6 +84,8 @@ function FinishStep({ doc, entryId, lang, version, onDone }: {
   const [notes, setNotes] = useState("");
   const [missing, setMissing] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  /** What the boxes were last given from the record. */
+  const shown = useRef<{ quantity: string; useBy: string; labelled: boolean; notes: string } | null>(null);
 
   useEffect(() => {
     let on = true;
@@ -98,11 +102,22 @@ function FinishStep({ doc, entryId, lang, version, onDone }: {
         if (r.status !== "draft") { setClosed("submitted"); return; }
         setClosed("");
         const d = r.data ?? {};
-        setQuantity(String(d[BATCH_FORM.quantity] ?? ""));
         // The use-by is notation, not a measurement: the form's own rule fills it while it is blank.
-        setUseBy(String(d[BATCH_FORM.useBy] ?? "") || derivedUseBy(schema, d[BATCH_FORM.madeOn]));
-        setLabelled(d[BATCH_FORM.labelled] === true);
-        setNotes(String(d[BATCH_FORM.notes] ?? ""));
+        const next = {
+          quantity: String(d[BATCH_FORM.quantity] ?? ""),
+          useBy: String(d[BATCH_FORM.useBy] ?? "") || derivedUseBy(schema, d[BATCH_FORM.madeOn]),
+          labelled: d[BATCH_FORM.labelled] === true,
+          notes: String(d[BATCH_FORM.notes] ?? ""),
+        };
+        // A re-read (refresh, or coming back to the screen) updates a box only while it still shows
+        // what the record said last time, so nothing typed here is lost.
+        const was = shown.current;
+        const take = <T,>(cur: T, k: keyof typeof next): T => (was == null || cur === was[k] ? next[k] as T : cur);
+        setQuantity(c => take(c, "quantity"));
+        setUseBy(c => take(c, "useBy"));
+        setLabelled(c => take(c, "labelled"));
+        setNotes(c => take(c, "notes"));
+        shown.current = next;
       } catch (e) {
         console.error(e);
         if (on) setClosed("record");
@@ -244,6 +259,7 @@ export default function BatchFlow() {
     }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  const { refresh, refreshing } = useRefreshOnReturn(load);
 
   // Sized for the tablet, as the lot page is.
   useEffect(() => {
@@ -296,7 +312,10 @@ export default function BatchFlow() {
           <p className="tp-on-bg py-10">{B.notFound}</p>
         ) : (
           <>
-            <h1 className="text-2xl md:text-3xl font-semibold tp-on-bg">{B.title(String(entry.data.product ?? ""), String(entry.data.lot_code ?? ""))}</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold tp-on-bg">
+              {B.title(String(entry.data.product ?? ""), String(entry.data.lot_code ?? ""))}
+              <span className="ml-3"><RefreshButton onClick={() => { void refresh(); }} spinning={refreshing} label={M.refresh} tip={M.refreshTip} /></span>
+            </h1>
             <ol className="flex flex-wrap gap-2">
               {steps.map((s, i) => {
                 const current = s.key === step;
