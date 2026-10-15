@@ -34,6 +34,12 @@ export const FIRST_PACK = {
   notePrefix: "First pack photo",
   /** Best-by = the month of manufacture plus this many months (owner, 2026-10-10). */
   shelfLifeMonths: 12,
+  /**
+   * The month after is accepted too (owner, 2026-10-15, lot 6283: made in October, printed
+   * "November 2027"). Which month the floor should print is still to be confirmed; until then
+   * either is a match. 12 stays the month suggested and pre-filled elsewhere.
+   */
+  bestByLateMonths: 1,
 } as const;
 
 export type PackPoint = "flavor" | "lot" | "best_by" | "barcode";
@@ -210,9 +216,23 @@ const TEXT = {
   },
 } as const;
 
-/** The month the pack must print, with the Spanish month beside it for a Spanish reader: "August 2027 (agosto)". */
-const wantMonth = (want: YearMonth, lang: PackLang) =>
+/** The months a pack may print for this bake: the expected one, then FIRST_PACK.bestByLateMonths after it. */
+export function acceptedBestBy(bakeDate: unknown): YearMonth[] {
+  const first = expectedBestBy(bakeDate);
+  if (!first) return [];
+  const out = [first];
+  for (let i = 1; i <= FIRST_PACK.bestByLateMonths; i++) {
+    const t = first.year * 12 + (first.month - 1) + i;
+    out.push({ year: Math.floor(t / 12), month: (t % 12) + 1 });
+  }
+  return out;
+}
+
+const oneMonth = (want: YearMonth, lang: PackLang) =>
   lang === "es" ? `${monthLabel(want)} (${MONTH_LABEL_ES[want.month - 1]})` : monthLabel(want);
+/** The months the pack may print, with the Spanish month beside each for a Spanish reader: "October 2027 or November 2027". */
+const wantMonth = (want: YearMonth, lang: PackLang, also: YearMonth[] = []) =>
+  [want, ...also].map(m => oneMonth(m, lang)).join(lang === "es" ? " o " : " or ");
 
 function flavorLine(expected: string, read: string | undefined, lang: PackLang): PackLine {
   const T = TEXT[lang];
@@ -243,15 +263,15 @@ export function checkFirstPack(expected: PackExpected, read: PackRead, lang: Pac
   else if (normLot(read.lot_code) === normLot(expected.lot)) lines.push({ point: "lot", state: "match", text: T.lotMatch(str(read.lot_code)) });
   else lines.push({ point: "lot", state: "mismatch", text: T.lotWrong(str(read.lot_code), str(expected.lot)) });
 
-  const want = expectedBestBy(expected.bakeDate);
+  const [want, ...later] = acceptedBestBy(expected.bakeDate);
   const got = parseBestBy(read.best_by);
   const printed0 = str(read.best_by);
   if (!want) lines.push({ point: "best_by", state: "skipped", text: T.dateNoRecord });
-  else if (!printed0) lines.push({ point: "best_by", state: "unread", text: T.dateUnread(wantMonth(want, lang)) });
-  else if (bestByNotEnglish(read.best_by).length) lines.push({ point: "best_by", state: "mismatch", text: T.dateNotEnglish(printed0, wantMonth(want, lang)) });
-  else if (!got) lines.push({ point: "best_by", state: "check", text: T.dateLook(printed0, wantMonth(want, lang)) });
-  else if (got.year === want.year && got.month === want.month) lines.push({ point: "best_by", state: "match", text: T.dateMatch(printed0) });
-  else lines.push({ point: "best_by", state: "mismatch", text: T.dateWrong(printed0, wantMonth(want, lang)) });
+  else if (!printed0) lines.push({ point: "best_by", state: "unread", text: T.dateUnread(wantMonth(want, lang, later)) });
+  else if (bestByNotEnglish(read.best_by).length) lines.push({ point: "best_by", state: "mismatch", text: T.dateNotEnglish(printed0, wantMonth(want, lang, later)) });
+  else if (!got) lines.push({ point: "best_by", state: "check", text: T.dateLook(printed0, wantMonth(want, lang, later)) });
+  else if ([want, ...later].some(m => got.year === m.year && got.month === m.month)) lines.push({ point: "best_by", state: "match", text: T.dateMatch(printed0) });
+  else lines.push({ point: "best_by", state: "mismatch", text: T.dateWrong(printed0, wantMonth(want, lang, later)) });
 
   const scanned = digits(read.decodedBarcode), printed = digits(read.barcode);
   const seen = scanned || printed;
