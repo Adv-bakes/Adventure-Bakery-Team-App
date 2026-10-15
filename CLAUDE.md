@@ -380,12 +380,17 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   barcode digits are **never** the lot — those come back in `alternates.lot_code` and render as
   click-to-apply chips in the Undo strip. `applyLabelScan` (pure, in `formSchema.ts`) overwrites
   non-empty cells deliberately and the caller snapshots the whole prior row, so one **Undo** restores
-  it exactly; a half-applied scan would be worse than either. The model needs a fetchable URL so the
-  photo is always uploaded, but it only **stays** as an entry attachment (auto-noted
-  `"Label photo — <grid> row N"`) when the grid sets `scanKeepPhoto` — **off by default**, since the
-  scanned values land in reviewed cells and a 20-ingredient entry would otherwise accumulate 20
-  redundant images; otherwise the upload is transient and removed in a `finally` (best-effort, like
-  `deleteResponse` — an orphaned object is harmless, a failed scan is not). Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
+  it exactly; a half-applied scan would be worse than either. **The reader is sent the PICTURE, never a
+  link** (`src/lib/photoData.ts`: `photoDataUrl` = JPEG data URL, long edge at most 2048 px;
+  `storedPhotoDataUrl` for a photo already on the entry). Owner's real test, lot 6283, 2026-10-15: the
+  first-pack check sent a signed link, waited over a minute and read nothing, twice, on a sharp
+  photo - the same failure the PDF fill had on 2026-10-09. Every label read (first pack, mixing scan,
+  grid row and section scans) now sends pictures, and `extractPackageLabel` gives up after 45 s with a
+  message. **Do not go back to links.** A photo is uploaded only where it is kept: as an entry
+  attachment (auto-noted `"Label photo — <grid> row N"`) when the grid sets `scanKeepPhoto` — **off by
+  default**, since the scanned values land in reviewed cells and a 20-ingredient entry would otherwise
+  accumulate 20 redundant images — and the first-pack photo, which always stays. "Fill from a photo"
+  (`extract-form-answers`) still sends photos as links; only its PDF pages are pictures. Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
   `onScanLabel` ← `FormEntry.tsx` (upload → attach → signed URL → invoke); admin toggle + per-column
   mapping live in `GridColumnsEditor`.
 - **A further photo of the same pack, on a grid row (owner at receiving, 2026-10-12).** After a row scan,
