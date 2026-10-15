@@ -129,6 +129,8 @@ export interface TodayMessages {
     };
     mix: {
       batchesQ: string; batchesHelp: string; batchN(n: number): string;
+      /** Two people can weigh one lot at once, a batch each: which one this tablet is weighing. */
+      whichQ: string; whichHelp: string; whichN(n: number): string; whichAll: string; onlyBatch(batch: number): string; changeBatch: string;
       where(batch: number, batches: number, position: number, of: number): string; whereOne(position: number, of: number): string;
       lotLabel: string; lotIs(lot: string): string; noLotYet: string; otherLot: string;
       scan: string; scanning: string; scanNone: string; scanFailed: string; scanReads(text: string): string; scanOffer: string;
@@ -432,11 +434,17 @@ const en: TodayMessages = {
       batchesQ: "How many batches are being mixed for this lot?",
       batchesHelp: "Each batch is weighed and recorded on its own.",
       batchN: n => n === 1 ? "1 batch" : `${n} batches`,
+      whichQ: "Which batch are you weighing on this tablet?",
+      whichHelp: "Two people can weigh at the same time, a batch each, on two tablets. The lot on each container is entered with batch 1.",
+      whichN: n => `Batch ${n}`,
+      whichAll: "All of them, in order",
+      onlyBatch: batch => `This tablet is weighing batch ${batch}.`,
+      changeBatch: "Change batch",
       where: (batch, batches, position, of) => `Batch ${batch} of ${batches} · ingredient ${position} of ${of}`,
       whereOne: (position, of) => `Ingredient ${position} of ${of}`,
       lotLabel: "Lot on the container",
       lotIs: lot => `Lot on the container: ${lot}`,
-      noLotYet: "No lot is recorded for this ingredient yet. Go back to batch 1 for it.",
+      noLotYet: "No lot is recorded for this ingredient yet. It is entered with batch 1.",
       otherLot: "A different container for this batch? Add it as a line of its own on the lot record.",
       scan: "Scan the label",
       scanning: "Reading the label…",
@@ -859,11 +867,17 @@ const es: TodayMessages = {
       batchesQ: "¿Cuántas tandas se mezclan para este lote?",
       batchesHelp: "Cada tanda se pesa y se anota por separado.",
       batchN: n => n === 1 ? "1 tanda" : `${n} tandas`,
+      whichQ: "¿Qué tanda pesa en esta tableta?",
+      whichHelp: "Dos personas pueden pesar a la vez, una tanda cada una, en dos tabletas. El lote de cada envase se anota con la tanda 1.",
+      whichN: n => `Tanda ${n}`,
+      whichAll: "Todas, en orden",
+      onlyBatch: batch => `Esta tableta pesa la tanda ${batch}.`,
+      changeBatch: "Cambiar de tanda",
       where: (batch, batches, position, of) => `Tanda ${batch} de ${batches} · ingrediente ${position} de ${of}`,
       whereOne: (position, of) => `Ingrediente ${position} de ${of}`,
       lotLabel: "Lote en el envase",
       lotIs: lot => `Lote en el envase: ${lot}`,
-      noLotYet: "Este ingrediente todavía no tiene lote anotado. Vuelva a la tanda 1 para anotarlo.",
+      noLotYet: "Este ingrediente todavía no tiene lote anotado. Se anota con la tanda 1.",
       otherLot: "¿Otro envase para esta tanda? Añádalo como una línea propia en el registro del lote.",
       scan: "Escanear la etiqueta",
       scanning: "Leyendo la etiqueta…",

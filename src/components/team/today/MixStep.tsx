@@ -9,6 +9,10 @@
 //  - A label scan gives the lot code only, into a box the person reads before saving. The
 //    ingredient and the brand are the formula's and are never written over.
 //  - Which screen is next is read from the record (lotFlow.mixScreens); nothing is stored for it.
+//  - Two people can weigh one lot at once, a batch each (owner, 2026-10-15): with more than one
+//    batch, each tablet chooses which batch it weighs (remembered for the tab, never on the record),
+//    and its saves go through the database function write_mix_entry, which lets a team member write
+//    a mixing answer onto a lot record somebody else started and changes only that answer.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -18,10 +22,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
-import { fetchResponse, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
+import { fetchResponse, saveResponseData, StaleResponseError, writeMixEntry, type FormResponse } from "@/lib/formResponses";
 import { getFormSchema, julianLotCode, valueFields, type GridField } from "@/lib/formSchema";
 import {
-  applyMixEntry, checkMixMapping, LOT_FLOW, LOT_SPEC, MIX_BATCH_CHOICES, mixProgress, mixScreenDone, mixScreens, nextMixScreen, noReworkOption,
+  applyMixEntry, checkMixMapping, LOT_FLOW, LOT_SPEC, MIX_BATCH_CHOICES, mixEntryCells, mixProgress, mixScreenDone, mixScreens, nextMixScreen, noReworkOption,
   type MixScreen, type MixSpec,
 } from "@/lib/lotFlow";
 import { scanIngredientLot } from "@/lib/mixScan";
@@ -34,6 +38,21 @@ type Line = Extract<MixScreen, { kind: "line" }>;
 const GOLD = "bg-[#C89B3C] text-[#2A1F0E] hover:bg-[#C89B3C]/90";
 const PLAIN = "border-[#2A1F0E]/40 bg-white/70 text-[#2A1F0E] hover:bg-white";
 const BIG = "h-12 text-lg bg-white";
+
+/** Which batch this tab weighs: a batch number, "all" (in order), or nothing chosen yet. */
+type Only = number | "all" | null;
+const onlyKey = (id: string) => `mix.only:${id}`;
+const readOnly = (id: string): Only => {
+  try {
+    const v = sessionStorage.getItem(onlyKey(id));
+    if (v === "all") return "all";
+    const n = Number(v);
+    return v && Number.isInteger(n) && n >= 1 ? n : null;
+  } catch { return null; }
+};
+
+/** What a save sends to write_mix_entry: one line's cells, or a top-level answer (line null). */
+type MixWrite = { line: { index: number; ingredient: string; brand: string } | null; set: Record<string, string | number> };
 
 const screenKey = (s: MixScreen | undefined) => (!s ? "" : s.kind === "line" ? `line:${s.batch}:${s.index}` : s.kind);
 
@@ -62,6 +81,12 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   const [loaded, setLoaded] = useState(false);
   /** The screen in view; null until the record has been read once. */
   const [at, setAt] = useState<number | null>(null);
+  const [only, setOnlyState] = useState<Only>(() => readOnly(lot.id));
+  const setOnly = (v: Exclude<Only, null>) => {
+    setOnlyState(v);
+    try { sessionStorage.setItem(onlyKey(lot.id), String(v)); } catch { /* no storage */ }
+  };
+  const batchOnly = typeof only === "number" ? only : null;
   const [busy, setBusy] = useState(false);
   const [lotText, setLotText] = useState("");
   const [weight, setWeight] = useState("");
@@ -89,7 +114,10 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
         else {
           setClosed("");
           setRec(r);
-          setAt(a => a ?? nextMixScreen(r.data, spec));
+          // With more than one batch and no batch chosen on this tablet, open on the question.
+          const p = mixProgress(r.data, spec);
+          const ask = spec.batches && p.batches > 1 && only == null && p.state !== "done";
+          setAt(a => a ?? (ask ? 0 : nextMixScreen(r.data, spec, batchOnly)));
         }
       } catch (e) {
         console.error(e);
@@ -102,7 +130,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   }, [lot.id, doc.revision, version, spec]);
 
   const data = rec?.data;
-  const screens = useMemo(() => mixScreens(data, spec), [data, spec]);
+  const screens = useMemo(() => mixScreens(data, spec, batchOnly), [data, spec, batchOnly]);
   const idx = Math.min(at ?? 0, screens.length - 1);
   const screen = screens[idx];
   const progress = useMemo(() => mixProgress(data, spec), [data, spec]);
@@ -118,8 +146,22 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, reset]);
 
-  /** Write a change onto the record as it is now. "moved" = the change no longer fits the record. */
-  const write = async (change: (d: Record<string, any>) => Record<string, any> | null): Promise<"saved" | "moved" | "record"> => {
+  /**
+   * Write a change onto the record as it is now. "moved" = the change no longer fits the record.
+   * With `via`, through write_mix_entry (anyone on the team, one answer only); the ordinary save
+   * (the record's own author) when the function is not on the database yet, or for a whole-table fill.
+   */
+  const write = async (change: (d: Record<string, any>) => Record<string, any> | null, via?: MixWrite): Promise<"saved" | "moved" | "record"> => {
+    if (via) {
+      const res = await writeMixEntry(lot.id, via.line, via.set);
+      if (res.outcome === "saved") { if (live.current) setRec(res.response); return "saved"; }
+      if (res.outcome === "moved") {
+        const r = await fetchResponse(lot.id).catch(() => null);
+        if (r && live.current) setRec(r);
+        return "moved";
+      }
+      if (res.outcome === "record") return "record";
+    }
     const run = async (): Promise<"saved" | "moved" | "record"> => {
       const r = await fetchResponse(lot.id);
       if (!r || r.status !== "draft" || r.form_revision !== doc.revision) return "record";
@@ -134,11 +176,11 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   };
 
   /** Run a save, and say what happened. `then` runs once it is on the record. */
-  const commit = async (change: (d: Record<string, any>) => Record<string, any> | null, then: () => void) => {
+  const commit = async (change: (d: Record<string, any>) => Record<string, any> | null, then: () => void, via?: MixWrite) => {
     if (busy) return;
     setBusy(true);
     try {
-      const outcome = await write(change);
+      const outcome = await write(change, via);
       if (!live.current) return;
       if (outcome === "saved") { then(); onSaved(undefined); }
       else if (outcome === "moved") { toast.message(X.moved); setReset(n => n + 1); }
@@ -151,7 +193,13 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
     }
   };
 
-  const saveBatches = (n: number) => commit(d => ({ ...d, [LOT_FLOW.batches]: n }), () => setAt(1));
+  // With more than one batch the screen stays, to ask which batch this tablet weighs.
+  const saveBatches = (n: number) => commit(d => ({ ...d, [LOT_FLOW.batches]: n }), () => { if (n === 1) setAt(1); },
+    { line: null, set: { [LOT_FLOW.batches]: n } });
+  const chooseBatch = (v: Exclude<Only, null>) => {
+    setOnly(v);
+    setAt(nextMixScreen(data, spec, typeof v === "number" ? v : null));
+  };
 
   const saveLine = (s: Line) => {
     const typedLot = lotText.trim();
@@ -164,13 +212,17 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
     const picksUnit = asksUnit(s) && typed !== "";
     if (picksUnit && !unit) { setError(X.needUnit); return; }
     setError("");
+    const ref = { index: s.index, ingredient: s.ingredient, brand: s.brand };
+    const change = {
+      ...(s.asksLot ? { lot: typedLot } : {}),
+      batch: s.batch, weight: typed === "" ? "" as const : n,
+      ...(picksUnit ? { unit } : {}),
+    };
+    const cells = mixEntryCells(change);
     void commit(
-      d => applyMixEntry(d, { index: s.index, ingredient: s.ingredient, brand: s.brand }, {
-        ...(s.asksLot ? { lot: typedLot } : {}),
-        batch: s.batch, weight: typed === "" ? "" : n,
-        ...(picksUnit ? { unit } : {}),
-      }),
+      d => applyMixEntry(d, ref, change),
       () => setAt(idx + 1),
+      cells ? { line: ref, set: cells } : undefined,
     );
   };
 
@@ -326,7 +378,28 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
           ))}
           {busy && <Loader2 className="w-5 h-5 animate-spin self-center text-[#C89B3C]" />}
         </div>
-        {nav(progress.batches > 0 ? <Button type="button" className={GOLD} disabled={busy} onClick={() => setAt(idx + 1)}>{F.next}</Button> : undefined)}
+        {progress.batches > 1 && (
+          <div className="space-y-3 border-t border-[#2A1F0E]/15 pt-4">
+            <div>
+              <p className="text-lg font-semibold">{X.whichQ}</p>
+              <p className="text-sm opacity-80">{X.whichHelp}</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {MIX_BATCH_CHOICES.filter(n => n <= progress.batches).map(n => (
+                <Button key={n} type="button" disabled={busy} onClick={() => chooseBatch(n)} aria-pressed={only === n}
+                  className={`h-16 px-8 text-xl ${only === n ? GOLD : "border border-[#2A1F0E]/40 bg-white text-[#2A1F0E] hover:bg-[#C89B3C]/20"}`}>
+                  {X.whichN(n)}
+                </Button>
+              ))}
+              <Button type="button" disabled={busy} onClick={() => chooseBatch("all")} aria-pressed={only === "all"}
+                className={`h-16 px-6 text-lg ${only === "all" ? GOLD : "border border-[#2A1F0E]/40 bg-white text-[#2A1F0E] hover:bg-[#C89B3C]/20"}`}>
+                {X.whichAll}
+              </Button>
+            </div>
+          </div>
+        )}
+        {nav(progress.batches > 0 && (progress.batches === 1 || only != null)
+          ? <Button type="button" className={GOLD} disabled={busy} onClick={() => setAt(idx + 1)}>{F.next}</Button> : undefined)}
       </div>
     );
   }
@@ -341,7 +414,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
         {answer && <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-800"><CheckCircle2 className="w-4 h-4" />{X.answered(answer)}</p>}
         <div className="flex flex-wrap gap-3">
           {no && (
-            <Button type="button" disabled={busy} onClick={() => commit(d => ({ ...d, [LOT_FLOW.rework]: no }), () => setReworkYes(false))}
+            <Button type="button" disabled={busy} onClick={() => commit(d => ({ ...d, [LOT_FLOW.rework]: no }), () => setReworkYes(false), { line: null, set: { [LOT_FLOW.rework]: no } })}
               className={`h-14 px-6 text-lg ${GOLD}`}>
               {busy && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}{X.reworkNo}
             </Button>
@@ -359,7 +432,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
         {skipped > 0 && (
           <div className="flex flex-wrap items-center gap-3">
             {amber(X.stillOpen(skipped))}
-            <Button type="button" variant="outline" className={PLAIN} onClick={() => setAt(nextMixScreen(data, spec))}>{X.goToOpen}</Button>
+            <Button type="button" variant="outline" className={PLAIN} onClick={() => setAt(nextMixScreen(data, spec, batchOnly))}>{X.goToOpen}</Button>
           </div>
         )}
         {nav()}
@@ -373,6 +446,12 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
       <input ref={file} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { void takePhoto(e.target.files?.[0]); }} />
       {/* Where the person is says enough here; the count of complete lines is on the first and last screens. */}
       <p className="text-sm font-medium opacity-80">{spec.batches ? X.where(s.batch, progress.batches, s.position, s.of) : X.whereOne(s.position, s.of)}</p>
+      {spec.batches && progress.batches > 1 && batchOnly != null && batchOnly <= progress.batches && (
+        <p className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-medium">{X.onlyBatch(batchOnly)}</span>
+          <button type="button" className="underline underline-offset-2 hover:opacity-80" onClick={() => setAt(0)}>{X.changeBatch}</button>
+        </p>
+      )}
       <div>
         <p className="text-2xl font-semibold leading-tight">{s.ingredient}</p>
         {s.brand && <p className="text-sm opacity-80">{s.brand}</p>}

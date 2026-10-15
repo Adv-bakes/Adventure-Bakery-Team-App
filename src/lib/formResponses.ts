@@ -278,6 +278,34 @@ export async function saveResponseData(
   return rows[0] as FormResponse;
 }
 
+/**
+ * One mixing answer onto a draft lot record (FRM-520) or made-here batch (FRM-530), through the
+ * database function write_mix_entry - so a second person weighing another batch can save onto a
+ * record somebody else started. `line` null = a top-level answer (batches, rework).
+ * "missing" = the function is not on this database yet (migration not pushed): the caller falls
+ * back to an ordinary save.
+ */
+export async function writeMixEntry(
+  responseId: string,
+  line: { index: number; ingredient: string; brand: string } | null,
+  set: Record<string, string | number>,
+): Promise<{ outcome: "saved"; response: FormResponse } | { outcome: "moved" | "record" | "missing" }> {
+  const { data, error } = await (supabase as any).rpc("write_mix_entry", {
+    _response_id: responseId,
+    _index: line?.index ?? null,
+    _ingredient: line?.ingredient ?? null,
+    _brand: line?.brand ?? null,
+    _set: set,
+  });
+  if (error) {
+    if (error.code === "PGRST202" || error.code === "42883") return { outcome: "missing" };
+    throw error;
+  }
+  const r = data as { outcome: string; response?: FormResponse };
+  if (r?.outcome === "saved" && r.response) return { outcome: "saved", response: r.response };
+  return { outcome: r?.outcome === "moved" ? "moved" : "record" };
+}
+
 /** Submit: caller validates via buildZodSchema first. Same staleness guard. */
 export async function submitResponse(
   id: string,

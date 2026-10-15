@@ -1413,6 +1413,17 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     day; a second run of the same code would share the first one's release and dispatch). The owner
     considered separate runs and set it aside "for now" - a run's own lot code (6286B) was my
     recommendation if it comes back. The plain Start a lot button has no product yet and is not checked.
+  - **Two people, a batch each** (owner, 2026-10-15): with more than one batch, the batches screen
+    asks **Which batch are you weighing on this tablet?** (Batch 1 / 2 / 3 / All of them, in order),
+    remembered per tab in `sessionStorage` (`mix.only:<lot id>`), never on the record. The tablet then
+    walks only that batch's lines (`mixScreens(data, spec, only)`); lot codes stay with batch 1. Every
+    mixing save goes through **`write_mix_entry`** (migration `20261015000001`, `SECURITY DEFINER`,
+    any team member): it writes one line's lot / weight / unit (line found by position + ingredient +
+    brand) or the batches / rework answer, on a DRAFT FRM-520 or FRM-530 on the form's current
+    revision, in place under a row lock - so two tablets never overwrite each other. Needed because RLS
+    lets staff update only a draft they created. RLS is NOT widened. Before the migration is pushed the
+    screen falls back to the ordinary save (`writeMixEntry` returns "missing"). Dunking and "Start from
+    the formula sheet" still use the ordinary save (the record's author or an admin).
   - Not built: a fourth batch, a line added from the page, offering received lots (FRM-301) for an
     ingredient. **Untested from here: the camera and the real read of an ingredient label.**
 - **Dunking: the syrup and the rum** (owner, 2026-10-14; plan in four parts, parts 1-2 built). Every cake
