@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Camera, Download, FileText, Loader2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
-  getResponseAttachmentUrl, removeResponseAttachment, uploadResponseAttachment,
+  getResponseAttachmentDownloadUrl, getResponseAttachmentUrl, removeResponseAttachment, uploadResponseAttachment,
   type ResponseAttachment,
 } from "@/lib/formResponses";
 import { DictationTextarea } from "./DictationTextarea";
@@ -65,6 +65,21 @@ function AttachmentRow({ item, canEdit, onRemove, onNoteChange }: {
   // they wrote — flush the pending debounce rather than dropping it.
   useEffect(() => () => flush(), []);
 
+  // Saves the file to the device's downloads (the thumbnail still opens it in a tab to look at).
+  const download = async () => {
+    try {
+      const href = await getResponseAttachmentDownloadUrl(item.path, item.name);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = item.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not download the file");
+    }
+  };
+
   const editNote = (value: string) => {
     setNote(value);
     pendingRef.current = value;
@@ -95,13 +110,9 @@ function AttachmentRow({ item, canEdit, onRemove, onNoteChange }: {
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {url && (
-            <a href={url} target="_blank" rel="noreferrer" download={item.name}>
-              <Button variant="outline" size="sm" title="Download">
-                <Download className="w-3.5 h-3.5" />
-              </Button>
-            </a>
-          )}
+          <Button variant="outline" size="sm" title="Download" aria-label={`Download ${item.name}`} onClick={() => { void download(); }}>
+            <Download className="w-3.5 h-3.5" />
+          </Button>
           {canEdit && onRemove && (
             <Button
               variant="outline" size="sm" onClick={onRemove} title="Remove"
