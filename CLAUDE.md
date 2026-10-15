@@ -1821,7 +1821,9 @@ copied. With `settings.batchSheet` set, `FormEntry` shows a **"Start from the fo
   point (`checkFirstPack`): flavor against the record's Product (a flavor word on the pack the record
   lacks is a mismatch; one only the record has "needs a look"), lot code (`normLot`), best-by **month**
   = bake date + 12 months (`expectedBestBy`, owner's rule: made 10 Oct 2026 says October 2027;
-  `parseBestBy` reads only a plain date), and the bar code against the product's recorded number.
+  `parseBestBy` reads only a plain date) - **or the month after** (`acceptedBestBy`,
+  `FIRST_PACK.bestByLateMonths`; owner, 2026-10-15, lot 6283 printed November 2027 and the right month
+  is still to be confirmed; +12 stays the month suggested and pre-filled elsewhere), and the bar code against the product's recorded number.
   **That number belongs to the LABEL** (owner, 2026-10-10: one formula can be sold in two packs): FRM-601
   v2 (migration `20261010000007`, GJM) has a Bar code number field, and `productBarcodeFrom` takes the
   product's newest SUBMITTED label review that states one, else its newest draft, else the formula

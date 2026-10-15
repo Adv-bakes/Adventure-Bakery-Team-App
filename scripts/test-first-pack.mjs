@@ -46,6 +46,12 @@ const REC = { product: "Rum Cake - Pumpkin Spice", lot: "6283", bakeDate: "2026-
 const states = lines => lines.map(l => `${l.point}:${l.state}`);
 const good = T.checkFirstPack(REC, { product_name: "Pumpkin Spice Rum Cake", lot_code: "6283", best_by: "October 2027", barcode: "8 50012 34567 8", decodedBarcode: "850012345678" });
 check("everything right", states(good), ["flavor:match", "lot:match", "best_by:match", "barcode:match"]);
+// The month after is accepted too (owner, 2026-10-15: lot 6283, made in October, printed November 2027)
+check("the month after is a match", states(T.checkFirstPack(REC, { best_by: "November 2027" }))[2], "best_by:match");
+check("two months after is not", states(T.checkFirstPack(REC, { best_by: "December 2027" }))[2], "best_by:mismatch");
+check("the month before is not", states(T.checkFirstPack(REC, { best_by: "September 2027" }))[2], "best_by:mismatch");
+check("a wrong date names both months", T.checkFirstPack(REC, { best_by: "December 2027" })[2].text.includes("October 2027 or November 2027"), true);
+check("over a year end", T.acceptedBestBy("2026-12-05").map(T.monthLabel), ["December 2027", "January 2028"]);
 check("...is a match", T.packVerdict(good), "match");
 
 const wrong = T.checkFirstPack(REC, { product_name: "Banana Rum Cake", lot_code: "6282", best_by: "September 2027", decodedBarcode: "850012345999" });
