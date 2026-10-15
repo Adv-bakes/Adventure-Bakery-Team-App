@@ -137,6 +137,10 @@ export default function Today() {
 
   useEffect(() => { load(); }, [load]);
   const { refresh, refreshing } = useRefreshOnReturn(() => load(true));
+  // After a row button saves, the page is read again WITHOUT the loading swap: the swap unmounts
+  // the button and its pop-up, which threw away the first-pack results the moment they were
+  // shown (owner, 2026-10-15).
+  const reloadQuietly = useCallback(() => { void load(true); }, [load]);
 
   const preop: PreopState = useMemo(() => records ? preopState(records.preops, today) : { state: "none" }, [records, today]);
   const open = productionOpen(preop);
@@ -439,21 +443,21 @@ export default function Today() {
                         <BakeLoadButton
                           doc={docOf("baking")!} lot={l.lotCode} product={l.product} today={today}
                           state={bakeState(records!, today, l.product, l.lotCode)}
-                          lang={lang} disabled={!open} onSaved={load}
+                          lang={lang} disabled={!open} onSaved={reloadQuietly}
                         />
                       )}
                       {canVoice && docOf("sealing") && l.lotCode && l.product && (
                         <SealCheckButton
                           doc={docOf("sealing")!} lot={l.lotCode} product={l.product} today={today}
                           state={sealState(records!, today, l.product, l.lotCode)}
-                          lang={lang} disabled={!open} onSaved={load}
+                          lang={lang} disabled={!open} onSaved={reloadQuietly}
                         />
                       )}
                       {/* Packing is on the lot's own record: the first pack from a photo, and the counts. */}
                       {canVoice && docOf("lots") && l.lotCode && l.product && (
                         <PackingButton
                           doc={docOf("lots")!} entryId={l.id} lot={l.lotCode} product={l.product} today={today}
-                          state={l.packing} lang={lang} disabled={!open} onSaved={load}
+                          state={l.packing} lang={lang} disabled={!open} onSaved={reloadQuietly}
                         />
                       )}
                       <Button asChild size="sm" variant="outline" disabled={!open}>
