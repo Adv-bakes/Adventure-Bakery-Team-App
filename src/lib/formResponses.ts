@@ -526,6 +526,18 @@ export async function removeResponseAttachment(path: string): Promise<void> {
 }
 
 /** Signed URL for viewing/downloading an attachment (private bucket, 1-year expiry). */
+/**
+ * A short-lived link that SAVES the file (Content-Disposition: attachment) under `name`. A plain
+ * `<a download>` is ignored by browsers for a link to another site, so it only opened the photo.
+ */
+export async function getResponseAttachmentDownloadUrl(path: string, name: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from("form-attachments")
+    .createSignedUrl(path, 60 * 10, { download: name });
+  if (error) throw error;
+  return data.signedUrl;
+}
+
 export async function getResponseAttachmentUrl(path: string): Promise<string> {
   const { data, error } = await supabase.storage
     .from("form-attachments")
