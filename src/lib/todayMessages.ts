@@ -186,6 +186,9 @@ export interface TodayMessages {
   draft: string;
   loading: string;
   loadError: string;
+  /** The refresh icon beside a page title, and its tooltip. */
+  refresh: string;
+  refreshTip: string;
   opening: string;
 }
 
@@ -611,6 +614,8 @@ const en: TodayMessages = {
   draft: "draft",
   loading: "Loading today…",
   loadError: "Could not load today's records.",
+  refresh: "Refresh",
+  refreshTip: "Read the records again (also done by itself when you come back to this screen)",
   opening: "Opening…",
 };
 
@@ -1036,6 +1041,8 @@ const es: TodayMessages = {
   draft: "borrador",
   loading: "Cargando el día…",
   loadError: "No se pudieron cargar los registros de hoy.",
+  refresh: "Actualizar",
+  refreshTip: "Volver a leer los registros (también se hace solo al volver a esta pantalla)",
   opening: "Abriendo…",
 };
 
