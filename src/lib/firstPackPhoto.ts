@@ -4,8 +4,9 @@
 // so the two cannot drift apart. The rules themselves are in firstPackCheck.ts.
 
 import {
-  extractPackageLabel, getResponseAttachmentUrl, saveResponseAttachments, uploadResponseAttachment, type FormResponse,
+  extractPackageLabel, saveResponseAttachments, uploadResponseAttachment, type FormResponse,
 } from "@/lib/formResponses";
+import { photoDataUrl } from "@/lib/photoData";
 import { loadProductBarcode } from "@/lib/formReport";
 import { decodeBarcode } from "@/lib/barcodeDecode";
 import { FIRST_PACK, checkFirstPack, packNote, type PackLang, type PackLine } from "@/lib/firstPackCheck";
@@ -34,7 +35,8 @@ export async function photographFirstPack(
   const withPhoto = await saveResponseAttachments(response.id, [...(response.attachments ?? []), { ...uploaded, note: FIRST_PACK.notePrefix }]);
   try {
     const [result, decodedBarcode, code] = await Promise.all([
-      getResponseAttachmentUrl(uploaded.path).then(url => extractPackageLabel([url], ["product_name", "lot_code", "best_by", "barcode"], "finished_goods")),
+      // The picture itself is read, not a link to the stored copy (photoData.ts).
+      photoDataUrl(file).then(url => extractPackageLabel([url], ["product_name", "lot_code", "best_by", "barcode"], "finished_goods")),
       decodeBarcode(file),
       loadProductBarcode(String(values[FIRST_PACK.product] ?? "")),
     ]);

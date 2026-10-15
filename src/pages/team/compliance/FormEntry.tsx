@@ -22,11 +22,12 @@ import {
 import { clauseRequirements } from "@/lib/auditGuide";
 import {
   StaleResponseError, deleteResponse, draftAuditEvidence, extractFormAnswers, extractPackageLabel, fetchProfileNames,
-  fetchResponse, getResponseAttachmentUrl, removeResponseAttachment, reopenResponse,
+  fetchResponse, getResponseAttachmentUrl, reopenResponse,
   resolveSchemaForResponse, saveResponseAttachments, saveResponseData, shortUserId, submitResponse,
   uploadResponseAttachment,
   type FormResponse, type ResolvedSchema, type ResponseAttachment,
 } from "@/lib/formResponses";
+import { photoDataUrl, storedPhotoDataUrl } from "@/lib/photoData";
 import { FormRenderer } from "@/components/team/forms/FormRenderer";
 import { DocSelfContext } from "@/components/team/forms/DocRefText";
 import { deriveDeviations, deviationFormFor, deviationProblems } from "@/lib/ccpDeviations";
@@ -515,14 +516,10 @@ export default function FormEntry() {
     ctx: ScanRequest,
   ): Promise<LabelScanResult | null> => {
     if (!response) return null;
-    let transientPath: string | null = null;
-    // Earlier photos of the same pack on a ROW scan ("Add another photo"): uploaded again only
-    // so the reader can fetch them, and always removed afterwards.
-    const extraPaths: string[] = [];
+    // The reader is sent the pictures themselves, not links to stored copies (photoData.ts): so a
+    // photo is uploaded only where the grid keeps it, and earlier photos of the same pack on a ROW
+    // scan ("Add another photo") are never uploaded at all.
     try {
-      for (const f of ctx.earlier ?? []) extraPaths.push((await uploadResponseAttachment(response.id, f)).path);
-      const uploaded = await uploadResponseAttachment(response.id, file);
-      transientPath = uploaded.path;
 
       // A section scan is of ONE pack, which may take several shots (a round bottle): the earlier
       // label photos of the same section are read together with the new one, so a statement that
@@ -535,28 +532,28 @@ export default function FormEntry() {
         : [];
 
       if (ctx.keepPhoto) {
+        const uploaded = await uploadResponseAttachment(response.id, file);
         const photo: ResponseAttachment = { ...uploaded, note };
         // Adopt the returned row (fresh updated_at) exactly as scanAndFill does,
         // or the next Save Draft trips the optimistic-concurrency guard.
         const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), photo]);
         setResponse(updated);
-        transientPath = null; // now part of the record — must survive the finally
       }
 
-      const urls = await Promise.all([...earlier.map(a => a.path), ...extraPaths, uploaded.path].map(getResponseAttachmentUrl));
-      const result = await extractPackageLabel(urls, ctx.wanted, ctx.mode);
-      if (Object.keys(result.facts).length === 0 && earlier.length === 0 && extraPaths.length === 0) {
+      const extra = ctx.earlier ?? [];
+      const images = await Promise.all([
+        ...earlier.map(a => storedPhotoDataUrl(a.path)),
+        ...extra.map(f => photoDataUrl(f)),
+        photoDataUrl(file),
+      ]);
+      const result = await extractPackageLabel(images, ctx.wanted, ctx.mode);
+      if (Object.keys(result.facts).length === 0 && earlier.length === 0 && extra.length === 0) {
         toast.warning("Nothing readable on that label photo — the row was left as it was.");
       }
       return result;
     } catch (e: any) {
       toast.error(e.message ?? "Failed to read the label photo");
       return null;
-    } finally {
-      // Best-effort, like deleteResponse: an orphaned file is harmless, and
-      // failing the scan over a stray object would not be.
-      if (transientPath) await removeResponseAttachment(transientPath).catch(() => { /* orphan */ });
-      for (const p of extraPaths) await removeResponseAttachment(p).catch(() => { /* orphan */ });
     }
   };
 

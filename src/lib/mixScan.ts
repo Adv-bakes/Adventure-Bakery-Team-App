@@ -3,12 +3,12 @@
 // formula sheet and are never written over by a photo; what the label says it is comes back as
 // text, so the person can see they have the right container in hand.
 //
-// The photo is uploaded only so the reader can fetch it, and is always removed afterwards - the
-// lot lands in a box the person reads and saves, as with a grid row's scan.
+// The photo is sent to the reader as a picture and never stored (2026-10-15: it used to be uploaded
+// so the reader could fetch it by link, which was slow and unreliable) - the lot lands in a box the
+// person reads and saves, as with a grid row's scan.
 
-import {
-  extractPackageLabel, getResponseAttachmentUrl, removeResponseAttachment, uploadResponseAttachment,
-} from "./formResponses";
+import { extractPackageLabel } from "./formResponses";
+import { photoDataUrl } from "./photoData";
 import { decodeQr } from "./barcodeDecode";
 import { parseLabelPayload } from "./batchLabel";
 
@@ -46,16 +46,8 @@ async function ourLabel(file: File): Promise<MixScanResult | null> {
   return read ? { lot: read.lotCode, alternates: [], reads: `${read.product} · lot ${read.lotCode} (our label's code)` } : null;
 }
 
-export async function scanIngredientLot(responseId: string, file: File): Promise<MixScanResult> {
+export async function scanIngredientLot(_responseId: string, file: File): Promise<MixScanResult> {
   const ours = await ourLabel(file);
   if (ours) return ours;
-  let path: string | null = null;
-  try {
-    path = (await uploadResponseAttachment(responseId, file)).path;
-    const url = await getResponseAttachmentUrl(path);
-    return mixScanResult(await extractPackageLabel([url], ["lot_code", "product_name", "brand"], "ingredient"));
-  } finally {
-    // Best-effort: an orphaned photo is harmless, a failed scan over a stray file would not be.
-    if (path) await removeResponseAttachment(path).catch(() => { /* orphan */ });
-  }
+  return mixScanResult(await extractPackageLabel([await photoDataUrl(file)], ["lot_code", "product_name", "brand"], "ingredient"));
 }

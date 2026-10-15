@@ -468,14 +468,27 @@ export async function extractFormAnswers(
  * code looks like, so passing the wrong one reads the wrong number. Defaults to
  * "ingredient", which is what every caller meant before the mode existed.
  */
+/** A label read that has not answered in this long is given up, rather than leaving the person waiting. */
+const LABEL_READ_LIMIT_MS = 45_000;
+
+/**
+ * `imageUrls` are the pictures themselves (data URLs, see photoData.ts), not links to storage: a
+ * link made the AI service fetch the photo, and on the first real first-pack check that took over a
+ * minute and returned nothing (2026-10-15).
+ */
 export async function extractPackageLabel(
   imageUrls: string[],
   wanted: ScanFact[],
   mode: ScanMode = "ingredient",
 ): Promise<LabelScanResult> {
-  const { data, error } = await supabase.functions.invoke("extract-package-label", {
-    body: { imageUrls, wanted, mode },
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("The label could not be read in time. Try again, or enter it by hand.")), LABEL_READ_LIMIT_MS);
   });
+  const { data, error } = await Promise.race([
+    supabase.functions.invoke("extract-package-label", { body: { imageUrls, wanted, mode } }),
+    late,
+  ]).finally(() => clearTimeout(timer));
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
   return {
