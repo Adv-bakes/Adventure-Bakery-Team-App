@@ -119,7 +119,10 @@ export type MixScreen =
       unit: string;
       /** The formula's quantity per batch, as text; blank when the formula gives none. */
       expected: string;
-      /** The lot on the container is asked with the first batch only. */
+      /**
+       * The lot on the container is asked with the first batch, and with any other batch while the
+       * line has none yet - first come, first served, so two tablets need not wait on each other.
+       */
       asksLot: boolean;
       /**
        * The weight has to be entered: the formula gives this line a quantity. Without one (pan
@@ -159,7 +162,7 @@ export function mixScreens(data: Record<string, any> | null | undefined, spec: M
       kind: "line", batch: b, index: x.index,
       ingredient: str(x.r[LOT_FLOW.ingredient]), brand: str(x.r[LOT_FLOW.brand]), unit: str(x.r[LOT_FLOW.unit]),
       expected: str(x.r[LOT_FLOW.expected]),
-      asksLot: b === 1, needsWeight: str(x.r[LOT_FLOW.expected]) !== "",
+      asksLot: b === 1 || str(x.r[LOT_FLOW.lot]) === "", needsWeight: str(x.r[LOT_FLOW.expected]) !== "",
       lot: str(x.r[LOT_FLOW.lot]), weight: str(x.r[LOT_FLOW.weighed[b - 1]]),
       position: i + 1, of: here.length,
     }));
@@ -192,7 +195,12 @@ export const MIX_BATCH_CHOICES: readonly number[] = LOT_FLOW.weighed.map((_, i) 
  * moved or renamed the row, nothing is written and null comes back (the page then reads the
  * record again). Only what the change names is written - a lot, a weight or a unit left out is untouched.
  */
-export interface MixChange { lot?: string; batch?: number; weight?: number | ""; unit?: string }
+/**
+ * `lot` overwrites (a lot the screen showed and the person changed); `lotIfBlank` is written only
+ * while the line has no lot - a lot typed on a screen that showed none, which another tablet may
+ * have entered in the meantime.
+ */
+export interface MixChange { lot?: string; lotIfBlank?: string; batch?: number; weight?: number | ""; unit?: string }
 
 /**
  * The cells of one line a mixing save writes - what the database function write_mix_entry is
@@ -201,6 +209,7 @@ export interface MixChange { lot?: string; batch?: number; weight?: number | "";
 export function mixEntryCells(change: MixChange): Record<string, string | number> | null {
   const cells: Record<string, string | number> = {};
   if (change.lot !== undefined) cells[LOT_FLOW.lot] = change.lot.trim();
+  if (change.lotIfBlank !== undefined) cells[`${LOT_FLOW.lot}_if_blank`] = change.lotIfBlank.trim();
   if (change.batch !== undefined && change.weight !== undefined) {
     const key = LOT_FLOW.weighed[change.batch - 1];
     if (!key) return null;
@@ -218,9 +227,10 @@ export function applyMixEntry(
   const rows = gridRows(values);
   const row = rows[ref.index];
   if (!row || str(row[LOT_FLOW.ingredient]) !== ref.ingredient || str(row[LOT_FLOW.brand]) !== ref.brand) return null;
-  const cells = mixEntryCells(change);
-  if (!cells) return null;
+  const { [`${LOT_FLOW.lot}_if_blank`]: ifBlank, ...cells } = mixEntryCells(change) ?? { _none: 1 };
+  if ("_none" in cells) return null;
   const next: Record<string, unknown> = { ...row, ...cells };
+  if (ifBlank !== undefined && str(row[LOT_FLOW.lot]) === "") next[LOT_FLOW.lot] = ifBlank;
   if (change.amount !== undefined) next[LOT_FLOW.notes] = withAmount(str(row[LOT_FLOW.notes]), change.amount);
   return { ...values, [LOT_FLOW.grid]: rows.map((r, i) => (i === ref.index ? next : r)) };
 }

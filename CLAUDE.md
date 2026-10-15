@@ -1416,7 +1416,11 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
   - **Two people, a batch each** (owner, 2026-10-15): with more than one batch, the batches screen
     asks **Which batch are you weighing on this tablet?** (Batch 1 / 2 / 3 / All of them, in order),
     remembered per tab in `sessionStorage` (`mix.only:<lot id>`), never on the record. The tablet then
-    walks only that batch's lines (`mixScreens(data, spec, only)`); lot codes stay with batch 1. Every
+    walks only that batch's lines (`mixScreens(data, spec, only)`). **The lot on the container is first
+    come, first served** (owner, same day): any batch asks it while the line has none. A lot typed where
+    none was shown goes as `supplier_lot_if_blank` (migration `20261015000002`), written only while the
+    line is still blank, so two tablets never replace each other's lot; the loser's weight is saved and
+    a warning names the lot kept. A lot the screen showed and the person changed still overwrites. Every
     mixing save goes through **`write_mix_entry`** (migration `20261015000001`, `SECURITY DEFINER`,
     any team member): it writes one line's lot / weight / unit (line found by position + ingredient +
     brand) or the batches / rework answer, on a DRAFT FRM-520 or FRM-530 on the form's current

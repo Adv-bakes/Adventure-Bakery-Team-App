@@ -170,7 +170,7 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
     ["batches", "1:Flour", "1:Pan spray", "1:Sugar", "2:Flour", "2:Sugar", "rework"]);
   const s = F.mixScreens({ batches: 2, ingredients: rows });
   check("a line knows its row, blank lines counted", [s[1].index, s[2].index, s[3].index], [0, 2, 3]);
-  check("the first batch asks the lot, the second does not", [s[1].asksLot, s[4].asksLot], [true, false]);
+  check("the first batch asks the lot; the second too while the line has none", [s[1].asksLot, s[4].asksLot], [true, true]);
   check("a line with no expected quantity need not be weighed", [s[2].needsWeight, s[1].needsWeight], [false, true]);
   check("...and is answered by its lot alone", F.mixScreenDone({}, { ...s[2], lot: "L9" }), true);
   check("...but weighed with the first batch, it is asked again with the second",
@@ -304,6 +304,18 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
   check("cells: lot, weight and unit", F.mixEntryCells({ lot: " L7 ", batch: 2, weight: 4.5, unit: "oz" }), { supplier_lot: "L7", actual_qty_2: 4.5, unit: "oz" });
   check("cells: a weight cleared", F.mixEntryCells({ batch: 1, weight: "" }), { actual_qty: "" });
   check("cells: no fourth batch", F.mixEntryCells({ batch: 4, weight: 1 }), null);
+  // The lot, first come first served
+  const blank = { batches: 2, ingredients: [row("Flour", 17.49), row("Sugar", 12, "L2")] };
+  const b2 = F.mixScreens(blank, F.LOT_SPEC, 2).filter(s => s.kind === "line");
+  check("batch 2 asks the lot of a line that has none", b2.map(s => s.asksLot), [true, false]);
+  check("batch 2 line with no lot is not done on its weight alone", F.mixScreenDone({ ...blank, ingredients: [row("Flour", 17.49, "", "", 17.4), row("Sugar", 12, "L2")] }, { ...b2[0], weight: "17.4" }), false);
+  check("cells: a lot first come", F.mixEntryCells({ lotIfBlank: " L8 ", batch: 2, weight: 3 }), { supplier_lot_if_blank: "L8", actual_qty_2: 3 });
+  const fref = { index: 0, ingredient: "Flour", brand: "" };
+  check("first come: written while blank", F.applyMixEntry(blank, fref, { lotIfBlank: "L8", batch: 2, weight: 3 }).ingredients[0].supplier_lot, "L8");
+  const taken = { batches: 2, ingredients: [row("Flour", 17.49, "L1")] };
+  const kept = F.applyMixEntry(taken, fref, { lotIfBlank: "L8", batch: 2, weight: 3 }).ingredients[0];
+  check("first come: a lot already there is kept, the weight saved", [kept.supplier_lot, kept.actual_qty_2], ["L1", 3]);
+  check("an edited lot still overwrites", F.applyMixEntry(taken, fref, { lot: "L9" }).ingredients[0].supplier_lot, "L9");
 }
 
 // ---- the address
