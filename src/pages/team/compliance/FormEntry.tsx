@@ -22,7 +22,7 @@ import {
 import { clauseRequirements } from "@/lib/auditGuide";
 import {
   StaleResponseError, deleteResponse, draftAuditEvidence, extractFormAnswers, extractPackageLabel, fetchProfileNames,
-  fetchResponse, getResponseAttachmentUrl, reopenResponse,
+  fetchResponse, reopenResponse,
   resolveSchemaForResponse, saveResponseAttachments, saveResponseData, shortUserId, submitResponse,
   uploadResponseAttachment,
   type FormResponse, type ResolvedSchema, type ResponseAttachment,
@@ -452,21 +452,23 @@ export default function FormEntry() {
       // PDF itself is what stays on the entry. The first cut uploaded each page picture and sent
       // its link like a photo's: on the owner's first real PDF that stalled for over a minute
       // and read nothing, while the same pictures sent directly were read in three seconds.
+      // Photos go the same way since 2026-10-15: the server logs showed the AI service failing to
+      // fetch storage links ("Cannot fetch content from the provided URL") on every label read.
       const added: ResponseAttachment[] = [];
-      // In the order chosen: a kept photo's storage path, or a PDF page's picture.
-      const toRead: ({ path: string } | { dataUrl: string; text: string })[] = [];
+      // In the order chosen: a photo (sent as its picture), or a PDF page's picture.
+      const toRead: ({ photo: File } | { dataUrl: string; text: string })[] = [];
       let fromPdf = false;
       for (const file of Array.from(files)) {
         const kept = await uploadResponseAttachment(response.id, file);
         added.push(kept);
-        if (!isPdfFile(file)) { toRead.push({ path: kept.path }); continue; }
+        if (!isPdfFile(file)) { toRead.push({ photo: file }); continue; }
         fromPdf = true;
         for (const page of await renderPdfPages(file)) toRead.push(page);
       }
       const updated = await saveResponseAttachments(response.id, [...(response.attachments ?? []), ...added]);
       setResponse(updated); // adopt fresh updated_at; keep photos on record
 
-      const imageUrls = await Promise.all(toRead.map(r => "path" in r ? getResponseAttachmentUrl(r.path) : r.dataUrl));
+      const imageUrls = await Promise.all(toRead.map(r => "photo" in r ? photoDataUrl(r.photo) : r.dataUrl));
       // Answers a PDF never fills on this form (FRM-903's Day / Shift) are not asked for, and are
       // dropped if they come back anyway.
       const skipped = fromPdf ? pdfFillSkippedFields(doc?.sop_number, schema) : new Set<string>();

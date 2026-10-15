@@ -446,15 +446,27 @@ export async function uploadResponseAttachment(responseId: string, file: File): 
  * the result straight into RHF. Nothing is persisted here — the user reviews
  * the pre-filled values and saves themselves.
  */
+/** A whole-form read that has not answered in this long is given up. */
+const FORM_READ_LIMIT_MS = 90_000;
+
+/** `imageUrls` are pictures (data URLs), never links to storage - see photoData.ts. */
 export async function extractFormAnswers(
   manifest: FieldManifest[],
   imageUrls: string[],
   /** A PDF, not a photograph: the function is told so and given each page's text (document mode). */
   document?: { pageTexts: string[] },
 ): Promise<{ answers: Record<string, any>; warnings: string[] }> {
-  const { data, error } = await supabase.functions.invoke("extract-form-answers", {
-    body: document ? { manifest, imageUrls, source: "pdf", pageTexts: document.pageTexts } : { manifest, imageUrls },
+  // A whole form takes longer than a label, so the limit is longer; past it the person is told.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("The form could not be read in time. Try again, or fill it in by hand.")), FORM_READ_LIMIT_MS);
   });
+  const { data, error } = await Promise.race([
+    supabase.functions.invoke("extract-form-answers", {
+      body: document ? { manifest, imageUrls, source: "pdf", pageTexts: document.pageTexts } : { manifest, imageUrls },
+    }),
+    late,
+  ]).finally(() => clearTimeout(timer));
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
   return { answers: (data?.answers ?? {}) as Record<string, any>, warnings: (data?.warnings ?? []) as string[] };
