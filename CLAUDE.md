@@ -390,7 +390,9 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   attachment (auto-noted `"Label photo — <grid> row N"`) when the grid sets `scanKeepPhoto` — **off by
   default**, since the scanned values land in reviewed cells and a 20-ingredient entry would otherwise
   accumulate 20 redundant images — and the first-pack photo, which always stays. "Fill from a photo"
-  (`extract-form-answers`) still sends photos as links; only its PDF pages are pictures. Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
+  (`extract-form-answers`) sends its photos as pictures too (same day), with a 90 s limit. The server
+  logs proved the cause: every failed read logged "AI gateway error: 400 ... Cannot fetch content from
+  the provided URL ... URL_REJECTED" - the AI service cannot fetch our signed storage links. Wiring: `GridFieldInput` (button/apply/Undo, still imports no supabase) ← `FormRenderer`
   `onScanLabel` ← `FormEntry.tsx` (upload → attach → signed URL → invoke); admin toggle + per-column
   mapping live in `GridColumnsEditor`.
 - **A further photo of the same pack, on a grid row (owner at receiving, 2026-10-12).** After a row scan,
@@ -469,8 +471,8 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   while five direct reads of the same PDF were right - a model's reading varies, the text does not. It
   stops at the first free-text column, gives nothing for a label printed twice with different choices,
   and does nothing for a scan. Tested on that record's real text layer.
-  **A request without `source` is read exactly as before** - photographs are untouched, which
-  is why this could ship without being tried on a photo. The owner deploys the function
+  **A request without `source` is read exactly as before** - photographs are untouched by
+  document mode. (Since 2026-10-15 photos are also sent as pictures, not links - see photoData.ts.) The owner deploys the function
   (`npx supabase functions deploy extract-form-answers`); the client is safe before and after.
   **A PDF never fills FRM-903's "Day / Shift" section** (`PDF_FILL_SKIPS` / `pdfFillSkippedFields` in
   `formSchema.ts`): those fields are left out of the manifest and dropped from the answers, so the date,
