@@ -289,6 +289,23 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
   check("no lines: nowhere to open, but no error", F.nextMixScreen({}, B), 0);
 }
 
+// ---- two people weighing one lot, a batch each (owner, 2026-10-15)
+{
+  const d = { batches: 3, rework: "", ingredients: [row("Flour", 17.49, "L1", 17.5), row("Sugar", 12, "L2", 12, 11.9), row("Spray", "")] };
+  const kinds = (x, only) => F.mixScreens(x, F.LOT_SPEC, only).map(s => s.kind === "line" ? `${s.batch}:${s.ingredient}` : s.kind);
+  check("batch 2 only: its own lines, the choice and rework", kinds(d, 2), ["batches", "2:Flour", "2:Sugar", "rework"]);
+  check("batch 3 only", kinds(d, 3), ["batches", "3:Flour", "3:Sugar", "rework"]);
+  check("no choice: every batch in order", kinds(d, null).length, kinds(d).length);
+  check("a choice past the number of batches is every batch", kinds(d, 5), kinds(d, null));
+  check("batch 2 opens on its first line not weighed", F.mixScreens(d, F.LOT_SPEC, 2)[F.nextMixScreen(d, F.LOT_SPEC, 2)].ingredient, "Flour");
+  const d2 = { ...d, ingredients: [row("Flour", 17.49, "L1", 17.5, 17.4), row("Sugar", 12, "L2", 12, 11.9), row("Spray", "")] };
+  check("batch 2 all weighed: opens on rework", F.mixScreens(d2, F.LOT_SPEC, 2)[F.nextMixScreen(d2, F.LOT_SPEC, 2)].kind, "rework");
+  check("batch 2 never asks the lot", F.mixScreens(d, F.LOT_SPEC, 2).filter(s => s.kind === "line").every(s => !s.asksLot), true);
+  check("cells: lot, weight and unit", F.mixEntryCells({ lot: " L7 ", batch: 2, weight: 4.5, unit: "oz" }), { supplier_lot: "L7", actual_qty_2: 4.5, unit: "oz" });
+  check("cells: a weight cleared", F.mixEntryCells({ batch: 1, weight: "" }), { actual_qty: "" });
+  check("cells: no fourth batch", F.mixEntryCells({ batch: 4, weight: 1 }), null);
+}
+
 // ---- the address
 check("the page", [F.lotFlowHref("abc"), F.lotFlowHref("abc", "sealing")], ["/team/today/lot/abc", "/team/today/lot/abc?step=sealing"]);
 check("back from a record", F.lotBackQuery("abc", "baking"), "from=lot&lot=abc&step=baking");

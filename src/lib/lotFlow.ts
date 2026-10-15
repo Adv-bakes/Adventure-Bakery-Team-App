@@ -141,14 +141,19 @@ const gridRows = (d: Record<string, any>): Record<string, unknown>[] => (Array.i
  * rework question. Until the number of batches is answered there is nothing to walk through, so
  * that is the only screen. Batches 2 and 3 ask the weight only, so a line the formula gives no
  * quantity is asked again only if it was weighed with the first batch.
+ *
+ * `only` = the one batch this tablet is weighing (owner, 2026-10-15: two people can weigh one lot
+ * at once, a batch each). Its lines are the only ones walked; the batches screen (where the choice
+ * is made) and the rework question stay. Null or out of range = every batch, in order.
  */
-export function mixScreens(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC): MixScreen[] {
+export function mixScreens(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC, only: number | null = null): MixScreen[] {
   const d = data ?? {};
   const batches = mixProgress(d, spec).batches;
   const out: MixScreen[] = spec.batches ? [{ kind: "batches" }] : [];
   if (!batches) return out;
   const named = gridRows(d).map((r, index) => ({ r, index })).filter(x => str(x.r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(x.r));
   for (let b = 1; b <= batches; b++) {
+    if (only != null && only >= 1 && only <= batches && b !== only) continue;
     const here = named.filter(x => b === 1 || str(x.r[LOT_FLOW.expected]) !== "" || str(x.r[LOT_FLOW.weighed[0]]) !== "");
     here.forEach((x, i) => out.push({
       kind: "line", batch: b, index: x.index,
@@ -172,8 +177,8 @@ export function mixScreenDone(data: Record<string, any> | null | undefined, s: M
 }
 
 /** Where the mixing step opens: the first screen not yet answered, else the last one. */
-export function nextMixScreen(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC): number {
-  const screens = mixScreens(data, spec);
+export function nextMixScreen(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC, only: number | null = null): number {
+  const screens = mixScreens(data, spec, only);
   const i = screens.findIndex(s => !mixScreenDone(data, s, spec));
   return i >= 0 ? i : Math.max(0, screens.length - 1);
 }
@@ -187,22 +192,35 @@ export const MIX_BATCH_CHOICES: readonly number[] = LOT_FLOW.weighed.map((_, i) 
  * moved or renamed the row, nothing is written and null comes back (the page then reads the
  * record again). Only what the change names is written - a lot, a weight or a unit left out is untouched.
  */
+export interface MixChange { lot?: string; batch?: number; weight?: number | ""; unit?: string }
+
+/**
+ * The cells of one line a mixing save writes - what the database function write_mix_entry is
+ * sent. Null when the batch has no weighed column.
+ */
+export function mixEntryCells(change: MixChange): Record<string, string | number> | null {
+  const cells: Record<string, string | number> = {};
+  if (change.lot !== undefined) cells[LOT_FLOW.lot] = change.lot.trim();
+  if (change.batch !== undefined && change.weight !== undefined) {
+    const key = LOT_FLOW.weighed[change.batch - 1];
+    if (!key) return null;
+    cells[key] = change.weight;
+  }
+  if (change.unit !== undefined) cells[LOT_FLOW.unit] = change.unit;
+  return cells;
+}
+
 export function applyMixEntry(
   values: Record<string, any>,
   ref: { index: number; ingredient: string; brand: string },
-  change: { lot?: string; batch?: number; weight?: number | ""; unit?: string; amount?: string },
+  change: MixChange & { amount?: string },
 ): Record<string, any> | null {
   const rows = gridRows(values);
   const row = rows[ref.index];
   if (!row || str(row[LOT_FLOW.ingredient]) !== ref.ingredient || str(row[LOT_FLOW.brand]) !== ref.brand) return null;
-  const next: Record<string, unknown> = { ...row };
-  if (change.lot !== undefined) next[LOT_FLOW.lot] = change.lot.trim();
-  if (change.batch !== undefined && change.weight !== undefined) {
-    const key = LOT_FLOW.weighed[change.batch - 1];
-    if (!key) return null;
-    next[key] = change.weight;
-  }
-  if (change.unit !== undefined) next[LOT_FLOW.unit] = change.unit;
+  const cells = mixEntryCells(change);
+  if (!cells) return null;
+  const next: Record<string, unknown> = { ...row, ...cells };
   if (change.amount !== undefined) next[LOT_FLOW.notes] = withAmount(str(row[LOT_FLOW.notes]), change.amount);
   return { ...values, [LOT_FLOW.grid]: rows.map((r, i) => (i === ref.index ? next : r)) };
 }
