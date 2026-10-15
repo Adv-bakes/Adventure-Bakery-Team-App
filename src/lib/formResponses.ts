@@ -299,6 +299,11 @@ export async function writeMixEntry(
   });
   if (error) {
     if (error.code === "PGRST202" || error.code === "42883") return { outcome: "missing" };
+    // The function as first pushed has no first-come lot key: send the lot as an ordinary one.
+    if (String(error.message ?? "").includes("supplier_lot_if_blank") && "supplier_lot_if_blank" in set) {
+      const { supplier_lot_if_blank: lot, ...rest } = set;
+      return writeMixEntry(responseId, line, { ...rest, supplier_lot: lot });
+    }
     throw error;
   }
   const r = data as { outcome: string; response?: FormResponse };

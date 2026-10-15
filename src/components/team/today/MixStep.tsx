@@ -101,6 +101,8 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   const scanned = useRef("");
   const file = useRef<HTMLInputElement>(null);
   const live = useRef(true);
+  /** The record as the last save left it, for that save's follow-up (state is not updated yet then). */
+  const lastSaved = useRef<FormResponse | null>(null);
   useEffect(() => () => { live.current = false; }, []);
 
   useEffect(() => {
@@ -154,7 +156,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   const write = async (change: (d: Record<string, any>) => Record<string, any> | null, via?: MixWrite): Promise<"saved" | "moved" | "record"> => {
     if (via) {
       const res = await writeMixEntry(lot.id, via.line, via.set);
-      if (res.outcome === "saved") { if (live.current) setRec(res.response); return "saved"; }
+      if (res.outcome === "saved") { lastSaved.current = res.response; if (live.current) setRec(res.response); return "saved"; }
       if (res.outcome === "moved") {
         const r = await fetchResponse(lot.id).catch(() => null);
         if (r && live.current) setRec(r);
@@ -168,6 +170,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
       const next = change({ ...(r.data ?? {}) });
       if (!next) { if (live.current) setRec(r); return "moved"; }
       const saved = await saveResponseData(r.id, next, r.updated_at);
+      lastSaved.current = saved;
       if (live.current) setRec(saved);
       return "saved";
     };
@@ -213,15 +216,22 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
     if (picksUnit && !unit) { setError(X.needUnit); return; }
     setError("");
     const ref = { index: s.index, ingredient: s.ingredient, brand: s.brand };
+    // A lot typed where none was shown is first come, first served: the other tablet may have
+    // entered it meanwhile, and then theirs stays.
     const change = {
-      ...(s.asksLot ? { lot: typedLot } : {}),
+      ...(s.asksLot ? (s.lot ? { lot: typedLot } : { lotIfBlank: typedLot }) : {}),
       batch: s.batch, weight: typed === "" ? "" as const : n,
       ...(picksUnit ? { unit } : {}),
     };
     const cells = mixEntryCells(change);
     void commit(
       d => applyMixEntry(d, ref, change),
-      () => setAt(idx + 1),
+      () => {
+        // Kept: a lot already entered on the other tablet. Say so, so a second container is not lost.
+        const kept = String(lastSaved.current?.data?.[LOT_FLOW.grid]?.[s.index]?.[LOT_FLOW.lot] ?? "").trim();
+        if (!s.lot && typedLot && kept && kept !== typedLot) toast.warning(X.lotKept(kept, typedLot), { duration: 15000 });
+        setAt(idx + 1);
+      },
       cells ? { line: ref, set: cells } : undefined,
     );
   };
