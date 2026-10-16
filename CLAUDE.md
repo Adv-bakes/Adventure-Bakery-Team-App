@@ -841,6 +841,12 @@ Component in `src/components/team/`, rendered in the drawer's **Document** tab. 
 
 `SopPdfRow` is a minimal subset of the row; the function is pure (no DB call — callers already hold the row).
 
+**Revision History is printed for internal readers only** (owner, 2026-10-16): `generateSopPdf(row,
+{ revisionHistory })` leaves that section out when `false`, and every caller passes
+`isInternalReader(roles)` (`useUserRole.ts`: staff, admin or owner), so an auditor's PDF has no
+Revision History. The closing current-revision line is always printed. The screen (Document tab) is
+unchanged - an auditor viewing the document there still sees it.
+
 **Download entry points** (all reuse `generateSopPdf` + `hasSopBody`, gated to `type === 'sop'` rows with a structured body):
 - **SOPs Library** (`SopsLibrary.tsx`) — a "Download PDF" button in the drawer's **Document** tab, and an inline `Download` icon beside the **Type** pill in the list (`e.stopPropagation()` so it doesn't open the drawer).
 - **Training & SOPs** (`TrainingSops.tsx`) — the Reference Library table has a **Type** column with the same inline download icon.

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useUserRole } from "@/hooks/useUserRole";
+import { isInternalReader, useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -127,7 +127,9 @@ type KindFilter = "all" | "training" | "reference";
 type DocSortKey = "number" | "title" | "type" | "revision" | "effective" | "status" | "sqf";
 
 export default function SopsLibrary() {
-  const { role } = useUserRole();
+  const { role, roles } = useUserRole();
+  // The Revision History section is printed for internal readers only, not for the auditor.
+  const pdfOpts = { revisionHistory: isInternalReader(roles) };
   const isAdmin = role === "admin" || role === "owner";
 
   const [docs, setDocs] = useState<SopDocument[]>([]);
@@ -619,7 +621,7 @@ export default function SopsLibrary() {
                       <button
                         onClick={async e => {
                           e.stopPropagation();
-                          try { await generateSopPdf(d); }
+                          try { await generateSopPdf(d, pdfOpts); }
                           catch (err: any) { toast.error(err?.message ?? "Failed to generate PDF"); }
                         }}
                         title="Download PDF"
@@ -964,7 +966,7 @@ export default function SopsLibrary() {
                         className="bg-[#C89B3C] hover:bg-[#B8892C]"
                         onClick={async () => {
                           try {
-                            await generateSopPdf(selected);
+                            await generateSopPdf(selected, pdfOpts);
                           } catch (e: any) {
                             toast.error(e?.message ?? "Failed to generate PDF");
                           }

@@ -30,6 +30,13 @@ interface UseUserRoleReturn {
   loading: boolean;
 }
 
+/**
+ * Staff, admin or owner: someone inside the company. An auditor (or any other role) is not, and is
+ * given PDFs without internal history (generateSopPdf's revisionHistory).
+ */
+export const isInternalReader = (roles: readonly string[]): boolean =>
+  roles.some(r => r === "staff" || r === "admin" || r === "owner");
+
 export function useUserRole(): UseUserRoleReturn {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
