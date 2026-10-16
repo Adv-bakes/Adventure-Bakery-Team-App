@@ -12,7 +12,7 @@ import { Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 import {
-  flattenForReport, getFormSchema, hasFormSchema, instanceTitle,
+  entryStateLabel, flattenForReport, getFormSchema, hasFormSchema, instanceTitle,
   type FormSchema, type ReportColumn,
 } from "@/lib/formSchema";
 import { fetchProfileNames, fetchResponses, shortUserId, type FormResponse } from "@/lib/formResponses";
@@ -128,7 +128,7 @@ export default function Records() {
     const lines = visible.map(r => [
       format(new Date(r.submitted_at ?? r.created_at), "yyyy-MM-dd HH:mm"),
       names.get(r.created_by) || shortUserId(r.created_by),
-      r.status,
+      entryStateLabel(schema, r.status, r.data),
       ...reportColumns.map(c => c.cell(r.data ?? {})),
     ].map(v => esc(String(v ?? ""))).join(","));
     const csv = [headers.map(esc).join(","), ...lines].join("\r\n");
@@ -194,8 +194,9 @@ export default function Records() {
           <Select value={statusFilter} onValueChange={v => setStatusFilter(v as StatusFilter)}>
             <SelectTrigger className="w-36 bg-white"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="submitted">Submitted</SelectItem>
-              <SelectItem value="draft">Drafts</SelectItem>
+              {/* A form with its own state words (FRM-703: Disposed / On the shelf) is filtered by them. */}
+              <SelectItem value="submitted">{schema?.settings?.stateLabels?.submitted || "Submitted"}</SelectItem>
+              <SelectItem value="draft">{schema?.settings?.stateLabels?.submitted ? "Not yet " + schema.settings.stateLabels.submitted.toLowerCase() : "Drafts"}</SelectItem>
               <SelectItem value="all">All</SelectItem>
             </SelectContent>
           </Select>
@@ -247,7 +248,7 @@ export default function Records() {
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{names.get(r.created_by) || shortUserId(r.created_by)}</TableCell>
-                    <TableCell><Badge className={statusBadge[r.status]}>{r.status}</Badge></TableCell>
+                    <TableCell><Badge className={statusBadge[r.status]}>{entryStateLabel(schema, r.status, r.data)}</Badge></TableCell>
                     {reportColumns.map(c => {
                       const value = c.cell(r.data ?? {});
                       return (
@@ -287,7 +288,7 @@ export default function Records() {
                     <TableCell className="font-medium">{formDoc?.title ?? "—"}</TableCell>
                     <TableCell className="text-xs">{instanceTitle(formSchema, r, filler)}</TableCell>
                     <TableCell>{filler}</TableCell>
-                    <TableCell><Badge className={statusBadge[r.status]}>{r.status}</Badge></TableCell>
+                    <TableCell><Badge className={statusBadge[r.status]}>{entryStateLabel(formSchema, r.status, r.data)}</Badge></TableCell>
                     <TableCell className="text-xs text-[#2A1F0E]/60">
                       {format(new Date(r.submitted_at ?? r.created_at), "M/d/yyyy h:mm a")}
                     </TableCell>
