@@ -14,6 +14,7 @@ import { SqfSectionGuide } from "./SqfSectionGuide";
 import { DocRefText, DocSelfContext } from "./DocRefText";
 import { useUserPref } from "@/lib/userPrefs";
 import { GridFieldInput, type GridFieldInputProps } from "./GridFieldInput";
+import { ReferenceTablesContext, type ReferenceTables } from "./ReferenceTables";
 import type { Signer } from "./SignatureFieldInput";
 
 /**
@@ -240,7 +241,17 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
     );
   };
 
+  // The form's printed reference tables, for a grid column that offers a table's rows (pickFromTable).
+  const tables: ReferenceTables = {};
+  for (const s of schema.sections) for (const f of s.fields) {
+    if (f.type === "reference_table") {
+      const t = f as ReferenceTableField;
+      tables[t.id] = { label: t.label, columns: t.columns ?? [], rows: t.rows ?? [] };
+    }
+  }
+
   return (
+    <ReferenceTablesContext.Provider value={tables}>
     <div className="space-y-4">
       {schema.sections.map(section => (
         <Fragment key={section.id}>
@@ -294,6 +305,7 @@ export function FormRenderer({ schema, form, readOnly, isAdmin, signer, onScanLa
         </Fragment>
       ))}
     </div>
+    </ReferenceTablesContext.Provider>
   );
 }
 

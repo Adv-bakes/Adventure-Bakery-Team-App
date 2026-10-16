@@ -38,6 +38,32 @@ export function pickOptionsFromRows(
   return out.sort((a, b) => a.value.localeCompare(b.value));
 }
 
+/**
+ * The pick-list from a printed reference table of the same form (GridColumn.pickFromTable): one
+ * option per row, its value the row's FIRST cell, and `fill` mapping a grid column id to the table
+ * column (by header, case-insensitively) that fills it. A row with an empty first cell is skipped;
+ * a header the table does not have fills nothing.
+ */
+export function pickOptionsFromTable(
+  table: { columns: string[]; rows: string[][] } | undefined,
+  fill: Record<string, string> = {},
+): PickOption[] {
+  if (!table) return [];
+  const col = (header: string) => table.columns.findIndex(c => same(c, header));
+  const out: PickOption[] = [];
+  for (const row of table.rows ?? []) {
+    const value = text(row?.[0]);
+    if (!value || out.some(o => same(o.value, value))) continue;
+    const fills: Record<string, string> = {};
+    for (const [column, header] of Object.entries(fill)) {
+      const i = col(header);
+      if (i >= 0) fills[column] = text(row?.[i]);
+    }
+    out.push({ value, fills, hint: "" });
+  }
+  return out;
+}
+
 /** The option whose value is exactly what is in the cell (case and outer spaces ignored). */
 export function matchPick(options: PickOption[], value: unknown): PickOption | null {
   const v = text(value);

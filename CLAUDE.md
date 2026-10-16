@@ -607,6 +607,15 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   or processing aid), filling Supplier from Manufacturer / brand and Allergen(s) from the ticked allergens
   (owner's request, 2026-10-09, migration `20261009000001`). Renaming those FRM-207 fields means a new
   migration for this setting.
+- **A cell picked from the form's OWN reference table (`GridColumn.pickFromTable`):** `{ table, fill? }` -
+  the same offer as `pickFrom`, from a `reference_table` field of the same form: the choices are that
+  table's first column, `fill` maps this grid's column ids to the table's column HEADERS
+  (`pickOptionsFromTable` in `pickFrom.ts`, tested by `scripts/test-pick-from.mjs`). Read live from the
+  schema on screen - `FormRenderer` hands its reference tables down through `ReferenceTablesContext`
+  (`components/team/forms/ReferenceTables.tsx`) - so the list follows the printed table. Rendered by
+  `LinkedPickInput` with `options` given directly (no load). First use: FRM-902's Area / surface tested
+  from its Verification schedule, filling Method and Acceptable limit (owner, 2026-10-16, migration
+  `20261016000004`, no revision change).
 - **Text derived from a date (`TextField.derive`):** `{ fromField, as: "julian_lot" }` FILLS a text field
   from a date field and keeps it in step until someone types over it (`nextDerivedFill`, the rule derived
   dates use); while the date is blank it offers today's value as a link. `julianLotCode` = year digit +

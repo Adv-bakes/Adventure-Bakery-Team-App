@@ -20,6 +20,8 @@ import { GridRowDialog } from "./GridRowDialog";
 import { DocRefText } from "./DocRefText";
 import { TeamNameInput } from "./TeamNameInput";
 import { LinkedPickInput } from "./LinkedPickInput";
+import { useReferenceTables } from "./ReferenceTables";
+import { pickOptionsFromTable } from "@/lib/pickFrom";
 
 /** How long the "label scan filled …" chip stays up before fading out. */
 const SCAN_UNDO_MS = 20000;
@@ -54,6 +56,7 @@ export function GridCell({ column, value, onChange, disabled, stacked, suggestio
   suggestion?: string | null;
 }) {
   const inputClass = stacked ? "h-9 text-sm" : "h-8 text-xs";
+  const tables = useReferenceTables();
   switch (column.type) {
     case "checkbox":
       return (
@@ -134,6 +137,21 @@ export function GridCell({ column, value, onChange, disabled, stacked, suggestio
             onChange={onChange}
             control={control}
             titlePath={column.teamPick.titleColumn && rowPath ? `${rowPath}.${column.teamPick.titleColumn}` : undefined}
+          />
+        );
+      }
+      // A value picked from a printed table of this same form, which fills the cells beside it.
+      if (column.pickFromTable && !disabled) {
+        const table = tables[column.pickFromTable.table];
+        return (
+          <LinkedPickInput
+            options={pickOptionsFromTable(table, column.pickFromTable.fill)}
+            sourceLabel={(table?.label || "the table above").toLowerCase()}
+            className={inputClass}
+            value={value ?? ""}
+            onChange={onChange}
+            control={control}
+            rowPath={rowPath}
           />
         );
       }
