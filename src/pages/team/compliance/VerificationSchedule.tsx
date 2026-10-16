@@ -20,7 +20,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  ScheduleRow, Completion, frequencyLabel, rowState,
+  ScheduleRow, Completion, frequencyLabel, rowState, shelfState, type RetentionEntry, type ShelfState,
 } from "@/lib/verificationSchedule";
 
 const STATE_STYLE: Record<string, string> = {
@@ -131,10 +131,23 @@ export default function VerificationSchedule() {
           }
         }
 
+        // The retention shelf: due on the earliest discard date among samples still on it (the same
+        // read the notification job makes). "Last completed" stays the newest disposal submitted.
+        let shelf: ShelfState | null = null;
+        if (r.evidence_kind === "shelf_discard") {
+          const { data } = await (supabase as any)
+            .from("sop_document_responses")
+            .select("id, status, reopened_at, data")
+            .eq("document_id", docId)
+            .eq("status", "draft");
+          shelf = shelfState((data ?? []) as RetentionEntry[], "0000-00-00");
+        }
+
         found.push({
           activity_key: r.activity_key,
           completed_on: at ? at.slice(0, 10) : null,
           covers_until: coversUntil,
+          shelf,
         });
       }
       setCompletions(found);
@@ -149,6 +162,7 @@ export default function VerificationSchedule() {
 
   const lastOf = new Map(completions.map((c) => [c.activity_key, c.completed_on]));
   const coversOf = new Map(completions.map((c) => [c.activity_key, c.covers_until ?? null]));
+  const shelfOf = new Map(completions.map((c) => [c.activity_key, c.shelf ?? null]));
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6 tp-fade-up">
@@ -190,7 +204,7 @@ export default function VerificationSchedule() {
               <TableBody>
                 {rows.map((r) => {
                   const last = lastOf.get(r.activity_key) ?? null;
-                  const st = rowState(r, last, today, coversOf.get(r.activity_key) ?? null);
+                  const st = rowState(r, last, today, coversOf.get(r.activity_key) ?? null, shelfOf.get(r.activity_key) ?? null);
                   const muted = r.status !== "active";
                   return (
                     <TableRow key={r.activity_key} className={muted ? "opacity-60" : undefined}>
@@ -206,7 +220,9 @@ export default function VerificationSchedule() {
                         )}
                       </TableCell>
                       <TableCell className="align-top whitespace-nowrap">
-                        {frequencyLabel(r.frequency_unit, r.frequency_count)}
+                        {r.evidence_kind === "shelf_discard"
+                          ? "When a sample passes its discard date"
+                          : frequencyLabel(r.frequency_unit, r.frequency_count)}
                       </TableCell>
                       <TableCell className="align-top">{r.responsible_position}</TableCell>
                       <TableCell className="align-top whitespace-nowrap">

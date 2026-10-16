@@ -29,8 +29,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  assessDue, retentionLinks, formLink, documentLink, addDays,
-  type Completion, type NotificationLink, type ScheduleRow,
+  assessDue, retentionLinks, shelfState, formLink, documentLink, addDays,
+  type Completion, type NotificationLink, type RetentionEntry, type ScheduleRow,
 } from "../_shared/verificationSchedule.ts";
 
 const corsHeaders = {
@@ -48,8 +48,8 @@ const corsHeaders = {
 // activity a day early, every day.
 const SITE_TZ = "America/New_York";
 
-// A retention sample due within a week is worth linking now: the review is weekly, so anything
-// falling due before the next review should be dealt with at this one.
+// Once a sample has passed its discard date the reminder is raised (shelf_discard), and any other
+// sample falling due within the next week is linked with it, so they can be dealt with together.
 const RETENTION_HORIZON_DAYS = 7;
 const RETENTION_LINK_CAP = 25;
 
@@ -123,8 +123,11 @@ serve(async (req) => {
     // in the system.
     const completions: Completion[] = [];
 
+    // A shelf_discard row (the retention shelf) is an entry-evidenced row too: its "last completed"
+    // is the newest disposal submitted on FRM-703, shown on the schedule page. What makes it DUE is
+    // the shelf itself, read below.
     const formRows = active.filter(
-      (r) => r.evidence_kind === "form_entry" && r.evidence_document_number,
+      (r) => (r.evidence_kind === "form_entry" || r.evidence_kind === "shelf_discard") && r.evidence_document_number,
     );
 
     // ONE query for every form's latest submission, not one per activity.
@@ -187,8 +190,29 @@ serve(async (req) => {
       coversByKey.set(r.activity_key, best);
     }
 
+    // The retention shelf: every FRM-703 sample still on it. Read once, before deciding - a
+    // shelf_discard row is due exactly when one of these has passed its discard date - and reused
+    // for the per-sample links.
+    let shelfEntries: RetentionEntry[] | null = null;
+    const retentionDocId = docIdOf.get("FRM-703");
+    if (retentionDocId) {
+      const { data, error } = await admin
+        .from("sop_document_responses")
+        .select("id, status, reopened_at, data")
+        .eq("document_id", retentionDocId)
+        .eq("status", "draft");
+      if (error) summary.errors.push(`FRM-703: ${error.message}`);
+      else shelfEntries = (data ?? []) as RetentionEntry[];
+    }
+
     for (const r of formRows) {
       const docId = docIdOf.get(r.evidence_document_number!);
+      if (r.evidence_kind === "shelf_discard" && shelfEntries === null) {
+        // Without the shelf there is no telling whether anything is due; raising nothing is the
+        // honest outcome, and the error is in the run summary.
+        summary.errors.push(`${r.activity_key}: the retention shelf could not be read`);
+        continue;
+      }
       if (!docId) {
         // The schedule names a document that does not exist. Say so rather than treating the
         // activity as never done, which would raise a notification nobody can act on.
@@ -199,6 +223,7 @@ serve(async (req) => {
         activity_key: r.activity_key,
         completed_on: latestByDoc.get(docId) ?? null,
         covers_until: coversByKey.get(r.activity_key) ?? null,
+        shelf: r.evidence_kind === "shelf_discard" ? shelfState(shelfEntries ?? [], today) : null,
       });
     }
 
@@ -239,29 +264,11 @@ serve(async (req) => {
     // One notification for the review, carrying a link per sample, so each can be opened and closed
     // out directly instead of being hunted for in the entries list.
     const linksFor = new Map<string, NotificationLink[]>();
-    if (findings.some((f) => f.activityKey === "retention_sample_review")) {
-      const docId = docIdOf.get("FRM-703");
-      if (docId) {
-        const { data, error } = await admin
-          .from("sop_document_responses")
-          .select("id, status, reopened_at, data")
-          .eq("document_id", docId)
-          .eq("status", "draft");
-        if (error) {
-          summary.errors.push(`FRM-703: ${error.message}`);
-        } else {
-          linksFor.set(
-            "retention_sample_review",
-            retentionLinks(
-              (data ?? []) as never,
-              docId,
-              today,
-              RETENTION_HORIZON_DAYS,
-              RETENTION_LINK_CAP,
-            ),
-          );
-        }
-      }
+    const shelfKeys = new Set(active.filter((r) => r.evidence_kind === "shelf_discard").map((r) => r.activity_key));
+    for (const f of findings) {
+      if (!shelfKeys.has(f.activityKey) || !retentionDocId || shelfEntries === null) continue;
+      linksFor.set(f.activityKey,
+        retentionLinks(shelfEntries, retentionDocId, today, RETENTION_HORIZON_DAYS, RETENTION_LINK_CAP));
     }
 
     // ---------------------------------------------------------------- write

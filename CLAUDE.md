@@ -1161,6 +1161,17 @@ is **retired**, never removed. SELECT is `is_compliance_viewer`, so the auditor 
   The job takes the **maximum** covers-until across submitted entries, not the newest entry's value,
   so a correction filed to an earlier period cannot walk the due date backwards and re-raise
   something already discharged.
+- **`evidence_kind = 'shelf_discard'` is the third way to date an activity** (owner, 2026-10-16, migration
+  `20261016000002`, FSQM-017 v17), used only by `retention_sample_review`. It was weekly against a
+  submitted FRM-703, and one FRM-703 is one sample submitted only when it leaves the shelf, so the
+  reminder could be cleared only by recording a sample still on the shelf as gone. Now `shelfState`
+  (both twins: `onShelf`, earliest discard date among samples still on the shelf, how many are past)
+  makes it due on the earliest discard date; an empty shelf or nothing past its date raises nothing
+  and reads "ok" (never "never"). The job reads the FRM-703 drafts before deciding and links each
+  sample past (or within a week of) its date; disposing of it and submitting its entry discharges it.
+  The frequency is not used; the schedule page shows "When a sample passes its discard date".
+  FSQM-014 asks for no weekly review. **Deploy the function before pushing the migration**: the old
+  function reads the new kind as never recorded.
 - **A row's evidence form must be one whose SUBMISSION shows the activity was done** (owner, 2026-10-12).
   `complaint_review` was evidenced by FRM-002, the report of ONE complaint, so its reminder said "no
   record has ever been made" and could never be discharged. The monthly review is done at the monthly
