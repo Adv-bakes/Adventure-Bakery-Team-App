@@ -652,7 +652,7 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   `useUserPref(key, fallback)` returns `[value, set]`; `fallback` must be a constant. All of a person's
   settings load once per page load and again when the account changes; a copy tagged with the user id is
   kept in `localStorage` (`userPrefs.cache`) so a page opens in the person's arrangement without a
-  flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, `today.shelfClosed`, `labels.printer`, and `form.skipSubmitConfirm`
+  flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, `pdf.includeRevHistory`, `today.shelfClosed`, `labels.printer`, and `form.skipSubmitConfirm`
   (`SKIP_SUBMIT_CONFIRM`, owner 2026-10-12: a "Do not show this again" tick on FormEntry's "Submit this
   entry?" dialog, taking effect when the person goes on to submit; switched back on My Account, "Form
   entries"). **Conveniences, never records**: nothing in the lib throws, and with the table missing or the
@@ -840,6 +840,14 @@ Component in `src/components/team/`, rendered in the drawer's **Document** tab. 
 - **Per-page footer** via pdfmake's `footer` callback: `Adventure Bakery, LLC · Confidential · <page #>` + the verbatim trade-secret/FOIA disclaimer.
 
 `SopPdfRow` is a minimal subset of the row; the function is pure (no DB call — callers already hold the row).
+
+**Revision History on a downloaded PDF** (owner, 2026-10-16): `generateSopPdf(row,
+{ revisionHistory })` leaves that section out when `false`. Every Download PDF button takes the option
+from `useSopPdfOptions()` (`src/hooks/`): **anyone internal** (staff, admin, owner - `isInternalReader`)
+chooses with the **Include Rev History** checkbox beside the drawer's Download PDF - unchecked to start,
+remembered per person for every document (`useUserPref` key `pdf.includeRevHistory`), and the list
+icons follow it; **the auditor gets no checkbox and never the history**. The closing current-revision line is always printed. The screen (Document tab) is
+unchanged - an auditor viewing the document there still sees it.
 
 **Download entry points** (all reuse `generateSopPdf` + `hasSopBody`, gated to `type === 'sop'` rows with a structured body):
 - **SOPs Library** (`SopsLibrary.tsx`) — a "Download PDF" button in the drawer's **Document** tab, and an inline `Download` icon beside the **Type** pill in the list (`e.stopPropagation()` so it doesn't open the drawer).

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSopPdfOptions } from "@/hooks/useSopPdfOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,6 +129,9 @@ type DocSortKey = "number" | "title" | "type" | "revision" | "effective" | "stat
 
 export default function SopsLibrary() {
   const { role } = useUserRole();
+  // Revision History on a downloaded PDF: each internal reader's own remembered choice, never the
+  // auditor's (useSopPdfOptions).
+  const { pdfOpts, canChoose: canChooseRevHistory, include: includeRevHistory, setInclude: setIncludeRevHistory } = useSopPdfOptions();
   const isAdmin = role === "admin" || role === "owner";
 
   const [docs, setDocs] = useState<SopDocument[]>([]);
@@ -619,7 +623,7 @@ export default function SopsLibrary() {
                       <button
                         onClick={async e => {
                           e.stopPropagation();
-                          try { await generateSopPdf(d); }
+                          try { await generateSopPdf(d, pdfOpts); }
                           catch (err: any) { toast.error(err?.message ?? "Failed to generate PDF"); }
                         }}
                         title="Download PDF"
@@ -957,14 +961,21 @@ export default function SopsLibrary() {
 
                 {hasSopBody(selected.content) && (
                   <TabsContent value="document">
-                    <div className="flex justify-end mb-3">
+                    <div className="flex items-center justify-end gap-3 mb-3">
+                      {canChooseRevHistory && (
+                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                          title="Remembered for every document. The auditor's PDF never includes it.">
+                          <Checkbox checked={includeRevHistory} onCheckedChange={v => setIncludeRevHistory(v === true)} />
+                          Include Rev History
+                        </label>
+                      )}
                       <Button
                         type="button"
                         size="sm"
                         className="bg-[#C89B3C] hover:bg-[#B8892C]"
                         onClick={async () => {
                           try {
-                            await generateSopPdf(selected);
+                            await generateSopPdf(selected, pdfOpts);
                           } catch (e: any) {
                             toast.error(e?.message ?? "Failed to generate PDF");
                           }

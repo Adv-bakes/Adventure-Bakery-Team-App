@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSopPdfOptions } from "@/hooks/useSopPdfOptions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,9 @@ const STATUS_ORDER: Record<AssignmentStatus, number> = {
 
 export default function TrainingSops() {
   const { role } = useUserRole();
+  // Revision History on a downloaded PDF: each internal reader's own remembered choice, never the
+  // auditor's (useSopPdfOptions).
+  const { pdfOpts } = useSopPdfOptions();
   const isAdmin = role === "admin" || role === "owner";
   const navigate = useNavigate();
 
@@ -307,7 +311,7 @@ export default function TrainingSops() {
                             <button
                               onClick={async e => {
                                 e.stopPropagation();
-                                try { await generateSopPdf(d); }
+                                try { await generateSopPdf(d, pdfOpts); }
                                 catch (err: any) { toast.error(err?.message ?? "Failed to generate PDF"); }
                               }}
                               title="Download PDF"

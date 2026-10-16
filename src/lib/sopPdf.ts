@@ -84,7 +84,12 @@ export async function loadLogoDataUrl(): Promise<string | null> {
 const dash = "—";
 const show = (v?: string | null) => (v && String(v).trim() ? String(v).trim() : dash);
 
-export async function generateSopPdf(row: SopPdfRow): Promise<void> {
+/**
+ * `revisionHistory: false` leaves the Revision History section out of the PDF - for a reader outside
+ * the company (the auditor; owner, 2026-10-16). Internal readers get it. The closing line with the
+ * current revision, status and approver is always printed.
+ */
+export async function generateSopPdf(row: SopPdfRow, opts: { revisionHistory?: boolean } = {}): Promise<void> {
   // A row of type "report" is a generated view, not a procedure. Printing it under
   // "SOP Title"/"SOP No." mislabels it as an SOP on the one artifact an auditor is
   // most likely to be holding.
@@ -179,6 +184,7 @@ export async function generateSopPdf(row: SopPdfRow): Promise<void> {
 
   // Body sections, in canonical order, skipping empties.
   for (const { key, display } of SECTION_LABELS) {
+    if (key === "revision_history" && opts.revisionHistory === false) continue;
     if (key === "procedure") {
       const steps = Array.isArray(content.procedure) ? content.procedure.filter(Boolean) : [];
       if (!steps.length) continue;
