@@ -43,7 +43,7 @@ check("the phrase says which", [T.periodPhrase({ since: "2026-10-07", until: "20
 const P = { since: "2026-10-07", until: "2026-10-12", previous: "2026-10-07" };
 const quiet = T.monthlyUpdateLines(T.emptyUpdateRecords(), P);
 check("verification", quiet.verification, "Nothing on the verification schedule is due or overdue as of 2026-10-12.");
-check("corrective actions", quiet.capa, "No corrective action is open on FRM-007 as of 2026-10-12.");
+check("corrective actions", quiet.capa, "No corrective action is open on FRM-007 as of 2026-10-12.\nNo corrective action opened on FRM-007 since the last update on 2026-10-07.\nNo corrective action closed since the last update on 2026-10-07.\nNo repeat and no recurring source since the last update on 2026-10-07.\nAn overdue action needs a revised date and its reason recorded on its FRM-007 - add any here.");
 check("complaints, incidents and recalls", quiet.events, "No complaint reported on FRM-002 since the last update on 2026-10-07.\nNo glass or brittle plastic breakage on FRM-908.\nNothing put on hold on FRM-702.\nNo withdrawal, recall or mock recall on FRM-012.");
 has("audits name both forms", quiet.audits, "No internal audit recorded on FRM-010 since the last update on 2026-10-07.\nNo GMP inspection recorded on FRM-913.\n");
 has("...and say what no form holds", quiet.audits, "Customer, certification body and regulatory visits are not on a form");
@@ -78,8 +78,31 @@ r.documents = [{ number: "FSQM-017", revision: "v15", effective: "2026-10-12" },
   { number: "FRM-601", revision: "v2", effective: "2026-10-10" }, { number: "FSQM-009", revision: "New", effective: "2026-09-02" }];
 const busy = T.monthlyUpdateLines(r, P);
 check("overdue before due, without the trailing verb", busy.verification, "Overdue:\n\u2022 Calibration check (due 2026-09-21)\nDue:\n\u2022 Monthly SQF update to senior site management (due 2026-10-07)");
-check("open actions oldest first, the late one flagged, the closed and the blank left out", busy.capa,
-  "2 corrective actions open on FRM-007:\n\u2022 CAPA-001 (Major, raised 2026-08-01, target 2026-09-30 - PAST DUE)\n\u2022 CAPA-002 (Minor, raised 2026-10-08, target 2026-11-01)");
+has("open actions oldest first, the late one flagged, the closed and the blank left out", busy.capa,
+  "2 corrective actions still open on FRM-007 (whenever raised):\n\u2022 CAPA-001 (Major, no owner, raised 2026-08-01, target 2026-09-30 - PAST DUE)\n\u2022 CAPA-002 (Minor, no owner, raised 2026-10-08, target 2026-11-01)\n");
+has("opened in the period only", busy.capa, "1 corrective action opened since the last update on 2026-10-07 (by source: source not recorded 1; by severity: Minor 1):\n\u2022 CAPA-002 raised 2026-10-08, Minor, source not recorded (draft)\n");
+has("closed before the period is not listed", busy.capa, "No corrective action closed since the last update on 2026-10-07.");
+
+// ---- the CAPA review FSQM-009 asks for (owner, 2026-10-16)
+{
+  const capas = [
+    entry({ capa_no: "CAPA-2026-001", severity: "Major", source: "Customer or consumer complaint", date_raised: "2026-09-01", target_close_date: "2026-10-01", capa_owner: "Diana", verification_due: "2026-10-05", closure_date: "" }, "draft"),
+    entry({ capa_no: "CAPA-2026-002", severity: "Minor", source: "Customer or consumer complaint", date_raised: "2026-10-08", is_repeat: true, repeat_of: "CAPA-2026-001", closure_date: "" }, "draft"),
+    entry({ capa_no: "CAPA-2026-003", severity: "Minor", source: "GMP inspection", date_raised: "2026-10-09", closure_date: "2026-10-11", verification_result: "Effective \u2014 no further action", verification_date: "2026-10-11" }),
+    entry({ capa_no: "CAPA-2026-004", severity: "Minor", source: "Customer or consumer complaint", date_raised: "2026-10-10", closure_date: "2026-10-12" }),
+  ];
+  const t = T.capaReview(capas, P);
+  has("owner, past-due target and overdue verification", t, "\u2022 CAPA-2026-001 (Major, owner Diana, raised 2026-09-01, target 2026-10-01 - PAST DUE, verification due 2026-10-05 - OVERDUE)\n");
+  has("opened tallied by source and severity", t, "3 corrective actions opened since the last update on 2026-10-07 (by source: Customer or consumer complaint 2, GMP inspection 1; by severity: Minor 3):");
+  has("closed with its result", t, "\u2022 CAPA-2026-003 closed 2026-10-11: verified Effective on 2026-10-11\n");
+  has("closed with no result is called out", t, "\u2022 CAPA-2026-004 closed 2026-10-12: NO EFFECTIVENESS RESULT RECORDED");
+  has("a repeat", t, "\u2022 CAPA-2026-002 is a repeat of CAPA-2026-001\n");
+  has("a recurring source", t, "\u2022 Customer or consumer complaint: 2 CAPAs since the last update on 2026-10-07\n");
+  // The first review: every CAPA on record, not the last 31 days.
+  const first = T.capaReview(capas, { since: "2026-09-11", until: "2026-10-12", previous: null });
+  has("first review: everything on record", first, "4 corrective actions opened on record (no earlier update)");
+  has("first review: an old closure counts", T.capaReview([entry({ capa_no: "C-1", severity: "Minor", date_raised: "2026-01-02", closure_date: "2026-01-20" })], { since: "2026-09-11", until: "2026-10-12", previous: null }), "\u2022 C-1 closed 2026-01-20: NO EFFECTIVENESS RESULT RECORDED");
+}
 has("complaints of the period only, the day of the last update included", busy.events,
   "3 complaints on FRM-002 since the last update on 2026-10-07 (1 Critical, 2 other):\n\u2022 C-13 2026-10-07, Non-Critical\n\u2022 C-14 2026-10-09, Rum Cake - Original, Critical (draft)\n\u2022 C-15 2026-10-11, not yet classified (draft)\n");
 has("a breakage", busy.events, "\n1 breakage on FRM-908:\n\u2022 G-3 2026-10-10, Packing room (draft)\n");

@@ -35,7 +35,7 @@ export type UpdateRow = keyof typeof UPDATE_ROWS;
 /** The single map of form numbers to the answer keys read. Rename a field on one of these forms, update this. */
 export const UPDATE_SOURCES = {
   updates:     { form: "FRM-009", fields: ["update_date"] },
-  capas:       { form: "FRM-007", fields: ["capa_no", "severity", "date_raised", "target_close_date", "closure_date"] },
+  capas:       { form: "FRM-007", fields: ["capa_no", "severity", "date_raised", "target_close_date", "closure_date", "source", "capa_owner", "is_repeat", "repeat_of", "verification_due", "verification_result", "verification_date"] },
   complaints:  { form: "FRM-002", fields: ["complaint_ref_no", "date_received", "classification", "product_name"] },
   breakages:   { form: "FRM-908", fields: ["incident_ref_no", "date_time_3", "location_area"] },
   holds:       { form: "FRM-702", fields: ["hold_tag_number", "date_time_placed_on_hold", "material_name_description", "final_disposition_decision"] },
@@ -133,6 +133,75 @@ export function periodPhrase(p: UpdatePeriod): string {
 const BULLET = "\u2022 ";
 const list = (head: string, items: string[]) => [`${head}:`, ...items.map(i => BULLET + i)].join("\n");
 
+/**
+ * The monthly review of corrective actions FSQM-009 Parts 8 and 9 ask for (owner, 2026-10-16: the
+ * schedule's "Review of open and overdue corrective actions" is recorded here, on FRM-009).
+ * In the period - since the last update, or EVERY CAPA on record when there is none - what was
+ * opened (by source and severity), what was closed (with its effectiveness result), the repeats
+ * and the sources that recurred; then every CAPA still open, whenever raised, with its owner,
+ * target, and verification date, flagged PAST DUE / OVERDUE. Evidence only: whether an overdue
+ * action has a revised date with a reason is the reviewer's to write.
+ */
+export function capaReview(capas: UpdateEntry[], p: UpdatePeriod): string {
+  const KEYS = ["capa_no", "date_raised", "severity"] as const;
+  const real = capas.filter(e => started(e, KEYS));
+  const no = (e: UpdateEntry) => str(e.data.capa_no) || "(no number)";
+  const closedOn = (e: UpdateEntry) => day(e.data.closure_date);
+  const isClosed = (e: UpdateEntry) => closedOn(e) !== "" || !isDraft(e);
+  // With no earlier update, the review covers every CAPA on record.
+  const all = !p.previous;
+  const inWindow = (d: string) => (all ? d !== "" : within(d, p));
+  const span = all ? "on record (no earlier update)" : `since the last update on ${p.previous}`;
+  const count = (xs: string[]) => {
+    const m = new Map<string, number>();
+    for (const x of xs) m.set(x, (m.get(x) ?? 0) + 1);
+    return [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  };
+  const tally = (xs: string[]) => count(xs).map(([k, n]) => `${k} ${n}`).join(", ");
+
+  const opened = real.filter(e => inWindow(dated(e, "date_raised"))).sort((a, b) => dated(a, "date_raised").localeCompare(dated(b, "date_raised")));
+  const sources = opened.map(e => str(e.data.source) || "source not recorded");
+  const openedLine = opened.length === 0
+    ? `No corrective action opened on FRM-007 ${span}.`
+    : list(`${plural(opened.length, "corrective action")} opened ${span} (by source: ${tally(sources)}; by severity: ${tally(opened.map(e => str(e.data.severity) || "not set"))})`,
+      opened.map(e => `${no(e)} raised ${dated(e, "date_raised")}, ${str(e.data.severity) || "severity not set"}, ${str(e.data.source) || "source not recorded"}${draft(e)}`));
+
+  const closed = real.filter(e => isClosed(e) && inWindow(closedOn(e) || dated(e, "date_raised")))
+    .sort((a, b) => (closedOn(a) || "").localeCompare(closedOn(b) || ""));
+  const closedLine = closed.length === 0
+    ? `No corrective action closed ${span}.`
+    : list(`${plural(closed.length, "corrective action")} closed ${span}`, closed.map(e => {
+        const result = str(e.data.verification_result).split(/\s[—–-]\s/)[0];
+        const verified = day(e.data.verification_date);
+        return `${no(e)} closed ${closedOn(e) || "(no closure date)"}: ${result ? `verified ${result}${verified ? ` on ${verified}` : ""}` : "NO EFFECTIVENESS RESULT RECORDED"}`;
+      }));
+
+  const repeats = opened.filter(e => e.data.is_repeat === true || str(e.data.repeat_of) !== "");
+  const recurring = count(sources).filter(([k, n]) => n >= 2 && k !== "source not recorded");
+  const repeatLine = repeats.length === 0 && recurring.length === 0
+    ? `No repeat and no recurring source ${span}.`
+    : list("Repeats and recurring sources", [
+        ...repeats.map(e => `${no(e)} is a repeat${str(e.data.repeat_of) ? ` of ${str(e.data.repeat_of)}` : ""}`),
+        ...recurring.map(([k, n]) => `${k}: ${n} CAPAs ${span}`),
+      ]);
+
+  const open = real.filter(e => !isClosed(e)).sort((a, b) => dated(a, "date_raised").localeCompare(dated(b, "date_raised")));
+  const openLine = open.length === 0
+    ? `No corrective action is open on FRM-007 as of ${p.until}.`
+    : list(`${plural(open.length, "corrective action")} still open on FRM-007 (whenever raised)`, open.map(e => {
+        const target = day(e.data.target_close_date);
+        const vdue = day(e.data.verification_due);
+        const raised = day(e.data.date_raised);
+        const parts = [str(e.data.severity), str(e.data.capa_owner) ? `owner ${str(e.data.capa_owner)}` : "no owner",
+          raised ? `raised ${raised}` : "", target ? `target ${target}${target < p.until ? " - PAST DUE" : ""}` : "no target date",
+          vdue ? `verification due ${vdue}${vdue < p.until && !str(e.data.verification_result) ? " - OVERDUE" : ""}` : ""];
+        return `${no(e)} (${parts.filter(Boolean).join(", ")})`;
+      }));
+
+  return [openLine, openedLine, closedLine, repeatLine,
+    "An overdue action needs a revised date and its reason recorded on its FRM-007 - add any here."].join("\n");
+}
+
 /** What the records say about each matter. Every line names the form it read. */
 export function monthlyUpdateLines(records: UpdateRecords, p: UpdatePeriod): Record<UpdateRow, string> {
   const E = records.entries;
@@ -147,18 +216,7 @@ export function monthlyUpdateLines(records: UpdateRecords, p: UpdatePeriod): Rec
     ? `Nothing on the verification schedule is due or overdue as of ${p.until}.`
     : [overdue.length ? list("Overdue", listed(overdue)) : "", due.length ? list("Due", listed(due)) : ""].filter(Boolean).join("\n");
 
-  // --- corrective actions still open, whenever they were raised
-  const open = E.capas
-    .filter(e => started(e, ["capa_no", "date_raised", "severity"]) && isDraft(e) && str(e.data.closure_date) === "")
-    .sort((a, b) => dated(a, "date_raised").localeCompare(dated(b, "date_raised")));
-  const capa = open.length === 0
-    ? `No corrective action is open on FRM-007 as of ${p.until}.`
-    : list(`${plural(open.length, "corrective action")} open on FRM-007`, open.map(e => {
-        const target = day(e.data.target_close_date);
-        const late = target && target < p.until ? " - PAST DUE" : "";
-        const raised = day(e.data.date_raised);
-        return `${str(e.data.capa_no) || "(no number)"} (${[str(e.data.severity), raised ? `raised ${raised}` : "", target ? `target ${target}` : "no target date"].filter(Boolean).join(", ")}${late})`;
-      }));
+  const capa = capaReview(E.capas, p);
 
   // --- complaints, incidents and recalls in the period
   const complaints = inPeriod(E.complaints, "date_received", ["complaint_ref_no", "date_received", "classification", "product_name"], p);
