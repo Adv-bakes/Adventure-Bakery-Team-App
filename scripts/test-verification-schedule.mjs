@@ -314,6 +314,37 @@ for (const [from, unit, count] of CASES) {
     console.error(`FAIL  twins disagree on addFrequency(${from}, ${unit}, ${count}): ${a} vs ${b}`);
   }
 }
+// ---------------------------------------------------------------- the retention shelf (2026-10-16)
+// The review is not recurring: it is due when a sample still on the shelf passes its discard date.
+{
+  const SHELF = row({ activity_key: "retention_sample_review", activity: "Retention sample review and disposal",
+    evidence_kind: "shelf_discard", evidence_document_number: "FRM-703", owning_program: "FSQM-014",
+    frequency_unit: "week", grace_days: 3 });
+  check("shelf: earliest on-shelf date, and how many are past", S.shelfState(entries, TODAY), { earliest: "2026-09-01", past: 3 });
+  check("shelf: nothing on it", S.shelfState([], TODAY), { earliest: null, past: 0 });
+  check("shelf: all in the future", S.shelfState([entries[2]], TODAY), { earliest: "2026-12-01", past: 0 });
+
+  // Nothing due on the shelf: no reminder, and NOT "never recorded" (the bug this replaces).
+  check("empty shelf raises nothing", assessDue([SHELF], [{ activity_key: SHELF.activity_key, completed_on: null, shelf: { earliest: null, past: 0 } }], TODAY), []);
+  check("empty shelf reads ok on the schedule page", rowState(SHELF, null, TODAY, null, { earliest: null, past: 0 }).state, "ok");
+  check("next discard in the future: ok, with the date shown",
+    rowState(SHELF, null, TODAY, null, { earliest: "2027-11-30", past: 0 }), { lastCompletedOn: null, nextDueOn: "2027-11-30", state: "ok" });
+  check("no completion row at all: still not 'never'", rowState(SHELF, null, TODAY).state, "ok");
+
+  const due = assessDue([SHELF], [{ activity_key: SHELF.activity_key, completed_on: "2026-01-01", shelf: { earliest: "2026-09-09", past: 1 } }], TODAY);
+  check("one sample past its date: due, keyed on that date", due.map((f) => [f.severity, f.dueOn, f.dedupeKey, f.neverDone]),
+    [["due", "2026-09-09", "verification:retention_sample_review:2026-09-09", false]]);
+  check("one sample: the message names it and says no frequency",
+    due[0].message, "A retention sample on the shelf passed its discard date on 2026-09-09. Dispose of each and record it on its own entry, linked below. Governed by FSQM-014.");
+  const late = assessDue([SHELF], [{ activity_key: SHELF.activity_key, completed_on: null, shelf: { earliest: "2026-09-01", past: 3 } }], TODAY);
+  check("past the grace days: overdue", late[0].severity, "overdue");
+  check("several: counted", late[0].message.startsWith("3 retention samples on the shelf have passed their discard date, the earliest on 2026-09-01."), true);
+  ok("the shelf row is not anchored on submissions", nextDue(SHELF, "2026-09-09") === null);
+
+  deepStrictEqual(C.shelfState(entries, TODAY), S.shelfState(entries, TODAY));
+  deepStrictEqual(C.assessDue([SHELF], [{ activity_key: SHELF.activity_key, completed_on: null, shelf: { earliest: "2026-09-01", past: 3 } }], TODAY), late);
+}
+
 try {
   deepStrictEqual(C.assessDue(SCHEDULE, COMPLETIONS, TODAY), S.assessDue(SCHEDULE, COMPLETIONS, TODAY));
   deepStrictEqual(C.retentionLinks(entries, DOC, TODAY), S.retentionLinks(entries, DOC, TODAY));

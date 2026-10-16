@@ -26,7 +26,12 @@ export type ScheduleRow = {
   frequency_unit: FrequencyUnit;
   frequency_count: number;
   responsible_position: string;
-  evidence_kind: "form_entry" | "document_revision" | "none";
+  /**
+   * Where the record of the activity comes from. "shelf_discard" (2026-10-16) is not a recurring
+   * activity at all: it is due when a retention sample still on the shelf passes its discard date,
+   * and it is discharged by recording that sample's disposal (FRM-703). See shelfState.
+   */
+  evidence_kind: "form_entry" | "document_revision" | "shelf_discard" | "none";
   evidence_document_number?: string | null;
   owning_program?: string | null;
   pending_deliverable?: string | null;
@@ -60,7 +65,12 @@ export type Completion = {
   activity_key: string;
   completed_on: string | null;
   covers_until?: string | null;
+  /** shelf_discard rows only: the earliest discard date on the shelf, and how many samples are past it. */
+  shelf?: ShelfState | null;
 };
+
+/** The retention shelf as the schedule needs it (shelfState). */
+export type ShelfState = { earliest: string | null; past: number };
 
 export type DueSeverity = "due" | "overdue";
 
@@ -160,7 +170,10 @@ export function nextDue(
   row: ScheduleRow,
   lastCompletedOn: string | null,
   coversUntil: string | null = null,
+  shelf: ShelfState | null = null,
 ): string | null {
+  // Due on the earliest discard date on the shelf; nothing on the shelf, nothing due.
+  if (row.evidence_kind === "shelf_discard") return shelf?.earliest ?? null;
   if (row.covers_until_field) {
     return coversUntil ? addDays(coversUntil, 1) : (row.first_due_on ?? null);
   }
@@ -181,11 +194,13 @@ export function rowState(
   lastCompletedOn: string | null,
   today: string,
   coversUntil: string | null = null,
+  shelf: ShelfState | null = null,
 ): RowState {
   if (row.status === "planned") return { lastCompletedOn, nextDueOn: null, state: "planned" };
   if (row.status === "retired") return { lastCompletedOn, nextDueOn: null, state: "retired" };
-  const due = nextDue(row, lastCompletedOn, coversUntil);
-  if (!due) return { lastCompletedOn, nextDueOn: null, state: "never" };
+  const due = nextDue(row, lastCompletedOn, coversUntil, shelf);
+  // An empty shelf is not "never done": there is simply nothing to dispose of.
+  if (!due) return { lastCompletedOn, nextDueOn: null, state: row.evidence_kind === "shelf_discard" ? "ok" : "never" };
   if (today > addDays(due, row.grace_days)) return { lastCompletedOn, nextDueOn: due, state: "overdue" };
   if (today >= addDays(due, -row.lead_days)) return { lastCompletedOn, nextDueOn: due, state: "due" };
   return { lastCompletedOn, nextDueOn: due, state: "ok" };
@@ -206,6 +221,7 @@ export function assessDue(
 ): DueFinding[] {
   const last = new Map(completions.map((c) => [c.activity_key, c.completed_on]));
   const covers = new Map(completions.map((c) => [c.activity_key, c.covers_until ?? null]));
+  const shelves = new Map(completions.map((c) => [c.activity_key, c.shelf ?? null]));
   const out: DueFinding[] = [];
 
   for (const row of rows) {
@@ -213,7 +229,8 @@ export function assessDue(
 
     const lastCompletedOn = last.get(row.activity_key) ?? null;
     const coversUntil = covers.get(row.activity_key) ?? null;
-    const st = rowState(row, lastCompletedOn, today, coversUntil);
+    const shelf = shelves.get(row.activity_key) ?? null;
+    const st = rowState(row, lastCompletedOn, today, coversUntil, shelf);
     if (st.state !== "due" && st.state !== "overdue" && st.state !== "never") continue;
 
     const neverDone = st.state === "never";
@@ -223,8 +240,14 @@ export function assessDue(
       ? `Record it on ${row.evidence_document_number}.`
       : "";
 
-    const bits: string[] = [`${freq}.`];
-    if (neverDone) {
+    const bits: string[] = row.evidence_kind === "shelf_discard" ? [] : [`${freq}.`];
+    if (row.evidence_kind === "shelf_discard") {
+      const n = shelf?.past ?? 0;
+      bits.push(n > 1
+        ? `${n} retention samples on the shelf have passed their discard date, the earliest on ${st.nextDueOn}.`
+        : `A retention sample on the shelf passed its discard date on ${st.nextDueOn}.`);
+      bits.push("Dispose of each and record it on its own entry, linked below.");
+    } else if (neverDone) {
       bits.push("No record of this activity has ever been made.");
     } else if (row.covers_until_field && coversUntil) {
       // Say what runs out and when, rather than when the last one was filed. The filing date is
@@ -237,7 +260,7 @@ export function assessDue(
     } else {
       bits.push(`Due ${st.nextDueOn}.`);
     }
-    if (where) bits.push(where);
+    if (where && row.evidence_kind !== "shelf_discard") bits.push(where);
     if (row.owning_program) bits.push(`Governed by ${row.owning_program}.`);
 
     out.push({
@@ -319,6 +342,29 @@ export type NotificationLink = { label: string; href: string };
  * it matches buildReportSql() in src/lib/formReport.ts, and it sidesteps the empty string that every
  * unfilled date key holds.
  */
+/**
+ * Is this FRM-703 entry a sample still on the shelf? "The draft is the shelf", except a reopened
+ * entry that already carries a disposal date - that sample is gone and its record is being tidied.
+ */
+export function onShelf(e: RetentionEntry): boolean {
+  if (e.status !== "draft") return false;
+  const disposed = String(e.data?.disposal_date ?? "") !== "";
+  return !(e.reopened_at !== null && disposed);
+}
+
+/**
+ * The shelf for a shelf_discard row: the earliest discard date among samples still on it (in the
+ * future too, so the schedule page can show when the next one falls due), and how many are already
+ * past it on `today`. Samples with no discard date are not counted - there is nothing to be due.
+ */
+export function shelfState(entries: RetentionEntry[], today: string): ShelfState {
+  const dates = entries.filter(onShelf)
+    .map((e) => String(e.data?.discard_due ?? "").slice(0, 10))
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+    .sort();
+  return { earliest: dates[0] ?? null, past: dates.filter((d) => d <= today).length };
+}
+
 export function retentionLinks(
   entries: RetentionEntry[],
   documentId: string,
@@ -328,9 +374,7 @@ export function retentionLinks(
 ): NotificationLink[] {
   const horizon = addDays(today, horizonDays);
   const due = entries.filter((e) => {
-    if (e.status !== "draft") return false;
-    const disposed = String(e.data?.disposal_date ?? "") !== "";
-    if (e.reopened_at !== null && disposed) return false;
+    if (!onShelf(e)) return false;
     const d = String(e.data?.discard_due ?? "");
     return d !== "" && d <= horizon;
   });
