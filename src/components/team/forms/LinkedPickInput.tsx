@@ -65,8 +65,13 @@ function FillOffer({ control, rowPath, targets, picked, last, form, onFill }: {
   );
 }
 
-export function LinkedPickInput({ spec, value, onChange, className, control, rowPath }: {
-  spec: GridPickFrom;
+export function LinkedPickInput({ spec, value, onChange, className, control, rowPath, options: given, sourceLabel }: {
+  /** Another form to load the choices from - or none, with `options` given directly. */
+  spec?: GridPickFrom;
+  /** Choices already in hand (a reference table of the same form): nothing is loaded. */
+  options?: PickOption[];
+  /** What the list is called in the placeholder and the "Fill from ..." link; defaults to spec.form. */
+  sourceLabel?: string;
   value: string;
   onChange: (value: string) => void;
   className?: string;
@@ -75,8 +80,11 @@ export function LinkedPickInput({ spec, value, onChange, className, control, row
   rowPath?: string;
 }) {
   const listId = useId();
-  const [options, setOptions] = useState<PickOption[]>([]);
+  const [loaded, setOptions] = useState<PickOption[]>([]);
+  const options = given ?? loaded;
+  const source = sourceLabel ?? spec?.form ?? "";
   useEffect(() => {
+    if (!spec) return;
     let live = true;
     optionsFor(spec).then(o => { if (live) setOptions(o); });
     return () => { live = false; };
@@ -88,7 +96,7 @@ export function LinkedPickInput({ spec, value, onChange, className, control, row
   // What this cell last picked, for this visit to the page: lets a changed pick carry its fills
   // along. After a reload every answer in the row counts as the person's and is kept.
   const last = useRef<PickOption | null>(null);
-  const targets = control && rowPath ? Object.keys(spec.fill ?? {}) : [];
+  const targets = control && rowPath ? [...new Set(options.flatMap(o => Object.keys(o.fills)).concat(Object.keys(spec?.fill ?? {})))] : [];
   const matched = targets.length ? matchPick(options, value) : null;
   const apply = (picked: PickOption, writes: Record<string, string>) => {
     for (const [column, text] of Object.entries(writes)) handles.current[column]?.onChange(text);
@@ -107,7 +115,7 @@ export function LinkedPickInput({ spec, value, onChange, className, control, row
         autoComplete="off"
         // The cell is one line, so a long name is cut off: hovering shows it whole.
         title={value || undefined}
-        placeholder={options.length ? `Type, or pick from ${spec.form}` : undefined}
+        placeholder={options.length ? `Type, or pick from ${source}` : undefined}
         onChange={(e) => {
           const v = e.target.value;
           onChange(v);
@@ -121,7 +129,7 @@ export function LinkedPickInput({ spec, value, onChange, className, control, row
       {matched && (
         <FillOffer
           control={control!} rowPath={rowPath!} targets={targets}
-          picked={matched} last={last.current} form={spec.form}
+          picked={matched} last={last.current} form={source}
           onFill={writes => apply(matched, writes)}
         />
       )}

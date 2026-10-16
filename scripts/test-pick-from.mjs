@@ -115,6 +115,22 @@ check("an empty cell with nothing to offer is left alone", T.pickFills(rum, null
   check("no list, a list with no table, a blank name", [names([]), names([{ status: "submitted", data: {} }]), names([list("submitted", row(""), row("  "))])], [[], [], []]);
 }
 
+// ---- from a printed reference table of the same form (FRM-902's verification schedule, 2026-10-16)
+{
+  const TABLE = { columns: ["Area / Surface", "Method", "Frequency", "Acceptable limit / standard"], rows: [
+    ["Mixer food-contact surface", "ATP swab", "Weekly", "< 10 RLU / pass"],
+    ["Allergen changeover surface", "Allergen swab", "At changeover", "Negative"],
+    ["", "ATP swab", "Weekly", ""],
+    ["mixer FOOD-contact surface", "duplicate", "", ""],
+  ] };
+  const opts = T.pickOptionsFromTable(TABLE, { method: "Method", accept_limit: "acceptable limit / STANDARD", nothing: "No such column" });
+  check("one option per row, first cell, in table order, blanks and repeats skipped", opts.map(o => o.value), ["Mixer food-contact surface", "Allergen changeover surface"]);
+  check("fills by header, case-insensitive; an unknown header fills nothing", opts[1].fills, { method: "Allergen swab", accept_limit: "Negative" });
+  check("no table, no options", T.pickOptionsFromTable(undefined, {}), []);
+  const picked = T.matchPick(opts, "mixer food-contact surface");
+  check("a pick fills only empty cells", T.pickFills(picked, null, { method: "", accept_limit: "< 5 RLU" }), { method: "ATP swab" });
+}
+
 rmSync(out, { recursive: true, force: true });
 if (failures) { console.error(`\n${failures} of ${cases} checks failed`); process.exit(1); }
 console.log(`pick from: ${cases} checks passed`);

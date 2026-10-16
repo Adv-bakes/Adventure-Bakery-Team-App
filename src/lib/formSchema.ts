@@ -372,6 +372,13 @@ export interface GridColumn {
    */
   pickFrom?: GridPickFrom;
   /**
+   * The same offer, from one of this form's OWN reference tables (owner, 2026-10-16: FRM-902's
+   * Area / surface tested from its Verification schedule). `table` is the reference_table field id;
+   * the cell's choices are that table's first column, and `fill` maps this grid's column ids to the
+   * table's column headers. Read live from the schema, so the list follows the table.
+   */
+  pickFromTable?: { table: string; fill?: Record<string, string> };
+  /**
    * A text column that offers the names in the team directory as a pick-list (FRM-953's
    * attendee name). It is an offer, never a closed list: a contractor or a temporary worker
    * is still typed in. `titleColumn` names another column of the row that is filled with the
