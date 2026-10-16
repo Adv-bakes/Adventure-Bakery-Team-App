@@ -657,6 +657,14 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   entry?" dialog, taking effect when the person goes on to submit; switched back on My Account, "Form
   entries"). **Conveniences, never records**: nothing in the lib throws, and with the table missing or the
   network down a setting is simply kept on the device. Do not put anything here that a record relies on.
+- **A form's own words for its states (`settings.stateLabels`, `entryStateLabel` in `formSchema.ts`):**
+  `{ draft, signed: { field, label, untilField }, submitted, save, submit, confirmTitle, confirmBody }`.
+  **Words only - the stored status stays draft / submitted**, because permissions, reminders, the trace
+  and the Today page all read it. Shown on the entry's badge, buttons and Submit confirmation, the
+  drawer's Entries list, and Form Records (badges, status filter, CSV). First use: **FRM-703** (owner,
+  2026-10-16, migration `20261016000003`, no revision change): Being logged / On the shelf until
+  <discard date> (once "Sample taken by" is signed) / Disposed, with Save and Record disposal. Tested by
+  `scripts/test-state-labels.mjs`.
 - **Link to another form under a field (`FieldBase.linkTo`):** `{ form, latestEntry? }` renders a link
   under the field (`FormLink` in `FormFieldInput.tsx`, target from `fetchFormLinkTarget`): with
   `latestEntry`, the form's newest submitted entry - else its newest draft, flagged - otherwise the form in

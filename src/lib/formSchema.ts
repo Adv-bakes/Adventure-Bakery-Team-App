@@ -561,6 +561,8 @@ export interface FormSettings {
   recallWorkspace?: boolean;
   /** "Copy from a previous entry" — see copyFromEntry. Absent = the picker is not offered. */
   copyFrom?: CopyFromSettings;
+  /** What this form calls its states and its two buttons - see entryStateLabel. Absent = draft / submitted. */
+  stateLabels?: StateLabels;
   /**
    * The release helper (useReleaseAssist): Product and Lot become pick-lists fed by the site's
    * records, and what those records say about the lot is filled in as facts and evidence - never a
@@ -928,6 +930,37 @@ export function mergeScanAnswers(
 }
 
 // ---------- Copy from a previous entry ----------
+
+/**
+ * The words a form uses for its entries' states (owner, 2026-10-16). Every entry is stored as
+ * "draft" or "submitted", and permissions, reminders, the trace and the Today page all read that -
+ * so a form whose entries LIVE in the draft state (FRM-703: a sample on the shelf is a draft until
+ * it is disposed of) only gets different WORDS, never a third stored state.
+ */
+export interface StateLabels {
+  draft?: string;
+  /** A draft whose signature `field` is signed reads as `label`, followed by "until <untilField>" when that date is set. */
+  signed?: { field: string; label: string; untilField?: string };
+  submitted?: string;
+  /** The Save Draft and Submit buttons, and the Submit confirmation. */
+  save?: string;
+  submit?: string;
+  confirmTitle?: string;
+  confirmBody?: string;
+}
+
+/** What the form calls this entry's state: "Being logged", "On the shelf until 2027-11-30", "Disposed" - else "draft" / "submitted". */
+export function entryStateLabel(schema: FormSchema | null | undefined, status: string, data?: Record<string, any> | null): string {
+  const L = schema?.settings?.stateLabels;
+  if (!L) return status;
+  if (status === "submitted") return L.submitted || status;
+  const sig = L.signed ? data?.[L.signed.field] : null;
+  if (L.signed && sig && typeof sig === "object" && String(sig.signed_at ?? sig.name ?? "").trim() !== "") {
+    const until = L.signed.untilField ? String(data?.[L.signed.untilField] ?? "").trim() : "";
+    return until ? `${L.signed.label} until ${until}` : L.signed.label;
+  }
+  return L.draft || status;
+}
 
 /**
  * Carry the fields named by settings.copyFrom over from a chosen earlier entry

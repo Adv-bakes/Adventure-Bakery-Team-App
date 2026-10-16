@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Camera, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { formatFieldValue, getFormSchema, instanceTitle, listFields } from "@/lib/formSchema";
+import { entryStateLabel, formatFieldValue, getFormSchema, instanceTitle, listFields } from "@/lib/formSchema";
 import { createResponse, fetchProfileNames, fetchResponses, shortUserId, type FormResponse } from "@/lib/formResponses";
 import { useUserRole } from "@/hooks/useUserRole";
 import { VISITOR_SIGN_IN_PATH, isVisitorKioskSchema, isVisitorForm } from "@/lib/visitors";
@@ -165,7 +165,7 @@ export function FormEntriesTab({ doc }: FormEntriesTabProps) {
                       </TableCell>
                     ))}
                     <TableCell>{filler}</TableCell>
-                    <TableCell><Badge className={statusBadge[entry.status]}>{entry.status}</Badge></TableCell>
+                    <TableCell><Badge className={statusBadge[entry.status]}>{entryStateLabel(schema, entry.status, entry.data)}</Badge></TableCell>
                     <TableCell className="text-xs text-[#2A1F0E]/80">
                       {format(new Date(entry.updated_at), "M/d/yyyy h:mm a")}
                     </TableCell>

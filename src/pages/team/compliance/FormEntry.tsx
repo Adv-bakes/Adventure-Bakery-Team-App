@@ -15,7 +15,7 @@ import { AlertTriangle, ArrowLeft, Camera, ClipboardList, Copy, Download, ImageP
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  answerManifest, buildZodSchema, copyFromEntry, describeFormErrors, emptyValues, getFormSchema, initialsFromName, instanceTitle,
+  answerManifest, buildZodSchema, copyFromEntry, describeFormErrors, emptyValues, entryStateLabel, getFormSchema, initialsFromName, instanceTitle,
   mergeScanAnswers, pdfFillSkippedFields, valueFields,
   type AiCellDraft, type FillContext, type FormSchema, type GridColumn, type GridRowValue, type LabelScanResult,
 } from "@/lib/formSchema";
@@ -851,7 +851,7 @@ export default function FormEntry() {
           <h1 className="text-2xl font-bold" style={{ color: "#F5F1E6" }}>{doc.title}</h1>
           {doc.sop_number && <Badge variant="outline" className="font-mono text-[#F5F1E6]/80 border-[#C89B3C]/40">{doc.sop_number}</Badge>}
           <Badge variant="outline" className="text-[#F5F1E6]/80 border-[#C89B3C]/40">Rev {response.form_revision ?? doc.revision ?? "—"}</Badge>
-          <Badge className={statusBadge[response.status]}>{response.status}</Badge>
+          <Badge className={statusBadge[response.status]}>{entryStateLabel(schema, response.status, response.data)}</Badge>
         </div>
         <p className="text-xs mt-1" style={{ color: "rgba(245,241,230,0.55)" }}>
           {instanceTitle(schema, response, fillerName)} · filled by {fillerName || "—"}
@@ -1208,7 +1208,7 @@ export default function FormEntry() {
         {canEdit && (
           <>
             <Button type="button" onClick={saveDraft} disabled={saving || submitting} variant="outline">
-              <Save className="w-4 h-4 mr-1.5" />{saving ? "Saving…" : "Save Draft"}
+              <Save className="w-4 h-4 mr-1.5" />{saving ? "Saving…" : (schema?.settings?.stateLabels?.save || "Save Draft")}
             </Button>
             <Button
               type="button"
@@ -1216,7 +1216,7 @@ export default function FormEntry() {
               disabled={saving || submitting}
               className="bg-[#C89B3C] hover:bg-[#B8892C]"
             >
-              <Send className="w-4 h-4 mr-1.5" />{submitting ? "Submitting…" : "Submit"}
+              <Send className="w-4 h-4 mr-1.5" />{submitting ? "Submitting…" : (schema?.settings?.stateLabels?.submit || "Submit")}
             </Button>
           </>
         )}
@@ -1324,8 +1324,9 @@ export default function FormEntry() {
       <AlertDialog open={confirmSubmit} onOpenChange={setConfirmSubmit}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Submit this entry?</AlertDialogTitle>
+            <AlertDialogTitle>{schema?.settings?.stateLabels?.confirmTitle || "Submit this entry?"}</AlertDialogTitle>
             <AlertDialogDescription>
+              {schema?.settings?.stateLabels?.confirmBody && <>{schema.settings.stateLabels.confirmBody}{" "}</>}
               Submitting locks the entry for editing{isAdmin ? " (admins can reopen it)" : " — only an admin can reopen it"}.
               Required fields are checked before it is recorded.
             </AlertDialogDescription>
