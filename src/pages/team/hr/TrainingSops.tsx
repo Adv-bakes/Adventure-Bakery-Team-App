@@ -44,8 +44,8 @@ const STATUS_ORDER: Record<AssignmentStatus, number> = {
 
 export default function TrainingSops() {
   const { role } = useUserRole();
-  // Revision History on a downloaded PDF: the admin's own remembered choice, included for other
-  // staff, never for the auditor (useSopPdfOptions).
+  // Revision History on a downloaded PDF: each internal reader's own remembered choice, never the
+  // auditor's (useSopPdfOptions).
   const { pdfOpts } = useSopPdfOptions();
   const isAdmin = role === "admin" || role === "owner";
   const navigate = useNavigate();

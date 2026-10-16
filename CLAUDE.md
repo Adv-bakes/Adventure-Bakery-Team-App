@@ -843,10 +843,10 @@ Component in `src/components/team/`, rendered in the drawer's **Document** tab. 
 
 **Revision History on a downloaded PDF** (owner, 2026-10-16): `generateSopPdf(row,
 { revisionHistory })` leaves that section out when `false`. Every Download PDF button takes the option
-from `useSopPdfOptions()` (`src/hooks/`): an **admin or owner chooses** with the **Include Rev History**
-checkbox beside the drawer's Download PDF - unchecked to start, remembered per person for every
-document (`useUserPref` key `pdf.includeRevHistory`), and the list icons follow it; **other staff get
-it** (`isInternalReader`); **the auditor never does**. The closing current-revision line is always printed. The screen (Document tab) is
+from `useSopPdfOptions()` (`src/hooks/`): **anyone internal** (staff, admin, owner - `isInternalReader`)
+chooses with the **Include Rev History** checkbox beside the drawer's Download PDF - unchecked to start,
+remembered per person for every document (`useUserPref` key `pdf.includeRevHistory`), and the list
+icons follow it; **the auditor gets no checkbox and never the history**. The closing current-revision line is always printed. The screen (Document tab) is
 unchanged - an auditor viewing the document there still sees it.
 
 **Download entry points** (all reuse `generateSopPdf` + `hasSopBody`, gated to `type === 'sop'` rows with a structured body):

@@ -129,8 +129,8 @@ type DocSortKey = "number" | "title" | "type" | "revision" | "effective" | "stat
 
 export default function SopsLibrary() {
   const { role } = useUserRole();
-  // Revision History on a downloaded PDF: the admin's own remembered choice, included for other
-  // staff, never for the auditor (useSopPdfOptions).
+  // Revision History on a downloaded PDF: each internal reader's own remembered choice, never the
+  // auditor's (useSopPdfOptions).
   const { pdfOpts, canChoose: canChooseRevHistory, include: includeRevHistory, setInclude: setIncludeRevHistory } = useSopPdfOptions();
   const isAdmin = role === "admin" || role === "owner";
 
