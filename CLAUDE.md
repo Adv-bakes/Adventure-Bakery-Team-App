@@ -1166,7 +1166,9 @@ is **retired**, never removed. SELECT is `is_compliance_viewer`, so the auditor 
   record has ever been made" and could never be discharged. The monthly review is done at the monthly
   SQF update, so the row now points at FRM-009 (migration `20261012000001`, FSQM-017 v15, SOP-2.1.3 v2).
   Two rows share that record on purpose (owner chose this over retiring the row): one FRM-009 submission
-  discharges both. A per-event form (a complaint, a hold, a CAPA) is never schedule evidence.
+  discharges both. **`capa_review` followed on 2026-10-16** (it pointed at FRM-007, the report of ONE
+  CAPA): now FRM-009 too, with FSQM-009 v2 and FSQM-017 v16 (migration `20261016000001`), so one
+  FRM-009 submission discharges three rows. A per-event form (a complaint, a hold, a CAPA) is never schedule evidence.
 - **`status='planned'`** means scheduled but *not being performed* — the governing program has not
   been issued. Three of the twenty-five rows are planned (critical-limit re-validation, backflow, water - as of 2026-10-07; calibration, the internal audit and the mock recall were activated when their programs were issued, and a crisis plan review row was added with FSQM-024); compressed air is **retired** (D-32 determined
   11.5.5 is not engaged). A CHECK forces each planned row to name its deliverable, and `assessDue()`
@@ -1916,8 +1918,12 @@ An editable FRM-009 entry shows a **Fill from the records** card (`MonthlyUpdate
 raised" cell, what the records show since the last update:
 
 - **Verification** - the schedule's open reminders as the feed holds them now (overdue first).
-- **Open corrective actions** - FRM-007 drafts with no closure date, whenever raised; a target date
-  before the update's date is flagged PAST DUE.
+- **Open corrective actions** - the monthly CAPA review FSQM-009 v2 Parts 8 and 9 ask for (`capaReview`,
+  owner 2026-10-16): every CAPA still open whenever raised (owner, target PAST DUE, verification due
+  OVERDUE), then for the period - **every CAPA on record when there is no earlier update** - those
+  opened (by source and severity), those closed with their effectiveness result (none recorded is
+  called out), repeats and sources recurring twice or more. The schedule's `capa_review` is evidenced
+  by this record (migration `20261016000001`).
 - **Complaints, incidents and recalls** - FRM-002 (counted Critical / other), FRM-908, FRM-702, FRM-012.
 - **Audits and inspections** - FRM-010 with its outcome, FRM-913 with its failed items counted.
 - **Changes** - FRM-015, and every controlled document whose effective date falls in the period.
