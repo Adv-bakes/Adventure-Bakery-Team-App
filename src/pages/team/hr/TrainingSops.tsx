@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { isInternalReader, useUserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useSopPdfOptions } from "@/hooks/useSopPdfOptions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,9 +43,10 @@ const STATUS_ORDER: Record<AssignmentStatus, number> = {
 };
 
 export default function TrainingSops() {
-  const { role, roles } = useUserRole();
-  // The Revision History section is printed for internal readers only, not for the auditor.
-  const pdfOpts = { revisionHistory: isInternalReader(roles) };
+  const { role } = useUserRole();
+  // Revision History on a downloaded PDF: the admin's own remembered choice, included for other
+  // staff, never for the auditor (useSopPdfOptions).
+  const { pdfOpts } = useSopPdfOptions();
   const isAdmin = role === "admin" || role === "owner";
   const navigate = useNavigate();
 

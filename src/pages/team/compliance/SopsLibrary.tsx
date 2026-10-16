@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { isInternalReader, useUserRole } from "@/hooks/useUserRole";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useSopPdfOptions } from "@/hooks/useSopPdfOptions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -127,9 +128,10 @@ type KindFilter = "all" | "training" | "reference";
 type DocSortKey = "number" | "title" | "type" | "revision" | "effective" | "status" | "sqf";
 
 export default function SopsLibrary() {
-  const { role, roles } = useUserRole();
-  // The Revision History section is printed for internal readers only, not for the auditor.
-  const pdfOpts = { revisionHistory: isInternalReader(roles) };
+  const { role } = useUserRole();
+  // Revision History on a downloaded PDF: the admin's own remembered choice, included for other
+  // staff, never for the auditor (useSopPdfOptions).
+  const { pdfOpts, canChoose: canChooseRevHistory, include: includeRevHistory, setInclude: setIncludeRevHistory } = useSopPdfOptions();
   const isAdmin = role === "admin" || role === "owner";
 
   const [docs, setDocs] = useState<SopDocument[]>([]);
@@ -959,7 +961,14 @@ export default function SopsLibrary() {
 
                 {hasSopBody(selected.content) && (
                   <TabsContent value="document">
-                    <div className="flex justify-end mb-3">
+                    <div className="flex items-center justify-end gap-3 mb-3">
+                      {canChooseRevHistory && (
+                        <label className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                          title="Remembered for every document. The auditor's PDF never includes it.">
+                          <Checkbox checked={includeRevHistory} onCheckedChange={v => setIncludeRevHistory(v === true)} />
+                          Include Rev History
+                        </label>
+                      )}
                       <Button
                         type="button"
                         size="sm"
