@@ -98,8 +98,10 @@ export interface TextField     extends FieldBase {
    * Offer the names in the team directory (FRM-952's employee name) - the scalar twin of
    * GridColumn.teamPick. `titleField` names another top-level text field that is filled with
    * the person's job title (else department) when a listed name is entered and it is empty.
+   * `titleFrom: "positions"` fills it with the FSQM-004 positions the person holds instead
+   * (FRM-005's "Position held"), comma-separated.
    */
-  teamPick?: { titleField?: string };
+  teamPick?: { titleField?: string; titleFrom?: "job" | "positions" };
   /**
    * A "Lot 6286" link to the right of the field that adds the lot code of the date in
    * `fromField` (today's while that date is blank) to what is already typed: "Rum Cake" becomes

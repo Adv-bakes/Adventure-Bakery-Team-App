@@ -544,6 +544,11 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   names" on a text column (`titleColumn` is set by migration). First use: FRM-953's Employee Name.
   A top-level text field takes the same option as `TextField.teamPick` (`{ titleField? }`, set by
   migration): FRM-952's Employee Name, which fills Job Title / Dept.
+  `teamPick.titleFrom: "positions"` fills the title field with the FSQM-004 positions the person holds
+  (`position_holders`, comma-separated) instead of the job title: FRM-005's Primary / Substitute SQF
+  Practitioner fill their "Position held" (owner, 2026-10-17, migration `20261017000005`, no revision
+  change). A name already on the entry with an empty title gets a one-tap "Fill ..." link under it,
+  since filling otherwise happens only as a name is entered.
 - **Topics from the document list (`TextField.docPick`):** `{ prefixes }` on a text field offers each
   ISSUED document whose number starts with one of the prefixes, as "TRN-003 Allergens Part 1"
   (`docPickOptions` in `docRefs.ts`, tested in `scripts/test-doc-refs.mjs`). Drafts are not offered; a
