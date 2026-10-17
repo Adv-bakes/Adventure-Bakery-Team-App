@@ -193,7 +193,8 @@ export default function FsmsIndex() {
       ) : (
         <>
           <div className="flex items-center gap-2 flex-wrap">
-            {STATES.map((s) => (
+            {/* A chip with nothing behind it would only filter to an empty page. */}
+            {STATES.filter((s) => index.counts[s] > 0 || only === s).map((s) => (
               <button
                 key={s}
                 type="button"

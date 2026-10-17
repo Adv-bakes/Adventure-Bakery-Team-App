@@ -280,8 +280,10 @@ Unmapped numbers fall back to plain text. Both generators key physical==printed 
   **never in `sqf_reference`**, which would make that document claim to control what it rules out
   (FSQM-036's issue migration enforces this). With no citation and an ISSUED declaration the clause
   shows a grey "Not applicable" pill with the reason and the document; a draft's declaration is shown
-  but not counted; a citation always wins and the disagreement is listed under "Declared not
-  applicable, but cited". A declaration covers the clauses under it, like a citation. Set by
+  but not counted. An issued ruling beats a BROADER citation (FSQM-013 / FRM-913 / TRN-009 cite all
+  of "11.6", which says nothing about refrigerated transport - those documents are left off the
+  ruled-out clause); a citation at least as specific as the ruling wins and is listed under
+  "Declared not applicable, but cited". A filter chip with a count of 0 is not shown. A declaration covers the clauses under it, like a citation. Set by
   migration (no drawer control), no revision. First uses: FSQM-014 for 2.4.4.3 / 2.4.4.4 (no on-site
   laboratory), FSQM-036 for 11.6.5.5 to .7 (ships ambient).
 - **Legacy IDs:** `sop_documents.legacy_sop_number` (migration `20260708000001…`) preserves the pre-convention number when a row is renumbered. Renumbering existing live rows is a reviewed data migration (crosswalk → id-keyed UPDATEs). Full runbook + stage table in **`DOCUMENT_REGISTER.md`**.

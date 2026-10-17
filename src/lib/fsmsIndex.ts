@@ -192,9 +192,19 @@ export function buildFsmsIndex(allDocs: IndexDoc[]): FsmsIndex {
     const sectionId = parts.slice(0, 2).join(".");
     const subId = parts.slice(0, 3).join(".");
 
+    // A declaration covers the clause and everything under it, as a citation does.
+    const notApplicable = declared
+      .filter((n) => n.clause === id || id.startsWith(n.clause + "."))
+      .map((n) => ({ doc: n.doc, reason: n.reason, depth: n.clause.split(".").length }));
+    // An issued ruling on this clause (or its sub-section) is more specific than a document citing
+    // a whole section ("11.6"), so that citation does not reach it: FSQM-013 cites all of 11.6 and
+    // says nothing about refrigerated transport. Only a citation at least as specific disagrees.
+    const ruledAt = Math.max(0, ...notApplicable.filter((n) => n.doc.status === "active").map((n) => n.depth));
+
     const byDoc = new Map<string, IndexedDoc>();
     for (const { doc, clause } of cited) {
       if (clause !== id && !id.startsWith(clause + ".")) continue;
+      if (clause.split(".").length < ruledAt) continue;
       const exact = clause === id;
       const seen = byDoc.get(doc.id);
       if (!seen) byDoc.set(doc.id, { ...doc, role: docRole(doc), exact });
@@ -203,10 +213,6 @@ export function buildFsmsIndex(allDocs: IndexDoc[]): FsmsIndex {
     const clauseDocs = [...byDoc.values()].sort((a, b) =>
       ROLE_ORDER[a.role] - ROLE_ORDER[b.role]
       || (a.sop_number ?? "").localeCompare(b.sop_number ?? "", undefined, { numeric: true }));
-    // A declaration covers the clause and everything under it, as a citation does.
-    const notApplicable = declared
-      .filter((n) => n.clause === id || id.startsWith(n.clause + "."))
-      .map((n) => ({ doc: n.doc, reason: n.reason }));
     const state = stateOf(clauseDocs, notApplicable);
     for (const n of notApplicable) {
       if (n.doc.status === "active" && clauseDocs.length > 0) conflicts.push({ clause: id, declared: n.doc, citedBy: clauseDocs });
@@ -225,7 +231,7 @@ export function buildFsmsIndex(allDocs: IndexDoc[]): FsmsIndex {
     }
     sub.clauses.push({
       id, text: SQF_FOOD_CLAUSES[id].text.trim(), href: sqfFoodPdfHref(SQF_FOOD_CLAUSES[id].page),
-      docs: clauseDocs, notApplicable, state,
+      docs: clauseDocs, notApplicable: notApplicable.map(({ doc, reason }) => ({ doc, reason })), state,
     });
     section.counts[state]++;
     counts[state]++;
