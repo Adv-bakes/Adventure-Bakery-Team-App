@@ -344,6 +344,7 @@ export function FormFieldInput({ field, control, disabled, isAdmin, signer, sugg
                   onChange={rhf.onChange}
                   control={control}
                   titlePath={(field as TextField).teamPick!.titleField}
+                  titleFrom={(field as TextField).teamPick!.titleFrom}
                 />
               );
               break;

@@ -17,6 +17,7 @@ import {
   type TraceEntry, type TraceKind, type TraceRecords,
 } from "@/lib/lotTrace";
 import { VISITOR_FORMS, isVisitorKioskSchema, type AckRecord } from "@/lib/visitors";
+import { POSITIONS } from "@/lib/positions";
 import {
   RELEASE_SOURCES, checkReleaseMapping, emptyReleaseRecords,
   type ReleaseKind, type ReleaseRecords, type ReleaseSourceSpec,
@@ -997,7 +998,12 @@ export async function fetchFormulaEntries(formNumber: string): Promise<{ entries
 }
 
 /** One person in the team directory, for a `teamPick` grid column. */
-export interface TeamDirectoryName { name: string; title: string }
+export interface TeamDirectoryName {
+  name: string;
+  title: string;
+  /** The FSQM-004 positions the person holds now (position_holders), in FSQM-004's order. */
+  positions: string[];
+}
 
 /**
  * The names a `teamPick` column offers: everyone holding a staff, admin or owner role who has a
@@ -1014,10 +1020,17 @@ export async function loadTeamDirectoryNames(): Promise<TeamDirectoryName[]> {
   const { data: people, error: pErr } = await supabase
     .from("profiles").select("id, full_name, job_title, department").in("id", ids);
   if (pErr) throw pErr;
+  // Positions are an extra: before position_holders exists, or if it cannot be read, there are none.
+  const { data: held } = await (supabase as any)
+    .from("position_holders").select("user_id, position").is("ended_at", null);
+  const positionsOf = (id: string) => POSITIONS
+    .filter((def) => (held ?? []).some((h: any) => h.user_id === id && h.position === def.key))
+    .map((def) => def.name);
   return (people ?? [])
     .map((p: any) => ({
       name: String(p.full_name ?? "").trim(),
       title: String(p.job_title ?? "").trim() || String(p.department ?? "").trim(),
+      positions: positionsOf(p.id),
     }))
     .filter(p => p.name)
     .sort((a, b) => a.name.localeCompare(b.name));
