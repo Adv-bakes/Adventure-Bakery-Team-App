@@ -18,10 +18,11 @@ import {
   ClauseState, IndexClause, IndexDoc, IndexedDoc, STATE_LABEL, buildFsmsIndex, clauseLines, fsmsIndexRows,
 } from "@/lib/fsmsIndex";
 
-const STATES: ClauseState[] = ["issued", "draft", "no_program", "none"];
+const STATES: ClauseState[] = ["issued", "not_applicable", "draft", "no_program", "none"];
 
 const STATE_STYLE: Record<ClauseState, string> = {
   issued: "bg-green-500/15 text-green-800 border-green-600/30",
+  not_applicable: "bg-slate-500/10 text-slate-700 border-slate-500/30",
   draft: "bg-[#C89B3C]/20 text-[#7A5714] border-[#C89B3C]/50",
   no_program: "bg-amber-500/20 text-amber-800 border-amber-600/40",
   none: "bg-red-500/15 text-red-800 border-red-600/30",
@@ -29,6 +30,7 @@ const STATE_STYLE: Record<ClauseState, string> = {
 
 const STATE_HELP: Record<ClauseState, string> = {
   issued: "An issued program, procedure or policy cites the clause.",
+  not_applicable: "An issued document states that the clause does not apply to this site, and why.",
   draft: "A program cites the clause, but it is still a draft.",
   no_program: "Only records or training cite the clause; no program states the rule.",
   none: "No document cites the clause.",
@@ -93,6 +95,14 @@ function ClauseRow({ c }: { c: IndexClause }) {
         <DocGroup label="Programs" docs={c.docs.filter((d) => d.role === "program")} />
         <DocGroup label="Records" docs={c.docs.filter((d) => d.role === "record")} />
         <DocGroup label="Training" docs={c.docs.filter((d) => d.role === "training")} />
+        {c.notApplicable.map((n) => (
+          <p key={n.doc.id} className="text-xs leading-relaxed">
+            <span className="text-muted-foreground">Not applicable, stated in </span>
+            <DocLink d={{ ...n.doc, role: "program", exact: true }} />
+            {n.reason && <span className="text-[#2A1F0E]">: {n.reason}</span>}
+            {n.doc.status === "draft" && <span className="text-muted-foreground"> (not counted until issued)</span>}
+          </p>
+        ))}
       </div>
       <div>
         <span title={STATE_HELP[c.state]}
@@ -123,11 +133,12 @@ export default function FsmsIndex() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
+      // content->not_applicable in the select is more than the generated types can follow.
+      const { data, error } = await (supabase as any)
         .from("sop_documents")
-        .select("id, sop_number, title, type, status, sqf_reference")
-        .in("status", ["active", "draft"])
-        .not("sqf_reference", "is", null);
+        // A document may rule clauses out without citing any, so none is filtered on sqf_reference.
+        .select("id, sop_number, title, type, status, sqf_reference, not_applicable:content->not_applicable")
+        .in("status", ["active", "draft"]);
       if (error) toast.error(error.message);
       setDocs((data ?? []) as unknown as IndexDoc[]);
       setLoading(false);
@@ -141,7 +152,8 @@ export default function FsmsIndex() {
   const matches = (c: IndexClause) =>
     (!only || c.state === only) &&
     (!q || c.id.startsWith(q) || c.text.toLowerCase().includes(q)
-      || c.docs.some((d) => `${d.sop_number ?? ""} ${d.title}`.toLowerCase().includes(q)));
+      || c.docs.some((d) => `${d.sop_number ?? ""} ${d.title}`.toLowerCase().includes(q))
+      || c.notApplicable.some((n) => `${n.doc.sop_number ?? ""} ${n.reason}`.toLowerCase().includes(q)));
 
   const sections = useMemo(() => index.sections
     .map((s) => ({
@@ -171,7 +183,8 @@ export default function FsmsIndex() {
           FSMS stands for Food Safety Management System. This page lists every clause of the SQF Food
           Safety Code: Food Manufacturing, with the documents that cite it.
           The list is read from each document's SQF reference, so it is always current. It shows what
-          a document says it covers; the internal audit checks that it does.
+          a document says it covers; the internal audit checks that it does. A clause that does not
+          apply to this site is marked Not applicable, with the document that says why.
         </p>
       </div>
 
@@ -246,6 +259,29 @@ export default function FsmsIndex() {
               </Card>
             );
           })}
+
+          {index.conflicts.length > 0 && (
+            <Card className="p-4" style={{ borderColor: "rgba(200,155,60,0.25)" }}>
+              <h2 className="text-sm font-semibold text-[#2A1F0E]">
+                Declared not applicable, but cited ({index.conflicts.length})
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                One document says these clauses do not apply while another cites them. They are shown
+                above by what cites them. Correct whichever document is wrong.
+              </p>
+              <ul className="mt-2 space-y-1">
+                {index.conflicts.map((x) => (
+                  <li key={`${x.clause}-${x.declared.id}`} className="text-xs">
+                    <span className="font-mono">{x.clause}</span>
+                    <span className="text-muted-foreground">: not applicable in </span>
+                    <DocLink d={{ ...x.declared, role: "program", exact: true }} />
+                    <span className="text-muted-foreground">, cited by </span>
+                    {x.citedBy.map((d, i) => <span key={d.id}>{i > 0 && ", "}<DocLink d={d} /></span>)}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           {index.unmatched.length > 0 && (
             <Card className="p-4" style={{ borderColor: "rgba(200,155,60,0.25)" }}>

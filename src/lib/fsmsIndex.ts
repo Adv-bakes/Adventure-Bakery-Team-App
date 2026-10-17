@@ -5,6 +5,10 @@
 // index is current the moment a document is issued, and a hand-kept matrix cannot fall behind it.
 // It is a map of what each document CLAIMS to cover, not proof that it does; the internal audit
 // (FSQM-038) is what tests the claim.
+//
+// A clause the site does not engage (no on-site laboratory, no refrigerated transport) is declared
+// Not Applicable by the document that says why, in content.not_applicable - never in sqf_reference,
+// which would make that document claim to control what it rules out.
 
 import { SQF_FOOD_CLAUSES, sqfFoodPdfHref } from "./sqfFoodClauses";
 
@@ -15,6 +19,8 @@ export interface IndexDoc {
   type: string;
   status: string;
   sqf_reference: string | null;
+  /** Clauses this document rules out, each with the reason it gives (content.not_applicable). */
+  not_applicable?: { clause: string; reason: string }[] | null;
 }
 
 /** Section titles are not in the generated clause map, which starts at the three-level headings. */
@@ -88,14 +94,16 @@ export function docRole(doc: Pick<IndexDoc, "sop_number" | "type">): DocRole {
 
 /**
  * issued     - an active program, procedure or policy cites the clause
+ * not_applicable - no document cites it, and an issued document declares it Not Applicable
  * draft      - a program cites it, but none of them is issued yet
  * no_program - only records or training cite it; nothing states the rule
  * none       - no document cites it
  */
-export type ClauseState = "issued" | "draft" | "no_program" | "none";
+export type ClauseState = "issued" | "not_applicable" | "draft" | "no_program" | "none";
 
 export const STATE_LABEL: Record<ClauseState, string> = {
   issued: "Issued",
+  not_applicable: "Not applicable",
   draft: "Draft only",
   no_program: "No program",
   none: "Nothing cites it",
@@ -107,11 +115,15 @@ export interface IndexedDoc extends IndexDoc {
   exact: boolean;
 }
 
+/** A document declaring a clause Not Applicable. A draft's declaration is shown but does not count. */
+export interface NotApplicable { doc: IndexDoc; reason: string }
+
 export interface IndexClause {
   id: string;
   text: string;
   href: string;
   docs: IndexedDoc[];
+  notApplicable: NotApplicable[];
   state: ClauseState;
 }
 
@@ -124,13 +136,20 @@ export interface FsmsIndex {
   total: number;
   /** References that match no clause of the Code: a typo, a clause of another edition, or "N/A". */
   unmatched: { doc: IndexDoc; token: string }[];
+  /** Clauses an issued document declares Not Applicable while another document cites them. */
+  conflicts: { clause: string; declared: IndexDoc; citedBy: IndexedDoc[] }[];
 }
 
 const ROLE_ORDER: Record<DocRole, number> = { program: 0, record: 1, training: 2 };
-const emptyCounts = (): Record<ClauseState, number> => ({ issued: 0, draft: 0, no_program: 0, none: 0 });
+const emptyCounts = (): Record<ClauseState, number> =>
+  ({ issued: 0, not_applicable: 0, draft: 0, no_program: 0, none: 0 });
 
-function stateOf(docs: IndexedDoc[]): ClauseState {
-  if (docs.length === 0) return "none";
+/**
+ * A citation always wins over a declaration: a clause some document says it controls is not shown
+ * as Not Applicable, and the disagreement is listed in `conflicts` for someone to settle.
+ */
+function stateOf(docs: IndexedDoc[], na: NotApplicable[]): ClauseState {
+  if (docs.length === 0) return na.some((n) => n.doc.status === "active") ? "not_applicable" : "none";
   const programs = docs.filter((d) => d.role === "program");
   if (programs.length === 0) return "no_program";
   return programs.some((d) => d.status === "active") ? "issued" : "draft";
@@ -148,7 +167,13 @@ export function buildFsmsIndex(allDocs: IndexDoc[]): FsmsIndex {
 
   const cited: { doc: IndexDoc; clause: string }[] = [];
   const unmatched: FsmsIndex["unmatched"] = [];
+  const declared: { doc: IndexDoc; clause: string; reason: string }[] = [];
   for (const doc of docs) {
+    for (const n of doc.not_applicable ?? []) {
+      const clause = String(n?.clause ?? "").trim();
+      if (known(clause)) declared.push({ doc, clause, reason: String(n?.reason ?? "").trim() });
+      else unmatched.push({ doc, token: `Not applicable: ${clause}` });
+    }
     const { clauses, unreadable } = parseSqfReferences(doc.sqf_reference);
     for (const token of unreadable) unmatched.push({ doc, token });
     for (const clause of clauses) {
@@ -158,6 +183,7 @@ export function buildFsmsIndex(allDocs: IndexDoc[]): FsmsIndex {
   }
 
   const counts = emptyCounts();
+  const conflicts: FsmsIndex["conflicts"] = [];
   const sections = new Map<string, IndexSection>();
   const subs = new Map<string, IndexSubSection>();
 
@@ -177,7 +203,14 @@ export function buildFsmsIndex(allDocs: IndexDoc[]): FsmsIndex {
     const clauseDocs = [...byDoc.values()].sort((a, b) =>
       ROLE_ORDER[a.role] - ROLE_ORDER[b.role]
       || (a.sop_number ?? "").localeCompare(b.sop_number ?? "", undefined, { numeric: true }));
-    const state = stateOf(clauseDocs);
+    // A declaration covers the clause and everything under it, as a citation does.
+    const notApplicable = declared
+      .filter((n) => n.clause === id || id.startsWith(n.clause + "."))
+      .map((n) => ({ doc: n.doc, reason: n.reason }));
+    const state = stateOf(clauseDocs, notApplicable);
+    for (const n of notApplicable) {
+      if (n.doc.status === "active" && clauseDocs.length > 0) conflicts.push({ clause: id, declared: n.doc, citedBy: clauseDocs });
+    }
 
     let section = sections.get(sectionId);
     if (!section) {
@@ -192,7 +225,7 @@ export function buildFsmsIndex(allDocs: IndexDoc[]): FsmsIndex {
     }
     sub.clauses.push({
       id, text: SQF_FOOD_CLAUSES[id].text.trim(), href: sqfFoodPdfHref(SQF_FOOD_CLAUSES[id].page),
-      docs: clauseDocs, state,
+      docs: clauseDocs, notApplicable, state,
     });
     section.counts[state]++;
     counts[state]++;
@@ -201,14 +234,15 @@ export function buildFsmsIndex(allDocs: IndexDoc[]): FsmsIndex {
   return {
     sections: [...sections.values()],
     counts,
-    total: counts.issued + counts.draft + counts.no_program + counts.none,
+    total: Object.values(counts).reduce((a, b) => a + b, 0),
     unmatched,
+    conflicts,
   };
 }
 
 /** The index as rows for a CSV: one line per clause, documents joined in one cell. */
 export function fsmsIndexRows(index: FsmsIndex): string[][] {
-  const rows: string[][] = [["Clause", "Section", "Requirement", "Status", "Programs", "Records", "Training"]];
+  const rows: string[][] = [["Clause", "Section", "Requirement", "Status", "Programs", "Records", "Training", "Not applicable"]];
   const list = (docs: IndexedDoc[], role: DocRole) =>
     docs.filter((d) => d.role === role)
       .map((d) => `${d.sop_number ?? d.title}${d.status === "draft" ? " (draft)" : ""}`).join("; ");
@@ -216,7 +250,8 @@ export function fsmsIndexRows(index: FsmsIndex): string[][] {
     for (const sub of s.subSections) {
       for (const c of sub.clauses) {
         rows.push([c.id, `${sub.id} ${sub.title}`.trim(), c.text, STATE_LABEL[c.state],
-          list(c.docs, "program"), list(c.docs, "record"), list(c.docs, "training")]);
+          list(c.docs, "program"), list(c.docs, "record"), list(c.docs, "training"),
+          c.notApplicable.map((n) => `${n.doc.sop_number ?? n.doc.title}${n.doc.status === "draft" ? " (draft)" : ""}: ${n.reason}`).join("; ")]);
       }
     }
   }

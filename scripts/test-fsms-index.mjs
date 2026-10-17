@@ -78,6 +78,34 @@ check("seventeen sections, each titled", [index.sections.length, index.sections.
 check("sections in Code order", index.sections.map((s) => s.id).slice(0, 3).concat(index.sections.at(-1).id), ["2.1", "2.2", "2.3", "11.8"]);
 check("sub-sections carry the Code's title", index.sections[0].subSections[0].title.length > 0, true);
 
+check("conflicts empty when nothing declared", index.conflicts, []);
+
+// ---- not applicable
+const na = (id, sop_number, status, list, ref = null) => ({ ...doc(id, sop_number, "fsqm", status, ref), not_applicable: list });
+const naIndex = T.buildFsmsIndex([
+  na("n1", "FSQM-014", "active", [{ clause: "2.4.4.3", reason: "No on-site laboratory." }, { clause: "9.9.9.9", reason: "x" }], "2.4.4.1"),
+  na("n2", "FSQM-036", "active", [{ clause: "11.6.5", reason: "Ships ambient." }]),
+  na("n3", "FSQM-900", "draft", [{ clause: "2.4.4.4", reason: "Draft says so." }]),
+  na("n4", "FSQM-901", "active", [{ clause: "2.4.4.2", reason: "Wrong." }]),
+  doc("n5", "FSQM-902", "fsqm", "active", "2.4.4.2"),
+]);
+const naClause = (id) => naIndex.sections.flatMap((s) => s.subSections).flatMap((s) => s.clauses).find((c) => c.id === id);
+check("issued declaration, no citation -> not applicable", naClause("2.4.4.3").state, "not_applicable");
+check("the reason and document are carried", naClause("2.4.4.3").notApplicable.map((n) => [n.doc.sop_number, n.reason]),
+  [["FSQM-014", "No on-site laboratory."]]);
+check("a declaration does not cite: the document is not listed as covering it", naClause("2.4.4.3").docs, []);
+check("a declared section covers the clauses under it", ["11.6.5.5", "11.6.5.7"].map((c) => naClause(c).state),
+  ["not_applicable", "not_applicable"]);
+check("a draft declaration is shown but not counted", [naClause("2.4.4.4").state, naClause("2.4.4.4").notApplicable.length], ["none", 1]);
+check("a citation wins over a declaration", naClause("2.4.4.2").state, "issued");
+check("and the disagreement is listed", naIndex.conflicts.map((x) => [x.clause, x.declared.sop_number, x.citedBy.map((d) => d.sop_number)]),
+  [["2.4.4.2", "FSQM-901", ["FSQM-902"]]]);
+check("a declaration of no clause is listed as unmatched", naIndex.unmatched.map((u) => u.token), ["Not applicable: 9.9.9.9"]);
+check("not applicable is counted in the total",
+  naIndex.total === Object.values(naIndex.counts).reduce((a, b) => a + b, 0) && naIndex.counts.not_applicable === 1 + Object.keys(T.buildFsmsIndex([]).sections.flatMap((s) => s.subSections).find((s) => s.id === "11.6.5").clauses).length, true);
+check("csv carries the reason", T.fsmsIndexRows(naIndex).find((r) => r[0] === "2.4.4.3").slice(3).join("|"),
+  "Not applicable||||FSQM-014: No on-site laboratory.");
+
 const rows = T.fsmsIndexRows(index);
 check("csv has a header and one row per clause", rows.length, index.total + 1);
 check("csv marks drafts", rows.find((r) => r[0] === "2.1.1.2")[4], "FSQM-006 (draft)");
