@@ -144,9 +144,12 @@ export interface ResolvedCover {
 export interface PositionRow {
   def: PositionDef;
   holders: Person[];
-  /** Null when FSQM-004 names no cover for the position. */
-  cover: ResolvedCover | null;
+  /** Who covers each holder. */
+  cover: ResolvedCover;
 }
+
+/** A holder with nobody sharing the position, where FSQM-004 names no cover for it. */
+export const NONE_NAMED = "No cover named in FSQM-004";
 
 const samePerson = (a: Person, b: Person) => (a.id && b.id ? a.id === b.id : fold(a.name) === fold(b.name));
 const without = (a: Person[], p: Person) => a.filter((q) => !samePerson(p, q));
@@ -177,6 +180,7 @@ export function resolvePositions(
   const coverFor = (def: PositionDef, holders: Person[], h: Person): HolderCover => {
     const sharing = without(holders, h);
     if (sharing.length) return { holder: h, people: sharing, via: "Also holds this position" };
+    if (def.cover.length === 0) return { holder: h, people: [], via: NONE_NAMED };
     for (const step of def.cover) {
       if (step.kind === "contracted") return { holder: h, people: [], via: "Contracted", contracted: step.label };
       if (step.kind === "same") continue; // already tried above
@@ -197,7 +201,6 @@ export function resolvePositions(
 
   return POSITIONS.map((def) => {
     const holders = holdersOf(def.key);
-    if (def.cover.length === 0) return { def, holders, cover: null };
     return { def, holders, cover: { byHolder: holders.map((h) => coverFor(def, holders, h)), vacant: holders.length === 0 } };
   });
 }

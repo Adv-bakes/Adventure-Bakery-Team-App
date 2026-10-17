@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ASSIGNABLE_POSITIONS, type PositionKey, coverWhenAway, standsInFor } from "@/lib/positions";
+import { ASSIGNABLE_POSITIONS, NONE_NAMED, type PositionKey, coverWhenAway, standsInFor } from "@/lib/positions";
 import { type PositionsData, loadPositions, setPositionHolder } from "@/lib/positionsLoad";
 
 export default function MemberPositionsCard({ userId, isTeamMember }: { userId: string; isTeamMember: boolean }) {
@@ -101,7 +101,7 @@ export default function MemberPositionsCard({ userId, isTeamMember }: { userId: 
                 <li key={def.key}>
                   <span className="font-medium">{def.name}</span>
                   {" - "}
-                  {!cover ? <span className="text-muted-foreground">no cover named in FSQM-004</span>
+                  {!cover || cover.via === NONE_NAMED ? <span className="text-muted-foreground">no cover named in FSQM-004</span>
                     : cover.contracted ? cover.contracted
                     : cover.people.length ? cover.people.map((p) => p.name).join(" or ")
                     : <span className="text-red-700 font-medium">nobody covers{cover.problem ? `: ${cover.problem}` : ""}</span>}

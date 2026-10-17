@@ -64,10 +64,13 @@ check("senior management has no cover without a primary practitioner", cov(now, 
 check("supervisor held by senior management: the cover is the same person", cov(now, "production_supervisor", "g"),
   [[], "No cover", "Senior Site Management is held by the same person, so it is not a cover."]);
 check("a lone operator falls to the supervisor", cov(now, "production_operator", "d"), [["Gabriela Juncos-Mercer"], "Production Supervisor"]);
-check("administration has no named cover", row(now, "administration").cover, null);
+check("administration, one holder, no named cover", cov(now, "administration", "r"), [[], "No cover named in FSQM-004"]);
+check("administration shared: the other holder covers, though FSQM-004 names nobody",
+  cov(T.resolvePositions([{ user_id: "r", position: "administration" }, { user_id: "g", position: "administration" }], team, null), "administration", "r"),
+  [["Gabriela Juncos-Mercer"], "Also holds this position"]);
 check("maintenance is covered by the contractor", cov(now, "maintenance", "g"),
   ["The contracted provider (Contract Services Register)", "Contracted"]);
-check("substitute has no cover row", row(now, "sqf_practitioner_substitute").cover, null);
+check("a vacant substitute has nobody to cover", row(now, "sqf_practitioner_substitute").cover, { byHolder: [], vacant: true });
 
 // ---- with a designation
 const des = { primary: "Gabriela Juncos-Mercer", substitute: "Diana Samboni", effectiveDate: "2026-10-17", responseId: "b" };
