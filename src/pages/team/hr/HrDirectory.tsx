@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { UserSquare2, Search, ChevronRight, UserPlus, Copy, Check, Clock, Ban, MailCheck, MailX, AlertTriangle } from "lucide-react";
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
 import { DEPARTMENTS } from "@/lib/training";
+import PositionsCoverCard from "@/components/team/PositionsCoverCard";
 
 const TEAM_ROLES: AppRole[] = ["owner", "admin", "staff", "auditor", "kiosk"];
 const ROLE_LABEL: Record<string, string> = {
@@ -446,6 +447,8 @@ export default function HrDirectory() {
           )}
         </CardContent>
       </Card>
+
+      <PositionsCoverCard canEdit={canEdit} />
 
       {canEdit && invites.length > 0 && (
         <Card className="mt-6">

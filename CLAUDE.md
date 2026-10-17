@@ -781,6 +781,28 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
 
 ---
 
+## Positions and cover (FSQM-004) — `lib/positions.ts` + `position_holders`
+
+FSQM-004 describes positions and names nobody (so it is not reissued when someone changes duties).
+Who holds each one is kept beside it (owner, 2026-10-17, migration `20261017000004`):
+
+- **`public.position_holders`** (not in generated types): one row per person per position, with
+  `started_at/by` and `ended_at/by` - giving a position up ENDS the row, never deletes it, so who held
+  it on a date stays answerable. One current row per (person, position) (partial unique index). No
+  write policies: `set_position_holder(user, position, holds)` (`SECURITY DEFINER`, admin/owner,
+  target must have a staff/admin/owner role). Read: `is_staff_or_admin` or `is_compliance_viewer`.
+- **The two SQF Practitioner positions are not in the table**: their holders are the names on the
+  newest SUBMITTED FRM-005 (`designationFrom`), matched to a team member by name. A draft designates nobody.
+- **`POSITIONS`** copies FSQM-004's positions and cover rules. `resolvePositions` turns a cover into
+  people: the cover position's holders minus this position's holders (nobody covers themselves); two
+  operators cover each other; otherwise, by FSQM-004's own rule, the cover passes up to Senior Site
+  Management; a vacant position has nobody to cover. `checkPositionsAgainstFsqm004` compares the rules
+  with the document's wording and the card lists any mismatch - **revise `POSITIONS` when FSQM-004's
+  positions or covers change.** Tested by `scripts/test-positions.mjs`.
+- **Surfaces:** `PositionsCoverCard` on the Team Directory (Position / Held by / Covered by, read-only)
+  and `MemberPositionsCard` on `/team/member/:userId` (a tick per position, saved at once, not covered
+  by Save Changes; shows the person's FRM-005 designation and what they cover). Loader `positionsLoad.ts`.
+
 ## Account Access & Invitations (auth provisioning)
 
 **Account Access card** — `components/team/AccountAccessCard.tsx`, rendered in `TeamMemberDetail.tsx`
