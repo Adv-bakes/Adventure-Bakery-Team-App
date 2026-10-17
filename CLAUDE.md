@@ -672,7 +672,7 @@ the bare `||` is ambiguous between `array_append`/`array_cat` and Postgres was p
   `useUserPref(key, fallback)` returns `[value, set]`; `fallback` must be a constant. All of a person's
   settings load once per page load and again when the account changes; a copy tagged with the user id is
   kept in `localStorage` (`userPrefs.cache`) so a page opens in the person's arrangement without a
-  flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, `pdf.includeRevHistory`, `today.shelfClosed`, `labels.printer`, and `form.skipSubmitConfirm`
+  flash. Keys in use: `form.helpHidden:<docId>`, `bake.reviewer`, `pdf.includeRevHistory`, `today.shelfClosed`, `labels.printer`, `positions.awayHidden` / `positions.standsInHidden` (the member page's Positions card lists), and `form.skipSubmitConfirm`
   (`SKIP_SUBMIT_CONFIRM`, owner 2026-10-12: a "Do not show this again" tick on FormEntry's "Submit this
   entry?" dialog, taking effect when the person goes on to submit; switched back on My Account, "Form
   entries"). **Conveniences, never records**: nothing in the lib throws, and with the table missing or the
