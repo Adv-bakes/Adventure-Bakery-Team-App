@@ -73,6 +73,9 @@ export default function AccountAccessCard({ userId, targetRoles, viewerIsOwner }
   };
 
   useEffect(() => {
+    // The function refuses an admin acting on an owner or admin account (status included), so a
+    // locked card does not ask: asking only put a red "Couldn't load account status" on the page.
+    if (locked) { setLoading(false); return; }
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -89,7 +92,7 @@ export default function AccountAccessCard({ userId, targetRoles, viewerIsOwner }
       }
     })();
     return () => { cancelled = true; };
-  }, [userId]);
+  }, [userId, locked]);
 
   const handleSetPassword = async () => {
     if (newPassword.length < MIN_PASSWORD_LENGTH) {
@@ -142,6 +145,7 @@ export default function AccountAccessCard({ userId, targetRoles, viewerIsOwner }
   };
 
   const statusLine = () => {
+    if (locked) return "Sign-in status is shown to the owner only";
     if (loading) return "Checking…";
     if (!status) return "Account status unavailable";
     const parts: string[] = [];
