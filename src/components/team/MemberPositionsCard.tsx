@@ -6,7 +6,7 @@
  * ends the holding; the history is kept. The SQF Practitioner designation is shown, not edited:
  * it is made on FRM-005.
  */
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Network } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +15,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ASSIGNABLE_POSITIONS, NONE_NAMED, type PositionKey, coverWhenAway, standsInFor } from "@/lib/positions";
 import { type PositionsData, loadPositions, setPositionHolder } from "@/lib/positionsLoad";
+import { useUserPref } from "@/lib/userPrefs";
+
+/** A titled list that can be put away; the choice is remembered per person (user_preferences). */
+function HideableList({ title, prefKey, children }: { title: string; prefKey: string; children: ReactNode }) {
+  const [hidden, setHidden] = useUserPref<boolean>(prefKey, false);
+  return (
+    <div className="text-sm">
+      <p className="text-muted-foreground">
+        {title}{" "}
+        <button type="button" className="text-xs underline hover:text-foreground" onClick={() => setHidden(!hidden)}>
+          {hidden ? "Show" : "Hide"}
+        </button>
+      </p>
+      {!hidden && <ul className="mt-1 space-y-0.5">{children}</ul>}
+    </div>
+  );
+}
 
 export default function MemberPositionsCard({ userId, isTeamMember }: { userId: string; isTeamMember: boolean }) {
   const [data, setData] = useState<PositionsData | null>(null);
@@ -32,13 +49,6 @@ export default function MemberPositionsCard({ userId, isTeamMember }: { userId: 
   const away = me ? coverWhenAway(data.rows, me) : [];
   const standsIn = me ? standsInFor(data.rows, me) : [];
   const first = (n: string) => n.split(" ")[0];
-  // "Gabriela and Richard as Production Supervisor and Receiving / Goods-In": grouped by the people.
-  const groups = new Map<string, string[]>();
-  for (const x of standsIn) {
-    const who = x.for.map((p) => first(p.name)).join(" and ");
-    groups.set(who, [...(groups.get(who) ?? []), x.def.name]);
-  }
-  const standsInText = [...groups].map(([who, names]) => `${who}, as ${names.join(", ")}`).join("; ");
 
   const toggle = async (key: PositionKey, next: boolean) => {
     setBusy(key);
@@ -94,28 +104,33 @@ export default function MemberPositionsCard({ userId, isTeamMember }: { userId: 
         </div>
 
         {away.length > 0 && (
-          <div className="text-sm">
-            <p className="text-muted-foreground">When {me ? first(me.name) : "this person"} is away:</p>
-            <ul className="mt-1 space-y-0.5">
-              {away.map(({ def, cover }) => (
-                <li key={def.key}>
-                  <span className="font-medium">{def.name}</span>
-                  {" - "}
-                  {!cover || cover.via === NONE_NAMED ? <span className="text-muted-foreground">no cover named in FSQM-004</span>
-                    : cover.contracted ? cover.contracted
-                    : cover.people.length ? cover.people.map((p) => p.name).join(" or ")
-                    : <span className="text-red-700 font-medium">nobody covers{cover.problem ? `: ${cover.problem}` : ""}</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <HideableList title={`When ${me ? first(me.name) : "this person"} is away:`} prefKey="positions.awayHidden">
+            {away.map(({ def, cover }) => (
+              <li key={def.key}>
+                <span className="font-medium">{def.name}</span>
+                {" - "}
+                {!cover || cover.via === NONE_NAMED ? <span className="text-muted-foreground">no cover named in FSQM-004</span>
+                  : cover.contracted ? cover.contracted
+                  : cover.people.length ? cover.people.map((p) => p.name).join(" or ")
+                  : <span className="text-red-700 font-medium">nobody covers{cover.problem ? `: ${cover.problem}` : ""}</span>}
+              </li>
+            ))}
+          </HideableList>
         )}
 
-        <div className="text-sm space-y-1">
-          <p>
-            <span className="text-muted-foreground">Stands in for: </span>
-            {standsIn.length ? standsInText : "nobody"}
-          </p>
+        {me && (
+          <HideableList title={`${first(me.name)} stands in for:`} prefKey="positions.standsInHidden">
+            {standsIn.length ? standsIn.map((x) => (
+              <li key={x.def.key}>
+                <span className="font-medium">{x.def.name}</span>
+                {" - "}
+                {x.for.map((p) => p.name).join(" and ")}
+              </li>
+            )) : <li className="text-muted-foreground">Nobody</li>}
+          </HideableList>
+        )}
+
+        <div>
           <p className="text-xs text-muted-foreground">
             The full list is on the{" "}
             <Link to="/team/hr/directory" className="underline">Team Directory</Link>, under Positions and cover.
