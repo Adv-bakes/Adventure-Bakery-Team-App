@@ -72,6 +72,7 @@ import {
   type AppNotification, type Signatory,
 } from "@/lib/notifications";
 import { FieldSignContext, RequestedSignatures, useFieldSignRequests } from "@/components/team/forms/RequestedSignatures";
+import { RefreshButton } from "@/components/team/today/RefreshButton";
 import { requestedSignatureFields, unsignedVerifierFields } from "@/lib/formSchema";
 import { useBottomBarClearance } from "@/hooks/useBottomBarClearance";
 import { WarningList } from "@/components/team/voice/VoiceCommandPanel";
@@ -279,6 +280,16 @@ export default function FormEntry() {
   } : null,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   [signer, response?.id, signRequests.requests]);
+
+  // The refresh icon beside the title: reads the entry again (someone may have signed it, or saved
+  // it on another device) and its signature requests. Unsaved changes would be lost, so it asks.
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshEntry = async () => {
+    if (isDirty && !window.confirm("You have unsaved changes. Reload the entry and lose them?")) return;
+    setRefreshing(true);
+    try { await Promise.all([load(), signRequests.refresh()]); }
+    finally { setRefreshing(false); }
+  };
 
   // Section 3 of a CCP record (FRM-507, FRM-606) is worked out from the loads or checks on the
   // record itself and kept in step as they change - see ccpDeviations.ts. What was DONE about a
@@ -863,6 +874,8 @@ export default function FormEntry() {
         </Link>
         <div className="flex flex-wrap items-center gap-2 mt-1.5">
           <h1 className="text-2xl font-bold" style={{ color: "#F5F1E6" }}>{doc.title}</h1>
+          <RefreshButton onClick={() => { void refreshEntry(); }} spinning={refreshing} label="Refresh"
+            tip="Read this entry again - for example after someone has signed it" />
           {doc.sop_number && <Badge variant="outline" className="font-mono text-[#F5F1E6]/80 border-[#C89B3C]/40">{doc.sop_number}</Badge>}
           <Badge variant="outline" className="text-[#F5F1E6]/80 border-[#C89B3C]/40">Rev {response.form_revision ?? doc.revision ?? "—"}</Badge>
           <Badge className={statusBadge[response.status]}>{entryStateLabel(schema, response.status, response.data)}</Badge>
