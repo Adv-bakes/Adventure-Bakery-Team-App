@@ -9,7 +9,7 @@ import { AlertTriangle, Network } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Person, PositionRow } from "@/lib/positions";
+import type { HolderCover, Person, PositionRow } from "@/lib/positions";
 import { type PositionsData, loadPositions } from "@/lib/positionsLoad";
 
 function PersonName({ p, linkable }: { p: Person; linkable: boolean }) {
@@ -37,21 +37,41 @@ export default function PositionsCoverCard({ canEdit }: { canEdit: boolean }) {
     return <People people={r.holders} linkable={canEdit} />;
   };
 
+  const coverLine = (c: HolderCover) => (
+    <>
+      {c.contracted ? <span>{c.contracted}</span>
+        : c.people.length ? <People people={c.people} linkable={canEdit} />
+        : <span className="text-red-700 font-medium">No cover</span>}
+      {c.people.length > 0 && <span className="text-xs text-muted-foreground"> ({c.via.toLowerCase()})</span>}
+      {c.problem && (
+        <span className="text-xs text-amber-700 flex items-start gap-1">
+          <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />{c.problem}
+        </span>
+      )}
+    </>
+  );
+
   const coverCell = (r: PositionRow) => {
     if (!r.cover) return <span className="text-muted-foreground">No cover named in FSQM-004</span>;
-    const c = r.cover;
-    if (c.via === "Vacant") return <span className="text-muted-foreground">Nobody to cover</span>;
+    if (r.cover.vacant) return <span className="text-muted-foreground">Nobody to cover</span>;
+    const one = r.cover.byHolder.length === 1;
+    // Several holders who all cover one another say so once, not once per person.
+    if (!one && r.cover.byHolder.every((c) => c.via === "Also holds this position")) {
+      return (
+        <div className="space-y-1">
+          <span>The holders cover each other</span>
+          {r.def.coverNote && <p className="text-xs text-muted-foreground">{r.def.coverNote}</p>}
+        </div>
+      );
+    }
     return (
-      <div className="space-y-0.5">
-        {c.contracted ? <span>{c.contracted}</span>
-          : c.people.length ? <People people={c.people} linkable={canEdit} />
-          : <span className="text-red-700 font-medium">No cover</span>}
-        {!c.contracted && c.people.length > 0 && <p className="text-xs text-muted-foreground">{c.via}</p>}
-        {c.problem && (
-          <p className="text-xs text-amber-700 flex items-start gap-1">
-            <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />{c.problem}
-          </p>
-        )}
+      <div className="space-y-1">
+        {r.cover.byHolder.map((c) => (
+          <div key={c.holder.id ?? c.holder.name}>
+            {!one && <span className="text-muted-foreground">If {c.holder.name.split(" ")[0]} is away: </span>}
+            {coverLine(c)}
+          </div>
+        ))}
         {r.def.coverNote && <p className="text-xs text-muted-foreground">{r.def.coverNote}</p>}
       </div>
     );
@@ -69,8 +89,9 @@ export default function PositionsCoverCard({ canEdit }: { canEdit: boolean }) {
           {data?.fsqm004Id
             ? <Link to={`/team/compliance/sops?doc=${data.fsqm004Id}`} className="underline">FSQM-004</Link>
             : "FSQM-004"}
-          , who holds each one and who covers it in their absence. A person never covers themselves:
-          where the named cover is the same person, the cover passes up to Senior Site Management.
+          , who holds each one and who covers it in their absence. Cover is worked out for each holder: first
+          anyone else holding the same position, then the cover FSQM-004 names, then Senior Site
+          Management. Nobody covers themselves.
           {canEdit && " Change who holds a position on the team member's page."}
         </CardDescription>
       </CardHeader>

@@ -49,30 +49,33 @@ check("the newest submitted entry is in force", T.designationFrom([
   entry("c", "draft", null, { primary_name: "Later draft" }),
 ]), { primary: "Gabriela Juncos-Mercer", substitute: "Diana Samboni", effectiveDate: "2026-10-17", responseId: "b" });
 
-// ---- today's shape: no practitioner designated
+const cov = (rows, key, who) => {
+  const c = row(rows, key).cover.byHolder.find((x) => x.holder.id === who);
+  return c.contracted ? [c.contracted, c.via] : [names(c.people), c.via, ...(c.problem ? [c.problem] : [])];
+};
+
+// ---- one holder per position
 const now = T.resolvePositions(held, team, null);
-check("receiving is covered by the production supervisor", [names(row(now, "receiving").cover.people), row(now, "receiving").cover.via],
-  [["Gabriela Juncos-Mercer"], "Production Supervisor"]);
+check("receiving is covered by the production supervisor", cov(now, "receiving", "d"), [["Gabriela Juncos-Mercer"], "Production Supervisor"]);
 check("practitioners are blank until FRM-005 is submitted", names(row(now, "sqf_practitioner_primary").holders), []);
-check("senior management has no cover without a primary practitioner",
-  [row(now, "senior_site_management").cover.people, row(now, "senior_site_management").cover.problem],
-  [[], "Nobody holds SQF Practitioner (primary)."]);
-check("supervisor held by senior management: the cover is the same person, so none",
-  [row(now, "production_supervisor").cover.people, row(now, "production_supervisor").cover.problem],
-  [[], "Senior Site Management is held by the same person, so it is not a cover."]);
-check("a lone operator falls to the supervisor", [names(row(now, "production_operator").cover.people), row(now, "production_operator").cover.via],
-  [["Gabriela Juncos-Mercer"], "Production Supervisor"]);
+check("a vacant position has nobody to cover", row(now, "sqf_practitioner_primary").cover, { byHolder: [], vacant: true });
+check("senior management has no cover without a primary practitioner", cov(now, "senior_site_management", "g"),
+  [[], "No cover", "Nobody holds SQF Practitioner (primary)."]);
+check("supervisor held by senior management: the cover is the same person", cov(now, "production_supervisor", "g"),
+  [[], "No cover", "Senior Site Management is held by the same person, so it is not a cover."]);
+check("a lone operator falls to the supervisor", cov(now, "production_operator", "d"), [["Gabriela Juncos-Mercer"], "Production Supervisor"]);
 check("administration has no named cover", row(now, "administration").cover, null);
-check("maintenance is covered by the contractor", row(now, "maintenance").cover.contracted, "The contracted provider (Contract Services Register)");
+check("maintenance is covered by the contractor", cov(now, "maintenance", "g"),
+  ["The contracted provider (Contract Services Register)", "Contracted"]);
 check("substitute has no cover row", row(now, "sqf_practitioner_substitute").cover, null);
 
 // ---- with a designation
 const des = { primary: "Gabriela Juncos-Mercer", substitute: "Diana Samboni", effectiveDate: "2026-10-17", responseId: "b" };
 const withDes = T.resolvePositions(held, team, des);
 check("designated names link to team members", row(withDes, "sqf_practitioner_primary").holders, [G]);
-check("primary covered by the substitute", names(row(withDes, "sqf_practitioner_primary").cover.people), ["Diana Samboni"]);
-check("senior management covered by the practitioner - unless it is the same person",
-  [row(withDes, "senior_site_management").cover.people, row(withDes, "senior_site_management").cover.via], [[], "No cover"]);
+check("primary covered by the substitute", cov(withDes, "sqf_practitioner_primary", "g"), [["Diana Samboni"], "SQF Practitioner (substitute)"]);
+check("senior management is not covered by itself as practitioner", cov(withDes, "senior_site_management", "g"),
+  [[], "No cover", "SQF Practitioner (primary) is held by the same person, so it is not a cover."]);
 check("a designated name with no account is still shown", row(T.resolvePositions(held, team, { ...des, substitute: "Someone Else" }), "sqf_practitioner_substitute").holders,
   [{ id: null, name: "Someone Else" }]);
 
@@ -81,21 +84,25 @@ const held2 = [
   { user_id: "g", position: "senior_site_management" },
   { user_id: "d", position: "production_supervisor" },
   { user_id: "d", position: "receiving" },
-  { user_id: "r", position: "production_operator" },
-  { user_id: "d", position: "production_operator" },
 ];
 const up = T.resolvePositions(held2, team, null);
-check("receiving held by the supervisor passes up to senior management",
-  [names(up.find((r) => r.def.key === "receiving").cover.people), up.find((r) => r.def.key === "receiving").cover.via,
-   up.find((r) => r.def.key === "receiving").cover.problem],
+check("receiving held by the supervisor passes up to senior management", cov(up, "receiving", "d"),
   [["Gabriela Juncos-Mercer"], "Passed up to Senior Site Management", "Production Supervisor is held by the same person, so it is not a cover."]);
-check("two operators cover each other",
-  [names(row(up, "production_operator").cover.people), row(up, "production_operator").cover.via], [["Diana Samboni", "Richard Mercer"], "Each other"]);
-const ops = T.resolvePositions([{ user_id: "r", position: "production_operator" }, { user_id: "d", position: "production_operator" },
-  { user_id: "g", position: "production_supervisor" }], team, null);
-check("the other operator comes before the supervisor", row(ops, "production_operator").cover.via, "Each other");
-check("nobody in a position, nobody to cover", row(T.resolvePositions([], team, null), "receiving").cover, { people: [], via: "Vacant" });
-check("a vacant primary practitioner gets no cover", row(now, "sqf_practitioner_primary").cover.via, "Vacant");
+check("nobody in a position, nobody to cover", row(T.resolvePositions([], team, null), "receiving").cover, { byHolder: [], vacant: true });
+
+// ---- shared positions (the site as entered on 2026-10-17: several people hold the same positions)
+const shared = ["production_operator", "production_supervisor", "receiving"].flatMap((p) => ["d", "g", "r"].map((u) => ({ user_id: u, position: p })))
+  .concat([{ user_id: "g", position: "senior_site_management" }, { user_id: "r", position: "senior_site_management" }]);
+const sh = T.resolvePositions(shared, team, null);
+check("co-holders cover each other, not 'no cover'", cov(sh, "receiving", "d"), [["Gabriela Juncos-Mercer", "Richard Mercer"], "Also holds this position"]);
+check("operators cover each other", cov(sh, "production_operator", "g"), [["Diana Samboni", "Richard Mercer"], "Also holds this position"]);
+check("two in senior management cover each other", cov(sh, "senior_site_management", "r"), [["Gabriela Juncos-Mercer"], "Also holds this position"]);
+check("stands in for: names the person and the position", T.standsInFor(sh, D).map((x) => [x.def.key, names(x.for)]),
+  [["production_supervisor", ["Gabriela Juncos-Mercer", "Richard Mercer"]], ["production_operator", ["Gabriela Juncos-Mercer", "Richard Mercer"]],
+   ["receiving", ["Gabriela Juncos-Mercer", "Richard Mercer"]]]);
+check("when away: who steps in for each position held", T.coverWhenAway(sh, D).map((x) => [x.def.key, names(x.cover.people)]),
+  [["production_supervisor", ["Gabriela Juncos-Mercer", "Richard Mercer"]], ["production_operator", ["Gabriela Juncos-Mercer", "Richard Mercer"]],
+   ["receiving", ["Gabriela Juncos-Mercer", "Richard Mercer"]]]);
 check("positionsOf lists a person's positions", T.positionsOf(withDes, G).map((p) => p.key),
   ["senior_site_management", "sqf_practitioner_primary", "production_supervisor", "maintenance"]);
 
