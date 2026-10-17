@@ -9,7 +9,7 @@
 // nothing else - so the person signing cannot alter the record they are putting their name to, and
 // nobody can tick the line on their behalf. Everything shown here reads the SAVED entry.
 
-import { useEffect, useState } from "react";
+import { createContext, useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Loader2, PenLine } from "lucide-react";
 import { toast } from "sonner";
@@ -38,26 +38,50 @@ interface RequestedSignaturesProps {
   dirty: boolean;
   /** A signature was written to the entry; the page reloads it. */
   onSigned: () => void;
+  /** The open requests, shared with the lines in the form (useFieldSignRequests). */
+  signRequests: FieldSignRequests;
 }
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
-export function RequestedSignatures({ schema, responseId, data, me, canEdit, dirty, onSigned }: RequestedSignaturesProps) {
+/** The open requests for an entry's `signedBy` lines, keyed by field id. Loaded once by the page. */
+export interface FieldSignRequests {
+  requests: Record<string, AppNotification>;
+  refresh: () => Promise<void>;
+}
+
+export function useFieldSignRequests(responseId: string | undefined, wanted: boolean): FieldSignRequests {
+  const [requests, setRequests] = useState<Record<string, AppNotification>>({});
+  const refresh = useCallback(async () => {
+    if (!responseId) return;
+    try { setRequests(await openFieldSignatureRequests(responseId)); }
+    catch { /* The blocks fall back to "not asked yet". */ }
+  }, [responseId]);
+  useEffect(() => { if (wanted) void refresh(); }, [wanted, refresh]);
+  return { requests, refresh };
+}
+
+/**
+ * Lets the line in the form itself (SignatureFieldInput) offer "Sign as ..." to the person an open
+ * request is addressed to - before this, they saw a greyed box and had to find the block below the
+ * form (owner, 2026-10-17). Null outside an entry page.
+ */
+export const FieldSignContext = createContext<{
+  forMe: (fieldId: string) => boolean;
+  sign: (fieldId: string) => Promise<void>;
+  name: string;
+} | null>(null);
+
+export function RequestedSignatures({ schema, responseId, data, me, canEdit, dirty, onSigned, signRequests }: RequestedSignaturesProps) {
   const fields = requestedSignatureFields(schema)
     .filter(f => !(data[f.id] as SignatureValue | null | undefined)?.name);
-  const [requests, setRequests] = useState<Record<string, AppNotification>>({});
+  const { requests, refresh } = signRequests;
   const [people, setPeople] = useState<Signatory[]>([]);
   const wanted = fields.length > 0;
 
-  const refresh = async () => {
-    try { setRequests(await openFieldSignatureRequests(responseId)); }
-    catch { /* The blocks fall back to "not asked yet". */ }
-  };
   useEffect(() => {
     if (!wanted) return;
-    void refresh();
     fetchTeamSigners().then(setPeople).catch(() => toast.error("Could not load the team list"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [responseId, wanted]);
 
   if (!wanted) return null;

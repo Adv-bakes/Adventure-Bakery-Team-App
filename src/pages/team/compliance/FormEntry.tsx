@@ -68,11 +68,11 @@ import {
 } from "@/components/ui/select";
 import {
   fetchSignatories, openSignatureRequest, requestSignature, resolveSignatureRequest,
-  withdrawFieldSignatureRequests,
+  signRequestedField, withdrawFieldSignatureRequests,
   type AppNotification, type Signatory,
 } from "@/lib/notifications";
-import { RequestedSignatures } from "@/components/team/forms/RequestedSignatures";
-import { unsignedVerifierFields } from "@/lib/formSchema";
+import { FieldSignContext, RequestedSignatures, useFieldSignRequests } from "@/components/team/forms/RequestedSignatures";
+import { requestedSignatureFields, unsignedVerifierFields } from "@/lib/formSchema";
 import { useBottomBarClearance } from "@/hooks/useBottomBarClearance";
 import { WarningList } from "@/components/team/voice/VoiceCommandPanel";
 
@@ -265,6 +265,20 @@ export default function FormEntry() {
     [signer?.name],
   );
   const canEdit = !isSubmitted && (isMine || isAdmin);
+
+  // Open requests for lines a named person signs (FRM-952, FRM-005): one load, shared by the block
+  // under the form and by the lines in it, so the person asked can sign where the line is.
+  const signRequests = useFieldSignRequests(
+    response?.id,
+    !!schema && !isSubmitted && requestedSignatureFields(schema).length > 0,
+  );
+  const fieldSign = useMemo(() => signer && response ? {
+    name: signer.name,
+    forMe: (fieldId: string) => signRequests.requests[fieldId]?.assigned_to === signer.userId,
+    sign: async (fieldId: string) => { await signRequestedField(response.id, fieldId); await load(); },
+  } : null,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [signer, response?.id, signRequests.requests]);
 
   // Section 3 of a CCP record (FRM-507, FRM-606) is worked out from the loads or checks on the
   // record itself and kept in step as they change - see ccpDeviations.ts. What was DONE about a
@@ -1084,6 +1098,7 @@ export default function FormEntry() {
 
       {/* The form itself */}
       <DocSelfContext.Provider value={docId ?? null}>
+      <FieldSignContext.Provider value={fieldSign}>
         <FormRenderer
           schema={schema}
           form={form}
@@ -1132,6 +1147,7 @@ export default function FormEntry() {
             ],
           } : undefined}
         />
+      </FieldSignContext.Provider>
       </DocSelfContext.Provider>
 
       {/* Lines signed by a person named on the record, from their own log-in (FRM-952). */}
@@ -1144,6 +1160,7 @@ export default function FormEntry() {
           canEdit={canEdit}
           dirty={isDirty}
           onSigned={load}
+          signRequests={signRequests}
         />
       )}
 

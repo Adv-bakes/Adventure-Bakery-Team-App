@@ -1,4 +1,8 @@
+import { useContext, useState } from "react";
 import { DocRefText } from "./DocRefText";
+import { FieldSignContext } from "./RequestedSignatures";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { PenLine } from "lucide-react";
@@ -95,6 +99,11 @@ function StampSignature({ field, value, onChange, disabled, isAdmin, signer }: S
   const onRequest = !!field.signedBy;
   const canSign = !disabled && !!signer && !onRequest && (!isVerifier || isAdmin);
   const signed = !!value?.name;
+  // ...but the person it was asked of signs it right here. The server writes the answer, so this
+  // works even where the viewer cannot otherwise edit the entry.
+  const asks = useContext(FieldSignContext);
+  const mine = onRequest && !signed && !!asks?.forMe(field.id);
+  const [signing, setSigning] = useState(false);
 
   const toggle = (checked: boolean) => {
     if (!signer) return;
@@ -121,6 +130,19 @@ function StampSignature({ field, value, onChange, disabled, isAdmin, signer }: S
         {isVerifier && <span className="font-normal text-[#2A1F0E]/65">(verified by — admin only)</span>}
       </div>
       {field.statement && <p className="text-xs text-[#2A1F0E]/85"><DocRefText text={field.statement} /></p>}
+      {mine ? (
+        <Button
+          type="button" size="sm" disabled={signing}
+          onClick={async () => {
+            setSigning(true);
+            try { await asks!.sign(field.id); toast.success("Signed"); }
+            catch (e: any) { toast.error(e.message ?? "That did not go through"); }
+            finally { setSigning(false); }
+          }}
+        >
+          {signing ? "Signing…" : `Sign as ${asks!.name}`}
+        </Button>
+      ) : (
       <div className="flex items-center gap-2">
         <Checkbox
           id={`sig-${field.id}`}
@@ -138,6 +160,7 @@ function StampSignature({ field, value, onChange, disabled, isAdmin, signer }: S
               : `Sign as ${signer?.name ?? "…"}`}
         </label>
       </div>
+      )}
     </div>
   );
 }
