@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ASSIGNABLE_POSITIONS, type PositionKey } from "@/lib/positions";
+import { ASSIGNABLE_POSITIONS, type PositionKey, coverWhenAway, standsInFor } from "@/lib/positions";
 import { type PositionsData, loadPositions, setPositionHolder } from "@/lib/positionsLoad";
 
 export default function MemberPositionsCard({ userId, isTeamMember }: { userId: string; isTeamMember: boolean }) {
@@ -29,7 +29,16 @@ export default function MemberPositionsCard({ userId, isTeamMember }: { userId: 
   const me = data.team.find((p) => p.id === userId) ?? null;
   const holds = (key: PositionKey) => data.rows.some((r) => r.def.key === key && r.holders.some((h) => h.id === userId));
   const designated = data.rows.filter((r) => r.def.fromDesignation && r.holders.some((h) => h.id === userId));
-  const covers = data.rows.filter((r) => r.cover?.people.some((p) => p.id === userId));
+  const away = me ? coverWhenAway(data.rows, me) : [];
+  const standsIn = me ? standsInFor(data.rows, me) : [];
+  const first = (n: string) => n.split(" ")[0];
+  // "Gabriela and Richard as Production Supervisor and Receiving / Goods-In": grouped by the people.
+  const groups = new Map<string, string[]>();
+  for (const x of standsIn) {
+    const who = x.for.map((p) => first(p.name)).join(" and ");
+    groups.set(who, [...(groups.get(who) ?? []), x.def.name]);
+  }
+  const standsInText = [...groups].map(([who, names]) => `${who}, as ${names.join(", ")}`).join("; ");
 
   const toggle = async (key: PositionKey, next: boolean) => {
     setBusy(key);
@@ -82,9 +91,30 @@ export default function MemberPositionsCard({ userId, isTeamMember }: { userId: 
               ? designated.map((r) => r.def.fromDesignation).join(" and ") + " (FRM-005)"
               : "not designated (FRM-005)"}
           </p>
+        </div>
+
+        {away.length > 0 && (
+          <div className="text-sm">
+            <p className="text-muted-foreground">When {me ? first(me.name) : "this person"} is away:</p>
+            <ul className="mt-1 space-y-0.5">
+              {away.map(({ def, cover }) => (
+                <li key={def.key}>
+                  <span className="font-medium">{def.name}</span>
+                  {" - "}
+                  {!cover ? <span className="text-muted-foreground">no cover named in FSQM-004</span>
+                    : cover.contracted ? cover.contracted
+                    : cover.people.length ? cover.people.map((p) => p.name).join(" or ")
+                    : <span className="text-red-700 font-medium">nobody covers{cover.problem ? `: ${cover.problem}` : ""}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="text-sm space-y-1">
           <p>
-            <span className="text-muted-foreground">Covers: </span>
-            {covers.length ? covers.map((r) => r.def.name).join(", ") : "nothing"}
+            <span className="text-muted-foreground">Stands in for: </span>
+            {standsIn.length ? standsInText : "nobody"}
           </p>
           <p className="text-xs text-muted-foreground">
             The full list is on the{" "}

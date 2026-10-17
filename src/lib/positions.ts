@@ -121,15 +121,24 @@ function personByName(name: string, team: Person[]): Person | null {
   return hits.length === 1 ? hits[0] : { id: null, name };
 }
 
-export interface ResolvedCover {
-  /** Who would step in; empty when nobody can. */
+/** Who steps in when one holder is away. */
+export interface HolderCover {
+  holder: Person;
+  /** Who would step in; empty when nobody can (or when a contractor does). */
   people: Person[];
-  /** How the cover was reached: "Production Supervisor", "passed up to Senior Site Management", ... */
+  /** How: "Also holds this position", "Production Supervisor", "Passed up to Senior Site Management", ... */
   via: string;
   /** The contractor named, for maintenance. */
   contracted?: string;
-  /** Set when the named cover is the holder themselves or is not held, so the rule passed upward. */
+  /** Why the named cover could not be used, when the rule had to pass upward. */
   problem?: string;
+}
+
+export interface ResolvedCover {
+  /** One line per holder of the position. Empty when the position is vacant. */
+  byHolder: HolderCover[];
+  /** True when nobody holds the position, so there is nobody to stand in for. */
+  vacant: boolean;
 }
 
 export interface PositionRow {
@@ -139,17 +148,16 @@ export interface PositionRow {
   cover: ResolvedCover | null;
 }
 
-const sameSet = (a: Person[], b: Person[]) => a.length > 0 && a.every((p) => b.some((q) => samePerson(p, q)));
 const samePerson = (a: Person, b: Person) => (a.id && b.id ? a.id === b.id : fold(a.name) === fold(b.name));
-const minus = (a: Person[], b: Person[]) => a.filter((p) => !b.some((q) => samePerson(p, q)));
+const without = (a: Person[], p: Person) => a.filter((q) => !samePerson(p, q));
 
 /**
- * Every position with its holders and its cover resolved to people.
+ * Every position with its holders, and for each holder, who steps in while they are away.
  *
- * A person never covers themselves: the cover is the cover position's holders minus this
- * position's holders. When that leaves nobody, the next step is tried, and in the end FSQM-004's
- * rule applies - "where a position's cover is itself absent, the responsibility passes upward to
- * Senior Site Management". If even that resolves to the holder, the position has no cover.
+ * Worked out per holder, because one position is often held by several people here: first another
+ * holder of the same position (they already do the work - FSQM-004's "the other operator"), then
+ * the cover FSQM-004 names, then - FSQM-004's own rule - "the responsibility passes upward to
+ * Senior Site Management". Nobody ever covers themselves. A vacant position has nobody to cover.
  */
 export function resolvePositions(
   held: { user_id: string; position: string }[],
@@ -166,34 +174,46 @@ export function resolvePositions(
       .sort((a, b) => a.name.localeCompare(b.name));
   };
 
+  const coverFor = (def: PositionDef, holders: Person[], h: Person): HolderCover => {
+    const sharing = without(holders, h);
+    if (sharing.length) return { holder: h, people: sharing, via: "Also holds this position" };
+    for (const step of def.cover) {
+      if (step.kind === "contracted") return { holder: h, people: [], via: "Contracted", contracted: step.label };
+      if (step.kind === "same") continue; // already tried above
+      const people = without(holdersOf(step.key), h);
+      if (people.length) return { holder: h, people, via: positionName(step.key) };
+    }
+    const first = def.cover.find((s) => s.kind === "position") as { kind: "position"; key: PositionKey } | undefined;
+    const named = first ? positionName(first.key) : "the named cover";
+    const problem = first && holdersOf(first.key).length === 0
+      ? `Nobody holds ${named}.`
+      : `${named} is held by the same person, so it is not a cover.`;
+    if (def.key !== "senior_site_management") {
+      const up = without(holdersOf("senior_site_management"), h);
+      if (up.length) return { holder: h, people: up, via: "Passed up to Senior Site Management", problem };
+    }
+    return { holder: h, people: [], via: "No cover", problem };
+  };
+
   return POSITIONS.map((def) => {
     const holders = holdersOf(def.key);
     if (def.cover.length === 0) return { def, holders, cover: null };
-    // A cover stands in for a holder; with nobody in the position there is nobody to stand in for.
-    if (holders.length === 0 && def.cover[0].kind !== "contracted") return { def, holders, cover: { people: [], via: "Vacant" } };
-
-    for (const step of def.cover) {
-      if (step.kind === "contracted") return { def, holders, cover: { people: [], via: "Contracted", contracted: step.label } };
-      // Two operators cover each other; a lone holder cannot be "the other" one.
-      const people = step.kind === "same" ? (holders.length > 1 ? holders : []) : minus(holdersOf(step.key), holders);
-      const via = step.kind === "same" ? "Each other" : positionName(step.key);
-      if (people.length) return { def, holders, cover: { people, via } };
-    }
-
-    const first = def.cover.find((s) => s.kind === "position") as { kind: "position"; key: PositionKey } | undefined;
-    const named = first ? positionName(first.key) : "the named cover";
-    const namedHolders = first ? holdersOf(first.key) : [];
-    const problem = namedHolders.length === 0
-      ? `Nobody holds ${named}.`
-      : sameSet(namedHolders, holders)
-        ? `${named} is held by the same person, so it is not a cover.`
-        : `${named} cannot cover.`;
-    if (def.key !== "senior_site_management") {
-      const up = minus(holdersOf("senior_site_management"), holders);
-      if (up.length) return { def, holders, cover: { people: up, via: "Passed up to Senior Site Management", problem } };
-    }
-    return { def, holders, cover: { people: [], via: "No cover", problem } };
+    return { def, holders, cover: { byHolder: holders.map((h) => coverFor(def, holders, h)), vacant: holders.length === 0 } };
   });
+}
+
+/** The positions a person stands in for, and for whom. */
+export function standsInFor(rows: PositionRow[], person: Person): { def: PositionDef; for: Person[] }[] {
+  return rows
+    .map((r) => ({ def: r.def, for: (r.cover?.byHolder ?? []).filter((c) => c.people.some((p) => samePerson(p, person))).map((c) => c.holder) }))
+    .filter((x) => x.for.length > 0);
+}
+
+/** For each position a person holds, who steps in while they are away. */
+export function coverWhenAway(rows: PositionRow[], person: Person): { def: PositionDef; cover: HolderCover | null }[] {
+  return rows
+    .filter((r) => r.holders.some((h) => samePerson(h, person)))
+    .map((r) => ({ def: r.def, cover: r.cover?.byHolder.find((c) => samePerson(c.holder, person)) ?? null }));
 }
 
 /** Positions a person holds, the practitioner designations included. */

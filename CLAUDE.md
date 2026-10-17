@@ -793,10 +793,12 @@ Who holds each one is kept beside it (owner, 2026-10-17, migration `202610170000
   target must have a staff/admin/owner role). Read: `is_staff_or_admin` or `is_compliance_viewer`.
 - **The two SQF Practitioner positions are not in the table**: their holders are the names on the
   newest SUBMITTED FRM-005 (`designationFrom`), matched to a team member by name. A draft designates nobody.
-- **`POSITIONS`** copies FSQM-004's positions and cover rules. `resolvePositions` turns a cover into
-  people: the cover position's holders minus this position's holders (nobody covers themselves); two
-  operators cover each other; otherwise, by FSQM-004's own rule, the cover passes up to Senior Site
-  Management; a vacant position has nobody to cover. `checkPositionsAgainstFsqm004` compares the rules
+- **`POSITIONS`** copies FSQM-004's positions and cover rules. `resolvePositions` works the cover out
+  **per holder** (`byHolder`), because here one position is usually held by several people (the first
+  per-position version showed "No cover" for Receiving when all three held it and the supervisor
+  position): first another holder of the same position, then the cover FSQM-004 names, then - its
+  own rule - Senior Site Management; nobody covers themselves; a vacant position has nobody to cover.
+  `coverWhenAway` / `standsInFor` give the member card's "When X is away" and "Stands in for". `checkPositionsAgainstFsqm004` compares the rules
   with the document's wording and the card lists any mismatch - **revise `POSITIONS` when FSQM-004's
   positions or covers change.** Tested by `scripts/test-positions.mjs`.
 - **Surfaces:** `PositionsCoverCard` on the Team Directory (Position / Held by / Covered by, read-only)
