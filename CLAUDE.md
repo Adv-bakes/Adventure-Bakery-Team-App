@@ -1347,7 +1347,11 @@ withdraw instead. The request lands in that person's feed with the note and a de
   its next save raises `StaleResponseError` - which is what stops it overwriting the signature. Set by
   migration; the builder has no control for it. Also on **FRM-005**'s Primary / Substitute SQF
   Practitioner acknowledgements (owner, 2026-10-17, migration `20261017000006`; both made required,
-  so a designation cannot be submitted until both have accepted it). Wrappers in `notifications.ts`
+  so a designation cannot be submitted until both have accepted it). **The person asked signs on the
+  line itself**: `FormEntry` loads the open requests once (`useFieldSignRequests`) and shares them
+  with the block under the form and, through `FieldSignContext`, with `SignatureFieldInput`, which
+  shows "Sign as <name>" in place of the greyed box (owner, 2026-10-17 - Gabriela saw a disabled box
+  and missed the button below the form). Wrappers in `notifications.ts`
   (`requestFieldSignature`, `signRequestedField`, `withdrawFieldSignatureRequests`,
   `openFieldSignatureRequests`, `fetchTeamSigners`).
 - ⚠️ Every `SECURITY DEFINER` function in `public` is executable by `anon` — a Supabase
