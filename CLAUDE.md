@@ -275,6 +275,15 @@ Unmapped numbers fall back to plain text. Both generators key physical==printed 
   `2.4.8.1, .2, .3`; anything else that is not a clause of the Code is listed under "References that
   match no clause" rather than dropped. It shows what a document CLAIMS to cover - the internal audit
   tests the claim. Filter chips, search, CSV download.
+  **Not applicable** (owner, 2026-10-17, migration `20261017000001`): a clause the site does not engage
+  is declared by the document that says why, in `content.not_applicable` (`[{clause, reason}]`) -
+  **never in `sqf_reference`**, which would make that document claim to control what it rules out
+  (FSQM-036's issue migration enforces this). With no citation and an ISSUED declaration the clause
+  shows a grey "Not applicable" pill with the reason and the document; a draft's declaration is shown
+  but not counted; a citation always wins and the disagreement is listed under "Declared not
+  applicable, but cited". A declaration covers the clauses under it, like a citation. Set by
+  migration (no drawer control), no revision. First uses: FSQM-014 for 2.4.4.3 / 2.4.4.4 (no on-site
+  laboratory), FSQM-036 for 11.6.5.5 to .7 (ships ambient).
 - **Legacy IDs:** `sop_documents.legacy_sop_number` (migration `20260708000001…`) preserves the pre-convention number when a row is renumbered. Renumbering existing live rows is a reviewed data migration (crosswalk → id-keyed UPDATEs). Full runbook + stage table in **`DOCUMENT_REGISTER.md`**.
 
 ---
