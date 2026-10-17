@@ -1345,7 +1345,9 @@ withdraw instead. The request lands in that person's feed with the note and a de
   `{fieldId}` from the saved entry; the person asking can change it) - FRM-952 names the training.
   After the person signs, the filler's open page is stale and
   its next save raises `StaleResponseError` - which is what stops it overwriting the signature. Set by
-  migration; the builder has no control for it. Wrappers in `notifications.ts`
+  migration; the builder has no control for it. Also on **FRM-005**'s Primary / Substitute SQF
+  Practitioner acknowledgements (owner, 2026-10-17, migration `20261017000006`; both made required,
+  so a designation cannot be submitted until both have accepted it). Wrappers in `notifications.ts`
   (`requestFieldSignature`, `signRequestedField`, `withdrawFieldSignatureRequests`,
   `openFieldSignatureRequests`, `fetchTeamSigners`).
 - ⚠️ Every `SECURITY DEFINER` function in `public` is executable by `anon` — a Supabase
