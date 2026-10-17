@@ -9,7 +9,7 @@ import { AlertTriangle, Network } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { HolderCover, Person, PositionRow } from "@/lib/positions";
+import { NONE_NAMED, type HolderCover, type Person, type PositionRow } from "@/lib/positions";
 import { type PositionsData, loadPositions } from "@/lib/positionsLoad";
 
 function PersonName({ p, linkable }: { p: Person; linkable: boolean }) {
@@ -39,7 +39,8 @@ export default function PositionsCoverCard({ canEdit }: { canEdit: boolean }) {
 
   const coverLine = (c: HolderCover) => (
     <>
-      {c.contracted ? <span>{c.contracted}</span>
+      {c.via === NONE_NAMED ? <span className="text-muted-foreground">{NONE_NAMED}</span>
+        : c.contracted ? <span>{c.contracted}</span>
         : c.people.length ? <People people={c.people} linkable={canEdit} />
         : <span className="text-red-700 font-medium">No cover</span>}
       {c.people.length > 0 && <span className="text-xs text-muted-foreground"> ({c.via.toLowerCase()})</span>}
