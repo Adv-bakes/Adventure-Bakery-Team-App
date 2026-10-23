@@ -340,7 +340,7 @@ export function useBakeLoad({ doc, lot, product, today, state, lang, onSaved, ba
             key={o} type="button" size="sm" variant="outline" onClick={() => setChoice(o)} aria-pressed={choice === o}
             className={choice === o ? "border-emerald-600 bg-emerald-50 text-emerald-800" : ""}
           >
-            {o === "none" ? M.lastNone : o === "batch" ? M.lastBatch : M.lastLot}
+            {o === "none" ? M.lastNone : o === "batch" ? M.lastBatch(product) : M.lastLot}
           </Button>
         ))}
       </div>
@@ -386,7 +386,7 @@ export function useBakeLoad({ doc, lot, product, today, state, lang, onSaved, ba
                       </dl>
                     </>
                   ) : (
-                    <p className="font-medium text-emerald-700">{M.markOnly(LAST_LOAD_VALUES[pending.last as LastLoad])}</p>
+                    <p className="font-medium text-emerald-700">{M.markOnly(pending.last === "batch" ? M.lastBatch(product) : M.lastLot)}</p>
                   )}
                   {pending.last && <p className="text-xs opacity-80">{pending.last === "batch" ? M.lastBatchHelp : M.lastLotHelp}</p>}
                   {pending.last === "lot" && reviewerSelect}

@@ -361,7 +361,7 @@ export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, b
       <div className="flex flex-wrap gap-2">
         {options.map(o => (
           <Button key={o} type="button" size="sm" variant="outline" onClick={() => setChoice(o)} aria-pressed={choice === o} className={choice === o ? pressed : ""}>
-            {o === "none" ? S.lastNone : o === "batch" ? S.lastBatch : S.lastLot}
+            {o === "none" ? S.lastNone : o === "batch" ? S.lastBatch(product) : S.lastLot}
           </Button>
         ))}
       </div>
@@ -423,7 +423,7 @@ export function useSealCheck({ doc, lot, product, today, state, lang, onSaved, b
                       </dl>
                     </>
                   ) : (
-                    <p className="font-medium text-emerald-700">{S.markOnly(SEAL_LAST_VALUES[pending.last as LastLoad])}</p>
+                    <p className="font-medium text-emerald-700">{S.markOnly(pending.last === "batch" ? S.lastBatch(product) : S.lastLot)}</p>
                   )}
                   {pending.last && <p className="text-xs opacity-80">{pending.last === "batch" ? S.lastBatchHelp : S.lastLotHelp}</p>}
                   {pending.last === "lot" && reviewerSelect}
