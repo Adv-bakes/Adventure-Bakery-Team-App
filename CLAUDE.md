@@ -1491,7 +1491,10 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
   change both together; `scripts/test-batch-weights.mjs` holds the cases both were run on. A cell
   typed by hand that is not that format is never merged into (`lineWeightsReadable`; the function
   refuses too). Each weight box **saves as soon as it is entered** (blur / Enter / "Use"), queued one
-  after another; "Save and next" saves the lot and anything left, then moves on. Back and Skip for
+  after another, and so does **the lot** (picked from the list or the box left - owner, 2026-10-23: a
+  lot typed and then left with Skip was lost while the weights were kept). The lot is ONE per line - every
+  batch on the line came from that container; another container is a line of its own. "Save and next"
+  saves anything left, then moves on. Back and Skip for
   now move without saving, and the rework screen says how many screens were skipped. A number of
   batches lowered after weighing leaves the extra weights on the record and says so
   (`weightsPastBatches`). FRM-530 keeps its one `actual_qty` column (`MixSpec.weights: "single"`).
