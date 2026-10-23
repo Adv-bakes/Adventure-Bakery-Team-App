@@ -800,7 +800,14 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
                   }}
                   className="h-11 w-28 bg-white text-lg" />
                 {sending.has(batch) ? <Loader2 className="w-4 h-4 animate-spin text-[#C89B3C]" />
-                  : savedHere ? <span className="flex items-center gap-1 text-xs font-medium text-emerald-800"><Check className="w-4 h-4" />{X.saved}</span>
+                  : savedHere ? (
+                    // The lot this batch is recorded against - the line's own (one per container). Shown,
+                    // not hovered: the floor uses tablets. A line with no lot says so in amber.
+                    <span className="flex flex-col text-xs font-medium leading-tight" title={s.lot ? X.batchLot(s.lot) : X.noLotYet}>
+                      <span className="flex items-center gap-1 text-emerald-800"><Check className="w-4 h-4" />{X.saved}</span>
+                      {s.lot ? <span className="opacity-75">{X.batchLot(s.lot)}</span> : <span className="text-amber-700">{X.noLotYet}</span>}
+                    </span>
+                  )
                   : value.trim() === "" && s.elsewhere[i] ? <span className="text-xs font-medium opacity-80">{X.fromLot(s.elsewhere[i])}</span>
                   : s.needsWeight && value.trim() === "" && (
                     <button type="button" disabled={busy} onClick={() => {
