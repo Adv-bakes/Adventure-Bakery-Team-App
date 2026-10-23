@@ -1493,7 +1493,17 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
   refuses too). Each weight box **saves as soon as it is entered** (blur / Enter / "Use"), queued one
   after another, and so does **the lot** (picked from the list or the box left - owner, 2026-10-23: a
   lot typed and then left with Skip was lost while the weights were kept). The lot is ONE per line - every
-  batch on the line came from that container; another container is a line of its own. "Save and next"
+  batch on the line came from that container. **Another container (new lot)** (owner, 2026-10-23) adds a
+  line of the same ingredient and brand at the END of the table (`addMixContainer`; no other line moves)
+  and the screen moves to it, walked straight after its ingredient (`mixLines` groups the lines of an
+  ingredient); its batches are weighed on it. **Lines of one ingredient count together**: a batch weighed
+  on one shows "From lot X" on the other (`MixScreen.elsewhere`), and the ingredient is complete when
+  every line has its lot and every batch is weighed on one of them (`mixProgress` counts ingredients, not
+  lines). **Typing a new lot over a saved one asks first** - Replace (a mistake corrected), It is another
+  container (the typed lot goes on a new line), or Keep - because it would re-label every batch already
+  weighed. An empty line added last can be taken back (`removeMixLine`). Both go through
+  `write_mix_entry` (`add_container` / `remove_line`, migration `20261023000003`, same rules) so a second
+  person can do it on someone else's record; before that is pushed, the ordinary save. "Save and next"
   saves anything left, then moves on. Back and Skip for
   now move without saving, and the rework screen says how many screens were skipped. A number of
   batches lowered after weighing leaves the extra weights on the record and says so

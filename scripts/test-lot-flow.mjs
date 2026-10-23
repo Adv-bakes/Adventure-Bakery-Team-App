@@ -305,6 +305,34 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
   check("no lines: nowhere to open, but no error", F.nextMixScreen({}, B), 0);
 }
 
+// ---- another container of an ingredient (owner, 2026-10-23)
+{
+  const d = { batches: 4, rework: "No rework used", ingredients: [row("Eggs", 13.49, "L1", 13.5, 13.4), row("Sugar", 12, "S1", 12, 12, 12, 12)] };
+  const eggs = { index: 0, ingredient: "Eggs", brand: "" };
+  const added = F.addMixContainer(d, eggs);
+  check("a new line at the end, same ingredient, lot and weights blank", [added.index, added.values.ingredients[2].ingredient, added.values.ingredients[2].supplier_lot, added.values.ingredients[2].weighed_batches, added.values.ingredients[2].expected_qty],
+    [2, "Eggs", "", "", 13.49]);
+  check("...no other line moves", added.values.ingredients.slice(0, 2), d.ingredients);
+  const order = v => F.mixScreens(v).filter(x => x.kind === "ingredient").map(x => [x.index, x.container, x.containers]);
+  check("...and it is walked straight after its ingredient", order(added.values), [[0, 1, 2], [2, 2, 2], [1, 1, 1]]);
+  const v2 = F.applyMixEntry(F.applyMixEntry(F.applyMixEntry(added.values, { index: 2, ingredient: "Eggs", brand: "" }, { lot: "L2", batch: 3, weight: 13.6 }),
+    { index: 2, ingredient: "Eggs", brand: "" }, { batch: 4, weight: 13.5 }), eggs, {});
+  const scr = F.mixScreens(v2).filter(x => x.kind === "ingredient");
+  check("batches weighed from the other container are named on each line", [scr[0].elsewhere, scr[1].elsewhere], [["", "", "L2", "L2"], ["L1", "L1", "", ""]]);
+  check("...so both lines are answered", scr.slice(0, 2).map(x => F.mixScreenDone(v2, x)), [true, true]);
+  check("the ingredient counts once, complete across its containers", F.mixProgress(v2), { state: "done", lines: 2, linesDone: 2, batches: 4 });
+  check("the second container without its lot leaves the ingredient open",
+    F.mixProgress(F.applyMixEntry(added.values, { index: 2, ingredient: "Eggs", brand: "" }, { batch: 3, weight: 13.6 })).linesDone, 1);
+  check("an empty line added last can be taken back", F.removeMixLine(added.values, { index: 2, ingredient: "Eggs", brand: "" }).ingredients.length, 2);
+  check("...not once it has a lot or a weight", F.removeMixLine(v2, { index: 2, ingredient: "Eggs", brand: "" }), null);
+  check("...nor the only line of an ingredient", F.removeMixLine(d, { index: 1, ingredient: "Sugar", brand: "" }), null);
+  check("...nor a line that is not last", F.removeMixLine({ ...added.values, ingredients: [...added.values.ingredients, row("Flour", 1)] }, { index: 2, ingredient: "Eggs", brand: "" }), null);
+  check("the screen offers taking back only that line", F.mixScreens(added.values).filter(x => x.kind === "ingredient").map(x => x.removable), [false, true, false]);
+  check("a tablet that chose the ingredient walks its new container too",
+    F.mixScreens(added.values, F.LOT_SPEC, [eggs]).filter(x => x.kind === "ingredient").map(x => x.index), [0, 2]);
+  check("a dunking line gets no mixing container", F.addMixContainer({ ingredients: [{ ...row("Rum", ""), _stage: "dunking" }] }, { index: 0, ingredient: "Rum", brand: "" }), null);
+}
+
 // ---- several people weighing one lot, split by ingredient (owner, 2026-10-23)
 {
   const d = { batches: 3, rework: "", ingredients: [row("Eggs", 17.49, "L1", 17.5, 17.5, 17.5), row("Flour", 12), row("Sugar", 12, "L2", 12), row("Spray", "")] };
