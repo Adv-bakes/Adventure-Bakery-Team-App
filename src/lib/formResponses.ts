@@ -289,7 +289,7 @@ export async function saveResponseData(
 export async function writeMixEntry(
   responseId: string,
   line: { index: number; ingredient: string; brand: string } | null,
-  set: Record<string, string | number>,
+  set: Record<string, unknown>,
 ): Promise<{ outcome: "saved"; response: FormResponse } | { outcome: "moved" | "record" | "missing" }> {
   const { data, error } = await (supabase as any).rpc("write_mix_entry", {
     _response_id: responseId,

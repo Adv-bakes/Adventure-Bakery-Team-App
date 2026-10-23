@@ -33,7 +33,11 @@ let n = 0;
 const entry = (data, status = "draft", at = "2026-10-12T12:00:00Z") =>
   ({ id: `e${++n}`, docId: "d", status, createdAt: at, submittedAt: status === "submitted" ? at : null, createdBy: "u1", submittedBy: null, data });
 const TODAY = "2026-10-12";
-const row = (ingredient, expected, lot = "", w1 = "", w2 = "") => ({ ingredient, brand: "", supplier_lot: lot, expected_qty: expected, unit: "lb", actual_qty: w1, actual_qty_2: w2, actual_qty_3: "" });
+/** A lot record line (FRM-520 v3): its weights, batch 1 first, in the "Weighed per batch" cell. */
+const row = (ingredient, expected, lot = "", ...ws) => ({ ingredient, brand: "", supplier_lot: lot, expected_qty: expected, unit: "lb",
+  weighed_batches: ws.map((w, i) => (w === "" ? "" : `B${i + 1}: ${w}`)).filter(Boolean).join("; "), notes: "" });
+/** A made-here batch line (FRM-530): one weight column. */
+const row530 = (ingredient, expected, lot = "", w = "") => ({ ingredient, brand: "", supplier_lot: lot, expected_qty: expected, unit: "lb", actual_qty: w });
 
 // ---- mixing, from the lot record's own answers
 check("nothing entered", F.mixProgress({ ingredients: [row("Flour", 17.49), row("Sugar", 12)] }), { state: "none", lines: 2, linesDone: 0, batches: 0 });
@@ -48,7 +52,9 @@ check("two batches need two weights", F.mixProgress({ batches: 2, rework: "No re
 check("a line with no expected quantity needs only its lot", F.mixProgress({ batches: 1, rework: "No rework used", ingredients: [row("Flour", 17.49, "L1", 17.5), row("Pan spray", "", "L9")] }).state, "done");
 check("...but it does need the lot", F.mixProgress({ batches: 1, rework: "No rework used", ingredients: [row("Flour", 17.49, "L1", 17.5), row("Pan spray", "")] }).linesDone, 1);
 check("a blank line is not an ingredient", F.mixProgress({ batches: 1, rework: "No rework used", ingredients: [row("Flour", 17.49, "L1", 17.5), row("", "")] }).state, "done");
-check("more than three batches is read as three", F.mixProgress({ batches: 5, ingredients: [row("Flour", 1)] }).batches, 3);
+check("any number of batches", F.mixProgress({ batches: 20, ingredients: [row("Flour", 1)] }).batches, 20);
+check("six batches need six weights", F.mixProgress({ batches: 6, rework: "No rework used", ingredients: [row("Eggs", 17.49, "L1", 1, 1, 1, 1, 1), row("Sugar", 12, "L2", 1, 1, 1, 1, 1, 1)] }),
+  { state: "open", lines: 2, linesDone: 1, batches: 6 });
 check("a count that is not a whole number is not answered", F.mixProgress({ batches: "two", ingredients: [row("Flour", 1)] }).batches, 0);
 
 // ---- the steps of a lot
@@ -161,58 +167,67 @@ check("a release step never moves by itself", F.advancesAfter("retention", undef
 const seven = [...five.slice(0, 4), { key: "retention", state: "done" }, five[4], { key: "release", state: "none" }];
 check("the retention sample signed on the page moves on to Sign and submit", [F.advancesAfter("retention", { step: "logged" }, seven), F.stepAfter(seven, "retention"), F.stepAfter(seven, "packing")], [true, "submit", "retention"]);
 
-// ---- mixing, one screen at a time
+// ---- mixing, one screen per ingredient, any number of batches
 {
-  const kinds = d => F.mixScreens(d).map(s => s.kind === "line" ? `${s.batch}:${s.ingredient}` : s.kind);
+  const kinds = (d, only = null) => F.mixScreens(d, F.LOT_SPEC, only).map(s => s.kind === "ingredient" ? s.ingredient : s.kind);
   const rows = [row("Flour", 17.49), row("", ""), row("Pan spray", ""), row("Sugar", 12)];
   check("until the batches are answered there is only that screen", kinds({ ingredients: rows }), ["batches"]);
-  check("batch by batch, then rework; a line not weighed is asked once", kinds({ batches: 2, ingredients: rows }),
-    ["batches", "1:Flour", "1:Pan spray", "1:Sugar", "2:Flour", "2:Sugar", "rework"]);
-  const s = F.mixScreens({ batches: 2, ingredients: rows });
-  check("a line knows its row, blank lines counted", [s[1].index, s[2].index, s[3].index], [0, 2, 3]);
-  check("the first batch asks the lot; the second too while the line has none", [s[1].asksLot, s[4].asksLot], [true, true]);
+  check("one screen per ingredient, then rework", kinds({ batches: 6, ingredients: rows }), ["batches", "Flour", "Pan spray", "Sugar", "rework"]);
+  const s = F.mixScreens({ batches: 6, ingredients: rows });
+  check("a screen knows its row, blank lines counted", [s[1].index, s[2].index, s[3].index], [0, 2, 3]);
+  check("a box for every batch", s[1].weights, ["", "", "", "", "", ""]);
   check("a line with no expected quantity need not be weighed", [s[2].needsWeight, s[1].needsWeight], [false, true]);
   check("...and is answered by its lot alone", F.mixScreenDone({}, { ...s[2], lot: "L9" }), true);
-  check("...but weighed with the first batch, it is asked again with the second",
-    kinds({ batches: 2, ingredients: [row("Flour", 17.49), row("Flavor", "", "L5", 0.4)] }), ["batches", "1:Flour", "1:Flavor", "2:Flour", "2:Flavor", "rework"]);
-  check("an optional weight can be taken off again", F.applyMixEntry({ ingredients: [row("Flavor", "", "L5", 0.4)] }, { index: 0, ingredient: "Flavor", brand: "" }, { batch: 1, weight: "" }).ingredients[0].actual_qty, "");
-  check("position within the batch", [[s[3].position, s[3].of], [s[5].position, s[5].of]], [[3, 3], [2, 2]]);
+  check("position among the ingredients", [[s[1].position, s[1].of], [s[3].position, s[3].of]], [[1, 3], [3, 3]]);
   check("the expected figure and unit come from the line", [s[1].expected, s[1].unit], ["17.49", "lb"]);
+  const w = F.mixScreens({ batches: 3, ingredients: [row("Eggs", 17.49, "L1", 17.5, "", 17.48)] })[1];
+  check("the weights already recorded, by batch", w.weights, ["17.5", "", "17.48"]);
+  check("a missing batch weight leaves the screen open", F.mixScreenDone({}, w), false);
+  check("every batch weighed and the lot in: answered", F.mixScreenDone({}, { ...w, weights: ["17.5", "17.4", "17.48"] }), true);
+  check("...but not without the lot", F.mixScreenDone({}, { ...w, lot: "", weights: ["1", "1", "1"] }), false);
 
   check("opens on the batches", F.nextMixScreen({ ingredients: rows }), 0);
   check("then the first ingredient", F.nextMixScreen({ batches: 1, ingredients: rows }), 1);
-  const part = { batches: 2, ingredients: [row("Flour", 17.49, "L1", 17.5), row("Sugar", 12, "L2")] };
-  check("a lot without its weight is not answered", F.nextMixScreen(part), 2);
-  const b1 = { batches: 2, ingredients: [row("Flour", 17.49, "L1", 17.5), row("Sugar", 12, "L2", 12)] };
-  check("batch 1 complete: on to batch 2", kinds(b1)[F.nextMixScreen(b1)], "2:Flour");
+  const part = { batches: 6, ingredients: [row("Eggs", 17.49, "L1", 1, 1, 1, 1, 1, 1), row("Sugar", 12, "L2", 12, 12)] };
+  check("the first ingredient not weighed for every batch", kinds(part)[F.nextMixScreen(part)], "Sugar");
   const all = { batches: 1, ingredients: [row("Flour", 17.49, "L1", 17.5)] };
   check("every line in: the rework question", kinds(all)[F.nextMixScreen(all)], "rework");
   check("all answered: stays on the last screen", F.nextMixScreen({ ...all, rework: "No rework used" }), 2);
 
-  const v = { batches: 2, product: "Rum Cake", ingredients: [row("Flour", 17.49), row("Sugar", 12, "L2", 12)] };
+  const v = { batches: 6, product: "Rum Cake", ingredients: [row("Flour", 17.49), row("Sugar", 12, "L2", 12)] };
   const ref = { index: 0, ingredient: "Flour", brand: "" };
   const a = F.applyMixEntry(v, ref, { lot: " L1 ", batch: 1, weight: 17.5 });
-  check("a lot and a weight are written on the line", [a.ingredients[0].supplier_lot, a.ingredients[0].actual_qty], ["L1", 17.5]);
+  check("a lot and a weight are written on the line", [a.ingredients[0].supplier_lot, a.ingredients[0].weighed_batches], ["L1", "B1: 17.5"]);
   check("nothing else changes", [a.ingredients[1], a.product, a.ingredients[0].expected_qty], [v.ingredients[1], "Rum Cake", 17.49]);
   check("the record handed in is not changed", v.ingredients[0].supplier_lot, "");
-  const b = F.applyMixEntry(a, ref, { batch: 2, weight: 17.4 });
-  check("batch 2 writes its own column and leaves the lot", [b.ingredients[0].actual_qty_2, b.ingredients[0].actual_qty, b.ingredients[0].supplier_lot], [17.4, 17.5, "L1"]);
-  check("a lot alone leaves the weights", F.applyMixEntry(b, ref, { lot: "L9" }).ingredients[0].actual_qty, 17.5);
+  const b = F.applyMixEntry(F.applyMixEntry(a, ref, { batch: 6, weight: 17.4 }), ref, { batch: 4, weight: 17.48 });
+  check("any batch goes into the same cell, in batch order", b.ingredients[0].weighed_batches, "B1: 17.5; B4: 17.48; B6: 17.4");
+  check("a weight taken off again", F.applyMixEntry(b, ref, { batch: 4, weight: "" }).ingredients[0].weighed_batches, "B1: 17.5; B6: 17.4");
+  check("a lot alone leaves the weights", F.applyMixEntry(b, ref, { lot: "L9" }).ingredients[0].weighed_batches, b.ingredients[0].weighed_batches);
   const u = F.applyMixEntry({ ingredients: [{ ...row("Flavor", ""), unit: "" }] }, { index: 0, ingredient: "Flavor", brand: "" }, { batch: 1, weight: 4, unit: "oz" });
-  check("a unit chosen with the weight is written on the line", [u.ingredients[0].actual_qty, u.ingredients[0].unit], [4, "oz"]);
+  check("a unit chosen with the weight is written on the line", [u.ingredients[0].weighed_batches, u.ingredients[0].unit], ["B1: 4", "oz"]);
   check("a unit not named is left as it is", F.applyMixEntry(v, ref, { batch: 1, weight: 1 }).ingredients[0].unit, "lb");
   check("a row that moved is refused", F.applyMixEntry(v, { index: 1, ingredient: "Flour", brand: "" }, { lot: "L1" }), null);
   check("a row that is gone is refused", F.applyMixEntry(v, { index: 5, ingredient: "Flour", brand: "" }, { lot: "L1" }), null);
   check("a brand that changed is refused", F.applyMixEntry(v, { ...ref, brand: "Other" }, { lot: "L1" }), null);
-  check("a fourth batch has no column", F.applyMixEntry(v, ref, { batch: 4, weight: 1 }), null);
-  check("the page offers one batch per weighed column", F.MIX_BATCH_CHOICES, [1, 2, 3]);
+  check("batch 0 is refused", F.applyMixEntry(v, ref, { batch: 0, weight: 1 }), null);
+  const typed = { batches: 2, ingredients: [{ ...row("Flour", 17.49, "L1"), weighed_batches: "first one 17.5" }] };
+  check("a cell typed by hand is never merged into", [F.applyMixEntry(typed, ref, { batch: 2, weight: 17.4 }), F.lineWeightsReadable(typed, 0)], [null, false]);
+  const legacy = { batches: 3, ingredients: [{ ingredient: "Flour", brand: "", supplier_lot: "L1", expected_qty: 17.49, unit: "lb", actual_qty: 17.5, actual_qty_2: 17.4, actual_qty_3: "" }] };
+  check("an earlier record's three columns are read", F.mixScreens(legacy)[1].weights, ["17.5", "17.4", ""]);
+  check("...and carried into the cell when it is written", F.applyMixEntry(legacy, ref, { batch: 3, weight: 17.6 }).ingredients[0].weighed_batches, "B1: 17.5; B2: 17.4; B3: 17.6");
+  check("quick buttons for the number of batches", F.MIX_QUICK_BATCHES, [1, 2, 3, 4, 5, 6]);
+  check("weights for batches past the number are counted", [F.weightsPastBatches({ batches: 2, ingredients: [row("Flour", 1, "L", 1, 1, 1)] }), F.weightsPastBatches(part)], [1, 0]);
 
   const col = id => ({ id });
   const schema = { sections: [{ fields: [
     { id: "batches" }, { id: "rework", options: ["No rework used", "Rework used - listed in the table with its original lot code"] },
-    { id: "ingredients", columns: ["ingredient", "brand", "supplier_lot", "expected_qty", "unit", "actual_qty", "actual_qty_2", "actual_qty_3"].map(col) },
+    { id: "ingredients", columns: ["ingredient", "brand", "supplier_lot", "expected_qty", "unit", "weighed_batches", "notes"].map(col) },
   ] }] };
   check("the form as it is: nothing missing", F.checkMixMapping(schema), []);
+  check("the form before v3 is named as missing its weights cell", F.checkMixMapping({ sections: [{ fields: [{ id: "batches" }, { id: "rework" },
+    { id: "ingredients", columns: ["ingredient", "brand", "supplier_lot", "expected_qty", "unit", "actual_qty", "actual_qty_2", "actual_qty_3"].map(col) }] }] }),
+    ["ingredients.weighed_batches"]);
   check("a renamed column is named", F.checkMixMapping({ sections: [{ fields: [{ id: "batches" }, { id: "ingredients", columns: [col("ingredient")] }] }] }).slice(0, 3),
     ["rework", "ingredients.brand", "ingredients.supplier_lot"]);
   check("the no-rework answer in the form's words", F.noReworkOption(schema), "No rework used");
@@ -225,7 +240,7 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
   const rows = [row("Flour", 17.49, "L1", 17.5), dunk("Simple syrup", "Made on site"), dunk("Rum", "Bacardi")];
   const d = { batches: 1, rework: "No rework used", ingredients: rows };
   check("a dunking line is not a mixing line", F.mixProgress(d), { state: "done", lines: 1, linesDone: 1, batches: 1 });
-  check("...nor a mixing screen", F.mixScreens(d).map(s => s.kind === "line" ? s.ingredient : s.kind), ["batches", "Flour", "rework"]);
+  check("...nor a mixing screen", F.mixScreens(d).map(s => s.kind === "ingredient" ? s.ingredient : s.kind), ["batches", "Flour", "rework"]);
   check("isDunkLine reads the marker only", [F.isDunkLine(rows[1]), F.isDunkLine(rows[0]), F.isDunkLine(null), F.isDunkLine({ _stage: "Dunking" })], [true, false, false, true]);
   const s = F.dunkScreens(d);
   check("one screen per dunking line, addressed by its row", s.map(x => [x.index, x.ingredient, x.position, x.of]), [[1, "Simple syrup", 1, 2], [2, "Rum", 2, 2]]);
@@ -274,14 +289,15 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
 // ---- a batch made on site (FRM-530): one batch, no rework
 {
   const B = F.BATCH_SPEC;
-  const syrup = { ingredients: [row("Granulated sugar", 20), row("Water", 10)] };
-  check("no batches screen and no rework screen", F.mixScreens(syrup, B).map(s => s.kind === "line" ? `${s.batch}:${s.ingredient}` : s.kind), ["1:Granulated sugar", "1:Water"]);
+  const syrup = { ingredients: [row530("Granulated sugar", 20), row530("Water", 10)] };
+  check("no batches screen and no rework screen", F.mixScreens(syrup, B).map(s => s.kind === "ingredient" ? `${s.weights.length}:${s.ingredient}` : s.kind), ["1:Granulated sugar", "1:Water"]);
   check("it opens on the first ingredient", F.nextMixScreen(syrup, B), 0);
   check("nothing entered", F.mixProgress(syrup, B), { state: "none", lines: 2, linesDone: 0, batches: 1 });
-  const done = { ingredients: [row("Granulated sugar", 20, "SUG-1", 20.1), row("Water", 10, "mains", 10)] };
+  const done = { ingredients: [row530("Granulated sugar", 20, "SUG-1", 20.1), row530("Water", 10, "mains", 10)] };
   check("every line in: done, with no rework question", F.mixProgress(done, B).state, "done");
   check("...whereas the lot record would still want its batches and rework", F.mixProgress(done).state, "open");
-  check("the form's mapping holds without batches, rework or batches 2 and 3", F.checkMixMapping({ sections: [{ fields: [
+  check("its weight goes in its one column", F.applyMixEntry(syrup, { index: 0, ingredient: "Granulated sugar", brand: "" }, { batch: 1, weight: 20.2 }, B).ingredients[0].actual_qty, 20.2);
+  check("the form's mapping holds without batches, rework or a weights cell", F.checkMixMapping({ sections: [{ fields: [
     { id: "ingredients", columns: ["ingredient", "brand", "supplier_lot", "expected_qty", "unit", "actual_qty"].map(id => ({ id })) },
   ] }] }, B), []);
   check("the batch's date field", B.dateField, "made_on");
@@ -289,32 +305,30 @@ check("the retention sample signed on the page moves on to Sign and submit", [F.
   check("no lines: nowhere to open, but no error", F.nextMixScreen({}, B), 0);
 }
 
-// ---- two people weighing one lot, a batch each (owner, 2026-10-15)
+// ---- several people weighing one lot, split by ingredient (owner, 2026-10-23)
 {
-  const d = { batches: 3, rework: "", ingredients: [row("Flour", 17.49, "L1", 17.5), row("Sugar", 12, "L2", 12, 11.9), row("Spray", "")] };
-  const kinds = (x, only) => F.mixScreens(x, F.LOT_SPEC, only).map(s => s.kind === "line" ? `${s.batch}:${s.ingredient}` : s.kind);
-  check("batch 2 only: its own lines, the choice and rework", kinds(d, 2), ["batches", "2:Flour", "2:Sugar", "rework"]);
-  check("batch 3 only", kinds(d, 3), ["batches", "3:Flour", "3:Sugar", "rework"]);
-  check("no choice: every batch in order", kinds(d, null).length, kinds(d).length);
-  check("a choice past the number of batches is every batch", kinds(d, 5), kinds(d, null));
-  check("batch 2 opens on its first line not weighed", F.mixScreens(d, F.LOT_SPEC, 2)[F.nextMixScreen(d, F.LOT_SPEC, 2)].ingredient, "Flour");
-  const d2 = { ...d, ingredients: [row("Flour", 17.49, "L1", 17.5, 17.4), row("Sugar", 12, "L2", 12, 11.9), row("Spray", "")] };
-  check("batch 2 all weighed: opens on rework", F.mixScreens(d2, F.LOT_SPEC, 2)[F.nextMixScreen(d2, F.LOT_SPEC, 2)].kind, "rework");
-  check("batch 2 never asks the lot", F.mixScreens(d, F.LOT_SPEC, 2).filter(s => s.kind === "line").every(s => !s.asksLot), true);
-  check("cells: lot, weight and unit", F.mixEntryCells({ lot: " L7 ", batch: 2, weight: 4.5, unit: "oz" }), { supplier_lot: "L7", actual_qty_2: 4.5, unit: "oz" });
-  check("cells: a weight cleared", F.mixEntryCells({ batch: 1, weight: "" }), { actual_qty: "" });
-  check("cells: no fourth batch", F.mixEntryCells({ batch: 4, weight: 1 }), null);
+  const d = { batches: 3, rework: "", ingredients: [row("Eggs", 17.49, "L1", 17.5, 17.5, 17.5), row("Flour", 12), row("Sugar", 12, "L2", 12), row("Spray", "")] };
+  const lines = F.mixLines(d);
+  check("the lines that are mixed", lines.map(l => [l.index, l.ingredient]), [[0, "Eggs"], [1, "Flour"], [2, "Sugar"], [3, "Spray"]]);
+  const kinds = only => F.mixScreens(d, F.LOT_SPEC, only).map(s => s.kind === "ingredient" ? s.ingredient : s.kind);
+  check("this tablet's ingredients only, with the choice and rework", kinds([lines[1], lines[2]]), ["batches", "Flour", "Sugar", "rework"]);
+  check("...counted among its own", F.mixScreens(d, F.LOT_SPEC, [lines[1], lines[2]]).filter(s => s.kind === "ingredient").map(s => [s.position, s.of]), [[1, 2], [2, 2]]);
+  check("no choice, or an empty one: every ingredient", [kinds(null), kinds([])], [kinds(undefined), kinds(undefined)]);
+  check("a chosen line that moved is not walked", kinds([{ index: 1, ingredient: "Sugar", brand: "" }]), ["batches", "rework"]);
+  check("opens on its first ingredient not done", F.mixScreens(d, F.LOT_SPEC, [lines[0], lines[2]])[F.nextMixScreen(d, F.LOT_SPEC, [lines[0], lines[2]])].ingredient, "Sugar");
+  check("cells: lot, a batch's weight and unit", F.mixEntryCells({ lot: " L7 ", batch: 5, weight: 4.5, unit: "oz" }), { supplier_lot: "L7", weighed_batches: { batch: 5, weight: 4.5 }, unit: "oz" });
+  check("cells: a weight cleared", F.mixEntryCells({ batch: 1, weight: "" }), { weighed_batches: { batch: 1, weight: "" } });
+  check("cells: no batch 0", F.mixEntryCells({ batch: 0, weight: 1 }), null);
+  check("cells: a made-here batch has one weight column", [F.mixEntryCells({ batch: 1, weight: 2 }, F.BATCH_SPEC), F.mixEntryCells({ batch: 2, weight: 2 }, F.BATCH_SPEC)],
+    [{ actual_qty: 2 }, null]);
   // The lot, first come first served
   const blank = { batches: 2, ingredients: [row("Flour", 17.49), row("Sugar", 12, "L2")] };
-  const b2 = F.mixScreens(blank, F.LOT_SPEC, 2).filter(s => s.kind === "line");
-  check("batch 2 asks the lot of a line that has none", b2.map(s => s.asksLot), [true, false]);
-  check("batch 2 line with no lot is not done on its weight alone", F.mixScreenDone({ ...blank, ingredients: [row("Flour", 17.49, "", "", 17.4), row("Sugar", 12, "L2")] }, { ...b2[0], weight: "17.4" }), false);
-  check("cells: a lot first come", F.mixEntryCells({ lotIfBlank: " L8 ", batch: 2, weight: 3 }), { supplier_lot_if_blank: "L8", actual_qty_2: 3 });
   const fref = { index: 0, ingredient: "Flour", brand: "" };
-  check("first come: written while blank", F.applyMixEntry(blank, fref, { lotIfBlank: "L8", batch: 2, weight: 3 }).ingredients[0].supplier_lot, "L8");
+  check("cells: a lot first come", F.mixEntryCells({ lotIfBlank: " L8 " }), { supplier_lot_if_blank: "L8" });
+  check("first come: written while blank", F.applyMixEntry(blank, fref, { lotIfBlank: "L8" }).ingredients[0].supplier_lot, "L8");
   const taken = { batches: 2, ingredients: [row("Flour", 17.49, "L1")] };
   const kept = F.applyMixEntry(taken, fref, { lotIfBlank: "L8", batch: 2, weight: 3 }).ingredients[0];
-  check("first come: a lot already there is kept, the weight saved", [kept.supplier_lot, kept.actual_qty_2], ["L1", 3]);
+  check("first come: a lot already there is kept, the weight saved", [kept.supplier_lot, kept.weighed_batches], ["L1", "B2: 3"]);
   check("an edited lot still overwrites", F.applyMixEntry(taken, fref, { lot: "L9" }).ingredients[0].supplier_lot, "L9");
 }
 

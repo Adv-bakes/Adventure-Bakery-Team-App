@@ -1478,17 +1478,27 @@ lot + product only and always shows the next piece of information the records ne
 itself is unchanged. Built in three pull requests, all in: the inputs lifted out of their pop-ups,
 the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot step by step".
 
-- **Mixing is one screen at a time** (`components/team/today/MixStep.tsx`; rules in `lotFlow.ts`:
+- **Mixing is one screen per ingredient** (`components/team/today/MixStep.tsx`; rules in `lotFlow.ts`:
   `mixScreens`, `mixScreenDone`, `nextMixScreen`, `applyMixEntry`, `checkMixMapping`): how many
-  batches (1 / 2 / 3, one per weighed column of FRM-520), then batch by batch each ingredient - its
-  lot on the container with the first batch, its weight with every batch - then the rework question.
-  Each Save writes that ONE answer onto the lot record as it is now (read again first, one retry on
-  `StaleResponseError`) and moves to the next screen; Back and Skip for now move without saving, and
-  the rework screen says how many screens were skipped. No form or document changed.
+  batches, then ingredient by ingredient its lot on the container and **one weight box per batch**,
+  then the rework question - the floor weighs the eggs for every batch, then the next ingredient
+  (owner's live test, 2026-10-19). **Any number of batches** (that test made six): quick buttons 1-6
+  and a number box with no maximum (`MIX_QUICK_BATCHES`). **FRM-520 v3** (migration `20261023000001`,
+  GJM) replaced the three columns Batch 1 / 2 / 3 weighed with ONE text column, **"Weighed per batch"**
+  (`weighed_batches`): `B1: 17.49; B2: 17.5; B6: 17.48`. The format lives in `src/lib/batchWeights.ts`
+  (`parseBatchWeights`, `setBatchWeight`, `rowBatchWeights` - which also reads the old three columns of
+  records made on v2) and has a **SQL twin**, `mix_set_batch_weight` (migration `20261023000002`):
+  change both together; `scripts/test-batch-weights.mjs` holds the cases both were run on. A cell
+  typed by hand that is not that format is never merged into (`lineWeightsReadable`; the function
+  refuses too). Each weight box **saves as soon as it is entered** (blur / Enter / "Use"), queued one
+  after another; "Save and next" saves the lot and anything left, then moves on. Back and Skip for
+  now move without saving, and the rework screen says how many screens were skipped. A number of
+  batches lowered after weighing leaves the extra weights on the record and says so
+  (`weightsPastBatches`). FRM-530 keeps its one `actual_qty` column (`MixSpec.weights: "single"`).
   - **A weight is never filled in**: the formula's figure is the box's grey placeholder and a
-    "Use 17.49 lb" link. A line the formula gives NO quantity (pan spray; on the real sheets also
-    Flavor) has an optional weight, and is asked again in batches 2 and 3 only if it was weighed with
-    the first. `mixProgress` still counts such a line complete on its lot alone. On such a line, and
+    "Use 17.49 lb" link beside each box (a tap on it enters and saves that figure). A line the formula
+    gives NO quantity (pan spray; on the real sheets also Flavor) has optional weights.
+    `mixProgress` still counts such a line complete on its lot alone. On such a line, and
     on one the formula gives a quantity but no unit, the **unit is a pick-list** beside the weight
     (the Unit column's own options; owner, 2026-10-13) and is required once a weight is typed.
   - **The table's rows have no id**, so a line is addressed by position + ingredient + brand;
@@ -1510,23 +1520,22 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     day; a second run of the same code would share the first one's release and dispatch). The owner
     considered separate runs and set it aside "for now" - a run's own lot code (6286B) was my
     recommendation if it comes back. The plain Start a lot button has no product yet and is not checked.
-  - **Two people, a batch each** (owner, 2026-10-15): with more than one batch, the batches screen
-    asks **Which batch are you weighing on this tablet?** (Batch 1 / 2 / 3 / All of them, in order),
-    remembered per tab in `sessionStorage` (`mix.only:<lot id>`), never on the record. The tablet then
-    walks only that batch's lines (`mixScreens(data, spec, only)`). **The lot on the container is first
-    come, first served** (owner, same day): any batch asks it while the line has none. A lot typed where
-    none was shown goes as `supplier_lot_if_blank` (migration `20261015000002`), written only while the
-    line is still blank, so two tablets never replace each other's lot; the loser's weight is saved and
+  - **Several people, split by ingredient** (owner, 2026-10-23; replaced "a batch each" of 2026-10-15):
+    the batches screen asks **Which ingredients are you weighing on this tablet?** - All of them
+    (default, never asked) or a tick list - remembered per tab in `sessionStorage` (`mix.only:<lot id>`,
+    the lines by position + name), never on the record; each ingredient screen says what this tablet
+    weighs, with Change. The tablet then walks only those lines (`mixScreens(data, spec, only)`).
+    **The lot on the container is first come, first served**: a lot typed where none was shown goes as
+    `supplier_lot_if_blank` (migration `20261015000002`), written only while the line is still blank, and
     a warning names the lot kept. A lot the screen showed and the person changed still overwrites. Every
-    mixing save goes through **`write_mix_entry`** (migration `20261015000001`, `SECURITY DEFINER`,
-    any team member): it writes one line's lot / weight / unit (line found by position + ingredient +
-    brand) or the batches / rework answer, on a DRAFT FRM-520 or FRM-530 on the form's current
-    revision, in place under a row lock - so two tablets never overwrite each other. Needed because RLS
-    lets staff update only a draft they created. RLS is NOT widened. Before the migration is pushed the
-    screen falls back to the ordinary save (`writeMixEntry` returns "missing"). Dunking and "Start from
-    the formula sheet" still use the ordinary save (the record's author or an admin).
-  - Not built: a fourth batch, a line added from the page, offering received lots (FRM-301) for an
-    ingredient. **Untested from here: the camera and the real read of an ingredient label.**
+    mixing save goes through **`write_mix_entry`** (`SECURITY DEFINER`, any team member): one line's lot /
+    batch weight / unit (line found by position + ingredient + brand), or the batches / rework answer, on a
+    DRAFT FRM-520 or FRM-530 on the form's current revision, in place under a row lock - a batch weight is
+    sent as `{ weighed_batches: { batch, weight } }` and MERGED into the cell there, so two tablets never
+    overwrite each other. Needed because RLS lets staff update only a draft they created; RLS is NOT
+    widened. Before a migration is pushed the screen falls back to the ordinary save (`writeMixEntry`
+    returns "missing"). Dunking and "Start from the formula sheet" still use the ordinary save.
+  - Not built: a line added from the page, offering received lots (FRM-301) for an ingredient. **Untested from here: the camera and the real read of an ingredient label.**
 - **Dunking: the syrup and the rum** (owner, 2026-10-14; plan in four parts, parts 1-2 built). Every cake
   is dunked in simple syrup with rum added to the dunk tank, after the bake and before sealing, and
   neither was on a formula sheet or lot record - a recall of either could not be traced.
