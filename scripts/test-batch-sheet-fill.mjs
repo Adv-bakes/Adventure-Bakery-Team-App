@@ -31,7 +31,7 @@ const CFG = {
   source: "FRM-501", productField: "product", grid: "ingredients", sourceField: "formula_source",
   columns: { ingredient: "ingredient", brand: "brand", expected: "expected_qty", unit: "unit" },
 };
-const COLS = ["ingredient", "brand", "supplier_lot", "expected_qty", "unit", "actual_qty", "actual_qty_2", "actual_qty_3", "notes"];
+const COLS = ["ingredient", "brand", "supplier_lot", "expected_qty", "unit", "weighed_batches", "notes"];
 const PREP_SHEET = [17.49, 13.49, 3, 7.99, 49.97, 0.25, 0.31];
 
 // ---------- quantities written as text ----------
@@ -75,10 +75,10 @@ const entry = (data, status = "draft") => ({ id: "e1", status, created_at: "2026
   check("every row carries every column", values.ingredients.every(r => COLS.every(c => c in r)), true);
   check("the lot is never filled", values.ingredients.every(r => r.supplier_lot === ""), true);
   check("weighed quantities are never filled",
-    values.ingredients.every(r => r.actual_qty === "" && r.actual_qty_2 === "" && r.actual_qty_3 === ""), true);
+    values.ingredients.every(r => r.weighed_batches === ""), true);
   check("first row", values.ingredients[0],
     { ingredient: "Soybean Oil (35 lb jug)", brand: "Sysco Classic", supplier_lot: "", expected_qty: 17.49, unit: "lb",
-      actual_qty: "", actual_qty_2: "", actual_qty_3: "", notes: "" });
+      weighed_batches: "", notes: "" });
   check("the formula's own notes do not become lot notes", values.ingredients[3].notes, "");
   check("says which lines have no quantity", warnings,
     ["No expected quantity on the formula for: Flavor, Pan release spray (contains soy)."]);

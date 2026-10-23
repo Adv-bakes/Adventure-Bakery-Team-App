@@ -11,6 +11,7 @@ import {
   bakeState, releaseSteps, sealState,
   type BakeState, type LotSummary, type ReleaseStep, type TodayEntry, type TodayRecords,
 } from "./today";
+import { formatBatchWeights, parseBatchWeights, rowBatchWeights, setBatchWeight, WEIGHED_BATCHES } from "./batchWeights";
 
 /** The single map of the lot record's (FRM-520) answer keys the mixing step reads. Rename a field, update this. */
 export const LOT_FLOW = {
@@ -25,8 +26,12 @@ export const LOT_FLOW = {
   lot: "supplier_lot",
   expected: "expected_qty",
   unit: "unit",
-  /** Batch 1, 2 and 3 weighed: the form has three columns, so three batches is the most. */
-  weighed: ["actual_qty", "actual_qty_2", "actual_qty_3"],
+  /**
+   * The lot record's weights: one cell per line, "B1: 17.49; B2: 17.5", any number of batches
+   * (FRM-520 v3, src/lib/batchWeights.ts). A made-here batch (FRM-530) has one weight column.
+   */
+  weighedBatches: WEIGHED_BATCHES,
+  oneWeight: "actual_qty",
   rework: "rework",
   signature: "recorded_by",
   notes: "notes",
@@ -40,18 +45,20 @@ export const LOT_FLOW = {
 export const DUNKING = "dunking";
 
 /**
- * Which record the mixing screens are walking. The lot record (FRM-520) asks how many batches (one
- * weighed column each) and the rework question; the Intermediate Batch Record (FRM-530, the syrup made
- * in the kettle) is one batch with one weighed column and no rework. Same field ids otherwise.
+ * Which record the mixing screens are walking. The lot record (FRM-520) asks how many batches (their
+ * weights in one cell per line) and the rework question; the Intermediate Batch Record (FRM-530, the
+ * syrup made in the kettle) is one batch with one weighed column and no rework. Same field ids otherwise.
  */
 export interface MixSpec {
   batches: boolean;
   rework: boolean;
+  /** "list" = the lot record's "Weighed per batch" cell; "single" = FRM-530's one weight column. */
+  weights: "list" | "single";
   /** The date a record started from the formula sheet is given, with the lot code it yields. */
   dateField: string;
 }
-export const LOT_SPEC: MixSpec = { batches: true, rework: true, dateField: "bake_date" };
-export const BATCH_SPEC: MixSpec = { batches: false, rework: false, dateField: "made_on" };
+export const LOT_SPEC: MixSpec = { batches: true, rework: true, weights: "list", dateField: "bake_date" };
+export const BATCH_SPEC: MixSpec = { batches: false, rework: false, weights: "single", dateField: "made_on" };
 
 /** Is this line of the lot record added at dunking rather than mixed? */
 export const isDunkLine = (r: unknown): boolean =>
@@ -77,9 +84,24 @@ export interface MixProgress {
   /** Ingredient lines on the record, and how many are complete for every batch. */
   lines: number;
   linesDone: number;
-  /** 0 until "Number of batches" is answered. */
+  /** 0 until "Number of batches" is answered. Any whole number from 1 up: there is no ceiling. */
   batches: number;
 }
+
+/** A line's weights by batch, as the record holds them for this kind of record. */
+function weightsOf(r: Record<string, unknown>, spec: MixSpec): Map<number, string> {
+  if (spec.weights === "list") return rowBatchWeights(r);
+  const w = str(r[LOT_FLOW.oneWeight]);
+  return new Map(w ? [[1, w]] : []);
+}
+
+const batchCount = (d: Record<string, any>, spec: MixSpec) => {
+  if (!spec.batches) return 1;
+  const n = Number(str(d[LOT_FLOW.batches]));
+  return Number.isInteger(n) && n >= 1 ? n : 0;
+};
+
+const gridRows = (d: Record<string, any>): Record<string, unknown>[] => (Array.isArray(d[LOT_FLOW.grid]) ? d[LOT_FLOW.grid] : []);
 
 /**
  * How far the weighing has got, from the lot record's own answers. A line is complete when it has
@@ -90,28 +112,44 @@ export interface MixProgress {
 export function mixProgress(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC): MixProgress {
   const d = data ?? {};
   // The dunking lines (syrup, rum) are not mixed: the Dunking step asks for them.
-  const rows: Record<string, unknown>[] = (Array.isArray(d[LOT_FLOW.grid]) ? d[LOT_FLOW.grid] : [])
-    .filter((r: any) => str(r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(r));
-  const n = Number(str(d[LOT_FLOW.batches]));
-  const batches = !spec.batches ? 1 : Number.isInteger(n) && n >= 1 ? Math.min(n, LOT_FLOW.weighed.length) : 0;
-  const complete = (r: Record<string, unknown>) =>
-    str(r[LOT_FLOW.lot]) !== "" && (str(r[LOT_FLOW.expected]) === "" || LOT_FLOW.weighed.slice(0, batches).every(k => str(r[k]) !== ""));
+  const rows = gridRows(d).filter(r => str(r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(r));
+  const batches = batchCount(d, spec);
+  const complete = (r: Record<string, unknown>) => {
+    if (str(r[LOT_FLOW.lot]) === "") return false;
+    if (str(r[LOT_FLOW.expected]) === "") return true;
+    const w = weightsOf(r, spec);
+    for (let b = 1; b <= batches; b++) if (!w.get(b)) return false;
+    return true;
+  };
   const linesDone = batches ? rows.filter(complete).length : 0;
   const touched = (spec.batches && batches > 0) || (spec.rework && str(d[LOT_FLOW.rework]) !== "")
-    || rows.some(r => str(r[LOT_FLOW.lot]) !== "" || LOT_FLOW.weighed.some(k => str(r[k]) !== ""));
+    || rows.some(r => str(r[LOT_FLOW.lot]) !== "" || weightsOf(r, spec).size > 0);
   const done = rows.length > 0 && batches > 0 && linesDone === rows.length && (!spec.rework || str(d[LOT_FLOW.rework]) !== "");
   return { state: done ? "done" : touched ? "open" : "none", lines: rows.length, linesDone, batches };
 }
 
+/**
+ * Lines holding a weight for a batch past the number of batches - the number was lowered after
+ * weighing. Nothing is taken off the record; the batches screen says so.
+ */
+export function weightsPastBatches(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC): number {
+  const d = data ?? {};
+  const batches = batchCount(d, spec);
+  if (!batches) return 0;
+  return gridRows(d).filter(r => !isDunkLine(r) && [...weightsOf(r, spec).keys()].some(b => b > batches)).length;
+}
+
 // ---------- Mixing, one screen at a time ----------
 
-/** One screen of the mixing step: the number of batches, one ingredient of one batch, or the rework question. */
+/**
+ * One screen of the mixing step: the number of batches, one ingredient with a weight box for every
+ * batch, or the rework question. Ingredient by ingredient, because that is how the floor weighs:
+ * the eggs for every batch, then the next ingredient (owner's live test, 2026-10-19).
+ */
 export type MixScreen =
   | { kind: "batches" }
   | {
-      kind: "line";
-      /** 1, 2 or 3. */
-      batch: number;
+      kind: "ingredient";
       /** The line's position in the record's table - blank lines included, so it addresses the row. */
       index: number;
       ingredient: string;
@@ -120,53 +158,57 @@ export type MixScreen =
       /** The formula's quantity per batch, as text; blank when the formula gives none. */
       expected: string;
       /**
-       * The lot on the container is asked with the first batch, and with any other batch while the
-       * line has none yet - first come, first served, so two tablets need not wait on each other.
-       */
-      asksLot: boolean;
-      /**
-       * The weight has to be entered: the formula gives this line a quantity. Without one (pan
+       * The weights have to be entered: the formula gives this line a quantity. Without one (pan
        * spray, or a line the formula sheet has no figure for) a weight can be entered, and need not be.
        */
       needsWeight: boolean;
+      /** The lot on the container, asked once - first come, first served between tablets. */
       lot: string;
-      weight: string;
-      /** Which ingredient of this batch this is, and of how many. */
+      /** The weight of each batch, batch 1 first; "" where none is recorded yet. */
+      weights: string[];
+      /** Which ingredient this is, and of how many this tablet walks. */
       position: number;
       of: number;
     }
   | { kind: "rework" };
 
-const gridRows = (d: Record<string, any>): Record<string, unknown>[] => (Array.isArray(d[LOT_FLOW.grid]) ? d[LOT_FLOW.grid] : []);
+/** A line of the record the mixing screens walk. */
+export interface MixLine { index: number; ingredient: string; brand: string }
+
+/** The lines that are mixed (named, not added at dunking), with their positions in the table. */
+export function mixLines(data: Record<string, any> | null | undefined): MixLine[] {
+  return gridRows(data ?? {})
+    .map((r, index) => ({ index, ingredient: str(r?.[LOT_FLOW.ingredient]), brand: str(r?.[LOT_FLOW.brand]), r }))
+    .filter(x => x.ingredient !== "" && !isDunkLine(x.r))
+    .map(({ index, ingredient, brand }) => ({ index, ingredient, brand }));
+}
 
 /**
- * The screens, in order: how many batches, then batch by batch each named ingredient, then the
- * rework question. Until the number of batches is answered there is nothing to walk through, so
- * that is the only screen. Batches 2 and 3 ask the weight only, so a line the formula gives no
- * quantity is asked again only if it was weighed with the first batch.
+ * The screens, in order: how many batches, then each ingredient with a box for every batch, then
+ * the rework question. Until the number of batches is answered that is the only screen.
  *
- * `only` = the one batch this tablet is weighing (owner, 2026-10-15: two people can weigh one lot
- * at once, a batch each). Its lines are the only ones walked; the batches screen (where the choice
- * is made) and the rework question stay. Null or out of range = every batch, in order.
+ * `only` = the ingredients this tablet weighs (owner, 2026-10-23: when several people weigh one lot,
+ * they split it by ingredient). A line is matched by position AND name, so a line that moved is
+ * simply not walked. Null or empty = every ingredient.
  */
-export function mixScreens(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC, only: number | null = null): MixScreen[] {
+export function mixScreens(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC, only: MixLine[] | null = null): MixScreen[] {
   const d = data ?? {};
-  const batches = mixProgress(d, spec).batches;
+  const batches = batchCount(d, spec);
   const out: MixScreen[] = spec.batches ? [{ kind: "batches" }] : [];
   if (!batches) return out;
-  const named = gridRows(d).map((r, index) => ({ r, index })).filter(x => str(x.r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(x.r));
-  for (let b = 1; b <= batches; b++) {
-    if (only != null && only >= 1 && only <= batches && b !== only) continue;
-    const here = named.filter(x => b === 1 || str(x.r[LOT_FLOW.expected]) !== "" || str(x.r[LOT_FLOW.weighed[0]]) !== "");
-    here.forEach((x, i) => out.push({
-      kind: "line", batch: b, index: x.index,
-      ingredient: str(x.r[LOT_FLOW.ingredient]), brand: str(x.r[LOT_FLOW.brand]), unit: str(x.r[LOT_FLOW.unit]),
-      expected: str(x.r[LOT_FLOW.expected]),
-      asksLot: b === 1 || str(x.r[LOT_FLOW.lot]) === "", needsWeight: str(x.r[LOT_FLOW.expected]) !== "",
-      lot: str(x.r[LOT_FLOW.lot]), weight: str(x.r[LOT_FLOW.weighed[b - 1]]),
+  const rows = gridRows(d);
+  const mine = (l: MixLine) => !only || only.length === 0 || only.some(o => o.index === l.index && o.ingredient === l.ingredient && o.brand === l.brand);
+  const here = mixLines(d).filter(mine);
+  here.forEach((l, i) => {
+    const r = rows[l.index] ?? {};
+    const w = weightsOf(r, spec);
+    out.push({
+      kind: "ingredient", index: l.index, ingredient: l.ingredient, brand: l.brand,
+      unit: str(r[LOT_FLOW.unit]), expected: str(r[LOT_FLOW.expected]), needsWeight: str(r[LOT_FLOW.expected]) !== "",
+      lot: str(r[LOT_FLOW.lot]), weights: Array.from({ length: batches }, (_, b) => w.get(b + 1) ?? ""),
       position: i + 1, of: here.length,
-    }));
-  }
+    });
+  });
   if (spec.rework) out.push({ kind: "rework" });
   return out;
 }
@@ -176,63 +218,82 @@ export function mixScreenDone(data: Record<string, any> | null | undefined, s: M
   const d = data ?? {};
   if (s.kind === "batches") return mixProgress(d, spec).batches > 0;
   if (s.kind === "rework") return str(d[LOT_FLOW.rework]) !== "";
-  return (!s.asksLot || s.lot !== "") && (!s.needsWeight || s.weight !== "");
+  return s.lot !== "" && (!s.needsWeight || s.weights.every(w => w !== ""));
 }
 
 /** Where the mixing step opens: the first screen not yet answered, else the last one. */
-export function nextMixScreen(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC, only: number | null = null): number {
+export function nextMixScreen(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC, only: MixLine[] | null = null): number {
   const screens = mixScreens(data, spec, only);
   const i = screens.findIndex(s => !mixScreenDone(data, s, spec));
   return i >= 0 ? i : Math.max(0, screens.length - 1);
 }
 
-/** The number of batches the page offers: one per weighed column of the form. */
-export const MIX_BATCH_CHOICES: readonly number[] = LOT_FLOW.weighed.map((_, i) => i + 1);
+/** The quick buttons for the number of batches; any other number is typed. */
+export const MIX_QUICK_BATCHES: readonly number[] = [1, 2, 3, 4, 5, 6];
 
-/**
- * Write one screen's answer onto the record's answers. The table's rows have no id of their own,
- * so a line is addressed by its position AND its ingredient and brand: if somebody has since
- * moved or renamed the row, nothing is written and null comes back (the page then reads the
- * record again). Only what the change names is written - a lot, a weight or a unit left out is untouched.
- */
 /**
  * `lot` overwrites (a lot the screen showed and the person changed); `lotIfBlank` is written only
  * while the line has no lot - a lot typed on a screen that showed none, which another tablet may
- * have entered in the meantime.
+ * have entered in the meantime. `batch` + `weight` is one batch's weight ("" takes it off).
  */
 export interface MixChange { lot?: string; lotIfBlank?: string; batch?: number; weight?: number | ""; unit?: string }
 
 /**
  * The cells of one line a mixing save writes - what the database function write_mix_entry is
- * sent. Null when the batch has no weighed column.
+ * sent. A lot record's weight goes as { batch, weight }, which the function merges into the line's
+ * "Weighed per batch" cell; a made-here batch (FRM-530) has its one weight column. Null when the
+ * change cannot be written (no such batch).
  */
-export function mixEntryCells(change: MixChange): Record<string, string | number> | null {
-  const cells: Record<string, string | number> = {};
+export function mixEntryCells(change: MixChange, spec: MixSpec = LOT_SPEC): Record<string, unknown> | null {
+  const cells: Record<string, unknown> = {};
   if (change.lot !== undefined) cells[LOT_FLOW.lot] = change.lot.trim();
   if (change.lotIfBlank !== undefined) cells[`${LOT_FLOW.lot}_if_blank`] = change.lotIfBlank.trim();
   if (change.batch !== undefined && change.weight !== undefined) {
-    const key = LOT_FLOW.weighed[change.batch - 1];
-    if (!key) return null;
-    cells[key] = change.weight;
+    if (!Number.isInteger(change.batch) || change.batch < 1) return null;
+    if (spec.weights === "list") cells[WEIGHED_BATCHES] = { batch: change.batch, weight: change.weight };
+    else if (change.batch === 1) cells[LOT_FLOW.oneWeight] = change.weight;
+    else return null;
   }
   if (change.unit !== undefined) cells[LOT_FLOW.unit] = change.unit;
   return cells;
 }
 
+/**
+ * Write one save onto the record's answers. The table's rows have no id of their own, so a line is
+ * addressed by its position AND its ingredient and brand: if somebody has since moved or renamed the
+ * row, nothing is written and null comes back (the page then reads the record again). Only what the
+ * change names is written. Null too when the line's weights cell holds something typed by hand that
+ * cannot be read - a weight is not merged into it.
+ */
 export function applyMixEntry(
   values: Record<string, any>,
   ref: { index: number; ingredient: string; brand: string },
   change: MixChange & { amount?: string },
+  spec: MixSpec = LOT_SPEC,
 ): Record<string, any> | null {
   const rows = gridRows(values);
   const row = rows[ref.index];
   if (!row || str(row[LOT_FLOW.ingredient]) !== ref.ingredient || str(row[LOT_FLOW.brand]) !== ref.brand) return null;
-  const { [`${LOT_FLOW.lot}_if_blank`]: ifBlank, ...cells } = mixEntryCells(change) ?? { _none: 1 };
-  if ("_none" in cells) return null;
-  const next: Record<string, unknown> = { ...row, ...cells };
+  const cells = mixEntryCells(change, spec);
+  if (!cells) return null;
+  const { [`${LOT_FLOW.lot}_if_blank`]: ifBlank, [WEIGHED_BATCHES]: one, ...plain } = cells as Record<string, any>;
+  const next: Record<string, unknown> = { ...row, ...plain };
+  if (one !== undefined) {
+    // An earlier record's three columns are carried into the cell the first time it is written.
+    const base = str(row[WEIGHED_BATCHES]) || formatBatchWeights(rowBatchWeights(row));
+    const merged = setBatchWeight(base, one.batch, one.weight);
+    if (merged == null) return null;
+    next[WEIGHED_BATCHES] = merged;
+  }
   if (ifBlank !== undefined && str(row[LOT_FLOW.lot]) === "") next[LOT_FLOW.lot] = ifBlank;
   if (change.amount !== undefined) next[LOT_FLOW.notes] = withAmount(str(row[LOT_FLOW.notes]), change.amount);
   return { ...values, [LOT_FLOW.grid]: rows.map((r, i) => (i === ref.index ? next : r)) };
+}
+
+/** Can a weight be merged into this line's cell? False when it holds something typed by hand. */
+export function lineWeightsReadable(data: Record<string, any> | null | undefined, index: number): boolean {
+  const r = gridRows(data ?? {})[index];
+  return parseBatchWeights(r?.[WEIGHED_BATCHES]).ok;
 }
 
 /** Field and column ids LOT_FLOW names that the lot record form no longer has. Empty = the mixing step can write. */
@@ -244,8 +305,8 @@ export function checkMixMapping(schema: { sections?: { fields?: any[] }[] } | nu
   for (const id of top) if (!byId.has(id)) missing.push(id);
   const cols = new Set<string>((byId.get(LOT_FLOW.grid)?.columns ?? []).map((c: any) => c.id));
   if (byId.has(LOT_FLOW.grid)) {
-    const weighed = spec.batches ? LOT_FLOW.weighed : LOT_FLOW.weighed.slice(0, 1);
-    for (const id of [LOT_FLOW.ingredient, LOT_FLOW.brand, LOT_FLOW.lot, LOT_FLOW.expected, LOT_FLOW.unit, ...weighed]) {
+    const weighed = spec.weights === "list" ? WEIGHED_BATCHES : LOT_FLOW.oneWeight;
+    for (const id of [LOT_FLOW.ingredient, LOT_FLOW.brand, LOT_FLOW.lot, LOT_FLOW.expected, LOT_FLOW.unit, weighed]) {
       if (!cols.has(id)) missing.push(`${LOT_FLOW.grid}.${id}`);
     }
   }

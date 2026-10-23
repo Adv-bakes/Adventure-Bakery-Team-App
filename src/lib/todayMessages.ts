@@ -129,10 +129,13 @@ export interface TodayMessages {
     };
     mix: {
       batchesQ: string; batchesHelp: string; batchN(n: number): string;
-      /** Two people can weigh one lot at once, a batch each: which one this tablet is weighing. */
-      whichQ: string; whichHelp: string; whichN(n: number): string; whichAll: string; onlyBatch(batch: number): string; changeBatch: string;
-      where(batch: number, batches: number, position: number, of: number): string; whereOne(position: number, of: number): string;
-      lotLabel: string; lotIs(lot: string): string; noLotYet: string; otherLot: string; lotKept(kept: string, typed: string): string;
+      countLabel: string; setCount: string; badCount: string; pastBatches(n: number): string;
+      /** Several people can weigh one lot at once, split by ingredient: which ones this tablet weighs. */
+      whichQ: string; whichHelp: string; whichAll: string; whichSome: string; whichGo: string; whichNone: string;
+      onlyAll: string; onlySome(n: number, of: number): string; changeWhich: string;
+      where(position: number, of: number, batches: number): string; whereOne(position: number, of: number): string;
+      lotLabel: string; otherLot: string; lotKept(kept: string, typed: string): string;
+      weightsHelp: string; saved: string; unreadable: string;
       scan: string; scanning: string; scanNone: string; scanFailed: string; scanReads(text: string): string; scanOffer: string;
       weightLabel(batch: number): string; weighedOne: string; formula(qty: string, unit: string): string; takeFigure(qty: string, unit: string): string;
       optionalWeight: string; badWeight: string; needLot: string; unitLabel: string; needUnit: string;
@@ -432,28 +435,38 @@ const en: TodayMessages = {
     openLotRecord: "Open the lot record",
     mix: {
       batchesQ: "How many batches are being mixed for this lot?",
-      batchesHelp: "Each batch is weighed and recorded on its own.",
+      batchesHelp: "Any number. Each ingredient is then weighed for every batch.",
       batchN: n => n === 1 ? "1 batch" : `${n} batches`,
-      whichQ: "Which batch are you weighing on this tablet?",
-      whichHelp: "Two people can weigh at the same time, a batch each, on two tablets. The lot on each container is entered by whoever weighs that ingredient first.",
-      whichN: n => `Batch ${n}`,
-      whichAll: "All of them, in order",
-      onlyBatch: batch => `This tablet is weighing batch ${batch}.`,
-      changeBatch: "Change batch",
-      where: (batch, batches, position, of) => `Batch ${batch} of ${batches} · ingredient ${position} of ${of}`,
+      countLabel: "Number of batches",
+      setCount: "Set",
+      badCount: "Enter a whole number of batches, 1 or more.",
+      pastBatches: n => n === 1
+        ? "1 ingredient has a weight for a batch past this number. It stays on the lot record; correct it there if it was a mistake."
+        : `${n} ingredients have weights for batches past this number. They stay on the lot record; correct them there if they were a mistake.`,
+      whichQ: "Which ingredients are you weighing on this tablet?",
+      whichHelp: "When several people weigh at once, each takes some of the ingredients and weighs them for every batch. The lot on each container is entered by whoever weighs that ingredient first.",
+      whichAll: "All of them",
+      whichSome: "Only the ones ticked:",
+      whichGo: "Weigh the ones ticked",
+      whichNone: "Tick at least one ingredient, or choose all of them.",
+      onlyAll: "This tablet: all the ingredients.",
+      onlySome: (n, of) => `This tablet: ${n} of the ${of} ingredients.`,
+      changeWhich: "Change",
+      where: (position, of, batches) => `Ingredient ${position} of ${of} · ${batches === 1 ? "1 batch" : `${batches} batches`}`,
       whereOne: (position, of) => `Ingredient ${position} of ${of}`,
       lotLabel: "Lot on the container",
-      lotIs: lot => `Lot on the container: ${lot}`,
-      noLotYet: "No lot is recorded for this ingredient yet. It is entered with batch 1.",
-      otherLot: "A different container for this batch? Add it as a line of its own on the lot record.",
-      lotKept: (kept, typed) => `The weight is saved. The lot was already entered on the other tablet as ${kept}, so ${typed} was not saved. If this batch used a different container, add it as a line of its own on the lot record.`,
+      otherLot: "A different container for some batches? Add it as a line of its own on the lot record.",
+      lotKept: (kept, typed) => `The lot was already entered on the other tablet as ${kept}, so ${typed} was not saved. If some batches used a different container, add it as a line of its own on the lot record.`,
+      weightsHelp: "Weigh this ingredient for each batch. Each weight is saved as soon as it is entered.",
+      saved: "Saved",
+      unreadable: "The weights of this ingredient were typed on the lot record by hand and cannot be added to here. Correct them on the lot record.",
       scan: "Scan the label",
       scanning: "Reading the label…",
       scanNone: "No lot code could be read on that photo. Type it as printed on the container.",
       scanFailed: "The label could not be read. Type the lot as printed on the container.",
       scanReads: text => `The label reads: ${text}`,
       scanOffer: "Also read on the label - tap to use:",
-      weightLabel: batch => `Batch ${batch} weighed`,
+      weightLabel: batch => `Batch ${batch}`,
       weighedOne: "Weighed",
       formula: (qty, unit) => `Formula: ${qty}${unit ? ` ${unit}` : ""} per batch`,
       takeFigure: (qty, unit) => `Use ${qty}${unit ? ` ${unit}` : ""}`,
@@ -866,28 +879,38 @@ const es: TodayMessages = {
     openLotRecord: "Abrir el registro del lote",
     mix: {
       batchesQ: "¿Cuántas tandas se mezclan para este lote?",
-      batchesHelp: "Cada tanda se pesa y se anota por separado.",
+      batchesHelp: "Cualquier número. Luego cada ingrediente se pesa para cada tanda.",
       batchN: n => n === 1 ? "1 tanda" : `${n} tandas`,
-      whichQ: "¿Qué tanda pesa en esta tableta?",
-      whichHelp: "Dos personas pueden pesar a la vez, una tanda cada una, en dos tabletas. El lote de cada envase lo anota quien pese primero ese ingrediente.",
-      whichN: n => `Tanda ${n}`,
-      whichAll: "Todas, en orden",
-      onlyBatch: batch => `Esta tableta pesa la tanda ${batch}.`,
-      changeBatch: "Cambiar de tanda",
-      where: (batch, batches, position, of) => `Tanda ${batch} de ${batches} · ingrediente ${position} de ${of}`,
+      countLabel: "Número de tandas",
+      setCount: "Fijar",
+      badCount: "Escriba un número entero de tandas, 1 o más.",
+      pastBatches: n => n === 1
+        ? "1 ingrediente tiene un peso para una tanda por encima de este número. Queda en el registro del lote; corríjalo allí si fue un error."
+        : `${n} ingredientes tienen pesos para tandas por encima de este número. Quedan en el registro del lote; corríjalos allí si fue un error.`,
+      whichQ: "¿Qué ingredientes pesa en esta tableta?",
+      whichHelp: "Cuando varias personas pesan a la vez, cada una toma algunos ingredientes y los pesa para todas las tandas. El lote de cada envase lo anota quien pese primero ese ingrediente.",
+      whichAll: "Todos",
+      whichSome: "Solo los marcados:",
+      whichGo: "Pesar los marcados",
+      whichNone: "Marque al menos un ingrediente, o elija todos.",
+      onlyAll: "Esta tableta: todos los ingredientes.",
+      onlySome: (n, of) => `Esta tableta: ${n} de los ${of} ingredientes.`,
+      changeWhich: "Cambiar",
+      where: (position, of, batches) => `Ingrediente ${position} de ${of} · ${batches === 1 ? "1 tanda" : `${batches} tandas`}`,
       whereOne: (position, of) => `Ingrediente ${position} de ${of}`,
       lotLabel: "Lote en el envase",
-      lotIs: lot => `Lote en el envase: ${lot}`,
-      noLotYet: "Este ingrediente todavía no tiene lote anotado. Se anota con la tanda 1.",
-      otherLot: "¿Otro envase para esta tanda? Añádalo como una línea propia en el registro del lote.",
-      lotKept: (kept, typed) => `El peso quedó guardado. El lote ya se había anotado en la otra tableta como ${kept}, así que ${typed} no se guardó. Si esta tanda usó otro envase, añádalo como una línea propia en el registro del lote.`,
+      otherLot: "¿Otro envase para algunas tandas? Añádalo como una línea propia en el registro del lote.",
+      lotKept: (kept, typed) => `El lote ya se había anotado en la otra tableta como ${kept}, así que ${typed} no se guardó. Si algunas tandas usaron otro envase, añádalo como una línea propia en el registro del lote.`,
+      weightsHelp: "Pese este ingrediente para cada tanda. Cada peso se guarda en cuanto se anota.",
+      saved: "Guardado",
+      unreadable: "Los pesos de este ingrediente se escribieron a mano en el registro del lote y no se pueden completar aquí. Corríjalos en el registro del lote.",
       scan: "Escanear la etiqueta",
       scanning: "Leyendo la etiqueta…",
       scanNone: "No se pudo leer un código de lote en esa foto. Escríbalo como está impreso en el envase.",
       scanFailed: "No se pudo leer la etiqueta. Escriba el lote como está impreso en el envase.",
       scanReads: text => `La etiqueta dice: ${text}`,
       scanOffer: "También se leyó en la etiqueta - toque para usar:",
-      weightLabel: batch => `Tanda ${batch} pesada`,
+      weightLabel: batch => `Tanda ${batch}`,
       weighedOne: "Pesado",
       formula: (qty, unit) => `Fórmula: ${qty}${unit ? ` ${unit}` : ""} por tanda`,
       takeFigure: (qty, unit) => `Usar ${qty}${unit ? ` ${unit}` : ""}`,
