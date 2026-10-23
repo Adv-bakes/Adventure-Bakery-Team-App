@@ -319,6 +319,38 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
     queue.current = job;
   };
 
+  /**
+   * Save the lot as soon as it is picked from the list or the box is left - like the weights, so
+   * moving to another ingredient (Skip, Back, the step strip) never loses it (owner, 2026-10-23).
+   * A lot typed where none was shown is first come, first served: another tablet may have entered
+   * it meanwhile, and then theirs stays and the person is told.
+   */
+  const [sendingLot, setSendingLot] = useState(false);
+  const saveLot = (s: Ingredient, typed: string) => {
+    const t = typed.trim();
+    if (!t || t === s.lot) return;
+    const change: MixChange = s.lot ? { lot: t } : { lotIfBlank: t };
+    const cells = mixEntryCells(change, spec);
+    if (!cells) return;
+    setSendingLot(true);
+    const job = queue.current.then(async () => {
+      try {
+        const outcome = await write(d => applyMixEntry(d, refOf(s), change, spec), { line: refOf(s), set: cells });
+        if (!live.current) return;
+        if (outcome !== "saved") { report(outcome); return; }
+        onSaved(undefined);
+        const kept = String(lastSaved.current?.data?.[LOT_FLOW.grid]?.[s.index]?.[LOT_FLOW.lot] ?? "").trim();
+        if (!s.lot && kept && kept !== t) { toast.warning(X.lotKept(kept, t), { duration: 15000 }); setLotText(kept); }
+      } catch (e) {
+        console.error(e);
+        if (live.current) toast.error(X.saveFailed);
+      } finally {
+        if (live.current) setSendingLot(false);
+      }
+    });
+    queue.current = job;
+  };
+
   /** "Save and next": the lot if it changed, any box not yet saved, then the next ingredient. */
   const saveIngredient = async (s: Ingredient) => {
     const typedLot = lotText.trim();
@@ -451,7 +483,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   }
 
   const skipped = screens.filter(s => s.kind !== "rework" && !mixScreenDone(data, s, spec)).length;
-  const saving = busy || sending.size > 0;
+  const saving = busy || sending.size > 0 || sendingLot;
   const nav = (save?: React.ReactNode) => (
     <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
       <div className="flex flex-wrap gap-2">
@@ -607,11 +639,14 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
           {/* An offer of the lots on record - used before, then received - never a closed list. */}
           <div className="w-full max-w-sm">
             <SuggestInput id="mix-lot" value={lotText} onChange={v => { setLotText(v); setError(""); }} options={lotOptions}
+              onPick={v => saveLot(s, v)}
               emptyText={offerData ? X.offersEmpty : undefined} className={BIG} disabled={busy} />
           </div>
           <Button type="button" variant="outline" className={`h-12 ${PLAIN}`} disabled={busy || scanning} onClick={() => file.current?.click()}>
             {scanning ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Camera className="w-4 h-4 mr-1.5" />}{scanning ? X.scanning : X.scan}
           </Button>
+          {sendingLot ? <Loader2 className="w-4 h-4 animate-spin text-[#C89B3C]" />
+            : s.lot !== "" && lotText.trim() === s.lot && <span className="flex items-center gap-1 text-xs font-medium text-emerald-800"><Check className="w-4 h-4" />{X.saved}</span>}
         </div>
         {scan?.reads && <p className="text-sm opacity-80">{X.scanReads(scan.reads)}</p>}
         {scan?.none && amber(X.scanNone)}
