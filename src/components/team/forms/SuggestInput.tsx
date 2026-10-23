@@ -28,11 +28,14 @@ interface SuggestInputProps {
   disabled?: boolean;
   maxLength?: number;
   placeholder?: string;
+  /** For a label's htmlFor, and the input's own look (the mixing screens' larger tablet box). */
+  id?: string;
+  className?: string;
 }
 
 const fold = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
-export function SuggestInput({ value, onChange, onBlur, onPick, options, emptyText, disabled, maxLength, placeholder }: SuggestInputProps) {
+export function SuggestInput({ value, onChange, onBlur, onPick, options, emptyText, disabled, maxLength, placeholder, id, className }: SuggestInputProps) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   // What onPick was last told, so leaving the field without changing it does not look it up again.
@@ -62,6 +65,8 @@ export function SuggestInput({ value, onChange, onBlur, onPick, options, emptyTe
   return (
     <div className="relative">
       <Input
+        id={id}
+        className={className}
         value={value ?? ""}
         disabled={disabled}
         maxLength={maxLength}

@@ -1508,6 +1508,17 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     `ingredient` mode; the photo is always removed). The ingredient and brand are the formula's and are
     never written over; what the label says it is is shown as text, other numbers as chips. A box that
     holds something typed is never replaced - the reading is offered beside it.
+  - **The lot box offers the lots on record** (owner, 2026-10-23; `src/lib/lotOffers.ts`, tested by
+    `scripts/test-lot-offers.mjs`, loader `loadLotOfferRecords`, rendered with `SuggestInput`): first
+    **used before** - the same ingredient name on earlier lot records (exact match; a jug or a bag lasts
+    more than one bake day), newest first - then **received** - FRM-301 lines of the last 180 days that
+    share a word with the ingredient (`nameWords`: no numbers, no packaging words, singular), ranked by
+    shared words and the brand / supplier. Receiving types what the pack says ("SALAD OIL 100% PURE
+    SOYBEAN OIL") and the brands often differ from the formula's, so an exact match would find almost
+    nothing. A lot is offered once (written differently or not). An OFFER, never a closed list; Scan the
+    label and the first-come rule are unchanged. Practice records are left out. Not offered at Dunking
+    yet. Exact names would need receiving to pick the material from FRM-207, as FRM-501 does.
+    A remembered tick list that matches nothing on the record (`liveChoice`) means all ingredients.
   - **Rework used** opens the record: rework is a line of its own with its original lot code.
     Two lots of one ingredient are likewise a second line, added on the record.
   - A lot record with no ingredient lines offers **Start from the formula sheet** on the step
