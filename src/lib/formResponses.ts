@@ -17,6 +17,7 @@ import {
   type TraceEntry, type TraceKind, type TraceRecords,
 } from "@/lib/lotTrace";
 import { VISITOR_FORMS, isVisitorKioskSchema, type AckRecord } from "@/lib/visitors";
+import type { ReceiptLine, UsedLine } from "@/lib/lotOffers";
 import { POSITIONS } from "@/lib/positions";
 import {
   RELEASE_SOURCES, checkReleaseMapping, emptyReleaseRecords,
@@ -752,6 +753,51 @@ export async function loadTraceRecords(): Promise<TraceData> {
     }
   }));
   return { records, docs, sourceProblems, recallProblems };
+}
+
+/**
+ * What the lot box on the mixing screens offers (lotOffers.ts): every line of the receiving log
+ * (FRM-301) and every ingredient line of the lot records (FRM-520), drafts included, practice records
+ * left out. Only the keys read are selected, and each form is paged. Never throws: with nothing
+ * loaded the box is simply a text box.
+ */
+export async function loadLotOfferRecords(): Promise<{ used: UsedLine[]; receipts: ReceiptLine[] }> {
+  const used: UsedLine[] = [];
+  const receipts: ReceiptLine[] = [];
+  try {
+    const { data: docRows, error } = await (supabase as any)
+      .from("sop_documents").select("id, sop_number").in("sop_number", ["FRM-301", "FRM-520"]).eq("type", "form").eq("status", "active");
+    if (error) throw error;
+    const idOf = (n: string) => (docRows ?? []).find((d: any) => d.sop_number === n)?.id as string | undefined;
+    const str = (v: unknown) => (v == null ? "" : String(v).trim());
+    const PAGE = 1000;
+    const pages = async (docId: string | undefined, select: string, each: (r: any) => void) => {
+      if (!docId) return;
+      for (let from = 0; ; from += PAGE) {
+        const { data, error: err } = await table().select(select).eq("document_id", docId).order("id").range(from, from + PAGE - 1);
+        if (err) throw err;
+        for (const r of (data ?? []) as any[]) if (!r.v_test) each(r);
+        if (!data || data.length < PAGE) break;
+      }
+    };
+    await Promise.all([
+      pages(idOf("FRM-301"), "id, created_at, v_log:data->receiving_log, v_test:data->>_test_batch", r => {
+        for (const x of Array.isArray(r.v_log) ? r.v_log : []) {
+          receipts.push({ lot: str(x?.lot_batch_number), material: str(x?.material_description), brand: str(x?.brand_manufacturer),
+            supplier: str(x?.supplier_name), date: str(r.created_at).slice(0, 10) });
+        }
+      }),
+      pages(idOf("FRM-520"), "id, created_at, v_day:data->>bake_date, v_rows:data->ingredients, v_test:data->>_test_batch", r => {
+        for (const x of Array.isArray(r.v_rows) ? r.v_rows : []) {
+          used.push({ lot: str(x?.supplier_lot), ingredient: str(x?.ingredient), brand: str(x?.brand),
+            date: str(r.v_day) || str(r.created_at).slice(0, 10), entryId: r.id });
+        }
+      }),
+    ]);
+  } catch (e) {
+    console.error("lot offers could not be loaded", e);
+  }
+  return { used, receipts };
 }
 
 /**

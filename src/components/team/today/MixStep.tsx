@@ -23,8 +23,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BatchSheetPickDialog } from "@/components/team/forms/BatchSheetPickDialog";
+import { SuggestInput, type SuggestOption } from "@/components/team/forms/SuggestInput";
 import { batchSheetFill, type FormulaSource } from "@/lib/batchSheetFill";
-import { fetchResponse, saveResponseData, StaleResponseError, writeMixEntry, type FormResponse } from "@/lib/formResponses";
+import { fetchResponse, loadLotOfferRecords, saveResponseData, StaleResponseError, writeMixEntry, type FormResponse } from "@/lib/formResponses";
+import { lotOffers, type ReceiptLine, type UsedLine } from "@/lib/lotOffers";
 import { getFormSchema, julianLotCode, valueFields, type GridField } from "@/lib/formSchema";
 import {
   applyMixEntry, checkMixMapping, lineWeightsReadable, LOT_FLOW, LOT_SPEC, MIX_QUICK_BATCHES, mixEntryCells, mixLines, mixProgress,
@@ -56,6 +58,18 @@ const readOnly = (id: string): MixLine[] | null => {
 type MixWrite = { line: { index: number; ingredient: string; brand: string } | null; set: Record<string, unknown> };
 type Outcome = "saved" | "moved" | "record";
 
+/**
+ * The tablet's choice as it applies to the record now: lines that are no longer there (moved,
+ * renamed, or a choice remembered from another lot) drop out, and a choice with nothing left in it
+ * means all of them - never a tablet with nothing to weigh.
+ */
+const liveChoice = (choice: MixLine[] | null, data: Record<string, any> | null | undefined): MixLine[] | null => {
+  if (!choice) return null;
+  const lines = mixLines(data);
+  const left = choice.filter(c => lines.some(l => l.index === c.index && l.ingredient === c.ingredient && l.brand === c.brand));
+  return left.length ? left : null;
+};
+
 const screenKey = (s: MixScreen | undefined) => (!s ? "" : s.kind === "ingredient" ? `ingredient:${s.index}` : s.kind);
 const sameLine = (a: MixLine, b: MixLine) => a.index === b.index && a.ingredient === b.ingredient && a.brand === b.brand;
 
@@ -84,9 +98,9 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   const [loaded, setLoaded] = useState(false);
   /** The screen in view; null until the record has been read once. */
   const [at, setAt] = useState<number | null>(null);
-  const [only, setOnlyState] = useState<MixLine[] | null>(() => readOnly(lot.id));
+  const [chosen, setChosen] = useState<MixLine[] | null>(() => readOnly(lot.id));
   const setOnly = (v: MixLine[] | null) => {
-    setOnlyState(v);
+    setChosen(v);
     try { sessionStorage.setItem(onlyKey(lot.id), JSON.stringify(v)); } catch { /* no storage */ }
   };
   const [busy, setBusy] = useState(false);
@@ -114,6 +128,10 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   useEffect(() => () => { live.current = false; }, []);
 
+  // What the lot box offers: lots used before for the ingredient, and recent deliveries. Loaded once.
+  const [offerData, setOfferData] = useState<{ used: UsedLine[]; receipts: ReceiptLine[] } | null>(null);
+  useEffect(() => { void loadLotOfferRecords().then(d => { if (live.current) setOfferData(d); }); }, []);
+
   useEffect(() => {
     let on = true;
     (async () => {
@@ -125,7 +143,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
         else {
           setClosed("");
           setRec(r);
-          setAt(a => a ?? nextMixScreen(r.data, spec, only));
+          setAt(a => a ?? nextMixScreen(r.data, spec, liveChoice(chosen, r.data)));
         }
       } catch (e) {
         console.error(e);
@@ -139,6 +157,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   }, [lot.id, doc.revision, version, spec]);
 
   const data = rec?.data;
+  const only = useMemo(() => liveChoice(chosen, data), [chosen, data]);
   const screens = useMemo(() => mixScreens(data, spec, only), [data, spec, only]);
   const idx = Math.min(at ?? 0, screens.length - 1);
   const screen = screens[idx];
@@ -246,6 +265,20 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
   const asksUnit = (s: Ingredient) => units.length > 0 && (!s.needsWeight || !s.unit);
 
   const refOf = (s: Ingredient) => ({ index: s.index, ingredient: s.ingredient, brand: s.brand });
+
+  const shortDay = (day: string) => {
+    const d = new Date(`${day}T12:00:00`);
+    return Number.isNaN(d.getTime()) ? day : d.toLocaleDateString(lang === "es" ? "es-US" : "en-US", { month: "short", day: "numeric" });
+  };
+  const lotOptions = useMemo<SuggestOption[]>(() => {
+    if (!offerData || screen?.kind !== "ingredient") return [];
+    return lotOffers({ ingredient: screen.ingredient, brand: screen.brand }, offerData.used, offerData.receipts, { today: localDay(), self: lot.id })
+      .map(o => ({
+        value: o.lot,
+        hint: o.kind === "used" ? X.offerUsed(shortDay(o.date)) : X.offerReceived(shortDay(o.date), o.material ?? "", o.brand ?? ""),
+      }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offerData, key, lang]);
 
   /** A weight is a number of 0 or more; "" takes a weight off. Null = not a weight. */
   const readWeight = (typed: string): number | "" | null => {
@@ -571,8 +604,11 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
       <div className="space-y-1.5">
         <label htmlFor="mix-lot" className="block text-sm font-medium">{X.lotLabel}</label>
         <div className="flex flex-wrap items-center gap-2">
-          <Input id="mix-lot" value={lotText} onChange={e => { setLotText(e.target.value); setError(""); }} autoComplete="off" autoCapitalize="characters"
-            className={`${BIG} max-w-xs`} disabled={busy} />
+          {/* An offer of the lots on record - used before, then received - never a closed list. */}
+          <div className="w-full max-w-sm">
+            <SuggestInput id="mix-lot" value={lotText} onChange={v => { setLotText(v); setError(""); }} options={lotOptions}
+              emptyText={offerData ? X.offersEmpty : undefined} className={BIG} disabled={busy} />
+          </div>
           <Button type="button" variant="outline" className={`h-12 ${PLAIN}`} disabled={busy || scanning} onClick={() => file.current?.click()}>
             {scanning ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Camera className="w-4 h-4 mr-1.5" />}{scanning ? X.scanning : X.scan}
           </Button>
