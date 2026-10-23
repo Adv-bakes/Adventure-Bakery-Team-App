@@ -15,7 +15,9 @@ import { AlertTriangle, Camera, CheckCircle2, ChevronLeft, FilePenLine, Loader2,
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { fetchResponse, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
+import { fetchResponse, loadLotOfferRecords, saveResponseData, StaleResponseError, type FormResponse } from "@/lib/formResponses";
+import { lotOffers, type ReceiptLine, type UsedLine } from "@/lib/lotOffers";
+import { SuggestInput, type SuggestOption } from "@/components/team/forms/SuggestInput";
 import { addDunkLot, applyMixEntry, dunkProgress, dunkScreens, nextDunkScreen, removeDunkLine, type DunkScreen } from "@/lib/lotFlow";
 import { scanIngredientLot } from "@/lib/mixScan";
 import { syrupLotsFor, type LotSummary, type TodayRecords } from "@/lib/today";
@@ -60,6 +62,10 @@ export function DunkStep({ doc, lot, lang, back, version, onSaved, records, toda
   const file = useRef<HTMLInputElement>(null);
   const live = useRef(true);
   useEffect(() => () => { live.current = false; }, []);
+
+  // What the lot box offers, as at Mixing: lots used before for the ingredient, and recent deliveries.
+  const [offerData, setOfferData] = useState<{ used: UsedLine[]; receipts: ReceiptLine[] } | null>(null);
+  useEffect(() => { void loadLotOfferRecords().then(d => { if (live.current) setOfferData(d); }); }, []);
 
   useEffect(() => {
     let on = true;
@@ -213,9 +219,25 @@ export function DunkStep({ doc, lot, lang, back, version, onSaved, records, toda
   }
 
   const s = screen;
-  // Syrup made on site: its batches (FRM-530) are offered by name; a bought syrup has none and is typed or scanned.
+  // One list under the lot box, as at Mixing (owner, 2026-10-23): syrup made on site first - its
+  // batches (FRM-530), with their use-by - then lots used before for this ingredient on earlier lot
+  // records, then recent deliveries (FRM-301). Rum and a bought syrup have no batches of their own.
   const offers = syrupLotsFor(records, s.ingredient, today).slice(0, 5);
   const chosen = offers.find(o => normLot(o.lotCode) === normLot(lotText) && lotText.trim() !== "");
+  const shortDay = (day: string) => {
+    const d = new Date(`${day}T12:00:00`);
+    return !day || Number.isNaN(d.getTime()) ? day || "—" : d.toLocaleDateString(lang === "es" ? "es-US" : "en-US", { month: "short", day: "numeric" });
+  };
+  const listed = new Set(offers.map(o => normLot(o.lotCode)));
+  const lotOptions: SuggestOption[] = [
+    ...offers.map(o => ({ value: o.lotCode, hint: X.offerMade(shortDay(o.madeOn), shortDay(o.useBy), o.status !== "submitted") })),
+    ...(offerData ? lotOffers({ ingredient: s.ingredient, brand: s.brand }, offerData.used, offerData.receipts, { today, self: lot.id }) : [])
+      .filter(o => !listed.has(normLot(o.lot)))
+      .map(o => ({
+        value: o.lot,
+        hint: o.kind === "used" ? M.offerUsed(shortDay(o.date)) : M.offerReceived(shortDay(o.date), o.material ?? "", o.brand ?? ""),
+      })),
+  ];
   return (
     <form className="space-y-4" onSubmit={e => { e.preventDefault(); save(s); }}>
       <input ref={file} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { void takePhoto(e.target.files?.[0]); }} />
@@ -231,24 +253,12 @@ export function DunkStep({ doc, lot, lang, back, version, onSaved, records, toda
 
       <div className="space-y-1.5">
         <label htmlFor="dunk-lot" className="block text-sm font-medium">{M.lotLabel}</label>
-        {offers.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-sm opacity-80">{B.offer}</p>
-            <div className="flex flex-wrap gap-2">
-              {offers.map(o => (
-                <button key={o.id} type="button" disabled={busy} onClick={() => { setLotText(o.lotCode); setError(""); }}
-                  aria-pressed={chosen?.id === o.id}
-                  className={`rounded-lg border px-3 py-2 text-left text-sm font-medium ${chosen?.id === o.id ? "border-[#C89B3C] bg-[#C89B3C]/25" : "border-[#2A1F0E]/30 bg-white hover:bg-[#C89B3C]/15"} ${o.expired ? "text-amber-900" : ""}`}>
-                  {B.offerLine(o.lotCode, o.madeOn || "—", o.useBy || "—")}
-                  {o.status !== "submitted" && <span className="ml-1 font-normal opacity-70">({B.draft})</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         <div className="flex flex-wrap items-center gap-2">
-          <Input id="dunk-lot" value={lotText} onChange={e => { setLotText(e.target.value); setError(""); }} autoComplete="off" autoCapitalize="characters"
-            className={`${BIG} max-w-xs`} disabled={busy} />
+          {/* An offer of the lots on record, never a closed list - the same box as at Mixing. */}
+          <div className="w-full max-w-sm">
+            <SuggestInput id="dunk-lot" value={lotText} onChange={v => { setLotText(v); setError(""); }} options={lotOptions}
+              emptyText={offerData ? M.offersEmpty : undefined} className={BIG} disabled={busy} />
+          </div>
           <Button type="button" variant="outline" className={`h-12 ${PLAIN}`} disabled={busy || scanning} onClick={() => file.current?.click()}>
             {scanning ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Camera className="w-4 h-4 mr-1.5" />}{scanning ? M.scanning : M.scan}
           </Button>

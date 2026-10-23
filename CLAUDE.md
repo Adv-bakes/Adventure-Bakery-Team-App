@@ -1529,8 +1529,9 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     shared words and the brand / supplier. Receiving types what the pack says ("SALAD OIL 100% PURE
     SOYBEAN OIL") and the brands often differ from the formula's, so an exact match would find almost
     nothing. A lot is offered once (written differently or not). An OFFER, never a closed list; Scan the
-    label and the first-come rule are unchanged. Practice records are left out. Not offered at Dunking
-    yet. Exact names would need receiving to pick the material from FRM-207, as FRM-501 does.
+    label and the first-come rule are unchanged. Practice records are left out. **The Dunking step has
+    the same box** (2026-10-23): homemade syrup batches (FRM-530, `syrupLotsFor`) first, with made / use-by
+    dates, then used before, then received; the use-by warning on an expired batch is unchanged. Exact names would need receiving to pick the material from FRM-207, as FRM-501 does.
     A remembered tick list that matches nothing on the record (`liveChoice`) means all ingredients.
   - **Rework used** opens the record: rework is a line of its own with its original lot code.
     Two lots of one ingredient are likewise a second line, added on the record.
@@ -1601,8 +1602,8 @@ the page, and (2026-10-13) mixing one ingredient at a time with "Start a lot ste
     mixing rule. Batches still drafts are listed under Production (`batchesInProgress`) with Continue and
     **Follow this batch**. FRM-530 is in `TODAY_FORMS.intermediates`.
   - **Homemade syrup is offered at Dunking** (`syrupLotsFor(records, ingredient, today)` in `today.ts`):
-    the FRM-530 batches whose product matches the dunking line's ingredient name, newest first, as
-    buttons ("Lot 6287 · made ... · use by ..."; a draft says "not yet signed"). A batch past its use-by is
+    the FRM-530 batches whose product matches the dunking line's ingredient name, newest first, at the
+    top of the lot box's list (buttons until 2026-10-23) ("Lot 6287 · made ... · use by ..."; a draft says "not yet signed"). A batch past its use-by is
     still listed for 30 days, and choosing it shows the FSQM-016 warning - **warned, never blocked**. A bought
     syrup and the rum have no batches, so nothing is offered and the lot is typed or scanned.
   - **FSQM-021 v3** (GJM): syrup made on site is its own lot on FRM-530, used within 30 days; the rum is
