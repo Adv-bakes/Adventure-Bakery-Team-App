@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Camera, Check, CheckCircle2, ChevronLeft, FilePenLine, FlaskConical, Loader2, Minus, Plus } from "lucide-react";
+import { AlertTriangle, Camera, Check, CheckCircle2, ChevronLeft, FilePenLine, FlaskConical, Loader2, Minus, PackagePlus, Plus, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ import { fetchResponse, loadLotOfferRecords, saveResponseData, StaleResponseErro
 import { lotOffers, type ReceiptLine, type UsedLine } from "@/lib/lotOffers";
 import { getFormSchema, julianLotCode, valueFields, type GridField } from "@/lib/formSchema";
 import {
-  applyMixEntry, checkMixMapping, lineWeightsReadable, LOT_FLOW, LOT_SPEC, MIX_QUICK_BATCHES, mixEntryCells, mixLines, mixProgress,
+  addMixContainer, applyMixEntry, checkMixMapping, lineWeightsReadable, LOT_FLOW, LOT_SPEC, MIX_QUICK_BATCHES, mixEntryCells, mixLines, mixProgress, removeMixLine,
   mixScreenDone, mixScreens, nextMixScreen, noReworkOption, weightsPastBatches,
   type MixChange, type MixLine, type MixScreen, type MixSpec,
 } from "@/lib/lotFlow";
@@ -173,7 +173,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
     setUnit(screen?.kind === "ingredient" ? screen.unit : "");
     setCount(progress.batches ? String(progress.batches) : "");
     setPicked(only ?? []);
-    setError(""); setScan(null); setReworkYes(false);
+    setError(""); setScan(null); setReworkYes(false); setReplacing(null);
     scanned.current = "";
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, reset]);
@@ -326,9 +326,17 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
    * it meanwhile, and then theirs stays and the person is told.
    */
   const [sendingLot, setSendingLot] = useState(false);
-  const saveLot = (s: Ingredient, typed: string) => {
+  /**
+   * A lot typed over the one already saved on this line: it would replace the lot for EVERY batch
+   * weighed on the line, so the screen asks first - is it a mistake being corrected, or another
+   * container (owner, 2026-10-23)?
+   */
+  const [replacing, setReplacing] = useState<string | null>(null);
+  const saveLot = (s: Ingredient, typed: string, replace = false) => {
     const t = typed.trim();
     if (!t || t === s.lot) return;
+    if (s.lot && !replace) { setReplacing(t); return; }
+    setReplacing(null);
     const change: MixChange = s.lot ? { lot: t } : { lotIfBlank: t };
     const cells = mixEntryCells(change, spec);
     if (!cells) return;
@@ -351,13 +359,83 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
     queue.current = job;
   };
 
+  /**
+   * Another container of this ingredient: a line of its own at the end of the table, through
+   * write_mix_entry (any team member), else the ordinary save while the function does not know it
+   * yet. With `newLot` (typed over the first container's lot), that lot goes on the new line. The
+   * screen then moves to the new line, where the batches from that container are weighed.
+   */
+  const addContainer = async (s: Ingredient, newLot?: string) => {
+    if (busy) return;
+    setBusy(true);
+    setReplacing(null);
+    try {
+      await queue.current;
+      const ref = refOf(s);
+      let outcome: Outcome;
+      try {
+        outcome = await write(d => addMixContainer(d, ref)?.values ?? null, { line: ref, set: { add_container: true } });
+      } catch (e: any) {
+        // The function as pushed before this change does not know the key: the ordinary save.
+        if (!String(e?.message ?? "").includes("add_container")) throw e;
+        outcome = await write(d => addMixContainer(d, ref)?.values ?? null);
+      }
+      if (!live.current) return;
+      if (outcome !== "saved") { report(outcome); return; }
+      const saved = lastSaved.current;
+      const index = (saved?.data?.[LOT_FLOW.grid]?.length ?? 1) - 1;
+      if (newLot) {
+        const cells = mixEntryCells({ lotIfBlank: newLot }, spec);
+        const nref = { index, ingredient: s.ingredient, brand: s.brand };
+        await write(d => applyMixEntry(d, nref, { lotIfBlank: newLot }, spec), cells ? { line: nref, set: cells } : undefined);
+        setLotText(s.lot);
+      }
+      onSaved(undefined);
+      toast.success(X.containerAdded);
+      const next = mixScreens(lastSaved.current?.data, spec, only).findIndex(x => x.kind === "ingredient" && x.index === index);
+      if (next >= 0) setAt(next);
+    } catch (e) {
+      console.error(e);
+      if (live.current) toast.error(X.saveFailed);
+    } finally {
+      if (live.current) setBusy(false);
+    }
+  };
+
+  /** Take back a container line added by mistake: the last line, still empty. */
+  const removeLine = async (s: Ingredient) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await queue.current;
+      const ref = refOf(s);
+      let outcome: Outcome;
+      try {
+        outcome = await write(d => removeMixLine(d, ref), { line: ref, set: { remove_line: true } });
+      } catch (e: any) {
+        if (!String(e?.message ?? "").includes("remove_line")) throw e;
+        outcome = await write(d => removeMixLine(d, ref));
+      }
+      if (!live.current) return;
+      if (outcome !== "saved") { report(outcome); return; }
+      onSaved(undefined);
+      setAt(Math.max(0, idx - 1));
+    } catch (e) {
+      console.error(e);
+      if (live.current) toast.error(X.saveFailed);
+    } finally {
+      if (live.current) setBusy(false);
+    }
+  };
+
   /** "Save and next": the lot if it changed, any box not yet saved, then the next ingredient. */
   const saveIngredient = async (s: Ingredient) => {
     const typedLot = lotText.trim();
     if (!typedLot) { setError(X.needLot); return; }
     const weights = boxes.map(readWeight);
     if (weights.some(w => w === null)) { setError(X.badWeight); return; }
-    if (s.needsWeight && weights.some(w => w === "")) { setError(X.badWeight); return; }
+    if (s.lot && typedLot !== s.lot) { setReplacing(typedLot); return; }
+    if (s.needsWeight && weights.some((w, i) => w === "" && !s.elsewhere[i])) { setError(X.badWeight); return; }
     const anyWeight = weights.some(w => w !== "");
     if (asksUnit(s) && anyWeight && !unit) { setError(X.needUnit); return; }
     boxes.forEach((b, i) => saveWeight(s, i + 1, b));
@@ -631,6 +709,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
       <div>
         <p className="text-2xl font-semibold leading-tight">{s.ingredient}</p>
         {s.brand && <p className="text-sm opacity-80">{s.brand}</p>}
+        {s.containers > 1 && <p className="mt-1 text-sm font-medium text-[#7a5a14]">{X.containerOf(s.container, s.containers)}</p>}
       </div>
 
       <div className="space-y-1.5">
@@ -659,7 +738,34 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
             ))}
           </div>
         )}
-        {many && s.lot && <p className="text-xs opacity-70">{X.otherLot}</p>}
+        {replacing && (
+          <div className="rounded-md border border-amber-500 bg-amber-50 p-3 text-sm text-amber-900 space-y-2">
+            <p>{X.replaceQ(s.lot, replacing)}</p>
+            <div className="flex flex-wrap gap-2">
+              {many && (
+                <Button type="button" className={GOLD} disabled={busy} onClick={() => void addContainer(s, replacing)}>
+                  <PackagePlus className="w-4 h-4 mr-1.5" />{X.replaceOther}
+                </Button>
+              )}
+              <Button type="button" variant="outline" className={PLAIN} disabled={busy} onClick={() => saveLot(s, replacing, true)}>{X.replaceYes(replacing)}</Button>
+              <Button type="button" variant="ghost" className="text-[#2A1F0E] hover:bg-black/5" disabled={busy}
+                onClick={() => { setReplacing(null); setLotText(s.lot); }}>{X.replaceKeep(s.lot)}</Button>
+            </div>
+          </div>
+        )}
+        {many && s.lot && !replacing && (
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <Button type="button" variant="outline" className={PLAIN} disabled={busy} onClick={() => void addContainer(s)}>
+              <PackagePlus className="w-4 h-4 mr-1.5" />{X.anotherContainer}
+            </Button>
+            <span className="text-xs opacity-70">{X.otherLot}</span>
+          </div>
+        )}
+        {s.removable && (
+          <Button type="button" variant="ghost" className="text-[#2A1F0E] hover:bg-black/5" disabled={busy} onClick={() => void removeLine(s)}>
+            <Undo2 className="w-4 h-4 mr-1.5" />{X.removeLine}
+          </Button>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -695,6 +801,7 @@ export function MixStep({ doc, lot, lang, back, version, onSaved, spec = LOT_SPE
                   className="h-11 w-28 bg-white text-lg" />
                 {sending.has(batch) ? <Loader2 className="w-4 h-4 animate-spin text-[#C89B3C]" />
                   : savedHere ? <span className="flex items-center gap-1 text-xs font-medium text-emerald-800"><Check className="w-4 h-4" />{X.saved}</span>
+                  : value.trim() === "" && s.elsewhere[i] ? <span className="text-xs font-medium opacity-80">{X.fromLot(s.elsewhere[i])}</span>
                   : s.needsWeight && value.trim() === "" && (
                     <button type="button" disabled={busy} onClick={() => {
                       setBoxes(prev => prev.map((p, j) => (j === i ? s.expected : p)));

@@ -81,7 +81,7 @@ const day = (v: unknown) => str(v).slice(0, 10);
 
 export interface MixProgress {
   state: FlowState;
-  /** Ingredient lines on the record, and how many are complete for every batch. */
+  /** Ingredients on the record (several containers of one count once), and how many are complete for every batch. */
   lines: number;
   linesDone: number;
   /** 0 until "Number of batches" is answered. Any whole number from 1 up: there is no ceiling. */
@@ -104,6 +104,18 @@ const batchCount = (d: Record<string, any>, spec: MixSpec) => {
 const gridRows = (d: Record<string, any>): Record<string, unknown>[] => (Array.isArray(d[LOT_FLOW.grid]) ? d[LOT_FLOW.grid] : []);
 
 /**
+ * One ingredient can be on several lines - one per container, each with its own lot (owner,
+ * 2026-10-23: "Another container"). Lines of the same ingredient and brand are counted together.
+ */
+const groupOf = (r: Record<string, unknown> | undefined) =>
+  `${str(r?.[LOT_FLOW.ingredient]).toLowerCase()}|${str(r?.[LOT_FLOW.brand]).toLowerCase()}`;
+
+/** A batch of a line is covered when this line or another line of the same ingredient weighs it. */
+function groupCovers(rows: Record<string, unknown>[], members: number[], spec: MixSpec, batch: number): boolean {
+  return members.some(i => !!weightsOf(rows[i] ?? {}, spec).get(batch));
+}
+
+/**
  * How far the weighing has got, from the lot record's own answers. A line is complete when it has
  * the lot on its container and - where the formula gives an expected quantity - a weight for each
  * batch. A line with no expected quantity (pan spray) needs only its lot. Mixing is done when the
@@ -112,20 +124,27 @@ const gridRows = (d: Record<string, any>): Record<string, unknown>[] => (Array.i
 export function mixProgress(data: Record<string, any> | null | undefined, spec: MixSpec = LOT_SPEC): MixProgress {
   const d = data ?? {};
   // The dunking lines (syrup, rum) are not mixed: the Dunking step asks for them.
-  const rows = gridRows(d).filter(r => str(r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(r));
+  const all = gridRows(d);
+  const rows = all.filter(r => str(r?.[LOT_FLOW.ingredient]) !== "" && !isDunkLine(r));
   const batches = batchCount(d, spec);
-  const complete = (r: Record<string, unknown>) => {
-    if (str(r[LOT_FLOW.lot]) === "") return false;
-    if (str(r[LOT_FLOW.expected]) === "") return true;
-    const w = weightsOf(r, spec);
-    for (let b = 1; b <= batches; b++) if (!w.get(b)) return false;
+  // An ingredient is complete when every line of it has its lot and - where the formula gives a
+  // quantity - every batch is weighed on one of its lines (one container, or several).
+  const groups = new Map<string, number[]>();
+  all.forEach((r, i) => {
+    if (str(r?.[LOT_FLOW.ingredient]) === "" || isDunkLine(r)) return;
+    groups.set(groupOf(r), [...(groups.get(groupOf(r)) ?? []), i]);
+  });
+  const complete = (members: number[]) => {
+    if (members.some(i => str(all[i][LOT_FLOW.lot]) === "")) return false;
+    if (str(all[members[0]][LOT_FLOW.expected]) === "") return true;
+    for (let b = 1; b <= batches; b++) if (!groupCovers(all, members, spec, b)) return false;
     return true;
   };
-  const linesDone = batches ? rows.filter(complete).length : 0;
+  const linesDone = batches ? [...groups.values()].filter(complete).length : 0;
   const touched = (spec.batches && batches > 0) || (spec.rework && str(d[LOT_FLOW.rework]) !== "")
     || rows.some(r => str(r[LOT_FLOW.lot]) !== "" || weightsOf(r, spec).size > 0);
-  const done = rows.length > 0 && batches > 0 && linesDone === rows.length && (!spec.rework || str(d[LOT_FLOW.rework]) !== "");
-  return { state: done ? "done" : touched ? "open" : "none", lines: rows.length, linesDone, batches };
+  const done = groups.size > 0 && batches > 0 && linesDone === groups.size && (!spec.rework || str(d[LOT_FLOW.rework]) !== "");
+  return { state: done ? "done" : touched ? "open" : "none", lines: groups.size, linesDone, batches };
 }
 
 /**
@@ -166,6 +185,13 @@ export type MixScreen =
       lot: string;
       /** The weight of each batch, batch 1 first; "" where none is recorded yet. */
       weights: string[];
+      /** Per batch: the lot of another container of this ingredient that weighs it, else "". */
+      elsewhere: string[];
+      /** Which container of this ingredient this line is, and of how many lines. */
+      container: number;
+      containers: number;
+      /** A line added for another container and still empty can be taken back. */
+      removable: boolean;
       /** Which ingredient this is, and of how many this tablet walks. */
       position: number;
       of: number;
@@ -177,10 +203,13 @@ export interface MixLine { index: number; ingredient: string; brand: string }
 
 /** The lines that are mixed (named, not added at dunking), with their positions in the table. */
 export function mixLines(data: Record<string, any> | null | undefined): MixLine[] {
-  return gridRows(data ?? {})
+  const lines = gridRows(data ?? {})
     .map((r, index) => ({ index, ingredient: str(r?.[LOT_FLOW.ingredient]), brand: str(r?.[LOT_FLOW.brand]), r }))
-    .filter(x => x.ingredient !== "" && !isDunkLine(x.r))
-    .map(({ index, ingredient, brand }) => ({ index, ingredient, brand }));
+    .filter(x => x.ingredient !== "" && !isDunkLine(x.r));
+  // Another container's line sits at the end of the table, but is walked straight after its ingredient.
+  const order: string[] = [];
+  for (const l of lines) if (!order.includes(groupOf(l.r))) order.push(groupOf(l.r));
+  return order.flatMap(g => lines.filter(l => groupOf(l.r) === g)).map(({ index, ingredient, brand }) => ({ index, ingredient, brand }));
 }
 
 /**
@@ -197,15 +226,26 @@ export function mixScreens(data: Record<string, any> | null | undefined, spec: M
   const out: MixScreen[] = spec.batches ? [{ kind: "batches" }] : [];
   if (!batches) return out;
   const rows = gridRows(d);
-  const mine = (l: MixLine) => !only || only.length === 0 || only.some(o => o.index === l.index && o.ingredient === l.ingredient && o.brand === l.brand);
-  const here = mixLines(d).filter(mine);
+  const lines = mixLines(d);
+  // A tablet that chose an ingredient also walks its other containers' lines.
+  const chosen = (l: MixLine) => only!.some(o => o.index === l.index && o.ingredient === l.ingredient && o.brand === l.brand);
+  const mine = (l: MixLine) => !only || only.length === 0 || lines.some(c => chosen(c) && groupOf(rows[c.index]) === groupOf(rows[l.index]));
+  const here = lines.filter(mine);
   here.forEach((l, i) => {
     const r = rows[l.index] ?? {};
     const w = weightsOf(r, spec);
+    const twins = lines.filter(x => groupOf(rows[x.index]) === groupOf(r)).map(x => x.index);
+    const elsewhere = Array.from({ length: batches }, (_, b) => {
+      if (w.get(b + 1)) return "";
+      const other = twins.find(t => t !== l.index && weightsOf(rows[t] ?? {}, spec).get(b + 1));
+      return other == null ? "" : str(rows[other][LOT_FLOW.lot]) || "?";
+    });
     out.push({
       kind: "ingredient", index: l.index, ingredient: l.ingredient, brand: l.brand,
       unit: str(r[LOT_FLOW.unit]), expected: str(r[LOT_FLOW.expected]), needsWeight: str(r[LOT_FLOW.expected]) !== "",
-      lot: str(r[LOT_FLOW.lot]), weights: Array.from({ length: batches }, (_, b) => w.get(b + 1) ?? ""),
+      lot: str(r[LOT_FLOW.lot]), weights: Array.from({ length: batches }, (_, b) => w.get(b + 1) ?? ""), elsewhere,
+      container: twins.indexOf(l.index) + 1, containers: twins.length,
+      removable: removeMixLine(d, l) != null,
       position: i + 1, of: here.length,
     });
   });
@@ -218,7 +258,41 @@ export function mixScreenDone(data: Record<string, any> | null | undefined, s: M
   const d = data ?? {};
   if (s.kind === "batches") return mixProgress(d, spec).batches > 0;
   if (s.kind === "rework") return str(d[LOT_FLOW.rework]) !== "";
-  return s.lot !== "" && (!s.needsWeight || s.weights.every(w => w !== ""));
+  return s.lot !== "" && (!s.needsWeight || s.weights.every((w, i) => w !== "" || (s.elsewhere?.[i] ?? "") !== ""));
+}
+
+/**
+ * Another container of an ingredient (the jug ran out at batch 4): a new line of the same ingredient
+ * and brand at the END of the table - no other line's position changes - with its lot and weights
+ * blank. Its batches are weighed on it; the first line keeps the batches weighed from the first
+ * container. Null when the line has moved or is a dunking line.
+ */
+export function addMixContainer(values: Record<string, any>, ref: MixLine): { values: Record<string, any>; index: number } | null {
+  const rows = gridRows(values);
+  const row = rows[ref.index];
+  if (!row || str(row[LOT_FLOW.ingredient]) !== ref.ingredient || str(row[LOT_FLOW.brand]) !== ref.brand || isDunkLine(row)) return null;
+  const copy: Record<string, unknown> = {};
+  for (const k of Object.keys(row)) copy[k] = "";
+  copy[LOT_FLOW.ingredient] = row[LOT_FLOW.ingredient];
+  copy[LOT_FLOW.brand] = row[LOT_FLOW.brand];
+  copy[LOT_FLOW.expected] = row[LOT_FLOW.expected] ?? "";
+  copy[LOT_FLOW.unit] = row[LOT_FLOW.unit] ?? "";
+  return { values: { ...values, [LOT_FLOW.grid]: [...rows, copy] }, index: rows.length };
+}
+
+/**
+ * Take back a container line added by mistake: only the LAST line of the table (so no other line
+ * moves under another tablet), with no lot, no weight and no notes, while another line of the same
+ * ingredient stays. Null when that does not hold. The database function applies the same rule.
+ */
+export function removeMixLine(values: Record<string, any> | null | undefined, ref: MixLine): Record<string, any> | null {
+  const rows = gridRows(values ?? {});
+  const row = rows[ref.index];
+  if (!row || ref.index !== rows.length - 1 || isDunkLine(row)) return null;
+  if (str(row[LOT_FLOW.ingredient]) !== ref.ingredient || str(row[LOT_FLOW.brand]) !== ref.brand) return null;
+  if (str(row[LOT_FLOW.lot]) !== "" || str(row[LOT_FLOW.notes]) !== "" || str(row[WEIGHED_BATCHES]) !== "" || str(row[LOT_FLOW.oneWeight]) !== "") return null;
+  if (!rows.some((r, i) => i !== ref.index && !isDunkLine(r) && groupOf(r) === groupOf(row))) return null;
+  return { ...(values ?? {}), [LOT_FLOW.grid]: rows.slice(0, -1) };
 }
 
 /** Where the mixing step opens: the first screen not yet answered, else the last one. */

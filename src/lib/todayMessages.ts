@@ -135,6 +135,8 @@ export interface TodayMessages {
       onlyAll: string; onlySome(n: number, of: number): string; changeWhich: string;
       where(position: number, of: number, batches: number): string; whereOne(position: number, of: number): string;
       lotLabel: string; otherLot: string; lotKept(kept: string, typed: string): string;
+      anotherContainer: string; containerOf(n: number, of: number): string; containerAdded: string; removeLine: string; fromLot(lot: string): string;
+      replaceQ(old: string, typed: string): string; replaceYes(typed: string): string; replaceOther: string; replaceKeep(old: string): string;
       weightsHelp: string; saved: string; unreadable: string;
       offerUsed(date: string): string; offerReceived(date: string, material: string, brand: string): string; offersEmpty: string;
       scan: string; scanning: string; scanNone: string; scanFailed: string; scanReads(text: string): string; scanOffer: string;
@@ -456,7 +458,16 @@ const en: TodayMessages = {
       where: (position, of, batches) => `Ingredient ${position} of ${of} · ${batches === 1 ? "1 batch" : `${batches} batches`}`,
       whereOne: (position, of) => `Ingredient ${position} of ${of}`,
       lotLabel: "Lot on the container",
-      otherLot: "A different container for some batches? Add it as a line of its own on the lot record.",
+      otherLot: "Ran out part way? Add the next container, and weigh its batches on it.",
+      anotherContainer: "Another container (new lot)",
+      containerOf: (n, of) => `Container ${n} of ${of}`,
+      containerAdded: "A line for the next container was added. Enter its lot, and weigh the batches that came from it.",
+      removeLine: "Take this line back",
+      fromLot: lot => `From lot ${lot}`,
+      replaceQ: (old, typed) => `This line's lot is ${old}. Saving ${typed} would replace it for every batch weighed on this line.`,
+      replaceYes: typed => `Replace with ${typed}`,
+      replaceOther: "It is another container",
+      replaceKeep: old => `Keep ${old}`,
       lotKept: (kept, typed) => `The lot was already entered on the other tablet as ${kept}, so ${typed} was not saved. If some batches used a different container, add it as a line of its own on the lot record.`,
       weightsHelp: "Weigh this ingredient for each batch. Each weight is saved as soon as it is entered.",
       saved: "Saved",
@@ -903,7 +914,16 @@ const es: TodayMessages = {
       where: (position, of, batches) => `Ingrediente ${position} de ${of} · ${batches === 1 ? "1 tanda" : `${batches} tandas`}`,
       whereOne: (position, of) => `Ingrediente ${position} de ${of}`,
       lotLabel: "Lote en el envase",
-      otherLot: "¿Otro envase para algunas tandas? Añádalo como una línea propia en el registro del lote.",
+      otherLot: "¿Se acabó a mitad? Añada el siguiente envase y pese en él sus tandas.",
+      anotherContainer: "Otro envase (otro lote)",
+      containerOf: (n, of) => `Envase ${n} de ${of}`,
+      containerAdded: "Se añadió una línea para el siguiente envase. Escriba su lote y pese las tandas que salieron de él.",
+      removeLine: "Quitar esta línea",
+      fromLot: lot => `Del lote ${lot}`,
+      replaceQ: (old, typed) => `El lote de esta línea es ${old}. Guardar ${typed} lo reemplazaría para todas las tandas pesadas en esta línea.`,
+      replaceYes: typed => `Reemplazar por ${typed}`,
+      replaceOther: "Es otro envase",
+      replaceKeep: old => `Dejar ${old}`,
       lotKept: (kept, typed) => `El lote ya se había anotado en la otra tableta como ${kept}, así que ${typed} no se guardó. Si algunas tandas usaron otro envase, añádalo como una línea propia en el registro del lote.`,
       weightsHelp: "Pese este ingrediente para cada tanda. Cada peso se guarda en cuanto se anota.",
       saved: "Guardado",
