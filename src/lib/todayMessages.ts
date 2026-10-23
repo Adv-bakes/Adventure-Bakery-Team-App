@@ -127,6 +127,7 @@ export interface TodayMessages {
       lead: string; where(position: number, of: number): string;
       amountLabel: string; amountHelp: string; anotherLot(ingredient: string): string; removeLine: string;
       done: string; submitted: string; added(ingredient: string): string;
+      offerMade(madeOn: string, useBy: string, draft: boolean): string;
     };
     mix: {
       batchesQ: string; batchesHelp: string; batchN(n: number): string;
@@ -567,6 +568,7 @@ const en: TodayMessages = {
     },
     dunk: {
       lead: "The syrup and the rum this lot is dunked in: the lot printed on each container.",
+      offerMade: (madeOn, useBy, draft) => `Made here ${madeOn} · use by ${useBy}${draft ? " · not yet signed" : ""}`,
       where: (position, of) => `Dunking line ${position} of ${of}`,
       amountLabel: "Amount used (optional)",
       amountHelp: "If you know it, for example 2 gal. It is not weighed.",
@@ -1025,6 +1027,7 @@ const es: TodayMessages = {
     },
     dunk: {
       lead: "El almíbar y el ron en que se remoja este lote: el lote impreso en cada envase.",
+      offerMade: (madeOn, useBy, draft) => `Hecho aquí ${madeOn} · usar antes de ${useBy}${draft ? " · sin firmar" : ""}`,
       where: (position, of) => `Línea de remojo ${position} de ${of}`,
       amountLabel: "Cantidad usada (opcional)",
       amountHelp: "Si la sabe, por ejemplo 2 gal. No se pesa.",
