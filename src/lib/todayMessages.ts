@@ -137,7 +137,7 @@ export interface TodayMessages {
       lotLabel: string; otherLot: string; lotKept(kept: string, typed: string): string;
       anotherContainer: string; containerOf(n: number, of: number): string; containerAdded: string; removeLine: string; fromLot(lot: string): string;
       replaceQ(old: string, typed: string): string; replaceYes(typed: string): string; replaceOther: string; replaceKeep(old: string): string;
-      weightsHelp: string; saved: string; unreadable: string;
+      weightsHelp: string; saved: string; unreadable: string; batchLot(lot: string): string; noLotYet: string;
       offerUsed(date: string): string; offerReceived(date: string, material: string, brand: string): string; offersEmpty: string;
       scan: string; scanning: string; scanNone: string; scanFailed: string; scanReads(text: string): string; scanOffer: string;
       weightLabel(batch: number): string; weighedOne: string; formula(qty: string, unit: string): string; takeFigure(qty: string, unit: string): string;
@@ -471,6 +471,8 @@ const en: TodayMessages = {
       lotKept: (kept, typed) => `The lot was already entered on the other tablet as ${kept}, so ${typed} was not saved. If some batches used a different container, add it as a line of its own on the lot record.`,
       weightsHelp: "Weigh this ingredient for each batch. Each weight is saved as soon as it is entered.",
       saved: "Saved",
+      batchLot: lot => `Lot ${lot}`,
+      noLotYet: "No lot yet",
       offerUsed: date => `Used for this ingredient · ${date}`,
       offerReceived: (date, material, brand) => [`Received ${date}`, material, brand].filter(Boolean).join(" · "),
       offersEmpty: "No lot on record for this ingredient yet. Type it, or scan the label.",
@@ -927,6 +929,8 @@ const es: TodayMessages = {
       lotKept: (kept, typed) => `El lote ya se había anotado en la otra tableta como ${kept}, así que ${typed} no se guardó. Si algunas tandas usaron otro envase, añádalo como una línea propia en el registro del lote.`,
       weightsHelp: "Pese este ingrediente para cada tanda. Cada peso se guarda en cuanto se anota.",
       saved: "Guardado",
+      batchLot: lot => `Lote ${lot}`,
+      noLotYet: "Sin lote aún",
       offerUsed: date => `Usado para este ingrediente · ${date}`,
       offerReceived: (date, material, brand) => [`Recibido ${date}`, material, brand].filter(Boolean).join(" · "),
       offersEmpty: "Todavía no hay lote registrado para este ingrediente. Escríbalo o escanee la etiqueta.",
