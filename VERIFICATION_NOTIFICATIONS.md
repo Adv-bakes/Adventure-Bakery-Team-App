@@ -186,6 +186,10 @@ cannot blank a pill that was right a moment ago). Look in the browser console.
 `net.http_post` queues a request and returns immediately, so the statement succeeds even when the
 HTTP call later times out or 401s.
 
+`cron.job_run_details` keeps only the last **7 days**: the `trim-cron-run-log` job deletes older
+runs every night at 03:30 UTC (migration `20261111000001`). Before that, nothing ever cleared it; it
+had grown to 501 MB, two-thirds of the database, on the day the project stalled (2026-11-11).
+
 ```sql
 select id, status_code, error_msg, created from net._http_response order by id desc limit 10;
 ```
